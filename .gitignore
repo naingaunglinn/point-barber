@@ -1,0 +1,29 @@
+# dependencies / build
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# environment and secrets — never commit (CG-SEC-05, CG-GIT-06)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+
+# local tooling
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# generated files and data dumps
+*.dump
+*.sql.gz
