@@ -27,3 +27,8 @@ Thumbs.db
 # generated files and data dumps
 *.dump
 *.sql.gz
+
+# added by add-repo-scaffold (PR-A)
+*.tsbuildinfo
+.eslintcache
+.vitest/

@@ -1,0 +1,106 @@
+# CI for point-barber (design D15 · ADR-001 action item 4 · system-design §4.1).
+# PR-A brings the jobs static, unit and pr-title; each later pull request of add-repo-scaffold
+# adds the job for the code it brings (db, integration, images, e2e).
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  static:
+    name: static
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # gitleaks scans the pushed commits
+
+      - uses: ./.github/actions/setup
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Guards
+        run: pnpm guards
+
+      - name: Secret scan (gitleaks, pushed commits — CG-SEC-05)
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          v="$GITLEAKS_VERSION"
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${v}/gitleaks_${v}_linux_x64.tar.gz"
+          curl -sSfL -o checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${v}/gitleaks_${v}_checksums.txt"
+          grep " gitleaks_${v}_linux_x64.tar.gz\$" checksums.txt | awk '{print $1"  gitleaks.tar.gz"}' | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          cd "$GITHUB_WORKSPACE"
+          if [ "$EVENT" = "pull_request" ]; then
+            range="${PR_BASE}..${PR_HEAD}"
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            range="${PUSH_BEFORE}..${PUSH_AFTER}"
+          else
+            range=""
+          fi
+          if [ -n "$range" ]; then
+            "$RUNNER_TEMP/gitleaks" git --redact --no-banner --log-opts="$range" .
+          else
+            "$RUNNER_TEMP/gitleaks" git --redact --no-banner .
+          fi
+
+  unit:
+    name: unit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Unit tests (Vitest — incl. guard, lint-rule and runner tests)
+        run: pnpm test
+
+  pr-title:
+    name: pr-title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # Title and branch reach the scripts only through the environment, never the shell text.
+      - name: PR title is a Conventional Commit with the change id (CG-GIT-02)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.head_ref }}
+        run: node tools/guards/check-pr-title.mjs
+
+      - name: Branch name (CG-GIT-01)
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+        run: node tools/guards/check-branch-name.mjs

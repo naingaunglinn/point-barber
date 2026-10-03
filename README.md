@@ -11,17 +11,19 @@ point/
 └── point-barber/   this repo — code                                     (github.com/naingaunglinn/point-barber)
 ```
 
-## Status
+Planning sources: [`../point-sdd`](../point-sdd) · Local set-up in detail:
+[`docs/engineering/local-setup.md`](docs/engineering/local-setup.md) · Rules for code:
+[`docs/engineering/coding-guideline.md`](docs/engineering/coding-guideline.md) · Pinned versions:
+[`VERSIONS.md`](VERSIONS.md)
 
-The repository starts with only the files below. The working tree (monorepo, database baseline, CI) is built
-by the first OpenSpec change, **`add-repo-scaffold`**; this README is replaced by that change.
+## Prerequisites
 
-| File | What it is |
-|---|---|
-| `CLAUDE.md` | Rules for Claude Code in this repository (short form) |
-| `docs/engineering/coding-guideline.md` | The coding guideline — rule IDs `CG-…` (v1.0 — approved by the owner on 02/Oct/2026; every rule is binding) |
-| `openspec/config.yaml` | OpenSpec pointer: `store: point-sdd` — the changes are read from `../point-sdd` |
-| `design-reference/` | The owner's reference images for the website and the admin panel (reference only) |
+| Tool     | Version                                                                                  | Check                    |
+| -------- | ---------------------------------------------------------------------------------------- | ------------------------ |
+| Node.js  | 24 LTS (`.nvmrc`)                                                                        | `node --version`         |
+| pnpm     | from `package.json` → `packageManager`, through corepack (`corepack enable`)             | `pnpm --version`         |
+| Docker   | Docker Desktop (Windows / macOS) or Docker Engine with Compose v2                        | `docker compose version` |
+| gitleaks | 8.x — optional locally (the `pre-commit` hook uses it when installed; CI always runs it) | `gitleaks version`       |
 
 ## First steps (each developer)
 
@@ -34,11 +36,26 @@ openspec list                                           # the changes of point-s
 
 Then, in Claude Code opened in this folder: `/opsx:apply add-repo-scaffold`.
 
-Order of the first changes (details: `../point-sdd/docs/plan/roadmap.md`):
+## Everyday commands
 
-1. `add-repo-scaffold` — both developers
-2. `add-shared-ui-components` (Dev 1) and `add-foundation-auth-access` (Dev 2) — in parallel
-3. `add-walkin-visit-checkout`
+```powershell
+pnpm install        # dependencies (frozen in CI); also installs the Git hooks
+pnpm dev            # API and web app with reload
+pnpm lint           # ESLint — module boundaries, access decorators, guard rails
+pnpm typecheck      # tsc --noEmit for every workspace
+pnpm test           # unit tests (Vitest)
+pnpm guards         # repository guards (tools/guards/check-*.mjs)
+```
+
+Also: `pnpm format` / `pnpm format:check` (Prettier), `pnpm test:int` (API on PostgreSQL 16),
+`pnpm e2e` (Playwright against the Compose stack), `pnpm db:migrate` / `pnpm db:test`.
+
+## Branches and pull requests
+
+Branch `feature/<change-id>` (`feature/<change-id>/<part>` when a change has several pull requests) or
+`chore/<topic>`; the pull-request title is `<type>(<change-id>): <summary>` and the description follows
+`.github/pull_request_template.md` (CG-GIT-01 … CG-GIT-05). Squash merge after green CI and one review by
+the other developer.
 
 ## Rules in one paragraph
 

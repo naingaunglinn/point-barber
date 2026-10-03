@@ -1,0 +1,37 @@
+{
+  "name": "point-barber",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "prepare": "node tools/git-hooks/install.mjs",
+    "dev": "turbo run dev",
+    "lint": "eslint .",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "test:int": "turbo run test:int",
+    "e2e": "turbo run e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "guards": "node tools/guards/run-all.mjs",
+    "db:migrate": "node db/scripts/migrate.mjs",
+    "db:test": "node db/scripts/run-constraint-tests.mjs",
+    "db:check-source": "node db/scripts/check-source.mjs",
+    "db:check-introspection": "node db/scripts/check-introspection.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "24.19.1",
+    "eslint": "9.39.5",
+    "globals": "17.13.0",
+    "prettier": "3.9.9",
+    "turbo": "2.11.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}

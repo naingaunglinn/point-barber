@@ -1,0 +1,11 @@
+# Line endings: LF in the repository and in every working tree (Prettier checks LF — .prettierrc.json).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
