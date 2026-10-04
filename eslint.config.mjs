@@ -16,6 +16,7 @@ export default tseslint.config(
       '**/.next/**',
       '**/.turbo/**',
       '**/coverage/**',
+      'apps/api/src/generated/**',
       // Fixture files that must fail are linted only by their rule tests (design D10).
       'tools/eslint/fixtures/**',
       'tools/eslint-plugin-point/fixtures/**',
