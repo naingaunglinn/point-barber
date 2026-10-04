@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { checkMigrations } from '../check-migrations.mjs';
@@ -131,6 +132,17 @@ describe('check-migrations (CG-DB-02)', { timeout: 30_000 }, () => {
     expect(checkMigrations({ cwd, baseRef: 'main' })).toEqual([]);
   });
 
+  // PR-B re-review — dynamic DDL in a dollar-quoted EXECUTE argument or in concatenated pieces.
+  it.each([
+    'DO $outer$ BEGIN EXECUTE $q$ALTER TABLE a DROP COLUMN note$q$; END $outer$;',
+    "DO $$ BEGIN EXECUTE 'ALTER TABLE ' || quote_ident('a') || ' DROP COLUMN note'; END $$;",
+  ])('fails destructive DDL that EXECUTE builds from %s', (sql) => {
+    const cwd = repo();
+    write(cwd, '20261002000000_add_x', `${sql}\n`);
+    commit(cwd);
+    expect(checkMigrations({ cwd, baseRef: 'main' })[0]).toMatch(/destructive DDL \(DROP COLUMN\)/);
+  });
+
   // Review #9 — every tracked file under db/migrations/, not only migration.sql.
   it('fails when migration_lock.toml from main is modified', () => {
     const cwd = repo();
@@ -145,6 +157,25 @@ describe('check-migrations (CG-DB-02)', { timeout: 30_000 }, () => {
   it('fails when no base ref can be resolved', () => {
     const cwd = repo();
     expect(() => checkMigrations({ cwd, baseRef: 'origin/does-not-exist' })).toThrow(/no base ref/);
+  });
+
+  // PR-B re-review — on main in a shallow clone, HEAD^ is missing because of the shallow boundary.
+  it('fails on main in a shallow clone instead of comparing only the working tree', () => {
+    const origin = repo();
+    git(origin, 'switch', '-q', 'main');
+    write(origin, '20261001000000_baseline', 'CREATE TABLE a (id bigint);\n');
+    git(origin, 'commit', '-q', '-am', 'fix(repo): edit a merged migration');
+    const clone = mkdtempSync(join(tmpdir(), 'mig-guard-shallow-'));
+    git(clone, 'clone', '-q', '--depth', '1', '--branch', 'main', pathToFileURL(origin).href, '.');
+    expect(() => checkMigrations({ cwd: clone, baseRef: 'main' })).toThrow(/shallow/);
+  });
+
+  it('on the root commit of a full clone, compares the working tree', () => {
+    const cwd = repo();
+    git(cwd, 'switch', '-q', 'main');
+    expect(checkMigrations({ cwd, baseRef: 'main' })).toEqual([]);
+    write(cwd, '20261001000000_baseline', 'CREATE TABLE a (id text);\n');
+    expect(checkMigrations({ cwd, baseRef: 'main' })[0]).toMatch(/merged migration file modified/);
   });
 
   it('passes a new additive migration', () => {
