@@ -1,97 +1,113 @@
 {
   "source": "point-sdd docs/db (README load order)",
-  "point_sdd_commit": "394e253befca4be1d8474d54de4a604ec44785a3",
   "copied_on": "2026-10-03",
   "files": [
     {
       "name": "_generated-tables-part1-8.sql",
       "kind": "ddl",
       "load_order": 1,
-      "sha256": "03f5c7e980392f841dee03bbc57feac966cfb58d51249def3097e01a8e6d8e4f"
+      "sha256": "03f5c7e980392f841dee03bbc57feac966cfb58d51249def3097e01a8e6d8e4f",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part1-foundation-v3-constraints.sql",
       "kind": "constraints",
       "load_order": 2,
-      "sha256": "0bbc02e01ac76da292df7aa4bdf2563f92eaf54378e855572f5580f0edc3098f"
+      "sha256": "0bbc02e01ac76da292df7aa4bdf2563f92eaf54378e855572f5580f0edc3098f",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part1b-login-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 3,
-      "sha256": "642c8a5319d5710981cf4891bb14bad9d7b91d5c6bf833b43629339c3409b369"
+      "sha256": "642c8a5319d5710981cf4891bb14bad9d7b91d5c6bf833b43629339c3409b369",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part2-services-scheduling-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 4,
-      "sha256": "8389bcf1d6b1e99d924d6e7d73676907010f21f314b88ca45f31d817165385d8"
+      "sha256": "8389bcf1d6b1e99d924d6e7d73676907010f21f314b88ca45f31d817165385d8",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part3-customers-booking-v3-constraints.sql",
       "kind": "constraints",
       "load_order": 5,
-      "sha256": "954540040ece3add0a52ca6dea67cf161aeab99b2743bf4cf955cf2d4d7feeda"
+      "sha256": "954540040ece3add0a52ca6dea67cf161aeab99b2743bf4cf955cf2d4d7feeda",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part4-visits-sales-payments-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 6,
-      "sha256": "49c32110cf2de6bedd5c2ce73d027d538706a2a2f325f178bdd6cf225253417f"
+      "sha256": "49c32110cf2de6bedd5c2ce73d027d538706a2a2f325f178bdd6cf225253417f",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part5-commission-payroll-attendance-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 7,
-      "sha256": "d87fc2978d920a37b07d67b56256cfb64c6c1216a846d77b6cc7ca0bfb835ff6"
+      "sha256": "d87fc2978d920a37b07d67b56256cfb64c6c1216a846d77b6cc7ca0bfb835ff6",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part6-inventory-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 8,
-      "sha256": "0fcdc529eb314e406dc1ac6786764746094c7cda23630241a4c4e07b93dad01d"
+      "sha256": "0fcdc529eb314e406dc1ac6786764746094c7cda23630241a4c4e07b93dad01d",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part7-finance-closing-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 9,
-      "sha256": "b6af52d7cbd6feac18db233994402fded89fae2c0177b9a0c8e714e89e0cae93"
+      "sha256": "b6af52d7cbd6feac18db233994402fded89fae2c0177b9a0c8e714e89e0cae93",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part8-system-website-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 10,
-      "sha256": "b6fe3e7b5d857893776156123967511f1288d6f888abe069bfd1a880007c2511"
+      "sha256": "b6fe3e7b5d857893776156123967511f1288d6f888abe069bfd1a880007c2511",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part3-customers-booking-v3-test.sql",
       "kind": "test",
-      "sha256": "b46d9b61d5bc3199e1a83fbea88582815cd789049bbf66d1cbb33b28b2f7ce08"
+      "sha256": "b46d9b61d5bc3199e1a83fbea88582815cd789049bbf66d1cbb33b28b2f7ce08",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part4-visits-sales-payments-v1-test.sql",
       "kind": "test",
-      "sha256": "c4192b0273e5a92e7ff65fae0da08a592a1344603ab0ca5fe208a42bb5698790"
+      "sha256": "c4192b0273e5a92e7ff65fae0da08a592a1344603ab0ca5fe208a42bb5698790",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part5-commission-payroll-attendance-v1-test.sql",
       "kind": "test",
-      "sha256": "fe09e5fd90b01001333c2917fd1dcd618cc629c99a562925f479b68f68d3267d"
+      "sha256": "fe09e5fd90b01001333c2917fd1dcd618cc629c99a562925f479b68f68d3267d",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part6-inventory-v1-test.sql",
       "kind": "test",
-      "sha256": "e7622deadfedc458be37dcb7d3439fa1bef5f815404e4c8bba30ed43f8997894"
+      "sha256": "e7622deadfedc458be37dcb7d3439fa1bef5f815404e4c8bba30ed43f8997894",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part7-finance-closing-v1-test.sql",
       "kind": "test",
-      "sha256": "ec757d887cef6672e7de2cf9d1ac420a30242b18f5df84d477b90edb12148a15"
+      "sha256": "ec757d887cef6672e7de2cf9d1ac420a30242b18f5df84d477b90edb12148a15",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     },
     {
       "name": "part8-system-website-v1-test.sql",
       "kind": "test",
-      "sha256": "ea8051066262ae81fb4c777a230c63e6702cca5f650bd7368f2037bdf0975b20"
+      "sha256": "ea8051066262ae81fb4c777a230c63e6702cca5f650bd7368f2037bdf0975b20",
+      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
     }
-  ]
+  ],
+  "note": "commit = the point-sdd commit each file was copied from (design D4.1)"
 }

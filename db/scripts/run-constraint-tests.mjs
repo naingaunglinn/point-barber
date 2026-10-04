@@ -48,7 +48,7 @@ files.forEach((file, i) => {
   recreate(db, template);
   const run = psql(
     withDatabase(ownerUrl, db),
-    ['-At', '-F', SEP, '-f', join(root, 'db', 'source', file)],
+    ['-At', '-0', '-F', SEP, '-f', join(root, 'db', 'source', file)],
     {
       PGTZ: 'Asia/Yangon',
     },

@@ -1,5 +1,6 @@
 // pnpm db:check-introspection — re-introspects the migrated database (`prisma db pull --print`)
-// and fails when the result differs from the committed db/schema.prisma (design D4.5).
+// and fails when the result differs from the committed db/schema.prisma (design D4.5). --force:
+// introspect from scratch, so a hand edit Prisma would otherwise keep (@map, @default, ///) fails too.
 // db/schema.prisma is never edited by hand. Connection: MIGRATE_DATABASE_URL (owner role).
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -21,7 +22,7 @@ if (!process.env.MIGRATE_DATABASE_URL) {
   console.error('check-introspection: MIGRATE_DATABASE_URL is required');
   process.exit(1);
 }
-const pulled = spawnSync(process.execPath, [prismaCli, 'db', 'pull', '--print'], {
+const pulled = spawnSync(process.execPath, [prismaCli, 'db', 'pull', '--print', '--force'], {
   cwd: root,
   encoding: 'utf8',
   maxBuffer: 64 * 1024 * 1024,

@@ -2,7 +2,7 @@
 // A file's hash is the SHA-256 of its text with CRLF normalised to LF, so a Windows checkout
 // (core.autocrlf) and CI compute the same value.
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export function textHash(path) {
@@ -21,10 +21,16 @@ export function loadOrder(manifest) {
     .sort((a, b) => a.load_order - b.load_order);
 }
 
-/** Every db/source file matches its manifest hash. Returns problems (empty = ok). */
+/** Every db/source file matches its manifest hash, and every file is listed. Returns problems (empty = ok). */
 export function checkManifest(sourceDir) {
   const manifest = readManifest(sourceDir);
   const problems = [];
+  const listed = new Set(manifest.files.map((f) => f.name));
+  for (const name of readdirSync(sourceDir).sort()) {
+    if (name !== 'manifest.json' && !listed.has(name)) {
+      problems.push(`${name}: in db/source but not in manifest.json`);
+    }
+  }
   for (const f of manifest.files) {
     const path = join(sourceDir, f.name);
     if (!existsSync(path)) problems.push(`${f.name}: missing from db/source`);

@@ -39,6 +39,13 @@ describe('db/source manifest (D4.1 · D4.11)', () => {
     expect(checkManifest(dir)).toEqual(['x.sql: missing from db/source']);
   });
 
+  // Review #3 — D4.11: every file in db/source/ is covered by the manifest.
+  it('fails on a file the manifest does not list', () => {
+    const dir = fixture();
+    writeFileSync(join(dir, 'part9-test.sql'), 'SELECT 1;\n');
+    expect(checkManifest(dir)).toEqual(['part9-test.sql: in db/source but not in manifest.json']);
+  });
+
   it('treats CRLF and LF as the same text', () => {
     const dir = mkdtempSync(join(tmpdir(), 'db-source-'));
     writeFileSync(join(dir, 'lf.sql'), 'a\nb\n');

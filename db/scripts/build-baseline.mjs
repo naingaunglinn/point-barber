@@ -36,7 +36,7 @@ if (files.length !== 10) {
 
 const parts = [
   '-- Baseline: the locked database design of point-sdd docs/db (design D4.2).',
-  `-- Built by db/scripts/build-baseline.mjs from point-sdd commit ${manifest.point_sdd_commit}.`,
+  `-- Built by db/scripts/build-baseline.mjs from point-sdd commit(s) ${[...new Set(files.map((f) => f.commit))].join(', ')}.`,
   '-- Never edit this file. A later change adds a new migration (docs/engineering/db-changes.md).',
   '',
   '-- Database time zone (D-PLT-15 · D4.7a)',

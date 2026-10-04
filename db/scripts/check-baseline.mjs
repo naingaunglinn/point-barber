@@ -1,6 +1,10 @@
-// CI job `db` — checks the migrated database against the spec (design D4 · requirements
-// "Database baseline equals the locked design" and "The API's database role cannot change or
-// delete audit rows"). Connections: MIGRATE_DATABASE_URL (owner) and DATABASE_URL (point_app).
+// CI job `db` — checks the migrated database against the spec of add-repo-scaffold, capability
+// platform-runtime: requirement "Database baseline equals the locked design" (scenarios Table
+// count · Extension · Time zone) and requirement "The API's database role cannot change or delete
+// audit rows" (scenarios Update is refused · Delete and truncate are refused · Insert and select are
+// allowed · Role attributes), plus task 3.9's checks on _prisma_migrations.
+// Connections: MIGRATE_DATABASE_URL (owner) and DATABASE_URL (point_app). Every write probe runs in
+// a transaction that is rolled back, so a broken grant can never change data.
 import { psql, scalar } from './lib/pg.mjs';
 
 const owner = process.env.MIGRATE_DATABASE_URL;
@@ -17,9 +21,10 @@ function expect(label, actual, wanted) {
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}: ${actual}${ok ? '' : ` (expected ${wanted})`}`);
   if (!ok) problems.push(label);
 }
+const priv = (table, list) => `has_table_privilege('point_app', '${table}', '${list}')::text`;
 
 expect(
-  'tables in public (without _prisma_migrations)',
+  'Scenario: Table count',
   scalar(
     owner,
     "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name <> '_prisma_migrations'",
@@ -27,24 +32,32 @@ expect(
   '91',
 );
 expect(
-  'extension btree_gist',
+  'Scenario: Extension',
   scalar(owner, "SELECT count(*) FROM pg_extension WHERE extname = 'btree_gist'"),
   '1',
 );
-expect('SHOW timezone (owner connection)', scalar(owner, 'SHOW timezone'), 'Asia/Yangon');
-expect('SHOW timezone (point_app connection)', scalar(app, 'SHOW timezone'), 'Asia/Yangon');
 expect(
-  "to_char(timestamptz '2026-10-04T17:30:00Z')",
+  'Scenario: Time zone — SHOW timezone (owner connection)',
+  scalar(owner, 'SHOW timezone'),
+  'Asia/Yangon',
+);
+expect(
+  'Scenario: Time zone — SHOW timezone (point_app connection)',
+  scalar(app, 'SHOW timezone'),
+  'Asia/Yangon',
+);
+expect(
+  "Scenario: Time zone — to_char(timestamptz '2026-10-04T17:30:00Z')",
   scalar(owner, "SELECT to_char(timestamptz '2026-10-04T17:30:00Z', 'YYYY-MM-DD HH24:MI TZH:TZM')"),
   '2026-10-05 00:00 +06:30',
 );
 expect(
-  'point_app rolsuper, rolcreatedb',
+  'Scenario: Role attributes — rolsuper, rolcreatedb',
   scalar(owner, "SELECT rolsuper || ',' || rolcreatedb FROM pg_roles WHERE rolname = 'point_app'"),
   'false,false',
 );
 expect(
-  'tables owned by point_app',
+  'Scenario: Role attributes — tables owned by point_app',
   scalar(
     owner,
     "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tableowner = 'point_app'",
@@ -52,36 +65,43 @@ expect(
   '0',
 );
 expect(
-  'audit_events privileges INSERT, SELECT, UPDATE, DELETE',
+  'Scenario: Insert and select are allowed — INSERT, SELECT, UPDATE, DELETE on audit_events',
   scalar(
     owner,
-    "SELECT concat_ws(',', has_table_privilege('point_app', 'audit_events', 'INSERT')::text, has_table_privilege('point_app', 'audit_events', 'SELECT')::text, has_table_privilege('point_app', 'audit_events', 'UPDATE')::text, has_table_privilege('point_app', 'audit_events', 'DELETE')::text)",
+    `SELECT concat_ws(',', ${priv('audit_events', 'INSERT')}, ${priv('audit_events', 'SELECT')}, ${priv('audit_events', 'UPDATE')}, ${priv('audit_events', 'DELETE')})`,
   ),
   'true,true,false,false',
 );
-for (const sql of [
-  "UPDATE audit_events SET reason = 'x'",
-  'DELETE FROM audit_events',
-  'TRUNCATE audit_events',
-]) {
-  const r = psql(app, ['-v', 'VERBOSITY=verbose', '-c', sql]);
+expect(
+  'audit_events — none of UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER',
+  scalar(owner, `SELECT ${priv('audit_events', 'UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')}`),
+  'false',
+);
+const probes = [
+  ['Scenario: Update is refused', "UPDATE audit_events SET reason = 'x'"],
+  ['Scenario: Delete and truncate are refused — DELETE', 'DELETE FROM audit_events'],
+  ['Scenario: Delete and truncate are refused — TRUNCATE', 'TRUNCATE audit_events'],
+];
+for (const [label, sql] of probes) {
+  // ON_ERROR_STOP ends the session at the refused statement; a permitted one is rolled back.
+  const r = psql(app, ['-v', 'VERBOSITY=verbose', '-c', 'BEGIN', '-c', sql, '-c', 'ROLLBACK']);
   const refused =
     r.status !== 0 &&
     r.stderr.includes('42501') &&
     r.stderr.includes('permission denied for table audit_events');
   expect(
-    `point_app: ${sql}`,
+    label,
     refused ? 'refused 42501' : `status ${r.status} ${r.stderr.trim()}`,
     'refused 42501',
   );
 }
 expect(
-  'point_app privileges on _prisma_migrations',
+  '_prisma_migrations — no privilege for point_app (task 3.9)',
   scalar(
     owner,
-    "SELECT concat_ws(',', has_table_privilege('point_app', '_prisma_migrations', 'SELECT')::text, has_table_privilege('point_app', '_prisma_migrations', 'INSERT')::text, has_table_privilege('point_app', '_prisma_migrations', 'UPDATE')::text, has_table_privilege('point_app', '_prisma_migrations', 'DELETE')::text)",
+    `SELECT ${priv('_prisma_migrations', 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')}`,
   ),
-  'false,false,false,false',
+  'false',
 );
 
 console.log(
