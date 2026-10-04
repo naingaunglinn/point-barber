@@ -20,3 +20,8 @@ test-results/
 
 # Copied verbatim from the coding guideline CG-GIT-04
 .github/pull_request_template.md
+
+# Database — SQL copies are byte-identical (D4.1); generated or introspected files
+db/source/
+db/migrations/
+db/schema.prisma
