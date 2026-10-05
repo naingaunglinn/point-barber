@@ -9,11 +9,16 @@ import n from 'eslint-plugin-n';
 import point from '../eslint-plugin-point/index.mjs';
 
 const DEV2_WORKSPACES = [
-  'apps/api/**/*.{ts,mts,cts,js,mjs,cjs}',
-  'packages/shared/**/*.{ts,mts,cts,js,mjs,cjs}',
-  'packages/documents/**/*.{ts,mts,cts,js,mjs,cjs}',
+  'apps/api/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
+  'packages/shared/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
+  'packages/documents/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
 ];
-const API_SOURCE = ['apps/api/src/**/*.ts', 'packages/shared/src/**/*.ts'];
+// packages/documents is source-only too: its receipt templates read no environment (D19).
+const API_SOURCE = [
+  'apps/api/src/**/*.ts',
+  'packages/shared/src/**/*.ts',
+  'packages/documents/src/**/*.{ts,tsx}',
+];
 
 const PARSE_FLOAT =
   'parseFloat — money is an integer number of kyats and is never parsed as a float (CG-MONEY-01 · AD-IMPL-05 · D-PLT-04).';

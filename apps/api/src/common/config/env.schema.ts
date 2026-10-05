@@ -4,9 +4,10 @@ import { z } from 'zod';
 // place in the API that reads process.env; a missing or malformed variable stops the start with
 // the variable's name — never its value.
 
-// Zod 4 runs a refinement even after the url check failed, so the refinement must not throw.
+// `abort: true` skips the refinement once the url check has failed, so a variable gets one message;
+// URL.canParse keeps the refinement from throwing on its own.
 const origin = z
-  .url({ protocol: /^https?$/ })
+  .url({ protocol: /^https?$/, abort: true })
   .refine((value) => URL.canParse(value) && new URL(value).origin === value, {
     message: 'must be an origin such as https://point.test (no path, no trailing slash)',
   });

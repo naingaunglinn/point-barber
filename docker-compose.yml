@@ -1,0 +1,131 @@
+# Production shape of the stack (design D13 · ADR-001 action item 3 · ADR-002 · ADR-006).
+#   docker compose up -d                       # caddy, api, web, postgres, backup
+#   docker compose run --rm migrate            # the one migrate entry point (D4.6)
+# Local work and CI add docker-compose.dev.yml. Variables come from .env (see .env.example).
+# Each service lists its own variables — there is no shared env_file — so a secret reaches only the
+# containers that hold it: INTERNAL_OPS_KEY → api, backup; INTERNAL_SSR_KEY → api, web (API-SHAPE-02).
+name: point
+
+x-api-build: &api-build
+  context: .
+  dockerfile: apps/api/Dockerfile
+  args:
+    APP_VERSION: ${APP_VERSION}
+
+services:
+  caddy:
+    image: caddy:2.11.6-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      SITE_ORIGIN: ${SITE_ORIGIN}
+      APP_ORIGIN: ${APP_ORIGIN}
+      API_UPSTREAM: ${API_UPSTREAM}
+      WEB_UPSTREAM: ${WEB_UPSTREAM}
+      CADDY_MAX_BODY: ${CADDY_MAX_BODY}
+      CADDY_GLOBAL_OPTIONS: ${CADDY_GLOBAL_OPTIONS}
+      # Default here, not only in the Caddyfile: Compose passes an empty string when the
+      # variable is empty or missing from .env, and Caddy's {$CADDY_HSTS:…} default would not apply.
+      CADDY_HSTS: ${CADDY_HSTS:-max-age=31536000}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
+  api:
+    build: *api-build
+    image: point-api:${APP_VERSION}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SITE_ORIGIN: ${SITE_ORIGIN}
+      APP_ORIGIN: ${APP_ORIGIN}
+      API_PORT: ${API_PORT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      INTERNAL_SSR_KEY: ${INTERNAL_SSR_KEY}
+      INTERNAL_OPS_KEY: ${INTERNAL_OPS_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + process.env.API_PORT + '/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION}
+    image: point-web:${APP_VERSION}
+    restart: unless-stopped
+    environment:
+      SITE_ORIGIN: ${SITE_ORIGIN}
+      APP_ORIGIN: ${APP_ORIGIN}
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
+      API_INTERNAL_BASE: ${API_INTERNAL_BASE}
+      INTERNAL_SSR_KEY: ${INTERNAL_SSR_KEY}
+    volumes:
+      - next_cache:/app/apps/web/.next/cache
+
+  postgres:
+    image: postgres:16.15-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POINT_APP_DB_PASSWORD: ${POINT_APP_DB_PASSWORD}
+      ROLES_SQL: /docker-entrypoint-roles/00-roles.sql
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Only the .sh goes into the init directory: the entrypoint would run a .sql found there
+      # without the app_password variable and fail the first start (PR #3 review, item 15).
+      - ./db/bootstrap/00-roles.sh:/docker-entrypoint-initdb.d/00-roles.sh:ro
+      - ./db/bootstrap/00-roles.sql:/docker-entrypoint-roles/00-roles.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backup:
+    build:
+      context: infra/backup
+      args:
+        APP_VERSION: ${APP_VERSION}
+    image: point-backup:${APP_VERSION}
+    restart: unless-stopped
+    environment:
+      # Read by the backup job of add-backup-restore (internal API, X-Internal-Key).
+      INTERNAL_OPS_KEY: ${INTERNAL_OPS_KEY}
+
+  migrate:
+    build: *api-build
+    image: point-api:${APP_VERSION}
+    profiles: ['tools']
+    restart: 'no'
+    command: ['node', 'db/scripts/migrate.mjs']
+    environment:
+      MIGRATE_DATABASE_URL: ${MIGRATE_DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+  next_cache:

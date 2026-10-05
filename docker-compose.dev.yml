@@ -1,0 +1,63 @@
+# Local work and CI (design D12 / D13): docker compose -f docker-compose.yml -f docker-compose.dev.yml …
+# - Local origins https://point.test / https://app.point.test with Caddy's local certificate
+#   authority (hosts file: 127.0.0.1 point.test app.point.test postgres), HSTS off.
+# - http://localhost:3000: the staff-host rules for read-only API calls (infra/caddy/dev/).
+# - PostgreSQL on 5432 for host-run development (pnpm db:migrate, pnpm test:int, pnpm dev).
+# - Every port this file publishes binds to 127.0.0.1 only: nobody on the same network reaches
+#   the database, the OTP inbox or the bucket of a developer machine.
+# - Host-run API / web: set API_UPSTREAM=host.docker.internal:3101 and
+#   WEB_UPSTREAM=host.docker.internal:3100 in .env (pnpm dev uses those ports).
+# - mailpit: the OTP inbox of the next change (ADR-007); minio under profile `storage` (ADR-014).
+services:
+  caddy:
+    ports:
+      - '127.0.0.1:3000:3000'
+    environment:
+      SITE_ORIGIN: https://point.test
+      APP_ORIGIN: https://app.point.test
+      CADDY_GLOBAL_OPTIONS: local_certs
+      CADDY_HSTS: max-age=0
+    volumes:
+      - ./infra/caddy/dev:/etc/caddy/conf.d:ro
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  api:
+    environment:
+      SITE_ORIGIN: https://point.test
+      APP_ORIGIN: https://app.point.test
+
+  web:
+    environment:
+      SITE_ORIGIN: https://point.test
+      APP_ORIGIN: https://app.point.test
+
+  postgres:
+    ports:
+      - '127.0.0.1:5432:5432'
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1025:1025' # SMTP
+      - '127.0.0.1:8025:8025' # web UI and API
+
+  # The official MinIO images are no longer published; pgsty/minio is a maintained build of the
+  # same server. Development only, and only with --profile storage.
+  minio:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    profiles: ['storage']
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      # Local development only — never a real credential.
+      MINIO_ROOT_USER: minio-dev
+      MINIO_ROOT_PASSWORD: minio-dev-only
+    ports:
+      - '127.0.0.1:9000:9000' # S3 API (S3_ENDPOINT=http://localhost:9000)
+      - '127.0.0.1:9001:9001' # console
+    volumes:
+      - minio_data:/data
+
+volumes:
+  minio_data:

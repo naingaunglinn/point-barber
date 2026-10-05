@@ -2,6 +2,10 @@
   "name": "@point/shared",
   "private": true,
   "type": "module",
+  "files": [
+    "dist",
+    "definitions"
+  ],
   "exports": {
     ".": {
       "source": "./src/index.ts",
