@@ -36,6 +36,30 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
     ]);
   });
 
+  // D16: parseFloat is banned in every workspace — the API's tests and scripts and
+  // packages/documents too.
+  it.each([
+    'apps/api/test/helpers/x.ts',
+    'apps/api/scripts/x.mjs',
+    'apps/api/vitest.int.config.ts',
+    'packages/documents/src/x.ts',
+  ])('fails on parseFloat in %s', async (path) => {
+    expect(await lint(fixture('parse-float.ts'), path)).toEqual([
+      { ruleId: 'no-restricted-globals', message: expect.stringContaining('CG-MONEY-01') },
+    ]);
+  });
+
+  // CG-SEC-06: the parser sees every form of Math.random, also inside a template literal.
+  it.each([
+    'export const a = Math.random();\n',
+    "export const b = Math['random']();\n",
+    'export const c = `id-${Math.random()}`;\n',
+  ])('fails on Math.random: %s', async (code) => {
+    expect(await lint(code, 'apps/api/src/modules/sales/id.ts')).toEqual([
+      { ruleId: 'no-restricted-properties', message: expect.stringContaining('CG-SEC-06') },
+    ]);
+  });
+
   it('fails on Number.parseFloat', async () => {
     expect(await lint(`export const x = Number.parseFloat('1.5');\n`, 'apps/api/src/x.ts')).toEqual(
       [{ ruleId: 'no-restricted-properties', message: expect.stringContaining('CG-MONEY-01') }],

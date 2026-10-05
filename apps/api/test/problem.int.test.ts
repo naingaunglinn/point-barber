@@ -42,6 +42,10 @@ describe('add-repo-scaffold · platform-runtime · Errors are RFC 9457 problem d
     expect(res.text).not.toMatch(/boom/);
     expect(res.text).not.toMatch(/s3cret/);
     expect(res.text).not.toMatch(/\bat .+:\d+:\d+/); // no stack frame
+    // D7: the body carries request_id and no detail at all.
+    expect(Object.keys(body).sort()).toStrictEqual(
+      ['code', 'request_id', 'status', 'title', 'type'].sort(),
+    );
 
     const errors = t.logs.filter((line) => line.level === 50);
     expect(errors).toHaveLength(1);

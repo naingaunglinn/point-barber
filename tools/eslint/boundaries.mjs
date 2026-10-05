@@ -69,6 +69,8 @@ export default [
       { regex: '^@prisma/', message: WEB_MESSAGE },
       { regex: '(^|/)generated/prisma(/|$)', message: WEB_MESSAGE },
       { regex: '^api(/|$)', message: WEB_MESSAGE },
+      // Any PostgreSQL client, not only Prisma (CG-ARCH-06 · guideline §24 row 20).
+      { regex: '^(pg|pg-[a-z-]+|postgres)(/|$)', message: WEB_MESSAGE },
       { regex: '(^|/)apps/api(/|$)', message: WEB_MESSAGE },
     ]),
   },

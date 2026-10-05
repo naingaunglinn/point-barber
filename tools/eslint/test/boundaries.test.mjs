@@ -101,12 +101,17 @@ describe('tools/eslint/boundaries.mjs (design D10)', () => {
     expect(await lint(client, 'apps/api/src/common/http/x.ts')).toEqual([RULE]);
   });
 
-  it.each(['api', 'api/src/main.js', '../../apps/api/src/app.module.js', '@prisma/adapter-pg'])(
-    'the web app may not import %s',
-    async (from) => {
-      expect(await lint(imports(from), 'apps/web/lib/x.ts')).toEqual([RULE]);
-    },
-  );
+  it.each([
+    'api',
+    'api/src/main.js',
+    '../../apps/api/src/app.module.js',
+    '@prisma/adapter-pg',
+    'pg',
+    'pg-pool',
+    'postgres',
+  ])('the web app may not import %s', async (from) => {
+    expect(await lint(imports(from), 'apps/web/lib/x.ts')).toEqual([RULE]);
+  });
 
   it('the web app may import the shared package', async () => {
     expect(await lint(imports('@point/shared'), 'apps/web/lib/x.ts')).toEqual([]);

@@ -10,6 +10,7 @@ export const REDACT_PATHS = [
   'req.headers.authorization',
   'req.headers["x-internal-key"]',
   'headers.cookie',
+  'headers.authorization',
   'headers["x-internal-key"]',
 ];
 

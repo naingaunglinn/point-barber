@@ -202,4 +202,11 @@ describe('add-repo-scaffold · platform-runtime · List limit is 1 to 100, defau
       { field: 'limit', code: 'invalid_type', params: { expected: 'number' } },
     ]);
   });
+
+  // CG-API-03: an unknown query member (a cache-buster, a newer app's parameter) is dropped.
+  it('an unknown query member is ignored, not rejected', async () => {
+    const res = await t.http.get('/api/v1/_fixtures/items?limit=5&utm_source=x');
+    expect(res.status).toBe(200);
+    expect(res.body).toStrictEqual({ limit: 5 });
+  });
 });

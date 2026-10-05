@@ -37,6 +37,11 @@ describe('listQuerySchema', () => {
     });
   });
 
+  // CG-API-03: request objects strip unknown members, so an older or newer app keeps working.
+  it('drops an unknown member instead of failing', () => {
+    expect(listQuerySchema.parse({ limit: '25', utm_source: 'x' })).toEqual({ limit: 25 });
+  });
+
   it('accepts an optional non-empty cursor', () => {
     expect(listQuerySchema.parse({ cursor: 'abc' })).toEqual({ limit: 25, cursor: 'abc' });
     expect(listQuerySchema.safeParse({ cursor: '' }).success).toBe(false);

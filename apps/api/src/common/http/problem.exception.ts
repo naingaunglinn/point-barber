@@ -1,4 +1,4 @@
-import type { FieldError } from '@point/shared';
+import type { ErrorCode, FieldError } from '@point/shared';
 
 // The only way a module raises an error (CG-ERR-03 · design D7). `code` comes from the catalogue in
 // packages/shared and is the language key `error.<code>`.
@@ -10,7 +10,7 @@ export interface ProblemOptions {
 
 export class ProblemException extends Error {
   constructor(
-    readonly code: string,
+    readonly code: ErrorCode,
     readonly status: number,
     readonly options: ProblemOptions = {},
   ) {

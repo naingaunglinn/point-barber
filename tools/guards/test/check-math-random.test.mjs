@@ -46,6 +46,15 @@ describe('tools/guards/check-math-random.mjs (CG-SEC-06 · design D19)', () => {
     expect(output).toContain('CG-SEC-06');
   });
 
+  it.each([
+    'export const t = `id-${Math.random()}`;\n',
+    'export const t = `a ${`b ${Math.random()}`}`;\n',
+    "export const x = Math['random']();\n",
+    'export const y = Math["random"]();\n',
+  ])('fails on %s', (text) => {
+    expect(run(tree({ 'apps/api/src/a.ts': text })).status).toBe(1);
+  });
+
   it('fails on a spaced-out call', () => {
     expect(run(tree({ 'apps/api/src/a.ts': 'export const r = Math . random();\n' })).status).toBe(
       1,
@@ -74,7 +83,9 @@ describe('tools/guards/check-math-random.mjs (CG-SEC-06 · design D19)', () => {
   });
 
   it('codeOnly keeps code and blanks comments and strings', () => {
-    expect(codeOnly("a(); // b\nc('d') /* e */ + `f`")).toBe('a(); \nc("")   + ""');
+    expect(codeOnly("a(); // b\nc('d e') /* f */ + `g`")).toBe('a(); \nc("")   + ""');
+    // A one-word string is kept (a computed member name); a template keeps its ${…} code.
+    expect(codeOnly("x['y'] + `a ${z(1)} b`")).toBe('x["y"] + "" z(1) ');
   });
 
   it('the real tree passes', () => {

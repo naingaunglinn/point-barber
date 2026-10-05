@@ -67,11 +67,9 @@ export class ProblemFilter implements ExceptionFilter {
 
     let problem = toProblem(error);
     if (problem === null) {
-      // Logged with its stack; the client gets only the request id (S4 · API-ERR-02).
+      // Logged with its stack; the client gets only the request id and no detail (D7 · API-ERR-02).
       this.log.error({ request_id: requestId, err: error, method: req.method }, 'unhandled error');
-      problem = new ProblemException(ErrorCode.INTERNAL_ERROR, 500, {
-        detail: 'An unexpected error occurred. Quote the request id when reporting it.',
-      });
+      problem = new ProblemException(ErrorCode.INTERNAL_ERROR, 500);
     }
 
     const { detail, errors, context } = problem.options;
