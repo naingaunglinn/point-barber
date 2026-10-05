@@ -42,7 +42,7 @@ sets.
 
 **`POSTGRES_PASSWORD`** (owner role):
 
-1. `docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`, then
+1. `docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'`, then
    `\password` and the new password. `\password` sends only the hashed password, never the plain one.
 2. Set the new value in `.env`, both as `POSTGRES_PASSWORD` and inside `MIGRATE_DATABASE_URL`.
    `POSTGRES_PASSWORD` itself is read only on the volume's first start.

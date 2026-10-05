@@ -51,7 +51,7 @@ docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES
 
 ## Check
 
-- `docker compose exec postgres psql -U point_app -d "$POSTGRES_DB" -Atc 'SHOW timezone'` →
+- `docker compose exec postgres sh -c 'psql -U point_app -d "$POSTGRES_DB" -Atc "SHOW timezone"'` →
   `Asia/Yangon`. The API refuses to start otherwise.
 - `GET https://<staff host>/api/v1/health` → `ok`.
 - _`add-backup-restore` adds the row-count and integrity checks of a restore drill._

@@ -64,15 +64,29 @@ The rules for `main` (design D15):
 | Merge method            | Squash merge only (no merge commits, no rebase merge)                    |
 | Direct pushes to `main` | None                                                                     |
 
-Both repositories are private (ADR-016 Decision 8). GitHub enforces protection rules on a private
-repository only on a paid plan, which is an owner item.
+Both repositories must be private (ADR-016 Decision 8). Today both are still public, and making them
+private is on the owner's sheet. GitHub enforces protection rules on a private repository only on a
+paid plan, which is also an owner item.
 
 **Until the plan allows it, the two developers keep these rules by hand:**
 
 - merge only when all seven jobs are green;
 - never approve your own pull request;
+- merge only when the other developer's **Approve** shows on GitHub. A comment or a chat message is
+  not an approval (CG-REVIEW-01);
+- merge only when every conversation is resolved and the branch is up to date with `main`;
 - always choose **Squash and merge**;
 - never push to `main`.
 
 When the plan is in place, the repository admin turns on the settings above and changes this
 paragraph.
+
+## Claude Code hook
+
+After each Edit or Write, Claude Code runs `tools/claude-hooks/after-edit.mjs` on the edited file:
+Prettier, then ESLint. The typecheck and the unit tests run before every push instead, in
+`.githooks/pre-push` (`pnpm run typecheck`, then `pnpm run test`).
+
+Design D17 sets a 10 s target for the hook. With all four of its steps, the hook took a median of
+12.7 s for a single-file edit in `apps/api` (measured for task 7.7), so two of the steps moved to the
+push. Both files come with PR-G.
