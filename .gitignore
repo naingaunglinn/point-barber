@@ -32,3 +32,6 @@ Thumbs.db
 *.tsbuildinfo
 .eslintcache
 .vitest/
+
+# Generated Prisma client (db/schema.prisma → prisma generate)
+apps/api/src/generated/

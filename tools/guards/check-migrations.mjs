@@ -106,7 +106,11 @@ export function destructiveStatements(sql) {
   for (const body of top.bodies) {
     const inner = tokenize(body);
     scan(inner.code);
-    if (/\bEXECUTE\b/i.test(inner.code)) inner.strings.forEach(scan);
+    // The SQL EXECUTE runs may sit in a dollar-quoted argument or be concatenated from pieces
+    // ('ALTER TABLE ' || … || ' DROP COLUMN x'), so the bodies and the joined strings are read too.
+    if (/\bEXECUTE\b/i.test(inner.code)) {
+      [...inner.strings, ...inner.bodies, inner.strings.join(' ')].forEach(scan);
+    }
   }
   return [...found];
 }
@@ -155,8 +159,16 @@ function resolveBase(cwd, baseRef) {
     const head = git(cwd, ['rev-parse', 'HEAD']);
     if (base !== head) return base;
     // On main itself (or a branch with no commit yet): the last commit's changes plus the working
-    // tree; with no parent commit, the working tree only.
-    return gitRevision(cwd, ['rev-parse', '--verify', '--quiet', 'HEAD^']) ?? head;
+    // tree; on the root commit, the working tree only. In a shallow clone HEAD^ is missing because
+    // of the clone's boundary, not because HEAD is the root — that compares nothing, so it fails.
+    const parent = gitRevision(cwd, ['rev-parse', '--verify', '--quiet', 'HEAD^']);
+    if (parent !== null) return parent;
+    if (git(cwd, ['rev-parse', '--is-shallow-repository']) === 'true') {
+      throw new Error(
+        'HEAD^ is beyond the boundary of this shallow clone — fetch the full history; nothing was checked (CG-DB-02)',
+      );
+    }
+    return head;
   }
   throw new Error(
     `no base ref (${refs.join(', ')}) — fetch main or set MIGRATION_BASE_REF; nothing was checked (CG-DB-02)`,

@@ -3,23 +3,29 @@
   "agentGuidance": false,
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "generate"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "lint": {},
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "generate"]
     },
     "test": {},
     "test:int": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL"],
+      "dependsOn": ["^build", "generate"]
     },
     "e2e": {
       "cache": false
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["^build", "generate"]
+    },
+    "generate": {
+      "cache": false
     }
   }
 }

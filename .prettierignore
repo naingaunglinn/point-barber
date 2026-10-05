@@ -25,3 +25,6 @@ test-results/
 db/source/
 db/migrations/
 db/schema.prisma
+
+# Generated Prisma client
+apps/api/src/generated/
