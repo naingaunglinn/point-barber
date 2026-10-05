@@ -1,8 +1,10 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import express from 'express';
+import { ErrorCode } from '@point/shared';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import type { Logger } from 'pino';
 
 import { Clock } from './common/clock/clock.js';
+import { ProblemException } from './common/http/problem.exception.js';
 import { ProblemFilter } from './common/http/problem.filter.js';
 import { requestIdMiddleware } from './common/http/request-id.middleware.js';
 import { JSON_BODY_LIMIT } from './common/limits.js';
@@ -26,6 +28,14 @@ export function configureApp(app: NestExpressApplication): void {
   // OPTIONS handler is needed for that — Nest registers its not-found handler after the routes, so
   // Express's automatic "200 + Allow" answer is never reached and the filter answers 404 not_found
   // (guarded by "A preflight is not answered" in test/edge.int.test.ts).
+
+  // Every route is under /api, but the edge also sends /rt* here (add-realtime-gateway, D12). Nest's
+  // not-found handling covers only the /api prefix, so any other path would get Express's HTML page;
+  // it is an unknown route and answers the problem 404 like every other one (API-ERR-02).
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    const underApi = req.path === '/api' || req.path.startsWith('/api/');
+    next(underApi ? undefined : new ProblemException(ErrorCode.NOT_FOUND, 404));
+  });
 
   // The version is written in each controller's path; no framework versioning (design D5).
   app.setGlobalPrefix('api');

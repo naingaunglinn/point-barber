@@ -263,6 +263,25 @@ jobs:
           E2E_COMPOSE: ${{ env.COMPOSE }}
         run: pnpm e2e
 
+      # Spec "The web container never holds INTERNAL_OPS_KEY" (API-SHAPE-02 · task 8.6).
+      - name: Secret distribution — each internal key only in its two holders
+        run: |
+          set -uo pipefail
+          failed=0
+          expect() { # service variable present|absent
+            out=$($COMPOSE exec -T "$1" printenv "$2"); code=$?
+            if [ "$3" = present ] && [ "$code" -eq 0 ] && [ -n "$out" ]; then echo "ok    $1 holds $2"
+            elif [ "$3" = absent ] && [ "$code" -eq 1 ] && [ -z "$out" ]; then echo "ok    $1 has no $2"
+            else echo "::error::$1 $2: expected $3, printenv exited $code"; failed=1; fi
+          }
+          expect web    INTERNAL_OPS_KEY absent
+          expect api    INTERNAL_OPS_KEY present
+          expect backup INTERNAL_OPS_KEY present
+          expect api    INTERNAL_SSR_KEY present
+          expect web    INTERNAL_SSR_KEY present
+          expect backup INTERNAL_SSR_KEY absent
+          exit $failed
+
       - name: Container logs
         if: failure()
         run: $COMPOSE logs --no-color --timestamps > compose-logs.txt
