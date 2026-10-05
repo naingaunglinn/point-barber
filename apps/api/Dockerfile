@@ -13,7 +13,8 @@ RUN corepack enable
 WORKDIR /repo
 # Dependencies first, so a source change does not refetch them.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-RUN pnpm fetch --frozen-lockfile
+# pnpm fetch always reads pnpm-lock.yaml as is (no --frozen-lockfile flag in pnpm 12).
+RUN pnpm fetch
 COPY . .
 RUN pnpm install --offline --frozen-lockfile
 # shared → Prisma client → api (turbo.json: build depends on ^build and generate).

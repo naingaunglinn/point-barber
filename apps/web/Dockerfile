@@ -9,7 +9,8 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 CI=1 NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-RUN pnpm fetch --frozen-lockfile
+# pnpm fetch always reads pnpm-lock.yaml as is (no --frozen-lockfile flag in pnpm 12).
+RUN pnpm fetch
 COPY . .
 RUN pnpm install --offline --frozen-lockfile
 RUN pnpm turbo run build --filter=web --output-logs=errors-only
