@@ -76,6 +76,14 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
     ]);
   });
 
+  // D16: parseFloat is banned in every workspace — the language files' package too.
+  it('fails on parseFloat and Number.parseFloat in packages/i18n', async () => {
+    expect(await lintFixture('parse-float.ts', 'packages/i18n/src/parse-float.ts')).toEqual([
+      { ruleId: 'no-restricted-globals', message: expect.stringContaining('CG-MONEY-01') },
+      { ruleId: 'no-restricted-properties', message: expect.stringContaining('CG-MONEY-01') },
+    ]);
+  });
+
   it.each(SCOPES)('fails on process.env outside apps/web/env.ts (%s)', async (scope) => {
     expect(await lintFixture('process-env.ts', `${scope}/process-env.ts`)).toEqual([
       { ruleId: 'n/no-process-env', message: expect.any(String) },

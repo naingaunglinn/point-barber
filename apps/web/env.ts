@@ -6,8 +6,9 @@ import { z } from 'zod';
 
 const httpUrl = z.url({ protocol: /^https?$/ });
 
-// Scheme + host (+ port) only — `https://point.test`, never a path or a trailing slash.
-const origin = httpUrl.refine((value) => new URL(value).origin === value, {
+// Scheme + host (+ port) only — `https://point.test`, never a path or a trailing slash. The
+// refinement also runs when z.url() has failed, so it must not let `new URL` throw.
+const origin = httpUrl.refine((value) => URL.canParse(value) && new URL(value).origin === value, {
   message: 'must be an origin such as https://point.test (no path, no trailing slash)',
 });
 

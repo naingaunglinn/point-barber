@@ -1,7 +1,8 @@
-// Web lint rules (apps/web, packages/ui) — owner: Dev 1 (design D3).
+// Web lint rules (apps/web, packages/ui, packages/i18n) — owner: Dev 1 (design D3).
 // The AD-IMPL-05 guard rails that need no UI library (design D16) and the process.env rule of
-// design D19. add-shared-ui-components extends this file: palette classes, rgb() / hsl() / oklch()
-// literals, `style` colours and the text attributes (aria-label, placeholder, title, alt).
+// design D19; in every Dev 1 workspace the parseFloat ban (D16). add-shared-ui-components extends
+// this file: palette classes, rgb() / hsl() / oklch() literals, `style` colours and the text
+// attributes (aria-label, placeholder, title, alt).
 // One `no-restricted-syntax` entry holds every selector: a later config object for the same files
 // would replace it, not add to it.
 import n from 'eslint-plugin-n';
@@ -10,6 +11,7 @@ const WEB_SOURCE = [
   'apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
   'packages/ui/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
 ];
+const DEV1_WORKSPACES = [...WEB_SOURCE, 'packages/i18n/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 
 const RAW_TEXT =
   'Raw UI text in JSX — every visible string comes from the my / en language files (CG-I18N-01 · AD-L10N-01 · D-PLT-03).';
@@ -46,13 +48,18 @@ export default [
         { selector: `Literal[value=/${ARBITRARY}/]`, message: ARBITRARY_COLOUR },
         { selector: `TemplateElement[value.raw=/${ARBITRARY}/]`, message: ARBITRARY_COLOUR },
       ],
+      // CG-SEC-05: the web app reads its environment only through apps/web/env.ts.
+      'n/no-process-env': 'error',
+    },
+  },
+  {
+    files: DEV1_WORKSPACES,
+    rules: {
       'no-restricted-globals': ['error', { name: 'parseFloat', message: PARSE_FLOAT }],
       'no-restricted-properties': [
         'error',
         { object: 'Number', property: 'parseFloat', message: PARSE_FLOAT },
       ],
-      // CG-SEC-05: the web app reads its environment only through apps/web/env.ts.
-      'n/no-process-env': 'error',
     },
   },
   {

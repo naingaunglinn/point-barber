@@ -41,6 +41,16 @@ describe('apps/web/env.ts (CG-SEC-05 · ADR-009 action item 3 · design D11)', (
     );
   });
 
+  // Zod 4 still runs the origin refinement after z.url() has failed, so it must not throw itself.
+  it.each(['SITE_ORIGIN', 'APP_ORIGIN'] as const)(
+    'fails with the variable name when %s is not a URL at all',
+    (name) => {
+      expect(() => parseWebEnv({ ...complete, [name]: 'point.test' })).toThrow(
+        `Invalid web app environment: ${name} `,
+      );
+    },
+  );
+
   it('fails on a browser API base that is not a same-origin path', () => {
     expect(() =>
       parseWebEnv({ ...complete, NEXT_PUBLIC_API_BASE: 'https://app.point.test/api/v1' }),
