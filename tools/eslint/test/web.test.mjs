@@ -90,6 +90,13 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
     ]);
   });
 
+  // D19: the language files' package reads no environment at all.
+  it('fails on process.env in packages/i18n', async () => {
+    expect(await lintFixture('process-env.ts', 'packages/i18n/src/process-env.ts')).toEqual([
+      { ruleId: 'n/no-process-env', message: expect.any(String) },
+    ]);
+  });
+
   it('allows process.env in apps/web/env.ts', async () => {
     expect(await lintFixture('process-env.ts', 'apps/web/env.ts')).toEqual([]);
   });

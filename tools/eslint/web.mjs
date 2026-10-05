@@ -1,6 +1,6 @@
 // Web lint rules (apps/web, packages/ui, packages/i18n) — owner: Dev 1 (design D3).
-// The AD-IMPL-05 guard rails that need no UI library (design D16) and the process.env rule of
-// design D19; in every Dev 1 workspace the parseFloat ban (D16). add-shared-ui-components extends
+// The AD-IMPL-05 guard rails that need no UI library (design D16); in every Dev 1 workspace the
+// parseFloat ban (D16) and the process.env rule of design D19. add-shared-ui-components extends
 // this file: palette classes, rgb() / hsl() / oklch() literals, `style` colours and the text
 // attributes (aria-label, placeholder, title, alt).
 // One `no-restricted-syntax` entry holds every selector: a later config object for the same files
@@ -33,7 +33,6 @@ const JSX_CHILD = ':matches(JSXElement, JSXFragment) > JSXExpressionContainer';
 export default [
   {
     files: WEB_SOURCE,
-    plugins: { n },
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -48,18 +47,20 @@ export default [
         { selector: `Literal[value=/${ARBITRARY}/]`, message: ARBITRARY_COLOUR },
         { selector: `TemplateElement[value.raw=/${ARBITRARY}/]`, message: ARBITRARY_COLOUR },
       ],
-      // CG-SEC-05: the web app reads its environment only through apps/web/env.ts.
-      'n/no-process-env': 'error',
     },
   },
   {
     files: DEV1_WORKSPACES,
+    plugins: { n },
     rules: {
       'no-restricted-globals': ['error', { name: 'parseFloat', message: PARSE_FLOAT }],
       'no-restricted-properties': [
         'error',
         { object: 'Number', property: 'parseFloat', message: PARSE_FLOAT },
       ],
+      // CG-SEC-05: the web app reads its environment only through apps/web/env.ts; packages/ui
+      // and packages/i18n read none.
+      'n/no-process-env': 'error',
     },
   },
   {

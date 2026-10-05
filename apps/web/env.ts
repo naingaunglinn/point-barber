@@ -4,10 +4,11 @@
 // module and must pass without the runtime environment.
 import { z } from 'zod';
 
-const httpUrl = z.url({ protocol: /^https?$/ });
+const httpUrl = z.url({ protocol: /^https?$/, abort: true });
 
-// Scheme + host (+ port) only — `https://point.test`, never a path or a trailing slash. The
-// refinement also runs when z.url() has failed, so it must not let `new URL` throw.
+// Scheme + host (+ port) only — `https://point.test`, never a path or a trailing slash.
+// `abort: true` skips this refinement when z.url() has failed, so a variable gets one message;
+// URL.canParse keeps the refinement from throwing on its own.
 const origin = httpUrl.refine((value) => URL.canParse(value) && new URL(value).origin === value, {
   message: 'must be an origin such as https://point.test (no path, no trailing slash)',
 });
