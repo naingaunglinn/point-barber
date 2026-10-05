@@ -180,11 +180,101 @@ only `/api/v1/public/*`, `/api/v1/health` and `/api/v1/system/status` ever reach
 
 ## 8. Web app
 
-_Written by task 7.4 (Dev 1, PR-G):_
+One Next.js app serves both hosts. `proxy.ts` picks the route tree from the request's `Host` header
+(design D11).
 
-- trusting Caddy's local root certificate on Windows, macOS and Linux;
-- the `http://localhost:3000` alias;
-- the web app's environment for `next dev`.
+### Which host shows which tree
+
+| URL                                                                                                                        | What you get                                                                             |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `https://point.test/`                                                                                                      | The public website: `app/site/` (for now the page with `data-testid="site-placeholder"`) |
+| `https://app.point.test/`                                                                                                  | The staff app: `app/staff/` (for now `data-testid="staff-placeholder"`)                  |
+| `https://point.test/staff`, `https://point.test/site`, `https://app.point.test/site`, `https://app.point.test/staff/today` | 404. A tree is reached only through its host, never by its folder name                   |
+| Any other host, e.g. `http://localhost:3100` directly                                                                      | 404. Open the web app through Caddy                                                      |
+
+`/internal/*` reaches the web app only over the Docker network; from outside, the edge refuses it
+(design D12).
+
+### Trust Caddy's local certificate
+
+Caddy signs `point.test` and `app.point.test` with its own local certificate authority
+(`CADDY_GLOBAL_OPTIONS=local_certs` in `docker-compose.dev.yml`). Until your machine trusts that
+authority, browsers warn and `curl` needs `-k`.
+
+Caddy creates the root certificate on its first start and keeps it in the `caddy_data` volume, so you
+trust it once. `… down -v` deletes the volume. After that, Caddy makes a new root and you trust it
+again.
+
+Copy the root certificate out of the container, to a place outside the repository. Only the
+certificate leaves the container; its private key stays in the volume.
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.dev.yml cp caddy:/data/caddy/pki/authorities/local/root.crt $HOME/caddy-local-root.crt
+```
+
+Then add it to the trust store:
+
+| System                  | Command                                                                                                       | Notes                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows                 | `Import-Certificate -FilePath $HOME\caddy-local-root.crt -CertStoreLocation Cert:\CurrentUser\Root`           | Windows asks you to confirm. Chrome and Edge use this store                                                                              |
+| macOS                   | `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/caddy-local-root.crt` | Chrome and Safari use the system keychain                                                                                                |
+| Linux (Debian / Ubuntu) | `sudo cp ~/caddy-local-root.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates`             | For `curl` and the system tools. Chrome and Firefox on Linux keep their own store: import the file in the browser's certificate settings |
+| WSL 2                   | Trust it on the Windows side for the browser, and run the Linux line inside WSL for `curl` there              |                                                                                                                                          |
+
+Firefox may keep its own store on every system. If it still warns, import the file under Settings →
+Privacy & Security → Certificates → View Certificates → Authorities.
+
+**Check:** `curl.exe -s https://app.point.test/api/v1/health`, without `-k`, returns
+`{"status":"ok",…}`.
+
+### The `http://localhost:3000` alias
+
+`docker-compose.dev.yml` makes Caddy also answer `http://localhost:3000` with the staff-host rules,
+and send `Host: app.point.test` upstream (design D12, `infra/caddy/dev/localhost-alias.caddy`). It
+keeps the "Local development" server of point-sdd's `docs/api/openapi/part1-foundation.yaml` working.
+It is plain HTTP, so no certificate is involved.
+
+```powershell
+curl.exe -s http://localhost:3000/api/v1/health
+```
+
+Use it for **read-only `GET` calls only**. Once `add-foundation-auth-access` is merged:
+
+- a changing request (`POST`, `PATCH`, `DELETE`) through the alias fails the CSRF origin check,
+  because its origin is not `APP_ORIGIN` (API-AUTH-02);
+- the session cookie is `Secure` (API-AUTH-01), so only a browser that treats `localhost` as secure
+  keeps it.
+
+Sign in and do every write on `https://app.point.test`. A change that needs `localhost` as the real
+staff origin replaces this block in its own dev override; it does not reuse the alias.
+
+### `next dev` (host-run)
+
+`pnpm dev` starts the web app with `next dev --port 3100` in `apps/web`. Next.js reads environment
+files only from `apps/web`, not the root `.env` that the API's dev script reads. Create
+`apps/web/.env.development.local` (git-ignored by `.env.*`) with the variables of `apps/web/env.ts`:
+
+```
+SITE_ORIGIN=https://point.test
+APP_ORIGIN=https://app.point.test
+NEXT_PUBLIC_API_BASE=/api/v1
+API_INTERNAL_BASE=http://localhost:3101/api/v1
+```
+
+- The origins must equal the ones in the root `.env`: `proxy.ts` compares the request's host with
+  them.
+- `API_INTERNAL_BASE` is the host-run API on 3101; in Compose it is `http://api:3001/api/v1`. Nothing
+  calls it yet.
+- `APP_VERSION` can stay unset; it defaults to `0.0.0-dev`.
+- A missing or malformed variable fails each request with
+  `Invalid web app environment: <name> …`, never its value.
+
+Open the app through Caddy, with `WEB_UPSTREAM=host.docker.internal:3100` as in
+[section 7](#7-host-run-development). `http://localhost:3100` itself answers 404, because its host is
+neither origin.
+
+`next dev` writes no `AGENTS.md` or `CLAUDE.md` into `apps/web`: `agentRules: false` in
+`next.config.ts` turns that off, so Claude Code reads only the repository's own instructions.
 
 ## 9. Troubleshooting
 
