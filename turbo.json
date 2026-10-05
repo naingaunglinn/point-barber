@@ -17,7 +17,8 @@
       "dependsOn": ["^build", "generate"]
     },
     "e2e": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["E2E_*", "PLAYWRIGHT_*", "CI"]
     },
     "dev": {
       "cache": false,

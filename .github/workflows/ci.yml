@@ -253,11 +253,26 @@ jobs:
           if grep -q 'data-testid="staff-placeholder"' <<<"$site"; then echo "::error::staff tree on the public host"; exit 1; fi
           if grep -q 'data-testid="site-placeholder"' <<<"$staff"; then echo "::error::site tree on the staff host"; exit 1; fi
 
-      # The Playwright files (smoke.spec.ts, edge.spec.ts) and the secret check arrive in PR-I.
+      - uses: ./.github/actions/setup
+
+      - name: Chromium for Playwright (the only browser — task 8.1)
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+
+      - name: Playwright — smoke.spec.ts and edge.spec.ts against the stack (D15 · D18)
+        env:
+          E2E_COMPOSE: ${{ env.COMPOSE }}
+        run: pnpm e2e
 
       - name: Container logs
         if: failure()
         run: $COMPOSE logs --no-color --timestamps > compose-logs.txt
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
 
       - name: Upload container logs
         if: failure()
