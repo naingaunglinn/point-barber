@@ -1,0 +1,31 @@
+# Build context of the api and web images (design D13 · CG-SEC-05). No environment file ever enters
+# an image: secrets reach containers only through `environment:` in the compose files.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Version control, local tooling
+.git
+.githooks
+.claude
+.vscode
+.idea
+*.log
+
+# Installed and built output — the images install and build their own
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+apps/api/src/generated
+playwright-report
+test-results
+
+# Not needed to build any image
+design-reference
+docs
+openspec
+db/source

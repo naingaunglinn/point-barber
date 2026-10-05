@@ -1,0 +1,87 @@
+# The edge (design D12 · ADR-009 action items 1 and 5). One Caddyfile for every environment: the
+# hosts come from SITE_ORIGIN (public) and APP_ORIGIN (staff). Local work adds, through
+# docker-compose.dev.yml only, Caddy's local certificates (CADDY_GLOBAL_OPTIONS=local_certs),
+# HSTS off (CADDY_HSTS=max-age=0) and the http://localhost:3000 alias of conf.d/.
+#
+# Edge 404s have an empty body and no X-Request-Id; an API 404 is application/problem+json with the
+# header — the edge tests use that difference to prove a request did or did not reach NestJS.
+# No trusted_proxies: Caddy replaces a client-sent X-Forwarded-For with the address it saw, and the
+# API trusts exactly that one hop (D5).
+{
+	{$CADDY_GLOBAL_OPTIONS}
+}
+
+# Both hosts.
+(common) {
+	encode zstd gzip
+	# Configured here, specified by add-public-website-pages (P8-RULE-13): never forwarded.
+	request_header -X-Internal-Key
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "{$CADDY_HSTS:max-age=31536000}"
+		-Server
+	}
+	# JSON to stdout; the query string is cut from the logged URI (same reason as the API, D5).
+	log {
+		output stdout
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp "\?.*$" ""
+				request>headers>X-Internal-Key delete
+			}
+		}
+	}
+	# The internal API and the web app's internal hooks are reachable only over the Docker network.
+	@internal path /api/v1/internal /api/v1/internal/* /internal /internal/*
+	handle @internal {
+		respond 404
+	}
+}
+
+# Staff host: every /api path and /rt* to the API, the rest to the web app. {args[0]} is the Host
+# sent upstream — the original one, or app.point.test for the localhost alias.
+(staff_routes) {
+	# Configured here, specified by add-attachments-upload: 10 MB upload + 1 MB.
+	request_body {
+		max_size {$CADDY_MAX_BODY}
+	}
+	# /rt*: configured here, specified by add-realtime-gateway.
+	@api path /api/* /rt*
+	handle @api {
+		reverse_proxy {$API_UPSTREAM} {
+			header_up Host {args[0]}
+		}
+	}
+	handle {
+		reverse_proxy {$WEB_UPSTREAM} {
+			header_up Host {args[0]}
+		}
+	}
+}
+
+{$APP_ORIGIN} {
+	import common
+	import staff_routes {host}
+}
+
+# Public host: only the public API, health and status reach the API; any other /api path is
+# refused here, so no staff login or session can be created on this host.
+{$SITE_ORIGIN} {
+	import common
+	@public_api path /api/v1/public/* /api/v1/health /api/v1/system/status
+	handle @public_api {
+		reverse_proxy {$API_UPSTREAM}
+	}
+	@other_api path /api /api/*
+	handle @other_api {
+		respond 404
+	}
+	handle {
+		reverse_proxy {$WEB_UPSTREAM}
+	}
+}
+
+# Development only: docker-compose.dev.yml mounts infra/caddy/dev/ here. Empty in production.
+import /etc/caddy/conf.d/*.caddy

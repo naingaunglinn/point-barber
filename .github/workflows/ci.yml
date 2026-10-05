@@ -1,6 +1,6 @@
 # CI for point-barber (design D15 · ADR-001 action item 4 · system-design §4.1).
-# PR-A brought the jobs static, unit and pr-title; PR-B adds db; PR-C adds integration. Each later
-# pull request of add-repo-scaffold adds the job for the code it brings (images, e2e).
+# PR-A brought the jobs static, unit and pr-title; PR-B adds db; PR-C adds integration; PR-E adds
+# images and e2e (stack and health — PR-I adds the Playwright tests and the secret check).
 # The PostgreSQL service and its variables are declared once, in job db, and reused by anchor.
 name: CI
 
@@ -167,6 +167,91 @@ jobs:
 
       - name: API integration tests (real app, real PostgreSQL 16, connected as point_app — D15)
         run: pnpm test:int
+
+  images:
+    name: images
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build api, web and backup with the commit as APP_VERSION (no push — D15)
+        run: |
+          set -euo pipefail
+          v="${GITHUB_SHA::12}"
+          echo "APP_VERSION=$v" >> "$GITHUB_ENV"
+          docker build -f apps/api/Dockerfile --build-arg APP_VERSION="$v" -t "point-api:$v" .
+          docker build -f apps/web/Dockerfile --build-arg APP_VERSION="$v" -t "point-web:$v" .
+          docker build --build-arg APP_VERSION="$v" -t "point-backup:$v" infra/backup
+
+      - name: Every image reports the commit, never 0.0.0-dev (D9)
+        run: |
+          set -euo pipefail
+          for image in api web backup; do
+            got=$(docker run --rm --entrypoint printenv "point-$image:$APP_VERSION" APP_VERSION)
+            echo "point-$image reports $got"
+            if [ "$got" = "0.0.0-dev" ] || [ "$got" != "$APP_VERSION" ]; then
+              echo "::error::point-$image reports APP_VERSION=$got, expected $APP_VERSION"
+              exit 1
+            fi
+          done
+
+      - name: The api image holds no test file and no environment file (D13)
+        run: |
+          set -euo pipefail
+          found=$(docker run --rm --entrypoint sh "point-api:$APP_VERSION" -c \
+            'find / -xdev \( -path "/app/test*" -o -name ".env" -o -name ".env.*" -o -name "*.int.test.*" \) -print 2>/dev/null' || true)
+          if [ -n "$found" ]; then echo "::error::unexpected files in the api image:"; echo "$found"; exit 1; fi
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-24.04
+    env:
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.dev.yml
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Hosts-file lines for the local origins (D12)
+        run: echo "127.0.0.1 point.test app.point.test postgres" | sudo tee -a /etc/hosts
+
+      - name: .env from .env.example, with generated internal keys
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          sed -i "s|^INTERNAL_SSR_KEY=.*|INTERNAL_SSR_KEY=$(openssl rand -hex 32)|" .env
+          sed -i "s|^INTERNAL_OPS_KEY=.*|INTERNAL_OPS_KEY=$(openssl rand -hex 32)|" .env
+          sed -i "s|^APP_VERSION=.*|APP_VERSION=${GITHUB_SHA::12}|" .env
+
+      - name: Build its own images (independent of job images — D15)
+        run: $COMPOSE build
+
+      - name: Stack up with the dev override
+        run: $COMPOSE up -d
+
+      - name: Migrate (the one entry point — D4.6)
+        run: $COMPOSE run --rm migrate
+
+      - name: Wait for health ok through the staff host
+        run: |
+          for i in $(seq 1 60); do
+            body=$(curl -sk --max-time 5 https://app.point.test/api/v1/health || true)
+            if echo "$body" | grep -q '"status":"ok"'; then echo "$body"; exit 0; fi
+            sleep 2
+          done
+          echo "::error::health never answered ok (last body: ${body:-none})"
+          exit 1
+
+      # The Playwright files (smoke.spec.ts, edge.spec.ts) and the secret check arrive in PR-I.
+
+      - name: Container logs
+        if: failure()
+        run: $COMPOSE logs --no-color --timestamps > compose-logs.txt
+
+      - name: Upload container logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compose-logs
+          path: compose-logs.txt
 
   pr-title:
     name: pr-title
