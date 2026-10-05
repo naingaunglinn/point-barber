@@ -27,7 +27,9 @@ services:
       WEB_UPSTREAM: ${WEB_UPSTREAM}
       CADDY_MAX_BODY: ${CADDY_MAX_BODY}
       CADDY_GLOBAL_OPTIONS: ${CADDY_GLOBAL_OPTIONS}
-      CADDY_HSTS: ${CADDY_HSTS}
+      # Default here, not only in the Caddyfile: Compose passes an empty string when the
+      # variable is empty or missing from .env, and Caddy's {$CADDY_HSTS:…} default would not apply.
+      CADDY_HSTS: ${CADDY_HSTS:-max-age=31536000}
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

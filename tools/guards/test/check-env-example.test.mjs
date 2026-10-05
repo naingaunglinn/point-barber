@@ -136,6 +136,14 @@ describe('tools/guards/check-env-example.mjs (CG-SEC-05 · design D13)', () => {
     expect(output).toMatch(/API_PORT.*no comment line/);
   });
 
+  // Compose interpolates $VAR without braces too (PR #6 review, item 3).
+  it('fails on an unbraced $VAR of a compose file that .env.example lacks', () => {
+    const compose = `${COMPOSE}      B: $BAR\n`;
+    const { status, output } = run(tree({ 'docker-compose.dev.yml': compose }));
+    expect(status).toBe(1);
+    expect(output).toMatch(/BAR: used by docker-compose\.dev\.yml but missing from \.env\.example/);
+  });
+
   it('does not read $$VAR (escaped for the container shell) as a compose variable', () => {
     // POSTGRES_USER appears only as "$$POSTGRES_USER" in the default compose file.
     expect(run(tree()).output).not.toContain('POSTGRES_USER');

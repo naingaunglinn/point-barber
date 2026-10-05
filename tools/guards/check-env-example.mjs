@@ -15,12 +15,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const SCHEMAS = ['apps/api/src/common/config/env.schema.ts', 'apps/web/env.ts'];
 const CHANGE_ID = /\b(?:add|change|remove|fix)-[a-z0-9-]+/;
 
-const COMPOSE_VAR = /(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)(?:[:?+-][^}]*)?\}/g;
+// ${VAR}, ${VAR:-default} … and the unbraced $VAR, which Compose interpolates too.
+const COMPOSE_VAR =
+  /(?<!\$)\$(?:\{([A-Za-z_][A-Za-z0-9_]*)(?:[:?+-][^}]*)?\}|([A-Za-z_][A-Za-z0-9_]*))/g;
 const CADDY_VAR = /\{\$([A-Za-z_][A-Za-z0-9_]*)(?::[^}]*)?\}/g;
 // A key of a z.object({ … }) literal: an indented `NAME:` line.
 const SCHEMA_KEY = /^\s+([A-Z][A-Z0-9_]*)\s*:/gm;
 
-const names = (text, pattern) => [...text.matchAll(pattern)].map((m) => m[1]);
+const names = (text, pattern) => [...text.matchAll(pattern)].map((m) => m[1] ?? m[2]);
 
 /** The files that use variables, as { path, names }; paths are repository-relative. */
 function users(root) {

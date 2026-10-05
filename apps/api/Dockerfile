@@ -27,9 +27,9 @@ ARG APP_VERSION=0.0.0-dev
 ENV NODE_ENV=production \
     APP_VERSION=${APP_VERSION}
 WORKDIR /app
-# Root-owned and read-only for the `node` user that runs the server.
+# Root-owned and read-only for the `node` user that runs the server. /out holds package.json,
+# node_modules and dist (the `files` field).
 COPY --from=build /out ./
-COPY --from=build /repo/apps/api/dist ./dist
 COPY db/migrations ./db/migrations
 COPY db/schema.prisma ./db/schema.prisma
 COPY db/scripts/migrate.mjs ./db/scripts/migrate.mjs

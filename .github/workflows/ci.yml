@@ -240,6 +240,19 @@ jobs:
           echo "::error::health never answered ok (last body: ${body:-none})"
           exit 1
 
+      # Until smoke.spec.ts (PR-I) takes over: the built web image serves both trees (task 6.9) —
+      # `up -d` succeeds even when the web container exits, so this is the image's only check.
+      - name: Both placeholder pages through the built web image
+        run: |
+          set -euo pipefail
+          site=$(curl -sfk https://point.test/)
+          staff=$(curl -sfk https://app.point.test/)
+          grep -q 'data-testid="site-placeholder"' <<<"$site"
+          grep -q 'data-testid="staff-placeholder"' <<<"$staff"
+          # set -e ignores a failing `! cmd`, so the two negative checks are explicit.
+          if grep -q 'data-testid="staff-placeholder"' <<<"$site"; then echo "::error::staff tree on the public host"; exit 1; fi
+          if grep -q 'data-testid="site-placeholder"' <<<"$staff"; then echo "::error::site tree on the staff host"; exit 1; fi
+
       # The Playwright files (smoke.spec.ts, edge.spec.ts) and the secret check arrive in PR-I.
 
       - name: Container logs
