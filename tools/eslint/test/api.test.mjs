@@ -16,7 +16,10 @@ const fixtures = join(root, 'tools/eslint/fixtures/api');
 const eslint = new ESLint({
   cwd: root,
   overrideConfigFile: true,
-  overrideConfig: [{ files: ['**/*.ts'], languageOptions: { parser: tseslint.parser } }, ...api],
+  overrideConfig: [
+    { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
+    ...api,
+  ],
 });
 
 async function lint(code, path) {
@@ -43,6 +46,9 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
     'apps/api/scripts/x.mjs',
     'apps/api/vitest.int.config.ts',
     'packages/documents/src/x.ts',
+    // The receipt templates of add-walkin-visit-checkout are React components (PR #4 review).
+    'packages/documents/src/receipt.tsx',
+    'packages/documents/src/receipt.jsx',
   ])('fails on parseFloat in %s', async (path) => {
     expect(await lint(fixture('parse-float.ts'), path)).toEqual([
       { ruleId: 'no-restricted-globals', message: expect.stringContaining('CG-MONEY-01') },
@@ -83,6 +89,16 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
       { ruleId: 'n/no-process-env', message: expect.any(String) },
     ]);
   });
+
+  // D19: packages/documents reads no environment (PR #5 review).
+  it.each(['packages/documents/src/x.ts', 'packages/documents/src/receipt.tsx'])(
+    'fails on process.env in %s',
+    async (path) => {
+      expect(await lint(fixture('process-env.ts'), path)).toEqual([
+        { ruleId: 'n/no-process-env', message: expect.any(String) },
+      ]);
+    },
+  );
 
   it('allows process.env in src/common/config/', async () => {
     expect(await lint(fixture('process-env.ts'), 'apps/api/src/common/config/config.ts')).toEqual(

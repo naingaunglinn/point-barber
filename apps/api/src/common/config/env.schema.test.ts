@@ -30,6 +30,16 @@ describe('API environment schema', () => {
     );
   });
 
+  // A failed URL check stops the origin refinement, so the variable gets one message (PR #5 review).
+  it.each(['SITE_ORIGIN', 'APP_ORIGIN'])(
+    'gives one message when %s is not a URL at all',
+    (name) => {
+      expect(() => parseApiEnv({ ...valid, [name]: 'point.test' })).toThrow(
+        new Error(`Invalid API environment: ${name} Invalid URL`),
+      );
+    },
+  );
+
   it('defaults APP_VERSION to 0.0.0-dev when it is not set', () => {
     expect(parseApiEnv(valid).APP_VERSION).toBe('0.0.0-dev');
     expect(parseApiEnv({ ...valid, APP_VERSION: '' }).APP_VERSION).toBe('0.0.0-dev');
