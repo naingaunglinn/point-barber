@@ -1,7 +1,9 @@
-// Which checks the after-edit hook runs for one edited file (design D17). Reads only the
-// package.json / tsconfig.json files of the tree it is given; starts nothing.
-import { existsSync, readFileSync } from 'node:fs';
-import { isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
+// Which checks the after-edit hook runs for one edited file (design D17, with the fallback of task
+// 7.7): Prettier on every file in scope, then ESLint on code. D17's steps 3 and 4 — tsc for the
+// owning workspace and the related unit tests — run in the pre-push check (.githooks/pre-push).
+// Starts nothing.
+import { existsSync } from 'node:fs';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 /** D17 step 1: only files under these folders are checked. */
 const SCOPE = /^(?:apps|packages|tools|e2e)\/|^db\/scripts\//;
@@ -10,10 +12,6 @@ const GENERATED =
   /(?:^|\/)(?:node_modules|\.next|\.turbo|dist|coverage|playwright-report|test-results)\//;
 /** Files ESLint lints (root eslint.config.mjs). */
 const LINTED = /\.(?:[cm]?[jt]s|[jt]sx)$/;
-/** Files that can change what the compiler or a unit test sees: code, and JSON (the catalogues). */
-const COMPILED = /\.(?:[cm]?[jt]s|[jt]sx|json)$/;
-/** The Vitest project of the root tooling tests (vitest.config.mjs): tools/ and db/scripts/. */
-const TOOLING_PROJECT = 'tooling';
 
 /** `tool_input.file_path` of a Claude Code PostToolUse payload, or null. Throws on bad JSON. */
 export function filePathOf(payload) {
@@ -21,20 +19,10 @@ export function filePathOf(payload) {
   return typeof path === 'string' && path !== '' ? path : null;
 }
 
-/** The nearest folder below the root, from `dir` up, that has a package.json — or null. */
-function owningWorkspace(root, dir) {
-  for (let current = dir; current !== '.' && current !== ''; current = posix.dirname(current)) {
-    if (existsSync(join(root, current, 'package.json'))) return current;
-  }
-  return null;
-}
-
 /**
  * The checks for `file` in the repository at `root`, or null when the hook leaves the file alone
- * (outside the repository or the scope folders, generated, or no longer there):
- * `{ rel, workspace, eslint, tsconfig, vitestProject }` — Prettier always runs; `workspace` is the
- * owning workspace folder or null; `tsconfig` is its tsconfig.json or null; `vitestProject` is the
- * project of the root Vitest config or null.
+ * (outside the repository or the scope folders, generated, or no longer there): `{ rel, eslint }` —
+ * Prettier always runs, ESLint when `eslint` is true.
  */
 export function planFor(root, file) {
   const fromRoot = relative(root, resolve(root, file));
@@ -42,27 +30,21 @@ export function planFor(root, file) {
   if (isAbsolute(fromRoot)) return null; // another drive on Windows
   const rel = fromRoot.split(sep).join('/');
   if (!SCOPE.test(rel) || GENERATED.test(rel) || !existsSync(join(root, rel))) return null;
+  return { rel, eslint: LINTED.test(rel) };
+}
 
-  const compiled = COMPILED.test(rel);
-  const workspace = owningWorkspace(root, posix.dirname(rel));
-  const tsconfig = workspace === null ? null : join(root, workspace, 'tsconfig.json');
-
-  let vitestProject = null;
-  // e2e/ holds Playwright specs only; Playwright never runs in the hook (D17).
-  if (compiled && !rel.startsWith('e2e/')) {
-    if (workspace === null) {
-      vitestProject = TOOLING_PROJECT;
-    } else {
-      const { name } = JSON.parse(readFileSync(join(root, workspace, 'package.json'), 'utf8'));
-      vitestProject = typeof name === 'string' && name !== '' ? name : posix.basename(workspace);
-    }
+/** The tools a plan starts, in D17 order: `{ label = the bin name, pkg, args }` per step. */
+export function stepsFor(root, plan) {
+  const target = join(root, plan.rel);
+  const steps = [
+    {
+      label: 'prettier',
+      pkg: 'prettier',
+      args: ['--write', '--ignore-unknown', '--log-level', 'warn', target],
+    },
+  ];
+  if (plan.eslint) {
+    steps.push({ label: 'eslint', pkg: 'eslint', args: ['--no-warn-ignored', target] });
   }
-
-  return {
-    rel,
-    workspace,
-    eslint: LINTED.test(rel),
-    tsconfig: compiled && tsconfig !== null && existsSync(tsconfig) ? tsconfig : null,
-    vitestProject,
-  };
+  return steps;
 }

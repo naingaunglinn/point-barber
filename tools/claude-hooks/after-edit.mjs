@@ -1,10 +1,11 @@
 // Claude Code after-edit hook (design D17 · CG-AI-08), registered in .claude/settings.json for
 // the Edit and Write tools. For the one edited file:
 //   1. a file outside apps/, packages/, tools/, e2e/, db/scripts/ is left alone;
-//   2. Prettier formats the file, then ESLint lints it;
-//   3. tsc --noEmit --incremental checks the workspace that owns it;
-//   4. vitest related <file> --run runs the unit tests of that workspace that import it.
-// Integration tests, database tests and Playwright never run here. A failure goes to stderr with
+//   2. Prettier formats the file, then ESLint lints it.
+// D17's steps 3 and 4 (tsc for the owning workspace, the related unit tests) run in the pre-push
+// check, .githooks/pre-push: with them a single-file edit in apps/api took a median 12.7 s, over
+// D17's 10 s target (task 7.7). Integration tests, database tests and Playwright never run here.
+// A failure goes to stderr with
 // exit code 2, which Claude Code shows to Claude. Every tool is started with this Node binary, never
 // through a shell, so the hook behaves the same on Windows and Linux.
 // By hand: node tools/claude-hooks/after-edit.mjs <file>. Claude Code sends its payload on stdin.
@@ -13,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { filePathOf, planFor } from './lib/plan.mjs';
+import { filePathOf, planFor, stepsFor } from './lib/plan.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const STEP_TIMEOUT_MS = 120_000;
@@ -25,15 +26,12 @@ async function readStdin() {
   return text;
 }
 
-/** The script of a package's bin, from the workspace's node_modules or the root's — or null. */
-function binOf(pkg, name, workspaceDir) {
-  for (const dir of new Set([workspaceDir, ROOT])) {
-    const manifest = join(dir, 'node_modules', pkg, 'package.json');
-    if (!existsSync(manifest)) continue;
-    const { bin } = JSON.parse(readFileSync(manifest, 'utf8'));
-    return join(dirname(manifest), typeof bin === 'string' ? bin : bin[name]);
-  }
-  return null;
+/** The script of a package's bin in the root node_modules (Prettier and ESLint are root tools). */
+function binOf(pkg, name) {
+  const manifest = join(ROOT, 'node_modules', pkg, 'package.json');
+  if (!existsSync(manifest)) return null;
+  const { bin } = JSON.parse(readFileSync(manifest, 'utf8'));
+  return join(dirname(manifest), typeof bin === 'string' ? bin : bin[name]);
 }
 
 function run(label, script, args) {
@@ -71,35 +69,9 @@ if (file === null) {
 const plan = file === null ? null : planFor(ROOT, file);
 if (plan === null) process.exit(0);
 
-const target = join(ROOT, plan.rel);
-const workspaceDir = plan.workspace === null ? ROOT : join(ROOT, plan.workspace);
-// { label = the bin name, package, arguments } in the order of D17.
-const steps = [
-  {
-    label: 'prettier',
-    pkg: 'prettier',
-    args: ['--write', '--ignore-unknown', '--log-level', 'warn', target],
-  },
-];
-if (plan.eslint) {
-  steps.push({ label: 'eslint', pkg: 'eslint', args: ['--no-warn-ignored', target] });
-}
-if (plan.tsconfig !== null) {
-  const args = ['--noEmit', '--incremental', '--pretty', 'false', '-p', plan.tsconfig];
-  steps.push({ label: 'tsc', pkg: 'typescript', args });
-}
-if (plan.vitestProject !== null) {
-  const args = ['related', target, '--run', '--project', plan.vitestProject];
-  steps.push({
-    label: 'vitest',
-    pkg: 'vitest',
-    args: [...args, '--passWithNoTests', '--reporter', 'agent'],
-  });
-}
-
 const results = [];
-for (const { label, pkg, args } of steps) {
-  const script = binOf(pkg, label, workspaceDir);
+for (const { label, pkg, args } of stepsFor(ROOT, plan)) {
+  const script = binOf(pkg, label);
   if (script === null) {
     console.error(`after-edit: ${pkg} is not installed — run pnpm install`);
     process.exit(1);

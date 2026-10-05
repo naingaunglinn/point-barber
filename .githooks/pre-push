@@ -1,0 +1,8 @@
+#!/bin/sh
+# Typecheck and unit tests before every push — the fallback of design D17 (task 7.7). They were
+# steps 3 and 4 of the Claude Code after-edit hook; with them a single-file edit in apps/api took a
+# median 12.7 s, over D17's 10 s target, so the hook keeps Prettier and ESLint and they run here.
+# CI jobs `static` and `unit` are the gate; this only catches a failure before it reaches the PR.
+set -e
+pnpm run typecheck
+pnpm run test

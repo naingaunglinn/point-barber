@@ -6,34 +6,24 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { filePathOf, planFor } from '../lib/plan.mjs';
+import { filePathOf, planFor, stepsFor } from '../lib/plan.mjs';
 
 const hook = resolve(dirname(fileURLToPath(import.meta.url)), '../after-edit.mjs');
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-// A temporary repository tree: workspaces with and without a tsconfig or a name, root tooling,
-// generated folders, and files outside the D17 scope folders.
+// A temporary repository tree: code and non-code files in workspaces and root tooling, generated
+// folders, and files outside the D17 scope folders.
 const FILES = {
-  'apps/web/package.json': '{ "name": "web" }',
-  'apps/web/tsconfig.json': '{}',
   'apps/web/proxy.ts': '',
   'apps/web/README.md': '',
   'apps/web/.next/types/routes.d.ts': '',
   'apps/web/node_modules/x/index.js': '',
-  'packages/ui/package.json': '{ "name": "@point/ui" }',
-  'packages/ui/tsconfig.json': '{}',
   'packages/ui/src/index.ts': '',
   'packages/ui/tokens.css': '',
-  'packages/shared/package.json': '{ "name": "@point/shared" }',
-  'packages/shared/tsconfig.json': '{}',
   'packages/shared/definitions/permissions.json': '[]',
-  'packages/plain/package.json': '{}',
-  'packages/plain/src/a.ts': '',
   'tools/guards/check-x.mjs': '',
   'db/scripts/migrate.mjs': '',
   'db/migrations/0_baseline/migration.sql': '',
-  'e2e/package.json': '{ "name": "e2e" }',
-  'e2e/tsconfig.json': '{}',
   'e2e/smoke.spec.ts': '',
   'docs/engineering/README.md': '',
   'CLAUDE.md': '',
@@ -61,70 +51,44 @@ function runHook(input) {
   return { status: result.status, output: `${result.stdout}${result.stderr}` };
 }
 
-// Technical guarantee, no spec scenario: the four steps of design D17 for each kind of file.
+// Technical guarantee, no spec scenario: D17 steps 1 and 2 for each kind of file. Steps 3 and 4
+// (tsc and the related unit tests) run in the pre-push check instead — the fallback of task 7.7.
 describe('tools/claude-hooks — the checks run after an edit (design D17 · CG-AI-08)', () => {
-  it('runs every step for a workspace source file', () => {
-    expect(planFor(root, 'apps/web/proxy.ts')).toEqual({
-      rel: 'apps/web/proxy.ts',
-      workspace: 'apps/web',
-      eslint: true,
-      tsconfig: join(root, 'apps/web/tsconfig.json'),
-      vitestProject: 'web',
-    });
+  it('formats and lints a workspace source file', () => {
+    expect(planFor(root, 'apps/web/proxy.ts')).toEqual({ rel: 'apps/web/proxy.ts', eslint: true });
   });
 
   it('takes an absolute path as Claude Code sends it', () => {
-    expect(planFor(root, join(root, 'packages/ui/src/index.ts'))).toMatchObject({
+    expect(planFor(root, join(root, 'packages/ui/src/index.ts'))).toEqual({
       rel: 'packages/ui/src/index.ts',
-      tsconfig: join(root, 'packages/ui/tsconfig.json'),
-      vitestProject: '@point/ui',
+      eslint: true,
     });
   });
 
-  it('only formats a file that is not code', () => {
-    for (const path of ['apps/web/README.md', 'packages/ui/tokens.css']) {
-      expect(planFor(root, path)).toMatchObject({
-        eslint: false,
-        tsconfig: null,
-        vitestProject: null,
-      });
-    }
+  it.each([
+    'apps/web/README.md',
+    'packages/ui/tokens.css',
+    'packages/shared/definitions/permissions.json',
+  ])('only formats %s, which ESLint does not lint', (path) => {
+    expect(planFor(root, path)).toEqual({ rel: path, eslint: false });
   });
 
-  it('typechecks and tests after a JSON edit, without ESLint', () => {
-    expect(planFor(root, 'packages/shared/definitions/permissions.json')).toMatchObject({
-      eslint: false,
-      tsconfig: join(root, 'packages/shared/tsconfig.json'),
-      vitestProject: '@point/shared',
-    });
-  });
-
-  it('skips tsc for a workspace without a tsconfig and names the project after its folder', () => {
-    expect(planFor(root, 'packages/plain/src/a.ts')).toMatchObject({
-      workspace: 'packages/plain',
-      tsconfig: null,
-      vitestProject: 'plain',
-    });
-  });
-
-  it.each(['tools/guards/check-x.mjs', 'db/scripts/migrate.mjs'])(
-    'runs the tooling tests and no tsc for %s',
+  it.each(['tools/guards/check-x.mjs', 'db/scripts/migrate.mjs', 'e2e/smoke.spec.ts'])(
+    'formats and lints %s',
     (path) => {
-      expect(planFor(root, path)).toMatchObject({
-        workspace: null,
-        eslint: true,
-        tsconfig: null,
-        vitestProject: 'tooling',
-      });
+      expect(planFor(root, path)).toEqual({ rel: path, eslint: true });
     },
   );
 
-  it('never runs Vitest for the Playwright workspace', () => {
-    expect(planFor(root, 'e2e/smoke.spec.ts')).toMatchObject({
-      eslint: true,
-      tsconfig: join(root, 'e2e/tsconfig.json'),
-      vitestProject: null,
-    });
+  it('starts Prettier, then ESLint on code, and never tsc or Vitest', () => {
+    const code = stepsFor(root, planFor(root, 'apps/web/proxy.ts'));
+    expect(code.map((step) => step.label)).toEqual(['prettier', 'eslint']);
+    expect(code.map((step) => step.args.at(-1))).toEqual([
+      join(root, 'apps/web/proxy.ts'),
+      join(root, 'apps/web/proxy.ts'),
+    ]);
+    const text = stepsFor(root, planFor(root, 'apps/web/README.md'));
+    expect(text.map((step) => step.label)).toEqual(['prettier']);
   });
 
   it.each([
