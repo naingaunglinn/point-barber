@@ -1,13 +1,13 @@
 // Claude Code after-edit hook (design D17 · CG-AI-08), registered in .claude/settings.json for
 // the Edit and Write tools. For the one edited file:
 //   1. a file outside apps/, packages/, tools/, e2e/, db/scripts/ is left alone;
-//   2. Prettier formats the file, then ESLint lints it.
+//   2. Prettier formats the file, then ESLint lints it without type information (lib/plan.mjs).
 // D17's steps 3 and 4 (tsc for the owning workspace, the related unit tests) run in the pre-push
 // check, .githooks/pre-push: with them a single-file edit in apps/api took a median 12.7 s, over
 // D17's 10 s target (task 7.7). Integration tests, database tests and Playwright never run here.
-// A failure goes to stderr with
-// exit code 2, which Claude Code shows to Claude. Every tool is started with this Node binary, never
-// through a shell, so the hook behaves the same on Windows and Linux.
+// A failure goes to stderr with exit code 2, which Claude Code shows to Claude. Every tool is
+// started with this Node binary, never through a shell, so the hook behaves the same on Windows
+// and Linux.
 // By hand: node tools/claude-hooks/after-edit.mjs <file>. Claude Code sends its payload on stdin.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';

@@ -1,7 +1,7 @@
 // Which checks the after-edit hook runs for one edited file (design D17, with the fallback of task
-// 7.7): Prettier on every file in scope, then ESLint on code. D17's steps 3 and 4 — tsc for the
-// owning workspace and the related unit tests — run in the pre-push check (.githooks/pre-push).
-// Starts nothing.
+// 7.7): Prettier on every file in scope, then ESLint on code, without type information. D17's
+// steps 3 and 4 — tsc for the owning workspace and the related unit tests — run in the pre-push
+// check (.githooks/pre-push). Starts nothing.
 import { existsSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
@@ -44,7 +44,13 @@ export function stepsFor(root, plan) {
     },
   ];
   if (plan.eslint) {
-    steps.push({ label: 'eslint', pkg: 'eslint', args: ['--no-warn-ignored', target] });
+    // Without the TypeScript program. No type-aware rule is on until add-ci-guard-rails, and
+    // building the program kept the hook over D17's 10 s on native Windows (PR #8 review: ESLint
+    // 12.2 s → 5.3 s, same findings). CI and `pnpm lint` keep the full configuration. When
+    // add-ci-guard-rails turns the type-aware rules on, ESLint stops here with "requires type
+    // information": that change re-measures and decides how the hook lints.
+    const args = ['--no-warn-ignored', '--parser-options', 'projectService:false', target];
+    steps.push({ label: 'eslint', pkg: 'eslint', args });
   }
   return steps;
 }

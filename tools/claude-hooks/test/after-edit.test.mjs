@@ -91,6 +91,15 @@ describe('tools/claude-hooks — the checks run after an edit (design D17 · CG-
     expect(text.map((step) => step.label)).toEqual(['prettier']);
   });
 
+  // No type-aware rule is on yet, and building the TypeScript program kept the hook over 10 s on
+  // native Windows (PR #8 review). CI and `pnpm lint` keep the full configuration.
+  it('lints without the TypeScript program', () => {
+    const [, eslint] = stepsFor(root, planFor(root, 'apps/web/proxy.ts'));
+    expect(eslint?.args).toEqual(
+      expect.arrayContaining(['--parser-options', 'projectService:false']),
+    );
+  });
+
   it.each([
     'docs/engineering/README.md',
     'CLAUDE.md',
