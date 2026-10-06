@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test } from './fixtures.js';
 import { rawRequest } from './helpers/raw-request.js';
-import { COMPOSE, SITE_HOST } from './hosts.js';
+import { APP_ORIGIN, COMPOSE, SITE_HOST, SITE_ORIGIN } from './hosts.js';
 
 // The edge and the built stack (design D12 · D18): Playwright's request API through Caddy, and raw
 // request lines where an HTTP client would clean the path. Part 1 and the hardening and
@@ -210,3 +210,38 @@ test.describe('edge: configuration whose requirement arrives with a later change
 });
 
 // ── Part 2 (task 8.4, Dev 1) ─────────────────────────────────────────────────────────────────────
+
+// A tree is reached only through its own host's rewrite, and a host the edge does not serve gets
+// nothing from the web app either (design D11).
+test.describe('add-repo-scaffold · platform-runtime · The Host header selects the route tree', () => {
+  test('Scenario: The staff tree cannot be opened through the public host', async ({ page }) => {
+    const res = await page.goto(`${SITE_ORIGIN}/staff`);
+    expect(res?.status()).toBe(404);
+    await expect(page.locator('[data-testid="staff-placeholder"]')).toHaveCount(0);
+  });
+
+  test('Scenario: The site tree cannot be opened through the staff host', async ({ page }) => {
+    const res = await page.goto(`${APP_ORIGIN}/site`);
+    expect(res?.status()).toBe(404);
+    await expect(page.locator('[data-testid="site-placeholder"]')).toHaveCount(0);
+  });
+
+  test("Scenario: A tree's own folder name is not a public path", async ({ page }) => {
+    for (const url of [`${SITE_ORIGIN}/site`, `${APP_ORIGIN}/staff/today`]) {
+      const res = await page.goto(url);
+      expect(res?.status(), url).toBe(404);
+    }
+  });
+
+  // The edge answers only the two hosts, so an unknown Host can reach the web app only from inside
+  // the Compose network. The api container is on that network and has Node.
+  test('Scenario: An unknown host gets nothing', () => {
+    const request = [
+      "require('node:http')",
+      ".get({ host: 'web', port: 3000, path: '/', headers: { host: 'evil.test' } }, (r) => {",
+      ' console.log(r.statusCode); r.resume(); })',
+      ".on('error', (e) => { console.error(e.message); process.exit(1); })",
+    ].join('');
+    expect(compose(`exec -T api node -e "${request}"`).trim()).toBe('404');
+  });
+});
