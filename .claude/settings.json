@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/tools/claude-hooks/after-edit.mjs"],
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
