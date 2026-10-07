@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { APP_ORIGIN, SITE_ORIGIN } from './hosts.js';
+import { APP_ORIGIN, IS_CI, SITE_ORIGIN } from './hosts.js';
 
 // End-to-end tests against a running Compose stack (design D15 · D18): job e2e, or a developer's
 // `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` + migrate. The two hosts are
@@ -9,11 +9,11 @@ import { APP_ORIGIN, SITE_ORIGIN } from './hosts.js';
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
-  forbidOnly: Boolean(process.env.CI),
+  forbidOnly: IS_CI,
   retries: 0,
   workers: 1,
   timeout: 60_000,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: IS_CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   metadata: { siteOrigin: SITE_ORIGIN, appOrigin: APP_ORIGIN },
   use: {
     baseURL: APP_ORIGIN,

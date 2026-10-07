@@ -252,6 +252,8 @@ jobs:
 
       # Spec "The web container never holds INTERNAL_OPS_KEY" (API-SHAPE-02 · task 8.6).
       - name: Secret distribution — each internal key only in its two holders
+        # Independent of Playwright's result: one run reports both (PR #9 review).
+        if: ${{ !cancelled() }}
         run: |
           set -uo pipefail
           failed=0
