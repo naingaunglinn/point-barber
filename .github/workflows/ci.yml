@@ -256,7 +256,10 @@ jobs:
           set -uo pipefail
           failed=0
           expect() { # service variable present|absent
-            out=$($COMPOSE exec -T "$1" printenv "$2"); code=$?
+            # Actions runs this with `bash -e`; printenv exiting 1 is an expected answer here, so its
+            # exit code is captured instead of ending the step.
+            code=0
+            out=$($COMPOSE exec -T "$1" printenv "$2") || code=$?
             if [ "$3" = present ] && [ "$code" -eq 0 ] && [ -n "$out" ]; then echo "ok    $1 holds $2"
             elif [ "$3" = absent ] && [ "$code" -eq 1 ] && [ -z "$out" ]; then echo "ok    $1 has no $2"
             else echo "::error::$1 $2: expected $3, printenv exited $code"; failed=1; fi
