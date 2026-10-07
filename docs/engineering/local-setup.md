@@ -109,7 +109,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm migrate
 ```
 
 `migrate` is the one migrate entry point (`node db/scripts/migrate.mjs`, design D4.6). From your
-machine, `pnpm db:migrate` does the same, with `MIGRATE_DATABASE_URL` set in the shell
+machine, `pnpm db:migrate` does the same, reading `MIGRATE_DATABASE_URL` from `.env`
 ([section 6](#6-database)).
 
 | Service    | What                                                                              | Reached at                                                                                       |
@@ -140,15 +140,18 @@ Stop with `… down`. **`… down -v` also deletes the database, Caddy's certifi
 
 ## 6. Database
 
-`pnpm db:migrate`, `pnpm db:test` and `pnpm db:check-introspection` read `MIGRATE_DATABASE_URL` from the
-shell, not from `.env`. Set it first, with the owner password from `.env`:
+`pnpm db:migrate`, `pnpm db:test` and `pnpm db:check-introspection` read `MIGRATE_DATABASE_URL` from
+the root `.env`. Its host `postgres` reaches the stack's database through the hosts-file line of
+section 4. A value set in the shell wins over `.env`; to use another database for one command, set
+it there:
 
 ```powershell
-$env:MIGRATE_DATABASE_URL = 'postgresql://point:<POSTGRES_PASSWORD>@postgres:5432/point'   # Windows
-export MIGRATE_DATABASE_URL='postgresql://point:<POSTGRES_PASSWORD>@postgres:5432/point'   # macOS / Linux
+$env:MIGRATE_DATABASE_URL = 'postgresql://point:<password>@localhost:5432/point'   # Windows
+export MIGRATE_DATABASE_URL='postgresql://point:<password>@localhost:5432/point'   # macOS / Linux
 ```
 
-`pnpm db:test` also needs `psql` on your machine (section 1).
+`pnpm db:test` also needs `psql` on your machine (section 1). The scripts pass the password to `psql`
+through `PGPASSWORD`, never on its command line.
 
 | Command                       | What                                                                    |
 | ----------------------------- | ----------------------------------------------------------------------- |
@@ -187,9 +190,8 @@ To work on the API or the web app with reload, run them on your machine and leav
 
 Requests still go through Caddy (`https://app.point.test`), so routing, hosts and edge rules are the
 real ones. The API restarts on each rebuild, so Caddy answers **502** for the second that the
-API is down. Wait, then retry. On Windows the API also restarts when `next dev` compiles a page or
-something writes to `.git`, for example an editor's background fetch, so a 502 is more frequent
-there.
+API is down. Wait, then retry. Only a new build of the API restarts it: writes to `apps/web/.next`,
+`node_modules` or `.git` do not.
 
 To go back to the full stack:
 
@@ -354,5 +356,6 @@ neither origin.
 | Browser warns about the certificate, or shows "Not secure"                                 | Caddy's local root certificate is not trusted yet. See [Trust Caddy's local certificate](#trust-caddys-local-certificate). If you just imported it, close all browser windows and reopen them. Firefox may need its own import. `curl` needs `-k` until then.                                           |
 | `curl.exe` on Windows fails with `CRYPT_E_NO_REVOCATION_CHECK` (exit 35)                   | The certificate is trusted, but Windows' curl also checks revocation, which Caddy's local authority can't answer. Add `--ssl-revoke-best-effort`.                                                                                                                                                       |
 | `502` from Caddy                                                                           | The upstream is not running. In host-run mode the API restarts on each rebuild: wait, then retry. After switching back from host-run mode, run `docker compose … up -d` ([section 7](#7-host-run-development)).                                                                                         |
-| `MIGRATE_DATABASE_URL is required` from a `pnpm db:*` script                               | The `db:*` scripts read it from the shell, not from `.env`. Set it as in [section 6](#6-database).                                                                                                                                                                                                      |
+| `MIGRATE_DATABASE_URL is required` from a `pnpm db:*` script                               | Neither `.env` nor the shell has it. Check that the root `.env` exists and has the line (section 3), or set it in the shell (section 6).                                                                                                                                                                |
+| `could not start psql (ENOENT)` from `pnpm db:test`                                        | The PostgreSQL 16 client is not on `PATH`. Install it (section 1), or set `PSQL` to the full path of `psql.exe`.                                                                                                                                                                                        |
 | Every page answers `500 Invalid web app environment: …` in host-run mode                   | `apps/web/.env.development.local` is missing. Create it as in [`next dev` (host-run)](#next-dev-host-run).                                                                                                                                                                                              |

@@ -12,10 +12,20 @@ const sourceDir = join(root, 'db', 'source');
 const sibling = join(root, '..', 'point-sdd', 'docs', 'db');
 
 const problems = checkManifest(sourceDir);
+let comparedSibling = false;
 if (!process.argv.includes('--manifest-only')) {
-  if (existsSync(sibling)) problems.push(...checkSibling(sourceDir, sibling));
-  else console.log('check-source: ../point-sdd not found — manifest check only');
+  if (existsSync(sibling)) {
+    problems.push(...checkSibling(sourceDir, sibling));
+    comparedSibling = true;
+  } else console.log('check-source: ../point-sdd not found — manifest check only');
 }
 for (const p of problems) console.error(`check-source: ${p} (CG-DB-01 · D4.11)`);
-if (problems.length === 0) console.log('check-source: db/source matches its manifest');
+if (problems.length === 0) {
+  // Say what was compared, so a reader sees whether point-sdd was part of it (PR-I 9.4).
+  console.log(
+    comparedSibling
+      ? 'check-source: db/source matches its manifest and ../point-sdd/docs/db'
+      : 'check-source: db/source matches its manifest',
+  );
+}
 process.exit(problems.length === 0 ? 0 : 1);

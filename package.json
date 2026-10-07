@@ -17,11 +17,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "guards": "node tools/guards/run-all.mjs",
-    "db:migrate": "node db/scripts/migrate.mjs",
+    "db:migrate": "node --env-file-if-exists=.env db/scripts/migrate.mjs",
     "db:build-baseline": "node db/scripts/build-baseline.mjs",
-    "db:test": "node db/scripts/run-constraint-tests.mjs",
+    "db:test": "node --env-file-if-exists=.env db/scripts/run-constraint-tests.mjs",
     "db:check-source": "node db/scripts/check-source.mjs",
-    "db:check-introspection": "node db/scripts/check-introspection.mjs"
+    "db:check-introspection": "node --env-file-if-exists=.env db/scripts/check-introspection.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
