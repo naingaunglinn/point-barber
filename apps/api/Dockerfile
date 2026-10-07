@@ -9,6 +9,12 @@ ARG NODE_IMAGE=node:24.21.0-bookworm-slim
 
 FROM ${NODE_IMAGE} AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 CI=1
+# OpenSSL here too: @prisma/engines downloads the schema engine for the OpenSSL it detects at install
+# time. The runtime stage has OpenSSL, so the build must pick the same engine — otherwise migrate
+# tries to download another one into the read-only node_modules and fails.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 WORKDIR /repo
 # Dependencies first, so a source change does not refetch them.
