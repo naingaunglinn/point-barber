@@ -49,6 +49,10 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
     // The receipt templates of add-walkin-visit-checkout are React components (PR #4 review).
     'packages/documents/src/receipt.tsx',
     'packages/documents/src/receipt.jsx',
+    // The shared e2e workspace (task 8.1 · D16 "every workspace" · guideline §24 row 37).
+    'e2e/edge.spec.ts',
+    'e2e/helpers/raw-request.ts',
+    'e2e/playwright.config.ts',
   ])('fails on parseFloat in %s', async (path) => {
     expect(await lint(fixture('parse-float.ts'), path)).toEqual([
       { ruleId: 'no-restricted-globals', message: expect.stringContaining('CG-MONEY-01') },

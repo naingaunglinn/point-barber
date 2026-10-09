@@ -89,4 +89,11 @@ Prettier, then ESLint. The typecheck and the unit tests run before every push in
 
 Design D17 sets a 10 s target for the hook. With all four of its steps, the hook took a median of
 12.7 s for a single-file edit in `apps/api` (measured for task 7.7), so two of the steps moved to the
-push. Both files come with PR-G.
+push. ESLint runs in the hook without type information, since no type-aware rule is on until
+`add-ci-guard-rails`. A warm edit then takes about 1 s on WSL 2 and 3–5 s on native Windows; the
+first edit after a checkout is slower.
+
+**What a push costs:** the `pre-push` check takes about 20 s on WSL 2. On native Windows it takes 1–2
+minutes: `pnpm test` alone takes 42–66 s, and the typecheck up to a minute when Turborepo's cache is
+cold. Let it run. Never skip it with `--no-verify` (guideline §23); CI is the gate, and this catches a
+failure before it reaches the pull request.
