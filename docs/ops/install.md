@@ -24,7 +24,9 @@ Once per server: the first staging server, the production server, or a replaceme
 ## Steps
 
 1. **Code.** Clone point-barber on the server and check out the release tag.
-2. **`.env`.** Copy `.env.example` to `.env` (mode `600`, owned by the deploy user) and set:
+2. **`.env`.** Copy `.env.example` to `.env` (mode `600`, owned by the deploy user) and set the
+   values below. The `change-me-*` passwords in `.env.example` are placeholders for a developer
+   machine (coding guideline CG-SEC-05); none may stay on a server.
    - `SITE_ORIGIN`, `APP_ORIGIN`: the two hosts, `https://…`, no path, no trailing slash.
    - `POSTGRES_PASSWORD`, `POINT_APP_DB_PASSWORD`: new URL-safe passwords, e.g.
      `openssl rand -hex 24`. Write the same values into `MIGRATE_DATABASE_URL` and `DATABASE_URL`.
@@ -48,6 +50,7 @@ Once per server: the first staging server, the production server, or a replaceme
   `"maintenance": false`.
 - `https://<public host>/` shows the website and `https://<staff host>/` the staff app.
 - `docker compose exec web printenv INTERNAL_OPS_KEY` prints nothing and exits with status 1.
+- `grep -c change-me .env` prints `0`.
 
 ## If it fails
 
