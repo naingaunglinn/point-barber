@@ -12,6 +12,8 @@ const DEV2_WORKSPACES = [
   'apps/api/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
   'packages/shared/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
   'packages/documents/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
+  // The shared e2e workspace, set up by Dev 2 (task 8.1 · D16 "every workspace").
+  'e2e/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
 ];
 // packages/documents is source-only too: its receipt templates read no environment (D19).
 const API_SOURCE = [

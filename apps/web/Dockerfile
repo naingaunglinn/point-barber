@@ -6,6 +6,12 @@ ARG NODE_IMAGE=node:24.21.0-bookworm-slim
 
 FROM ${NODE_IMAGE} AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 CI=1 NEXT_TELEMETRY_DISABLED=1
+# The install covers the whole workspace, so @prisma/engines' postinstall runs here too, though the
+# web app never uses Prisma; with OpenSSL present it stops printing a warning a reader can't place.
+# Build stage only — the runtime image is unchanged.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./

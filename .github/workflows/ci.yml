@@ -240,24 +240,50 @@ jobs:
           echo "::error::health never answered ok (last body: ${body:-none})"
           exit 1
 
-      # Until smoke.spec.ts (PR-I) takes over: the built web image serves both trees (task 6.9) —
-      # `up -d` succeeds even when the web container exits, so this is the image's only check.
-      - name: Both placeholder pages through the built web image
-        run: |
-          set -euo pipefail
-          site=$(curl -sfk https://point.test/)
-          staff=$(curl -sfk https://app.point.test/)
-          grep -q 'data-testid="site-placeholder"' <<<"$site"
-          grep -q 'data-testid="staff-placeholder"' <<<"$staff"
-          # set -e ignores a failing `! cmd`, so the two negative checks are explicit.
-          if grep -q 'data-testid="staff-placeholder"' <<<"$site"; then echo "::error::staff tree on the public host"; exit 1; fi
-          if grep -q 'data-testid="site-placeholder"' <<<"$staff"; then echo "::error::site tree on the staff host"; exit 1; fi
+      - uses: ./.github/actions/setup
 
-      # The Playwright files (smoke.spec.ts, edge.spec.ts) and the secret check arrive in PR-I.
+      - name: Chromium for Playwright (the only browser — task 8.1)
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+
+      - name: Playwright — smoke.spec.ts and edge.spec.ts against the stack (D15 · D18)
+        env:
+          E2E_COMPOSE: ${{ env.COMPOSE }}
+        run: pnpm e2e
+
+      # Spec "The web container never holds INTERNAL_OPS_KEY" (API-SHAPE-02 · task 8.6).
+      - name: Secret distribution — each internal key only in its two holders
+        # Independent of Playwright's result: one run reports both (PR #9 review).
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          failed=0
+          expect() { # service variable present|absent
+            # Actions runs this with `bash -e`; printenv exiting 1 is an expected answer here, so its
+            # exit code is captured instead of ending the step.
+            code=0
+            out=$($COMPOSE exec -T "$1" printenv "$2") || code=$?
+            if [ "$3" = present ] && [ "$code" -eq 0 ] && [ -n "$out" ]; then echo "ok    $1 holds $2"
+            elif [ "$3" = absent ] && [ "$code" -eq 1 ] && [ -z "$out" ]; then echo "ok    $1 has no $2"
+            else echo "::error::$1 $2: expected $3, printenv exited $code"; failed=1; fi
+          }
+          expect web    INTERNAL_OPS_KEY absent
+          expect api    INTERNAL_OPS_KEY present
+          expect backup INTERNAL_OPS_KEY present
+          expect api    INTERNAL_SSR_KEY present
+          expect web    INTERNAL_SSR_KEY present
+          expect backup INTERNAL_SSR_KEY absent
+          exit $failed
 
       - name: Container logs
         if: failure()
         run: $COMPOSE logs --no-color --timestamps > compose-logs.txt
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
 
       - name: Upload container logs
         if: failure()
