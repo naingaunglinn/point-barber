@@ -9,6 +9,12 @@ ARG NODE_IMAGE=node:24.21.0-bookworm-slim
 
 FROM ${NODE_IMAGE} AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 CI=1
+# OpenSSL here too: @prisma/engines downloads the schema engine for the OpenSSL it detects at install
+# time. The runtime stage has OpenSSL, so the build must pick the same engine — otherwise migrate
+# tries to download another one into the read-only node_modules and fails.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 WORKDIR /repo
 # Dependencies first, so a source change does not refetch them.
@@ -27,6 +33,11 @@ ARG APP_VERSION=0.0.0-dev
 ENV NODE_ENV=production \
     APP_VERSION=${APP_VERSION}
 WORKDIR /app
+# OpenSSL for Prisma's schema engine (the migrate service): without it every run printed
+# "prisma:warn Prisma failed to detect the libssl/openssl version" (PR-I 9.4).
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl \
+ && rm -rf /var/lib/apt/lists/*
 # Root-owned and read-only for the `node` user that runs the server. /out holds package.json,
 # node_modules and dist (the `files` field).
 COPY --from=build /out ./

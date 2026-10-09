@@ -88,10 +88,18 @@ describe("add-repo-scaffold · platform-runtime · API is served under /api/v1 o
     expect(JSON.parse(res.text)).toMatchObject({ code: 'not_found' });
   });
 
-  it('a path without the /api prefix is not an API route', async () => {
-    const res = await t.http.get('/v1/health');
-    expect(res.status).toBe(404);
-  });
+  // Caddy sends /rt* to the API (add-realtime-gateway, D12), so a path outside /api can reach it;
+  // it must still answer the problem 404, not Express's HTML page (PR #6 review · task 8.7).
+  it.each(['/v1/health', '/rt', '/rt/socket', '/'])(
+    'a path outside /api answers the problem 404: %s',
+    async (path) => {
+      const res = await t.http.get(path);
+      expect(res.status).toBe(404);
+      expect(res.headers['content-type']).toMatch(/^application\/problem\+json/);
+      expect(res.headers['x-request-id']).toBeDefined();
+      expect(JSON.parse(res.text)).toMatchObject({ code: 'not_found', status: 404 });
+    },
+  );
 
   it('the framework does not announce itself', async () => {
     const res = await t.http.get('/api/v1/health');

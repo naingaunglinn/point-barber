@@ -18,10 +18,21 @@ describe('.githooks/pre-push (design D17 · task 7.7)', () => {
     expect(stdout).toMatch(/^100755 /);
   });
 
-  it('runs the typecheck, then the unit tests, and stops at the first failure', () => {
+  // Read, not run: Git for Windows runs the hook with its own sh, which a test on Windows cannot
+  // count on finding on PATH.
+  it('skips a push that only deletes branches; otherwise runs the typecheck, then the unit tests, and stops at the first failure', () => {
     const lines = readFileSync(join(repo, '.githooks/pre-push'), 'utf8').split('\n');
     expect(lines[0]).toBe('#!/bin/sh');
     const commands = lines.filter((line) => line.trim() !== '' && !line.startsWith('#'));
-    expect(commands).toEqual(['set -e', 'pnpm run typecheck', 'pnpm run test']);
+    expect(commands).toEqual([
+      'set -e',
+      'commits=no',
+      'while read -r _local_ref local_sha _remote_ref _remote_sha; do',
+      '  case $local_sha in *[!0]*) commits=yes ;; esac',
+      'done',
+      '[ "$commits" = yes ] || exit 0',
+      'pnpm run typecheck',
+      'pnpm run test',
+    ]);
   });
 });
