@@ -50,7 +50,7 @@ function renderBell(props: Partial<NotificationBellProps> = {}) {
   return handlers;
 }
 
-const open = () => fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+const open = () => fireEvent.click(screen.getByRole('button', { name: /^Notifications/ }));
 
 describe('NotificationBell', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -58,12 +58,14 @@ describe('NotificationBell', () => {
   it('Scenario: Badge boundaries — 0 no badge, 99, 100 → 99+', () => {
     expect([0, 99, 100].map(unreadBadge)).toEqual([null, '99', '99+']);
     renderBell({ unreadCount: 0 });
-    expect(document.querySelector('[data-slot="unread-badge"]')).toBeNull();
+    expect(document.querySelector('[data-slot="count-badge"]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeDefined();
   });
 
-  it('shows the capped badge on the bell', () => {
+  it('shows the capped badge on the bell, and the count is part of its name', () => {
     renderBell({ unreadCount: 100 });
-    expect(document.querySelector('[data-slot="unread-badge"]')?.textContent).toBe('99+');
+    expect(document.querySelector('[data-slot="count-badge"]')?.textContent).toBe('99+');
+    expect(screen.getByRole('button', { name: 'Notifications 99+' })).toBeDefined();
   });
 
   it('Scenario: Grouping and relative time — Today: 5 min ago, 2 h ago; Earlier: 04/Oct/2026', () => {

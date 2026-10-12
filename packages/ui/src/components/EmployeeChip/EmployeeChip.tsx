@@ -1,12 +1,11 @@
 'use client';
 
-import { initialsOf } from '@point/shared';
-
 import { DataText } from '../DataText/DataText';
 
-// A person in a list or a card (AD-CMP-09 · AD-VIS-12 · design D10): the photo, or the initials on a
-// neutral background, always with the full display name — never an avatar alone — and the branch when
-// given. With `onOpenProfile` the chip is a button; without it, plain text.
+// A person in a list or a card (AD-CMP-09 · AD-VIS-12 v1.8 · design D10): the full display name, with the
+// photo when the employee has one — never an avatar alone — and the branch when given. Without a photo
+// there is no avatar (owner 12/Oct/2026: a Myanmar name has no initials). With `onOpenProfile` the chip is
+// a button; without it, plain text.
 
 export interface EmployeeChipProps {
   /** The display name, in the language the screen shows it (Myanmar names keep `lang="my"`). */
@@ -18,15 +17,7 @@ export interface EmployeeChipProps {
 
 export function EmployeeChip({ name, photoUrl, branch, onOpenProfile }: EmployeeChipProps) {
   const avatar =
-    photoUrl === undefined ? (
-      <span
-        aria-hidden
-        data-slot="initials"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground"
-      >
-        <DataText>{initialsOf(name)}</DataText>
-      </span>
-    ) : (
+    photoUrl === undefined ? null : (
       // Decorative: the name next to it says who it is.
       <img src={photoUrl} alt="" className="size-8 shrink-0 rounded-full object-cover" />
     );

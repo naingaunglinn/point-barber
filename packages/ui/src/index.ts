@@ -62,6 +62,7 @@ export {
   type SwitcherBranch,
 } from './components/BranchSwitcher/BranchSwitcher';
 export { CardList, type CardListProps } from './components/CardList/CardList';
+export { CountBadge, countText } from './components/CountBadge/CountBadge';
 export {
   BarChart,
   LineChart,

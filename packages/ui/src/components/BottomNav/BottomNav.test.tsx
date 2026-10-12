@@ -19,15 +19,14 @@ const CUSTOMERS = item('customers', 'Customers', <Users />);
 const MORE = item('more', 'More', <Ellipsis />);
 const START = 'Start';
 
+// The accessible names: each item's screen-reader label.
 const labels = () =>
   [...document.querySelectorAll('[data-slot="bottom-nav"] li')].map(
-    (li) =>
-      // The label is the last child; the badge sits on the icon.
-      (li.querySelector('a, button') as HTMLElement).lastElementChild?.textContent,
+    (li) => li.querySelector('.sr-only')?.textContent,
   );
 
 describe('BottomNav', () => {
-  it('Scenario: Bottom navigation of a barber — Today, Bookings, Start (filled centre), Customers, More', () => {
+  it('Scenario: Bottom navigation of a barber — icon items named Today, Bookings, Start (filled centre), Customers, More', () => {
     const onPress = vi.fn();
     render(
       <BottomNav
@@ -45,11 +44,11 @@ describe('BottomNav', () => {
       expect(link.querySelector('svg')).not.toBeNull();
   });
 
-  it('marks the active item and shows its badge', () => {
+  it('marks the active item and shows its badge, read with its name', () => {
     render(<BottomNav items={[TODAY, BOOKINGS, CUSTOMERS, MORE]} activeKey="today" />);
-    const today = screen.getByRole('link', { name: /Today/ });
+    const today = screen.getByRole('link', { name: 'Today 3' });
     expect(today.getAttribute('aria-current')).toBe('page');
-    expect(within(today).getByText('3').getAttribute('data-slot')).toBe('nav-badge');
+    expect(within(today).getByText('3').getAttribute('data-slot')).toBe('count-badge');
     expect(screen.getByRole('link', { name: 'Bookings' }).getAttribute('aria-current')).toBeNull();
   });
 
@@ -59,11 +58,19 @@ describe('BottomNav', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('labels wrap instead of being cut', () => {
-    render(<BottomNav items={[TODAY, BOOKINGS, CUSTOMERS, MORE]} />);
-    for (const link of screen.getAllByRole('link')) {
-      expect(link.lastElementChild?.className).toContain('break-words');
-      expect(link.className).not.toMatch(/truncate|overflow-hidden|line-clamp/);
+  it('shows no visible label: each label is screen-reader text (AD-VIS-11 v1.8)', () => {
+    render(
+      <BottomNav
+        items={[TODAY, BOOKINGS, CUSTOMERS, MORE]}
+        centre={{ label: START, icon: <Plus />, onPress: vi.fn() }}
+      />,
+    );
+    for (const item of [...screen.getAllByRole('link'), screen.getByRole('button')]) {
+      const visibleText = [...item.querySelectorAll('span:not(.sr-only)')]
+        .filter((span) => !span.closest('[data-slot="count-badge"]') && span.children.length === 0)
+        .map((span) => span.textContent)
+        .join('');
+      expect(visibleText).toBe('');
     }
   });
 

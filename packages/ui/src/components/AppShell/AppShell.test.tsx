@@ -30,13 +30,14 @@ const NAV: readonly ShellModule[] = [
   { key: 'settings', label: 'Settings', icon: <Settings />, href: '/settings' },
 ];
 // Slot stand-ins: the shell only places them.
-const [BRANCH, TITLE, BELL, LANGUAGE, USER, CONTENT] = [
+const [BRANCH, TITLE, BELL, LANGUAGE, USER, CONTENT, BREADCRUMB] = [
   'Point 3.0',
   'Sales list',
   'Notifications',
   'MM',
   'U Kyaw Zin',
   'content',
+  'Sales / Sales list',
 ];
 const SLOTS = {
   branchSwitcher: <button type="button">{BRANCH}</button>,
@@ -96,18 +97,38 @@ describe('AppShell', () => {
     expect(classes('content')).toEqual(expect.arrayContaining(['px-4', 'md:p-6']));
   });
 
-  it('every rail item has its icon and a visible label that wraps; the active module is marked', () => {
+  it('rail items are icon-only, named by their labels; the active module is marked (AD-VIS-11 v1.8)', () => {
     renderShell();
     const rail = slot('rail');
     for (const link of within(rail).getAllByRole('link')) {
       expect(link.querySelector('svg')).not.toBeNull();
-      expect(link.textContent).not.toBe('');
-      expect(link.lastElementChild?.className).toContain('break-words');
-      expect(link.className).not.toMatch(/truncate|overflow-hidden|line-clamp/);
+      expect(link.querySelector('.sr-only')?.textContent).not.toBe('');
+      const shown = link.cloneNode(true) as HTMLElement;
+      shown.querySelectorAll('.sr-only, [data-slot="count-badge"]').forEach((el) => el.remove());
+      expect(shown.textContent?.trim()).toBe('');
     }
     expect(within(rail).getByRole('link', { name: 'Sales' }).getAttribute('aria-current')).toBe(
       'page',
     );
+  });
+
+  it('a rail badge is read with the module name', () => {
+    render(
+      <AppShell nav={[{ ...NAV[0], badge: 4 } as ShellModule, ...NAV.slice(1)]} activeKey="home">
+        <p>{CONTENT}</p>
+      </AppShell>,
+    );
+    expect(within(slot('rail')).getByRole('link', { name: 'Home 4' })).toBeDefined();
+  });
+
+  it('from 768 px the breadcrumb names the page; the title stays for the phone app bar', () => {
+    render(
+      <AppShell nav={NAV} activeKey="home" title={TITLE} breadcrumb={BREADCRUMB}>
+        <p>{CONTENT}</p>
+      </AppShell>,
+    );
+    expect(screen.getByText(TITLE).className).toContain('md:hidden');
+    expect(screen.getByText(BREADCRUMB).className).toEqual(expect.stringContaining('md:block'));
   });
 
   it('a rail item shows its label as a tooltip on focus', async () => {

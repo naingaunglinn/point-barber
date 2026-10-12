@@ -7,16 +7,17 @@ import { useId, useState, type ReactNode } from 'react';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../primitives/tooltip';
 import { Button } from '../Button/Button';
-import { LABEL_CLASS, type NavLinkItem } from '../BottomNav/BottomNav';
+import { NavIcon, type NavLinkItem } from '../BottomNav/BottomNav';
 
 // The frame of every staff screen (AD-LAY-01 · AD-LAY-02 · AD-LAY-03 · AD-VIS-10 · AD-VIS-11 · AD-VIS-07 ·
 // design D10), switched by CSS at Tailwind's `md` (768 px) and `lg` (1024 px), so the server renders the
 // right layout for every width:
 // - below 768 px: a top app bar (title, branch chip, bell) and the bottom navigation; 16 px gutter;
-// - 768–1023 px: the icon rail (64 px, icon + visible label + tooltip); the screens of the active module
-//   become tabs at the top of the content (AD-LAY-02);
+// - 768–1023 px: the icon rail (64 px; icon-only, the label is the accessible name and a tooltip —
+//   AD-VIS-11 v1.8); the screens of the active module become tabs at the top of the content (AD-LAY-02);
 // - from 1024 px: the rail, the collapsible sub-navigation panel (240 px) and the top bar in the order
-//   branch switcher · title · search · bell · language · user menu; 24 px content padding.
+//   branch switcher · breadcrumb (the title when there is none) · search · bell · language · user menu;
+//   24 px content padding. The page's title itself is its PageHeader `h1`.
 // Each slot is rendered once. The top bar and the bottom navigation are sticky, not fixed.
 
 export interface ShellScreen {
@@ -40,7 +41,8 @@ export interface AppShellProps {
   /** A `<BottomNav>` (below 768 px). */
   readonly bottomNav?: ReactNode;
   readonly branchSwitcher?: ReactNode;
-  /** The page title in the top bar (plain text — the page's `h1` is its PageHeader). */
+  /** The page title in the phone app bar (plain text — the page's `h1` is its PageHeader); from 768 px
+   * only when there is no breadcrumb. */
   readonly title?: ReactNode;
   readonly breadcrumb?: ReactNode;
   readonly search?: ReactNode;
@@ -49,8 +51,7 @@ export interface AppShellProps {
   readonly userMenu?: ReactNode;
 }
 
-const RAIL_ITEM =
-  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-0.5 py-1.5 text-center text-xs leading-tight [&_svg]:size-5';
+const RAIL_ITEM = 'flex size-12 items-center justify-center rounded-md [&_svg]:size-5';
 const SCREEN_LINK = 'flex min-h-11 items-center rounded-md px-3 text-sm break-words';
 
 function activeClass(active: boolean) {
@@ -87,9 +88,9 @@ export function AppShell(props: AppShellProps) {
       <div data-slot="app-shell" className="flex min-h-dvh bg-background text-foreground">
         <nav
           data-slot="rail"
-          className="sticky top-0 hidden w-16 shrink-0 flex-col gap-1 self-start border-e border-border p-0.5 md:flex"
+          className="sticky top-0 hidden w-16 shrink-0 flex-col items-center self-start border-e border-border py-2 md:flex"
         >
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col items-center gap-2">
             {nav.map((item) => {
               const active = item.key === activeKey;
               return (
@@ -101,8 +102,7 @@ export function AppShell(props: AppShellProps) {
                         aria-current={active ? 'page' : undefined}
                         className={cn(RAIL_ITEM, activeClass(active))}
                       >
-                        <span aria-hidden>{item.icon}</span>
-                        <span className={LABEL_CLASS}>{item.label}</span>
+                        <NavIcon icon={item.icon} label={item.label} badge={item.badge} />
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right">{item.label}</TooltipContent>
@@ -156,9 +156,19 @@ export function AppShell(props: AppShellProps) {
             )}
             <div data-slot="top-title" className="order-1 min-w-0 flex-1 md:order-none">
               {breadcrumb === undefined ? null : (
-                <div className="hidden text-xs text-muted-foreground md:block">{breadcrumb}</div>
+                <div className="hidden text-sm text-muted-foreground md:block">{breadcrumb}</div>
               )}
-              {title === undefined ? null : <p className="font-semibold break-words">{title}</p>}
+              {title === undefined ? null : (
+                // From 768 px the breadcrumb names the page and the PageHeader shows the title.
+                <p
+                  className={cn(
+                    'font-semibold break-words',
+                    breadcrumb !== undefined && 'md:hidden',
+                  )}
+                >
+                  {title}
+                </p>
+              )}
             </div>
             {search === undefined ? null : (
               <div data-slot="top-search" className="hidden md:block">

@@ -8,25 +8,26 @@ const KO_AUNG = 'Ko Aung';
 const POINT_3 = 'Point 3.0';
 
 describe('EmployeeChip', () => {
-  it('Scenario: Employee without a photo — KA, the name and the branch, the name not truncated', () => {
+  it('Scenario: Employee without a photo — the name and the branch, no avatar, the name not truncated', () => {
     render(<EmployeeChip name={KO_AUNG} branch={POINT_3} />);
-    expect(document.querySelector('[data-slot="initials"]')?.textContent).toBe('KA');
+    expect(document.querySelector('img')).toBeNull();
+    expect(document.querySelector('[data-slot="initials"]')).toBeNull();
     const name = screen.getByText(KO_AUNG);
     expect(name.closest('[class*="truncate"]')).toBeNull();
     expect(screen.getByText(POINT_3)).toBeDefined();
   });
 
-  it('shows the photo instead of the initials, still with the name', () => {
+  it('Scenario: Employee with a photo — the photo, decorative, next to the name', () => {
     render(<EmployeeChip name={KO_AUNG} photoUrl="/fixtures/ko-aung.jpg" />);
     expect(document.querySelector('img')?.getAttribute('alt')).toBe('');
     expect(document.querySelector('[data-slot="initials"]')).toBeNull();
     expect(screen.getByText(KO_AUNG)).toBeDefined();
   });
 
-  it('marks a Myanmar name with lang="my", initials included', () => {
+  it('marks a Myanmar name with lang="my" and shows no honorific circle', () => {
     render(<EmployeeChip name="ကိုအောင်" />);
     expect(screen.getByText('ကိုအောင်').getAttribute('lang')).toBe('my');
-    expect(document.querySelector('[data-slot="initials"] [lang="my"]')?.textContent).toBe('ကို');
+    expect(document.querySelector('[data-slot="employee-chip"]')?.textContent).toBe('ကိုအောင်');
   });
 
   it('Scenario: Profile action only when given — plain text, then a button that calls the handler', () => {

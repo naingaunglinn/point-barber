@@ -4,16 +4,17 @@ import { cn } from 'cn';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import { unreadBadge } from '../NotificationBell/NotificationBell';
+import { CountBadge } from '../CountBadge/CountBadge';
 
-// The phone navigation (AD-NAV-01 · AD-LAY-03 · AD-VIS-11 · design D10): at most 5 items, each an icon
-// (24 px) with a visible label that wraps rather than clips; the centre item is the user's most frequent
-// create action, filled with `--primary` and larger; without a create action there is no centre (4
-// items). Badges count unfinished work. The caller chooses the set by permissions (AD-NAV-01).
+// The phone navigation (AD-NAV-01 · AD-LAY-03 · AD-VIS-11 v1.8 · design D10): at most 5 icon-only items
+// (24 px icons, no visible label — owner 12/Oct/2026); each label is screen-reader text inside the item,
+// so the name is "Today 3" with its badge. The centre item is the user's most frequent create action,
+// filled with `--primary` and larger; without a create action there is no centre (4 items). Badges count
+// unfinished work. The caller chooses the set by permissions (AD-NAV-01).
 
 export interface NavLinkItem {
   readonly key: string;
-  /** Translated. */
+  /** Translated; the item's accessible name. */
   readonly label: string;
   /** A lucide icon element (`<CalendarDays />`). */
   readonly icon: ReactNode;
@@ -22,7 +23,7 @@ export interface NavLinkItem {
 }
 
 export interface BottomNavCentre {
-  /** Translated ("＋ Start"). */
+  /** Translated ("＋ Start"); the button's accessible name. */
   readonly label: string;
   readonly icon: ReactNode;
   readonly onPress: () => void;
@@ -37,16 +38,32 @@ export type BottomNavProps = { readonly activeKey?: string } & (
   | { readonly items: UpTo5<NavLinkItem>; readonly centre?: undefined }
 );
 
-/** Breaks at word boundaries first (Myanmar too); inside a word only when the word is wider than the item. */
-export const LABEL_CLASS = 'max-w-full break-words';
+/** An icon with its count badge; the label is read, not shown (AD-VIS-11 v1.8). */
+export function NavIcon({
+  icon,
+  label,
+  badge,
+}: {
+  readonly icon: ReactNode;
+  readonly label: string;
+  readonly badge?: number;
+}) {
+  return (
+    <>
+      <span className="sr-only">{label}</span>{' '}
+      <span className="relative">
+        <span aria-hidden>{icon}</span>
+        {badge === undefined ? null : <CountBadge count={badge} />}
+      </span>
+    </>
+  );
+}
 
-const ITEM_CLASS =
-  'relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-start gap-1 px-0.5 py-1.5 text-center text-xs leading-tight';
+const ITEM_CLASS = 'flex min-h-14 min-w-0 flex-1 items-center justify-center';
 
 export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
   const link = (item: NavLinkItem) => {
     const active = item.key === activeKey;
-    const badge = item.badge === undefined ? null : unreadBadge(item.badge);
     return (
       <li key={item.key} className="flex min-w-0 flex-1">
         <Link
@@ -55,21 +72,10 @@ export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
           className={cn(
             ITEM_CLASS,
             '[&_svg]:size-6',
-            active ? 'font-semibold text-primary' : 'text-muted-foreground',
+            active ? 'text-primary' : 'text-muted-foreground',
           )}
         >
-          <span className="relative">
-            <span aria-hidden>{item.icon}</span>
-            {badge === null ? null : (
-              <span
-                data-slot="nav-badge"
-                className="absolute -end-3 -top-1 min-w-5 rounded-full bg-destructive px-1 text-center text-xs font-semibold text-destructive-foreground"
-              >
-                {badge}
-              </span>
-            )}
-          </span>
-          <span className={LABEL_CLASS}>{item.label}</span>
+          <NavIcon icon={item.icon} label={item.label} badge={item.badge} />
         </Link>
       </li>
     );
@@ -88,15 +94,15 @@ export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
               type="button"
               data-slot="nav-centre"
               onClick={centre.onPress}
-              className={cn(ITEM_CLASS, 'font-semibold text-foreground')}
+              className={ITEM_CLASS}
             >
+              <span className="sr-only">{centre.label}</span>
               <span
                 aria-hidden
-                className="-mt-4 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md [&_svg]:size-6"
+                className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md [&_svg]:size-6"
               >
                 {centre.icon}
               </span>
-              <span className={LABEL_CLASS}>{centre.label}</span>
             </button>
           </li>
         )}

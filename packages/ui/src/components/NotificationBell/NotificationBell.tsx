@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../primitives/popove
 import { useNow } from '../../providers/clock';
 import { useFormat } from '../../providers/format';
 import { Button } from '../Button/Button';
+import { CountBadge, countText } from '../CountBadge/CountBadge';
 import { DataText } from '../DataText/DataText';
 
 // The bell (AD-NTF-01 · D-NTF-01 · D-NTF-02 · AD-FMT-09 · design D10): the unread count capped at 99+ and
@@ -51,11 +52,8 @@ const CATEGORY_ICON: Readonly<Record<NotificationCategory, LucideIcon>> = {
   [NotificationCategory.SECURITY]: ShieldAlert,
 };
 
-/** `99+` above 99; nothing at 0. */
-export function unreadBadge(count: number): string | null {
-  if (count <= 0) return null;
-  return count > 99 ? '99+' : String(count);
-}
+/** `99+` above 99; nothing at 0 (the shared count badge). */
+export const unreadBadge = countText;
 
 const ITEM_CLASS = 'flex min-w-0 flex-1 flex-col text-start';
 
@@ -112,7 +110,6 @@ export function NotificationBell({
   const { locale } = useFormat('NotificationBell');
   const now = useNow();
   const today = todayMmt(now);
-  const badge = unreadBadge(unreadCount);
   const [open, setOpen] = useState(false);
   const groups = [
     {
@@ -132,18 +129,14 @@ export function NotificationBell({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={t('notifications.title')}
-          className="relative inline-flex size-12 items-center justify-center rounded-md hover:bg-muted md:size-10"
+          className="inline-flex size-12 items-center justify-center rounded-md hover:bg-muted md:size-10"
         >
-          <Bell aria-hidden className="size-5" />
-          {badge === null ? null : (
-            <span
-              data-slot="unread-badge"
-              className="absolute -end-0.5 -top-0.5 min-w-5 rounded-full bg-destructive px-1 text-center text-xs font-semibold text-destructive-foreground"
-            >
-              {badge}
-            </span>
-          )}
+          {/* The name is "Notifications" followed by the count, so the count is read too. */}
+          <span className="sr-only">{t('notifications.title')}</span>{' '}
+          <span className="relative">
+            <Bell aria-hidden className="size-5" />
+            <CountBadge count={unreadCount} />
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent
