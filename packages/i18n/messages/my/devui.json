@@ -19,7 +19,7 @@
     "site": "ဝက်ဘ်ဆိုက်"
   },
   "persona": {
-    "admin": "Admin",
+    "admin": "အက်ဒမင်",
     "manager": "မန်နေဂျာ",
     "barber": "ဆံပင်ညှပ်ဆရာ",
     "branchHolder": "ဆိုင်ခွဲအတွက်သာ ခွင့်ရသူ"
@@ -42,7 +42,7 @@
   },
   "tokens": {
     "swatches": "အရောင် token များ",
-    "token": "Token",
+    "token": "Token အမည်",
     "sample": "နမူနာ",
     "value": "တွက်ထားသော တန်ဖိုး",
     "note": "မှတ်ချက်",
@@ -55,8 +55,8 @@
     "limit": "အနည်းဆုံး",
     "mark": "ရလဒ်",
     "on": "{background} ပေါ်ရှိ {foreground}",
-    "focusOutline": "focus outline = {token}",
-    "inputBorder": "input border = {token}",
+    "focusOutline": "Focus မျဉ်း = {token}",
+    "inputBorder": "ထည့်သွင်းကွက် ဘောင် = {token}",
     "markPass": "အောင်",
     "markLargeOnly": "စာလုံးကြီးနှင့် icon အတွက်သာ",
     "markNotAllowed": "မသုံးရ",
@@ -67,7 +67,7 @@
   "fonts": {
     "samples": "မြန်မာ စမ်းသပ်စာကြောင်းများ (AD-VIS-05)",
     "faces": "Font face များ",
-    "family": "Family",
+    "family": "ဖောင့် အမျိုးအစား",
     "weightColumn": "အထူ",
     "status": "အခြေအနေ",
     "tabular": "ဂဏန်း ကော်လံ (tabular)",
@@ -77,7 +77,7 @@
     "legend": "တစ်ကြောင်းစီ: အထူ 400 · အထူ 700 · နှိုင်းယှဉ်ရန် system-ui"
   },
   "formatters": {
-    "function": "Function",
+    "function": "Function အမည်",
     "input": "ထည့်သွင်းချက်"
   }
 }

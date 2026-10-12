@@ -82,13 +82,13 @@ export default async function CataloguePage({ searchParams }: Props) {
             <h1 className="text-2xl font-bold">{t('title')}</h1>
             <p className="text-sm text-muted-foreground">{t('notice')}</p>
             <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <dt className="font-bold">{t('control.language')}</dt>
                 {LOCALES.map((lang) => (
                   <dd key={lang}>{link({ lang }, params.lang === lang, t(`language.${lang}`))}</dd>
                 ))}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <dt className="font-bold">{t('control.theme')}</dt>
                 {TREES.map((theme) => (
                   <dd key={theme}>
@@ -96,7 +96,7 @@ export default async function CataloguePage({ searchParams }: Props) {
                   </dd>
                 ))}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <dt className="font-bold">{t('control.persona')}</dt>
                 {PERSONAS.map((as) => (
                   <dd key={as}>
@@ -104,7 +104,7 @@ export default async function CataloguePage({ searchParams }: Props) {
                   </dd>
                 ))}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <dt className="font-bold">{t('control.clock')}</dt>
                 <dd>
                   <time dateTime={params.now} data-testid="catalogue-clock">
