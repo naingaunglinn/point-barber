@@ -38,6 +38,9 @@ export interface MoneyInputProps {
   readonly lakhHelper?: boolean;
   readonly readOnly?: boolean;
   readonly disabled?: boolean;
+  /** Shown while empty (the price grid: `—` or the inherited shop price). */
+  readonly placeholder?: string;
+  readonly title?: string;
   readonly id?: string;
   readonly name?: string;
   readonly onBlur?: () => void;

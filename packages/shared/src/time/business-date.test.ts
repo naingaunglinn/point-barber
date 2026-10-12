@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { businessDateOf, todayMmt, mmtDate } from './business-date.js';
+import { businessDateOf, mmtDate, nextBusinessDate, todayMmt } from './business-date.js';
 
 // ui-foundation · "Dates and times are formatted in Myanmar Time whatever the device time zone is"
 // and "Today and now come from the supplied clock" (D-PLT-15 · AD-FMT-11 · CG-TIME-04 · CG-TIME-05).
@@ -52,5 +52,13 @@ describe('mmtDate', () => {
 
   it('refuses a text that is not a business date', () => {
     expect(() => mmtDate('05/10/2026')).toThrow(RangeError);
+  });
+});
+
+describe('nextBusinessDate', () => {
+  it('is the next Myanmar calendar day, across a month and a year end', () => {
+    expect(nextBusinessDate('2026-10-05')).toBe('2026-10-06');
+    expect(nextBusinessDate('2026-10-31')).toBe('2026-11-01');
+    expect(nextBusinessDate('2026-12-31')).toBe('2027-01-01');
   });
 });
