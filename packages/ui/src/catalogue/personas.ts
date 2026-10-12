@@ -1,7 +1,5 @@
 import type { MeGrants } from '@point/shared';
 
-import { createGrants } from '../permissions/grants';
-
 // The catalogue's personas (`?as=` — add-shared-ui-components design D7): the `/me` access slice of each,
 // over the seven-code fixture catalogue (levels as in API Parts 1, 2, 3, 5 and 7). Demos decide by can()
 // only, never by the persona name (AD-META-06). Branch ids are the fixture branch codes.
@@ -45,9 +43,3 @@ export const PERSONA_GRANTS: Readonly<Record<Persona, MeGrants>> = {
   // Unnamed — branch scope gives read-only (company level) or nothing (private level).
   'branch-holder': me(grantsOf(2, ['B3'], ['role.update', 'payroll.view'])),
 };
-
-export const {
-  GrantsProvider: FixtureGrantsProvider,
-  PermissionGate: FixturePermissionGate,
-  useCan: useFixtureCan,
-} = createGrants(FIXTURE_PERMISSIONS);

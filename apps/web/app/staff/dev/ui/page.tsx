@@ -7,8 +7,10 @@ import { formatDateTime } from '@point/shared';
 import { ClockProvider } from '@point/ui';
 import {
   CATALOGUE_SECTIONS,
+  CatalogueProviders,
   FontsSection,
   FormattersSection,
+  SectionDemos,
   TokensSection,
   type CatalogueSectionId,
 } from '@point/ui/catalogue';
@@ -32,7 +34,7 @@ const PERSONA_LABEL = {
 
 const TREES = ['staff', 'site'] as const;
 
-/** The sections built so far; the others keep their anchor and title until their demos arrive. */
+/** Tokens, Fonts and Formatters have their own tables; the other sections render the manifest. */
 function sectionContent(id: CatalogueSectionId, params: CatalogueParams) {
   switch (id) {
     case 'tokens':
@@ -42,7 +44,7 @@ function sectionContent(id: CatalogueSectionId, params: CatalogueParams) {
     case 'formatters':
       return <FormattersSection />;
     default:
-      return null;
+      return <SectionDemos section={id} />;
   }
 }
 
@@ -127,16 +129,18 @@ export default async function CataloguePage({ searchParams }: Props) {
               ))}
             </ul>
           </nav>
-          <main className="px-4 py-6">
-            {CATALOGUE_SECTIONS.map(({ id, label }) => (
-              <section key={id} id={id} aria-labelledby={`${id}-title`} className="mb-10">
-                <h2 id={`${id}-title`} className="mb-4 text-xl font-bold">
-                  {t(`section.${label}`)}
-                </h2>
-                {sectionContent(id, params)}
-              </section>
-            ))}
-          </main>
+          <CatalogueProviders lang={params.lang} theme={params.theme} as={params.as}>
+            <main className="px-4 py-6">
+              {CATALOGUE_SECTIONS.map(({ id, label }) => (
+                <section key={id} id={id} aria-labelledby={`${id}-title`} className="mb-10">
+                  <h2 id={`${id}-title`} className="mb-4 text-xl font-bold">
+                    {t(`section.${label}`)}
+                  </h2>
+                  {sectionContent(id, params)}
+                </section>
+              ))}
+            </main>
+          </CatalogueProviders>
         </div>
       </ClockProvider>
     </NextIntlClientProvider>

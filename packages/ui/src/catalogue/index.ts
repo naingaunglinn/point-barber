@@ -2,14 +2,15 @@
 export { FontsSection } from './demos/fonts-section';
 export { FormattersSection } from './demos/formatters-section';
 export { TokensSection } from './demos/tokens-section';
+export { CatalogueProviders } from './catalogue-providers';
+export { anchorOf, MANIFEST, type ManifestDemo, type ManifestEntry } from './manifest';
+export { SectionDemos } from './section-demos';
 export { CATALOGUE_SECTIONS, type CatalogueSection, type CatalogueSectionId } from './sections';
+export { FixtureGrantsProvider, FixturePermissionGate, useFixtureCan } from './fixture-grants';
 export {
   FIXTURE_PERMISSIONS,
-  FixtureGrantsProvider,
-  FixturePermissionGate,
   PERSONA_GRANTS,
   PERSONAS,
-  useFixtureCan,
   type FixturePermission,
   type Persona,
 } from './personas';

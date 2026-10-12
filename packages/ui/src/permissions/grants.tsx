@@ -14,8 +14,9 @@ import { BlockedReasonProvider } from './blocked-reason';
 
 // GrantsProvider and PermissionGate (AD-PERM-02 · AD-PERM-03 · AD-PERM-05 · design D7), bound to a
 // permission catalogue so that a code outside it does not compile (D-ROLE-08):
-// `add-foundation-auth-access` binds the real catalogue once (`createGrants(PERMISSIONS)`), the
-// catalogue page binds the seven-code fixture catalogue. The provider holds the `/me` slice; the gate
+// `add-foundation-auth-access` binds the real catalogue once (`createGrants(PERMISSIONS)`, in a
+// 'use client' module — it creates a React context), the catalogue page binds the seven-code fixture
+// catalogue (catalogue/fixture-grants.tsx). The provider holds the `/me` slice; the gate
 // shows its children only when can() is true. They only shape the UI — the API checks every request.
 // `blocked = { reason }` disables the `Button`s below the gate (with the reason under each); a control
 // that is not a Button does not read it — gate such a control with `blocked = 'hidden'` and a LockBanner.

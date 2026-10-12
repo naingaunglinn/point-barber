@@ -5,10 +5,9 @@ import { describe, expect, it } from 'vitest';
 import {
   FixtureGrantsProvider,
   FixturePermissionGate as PermissionGate,
-  PERSONA_GRANTS,
   useFixtureCan,
-  type Persona,
-} from '../catalogue/personas';
+} from '../catalogue/fixture-grants';
+import { PERSONA_GRANTS, type Persona } from '../catalogue/personas';
 import { Button } from '../components/Button/Button';
 import { LockBanner } from '../components/LockBanner/LockBanner';
 

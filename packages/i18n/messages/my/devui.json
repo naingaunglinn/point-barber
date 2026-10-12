@@ -79,5 +79,72 @@
   "formatters": {
     "function": "Function အမည်",
     "input": "ထည့်သွင်းချက်"
+  },
+  "demo": {
+    "uploadImage": "ဓာတ်ပုံ — ပုံဖိုင်များ၊ အများဆုံး 10 MB",
+    "uploadDocument": "စာရွက်စာတမ်းများ — ဖိုင်အများ၊ ပုံနှင့် PDF",
+    "uploadImport": "Import ဖိုင် — CSV သို့မဟုတ် XLSX",
+    "gateCancel": "Point 3.0 တွင် booking.delete ဖြင့် ကာထားသော Cancel booking",
+    "canTable": "Persona အတွက် can()",
+    "bellList": "Catalogue နာရီဖြင့် အသိပေးချက် သုံးခု",
+    "bellBadge": "0၊ 99 နှင့် 100 တွင် badge",
+    "approvalDecide": "လျှော့ဈေး တောင်းဆိုချက် — ဆုံးဖြတ်ခွင့် ရှိ",
+    "approvalView": "လျှော့ဈေး တောင်းဆိုချက် — ကြည့်ရုံသာ",
+    "qrMock": "Mock source (ကင်မရာ မလို)",
+    "qrCamera": "ကင်မရာ source"
+  },
+  "log": {
+    "label": "Handler ခေါ်မှု:",
+    "opened": "onOpenItem({id})",
+    "markAllRead": "onMarkAllRead()",
+    "deleted": "onDelete({id})",
+    "approved": "onApprove()",
+    "rejected": "onReject(\"{note}\")",
+    "result": "onResult(\"{text}\")",
+    "error": "onError(\"{kind}\")",
+    "saved": "ဖိုင် {count} ခုဖြင့် submit",
+    "cancelBooking": "Cancel booking ကို နှိပ်ပြီး"
+  },
+  "bell": {
+    "discount": "{name} က {branch} တွင် လျှော့ဈေး တောင်းထားသည်",
+    "booking": "{branch} တွင် website booking အသစ်",
+    "security": "{name} အတွက် sign-in အသစ်",
+    "count": "မဖတ်ရသေး {count}:"
+  },
+  "approval": {
+    "title": "လျှော့ဈေး တောင်းဆိုချက်",
+    "services": "ဝန်ဆောင်မှုများ",
+    "subtotal": "စုစုပေါင်း (လျှော့မီ)",
+    "discount": "လျှော့ဈေး",
+    "total": "စုစုပေါင်း",
+    "reason": "ပုံမှန် customer၊ ဒီအပတ် ဒုတိယအကြိမ်"
+  },
+  "qr": {
+    "open": "Scanner ဖွင့်မည်",
+    "hint": "QR code ကို ကင်မရာနှင့် ချိန်ပါ"
+  },
+  "upload": {
+    "photo": "ဓာတ်ပုံ",
+    "documents": "စာရွက်စာတမ်းများ",
+    "importFile": "Import ဖိုင်",
+    "save": "သိမ်းမည်"
+  },
+  "gate": {
+    "dayClosed": "နေ့ ပိတ်ပြီး",
+    "lockBannerVariant": "အစား lock banner ပြမည်",
+    "reason": "05/Oct/2026 Point 3.0 ပိတ်ပြီးပါပြီ။ Admin က နေ့ကို ပြန်ဖွင့်နိုင်ပါသည်။",
+    "lockMessage": "05/Oct/2026 Point 3.0 ကို မနှင်းက 9:05 PM တွင် ပိတ်ခဲ့သည်",
+    "correction": "Admin က နေ့ကို ပြန်ဖွင့်နိုင်ပါသည်",
+    "cancelBooking": "Booking ဖျက်မည်"
+  },
+  "can": {
+    "code": "Code",
+    "level": "Level",
+    "any": "can(code)",
+    "atB3": "ဆိုင်ခွဲ B3",
+    "atB1": "ဆိုင်ခွဲ B1",
+    "company": "Company level",
+    "yes": "ရ",
+    "no": "မရ"
   }
 }
