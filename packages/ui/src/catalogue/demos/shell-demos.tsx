@@ -6,6 +6,7 @@ import {
   Ellipsis,
   House,
   Scissors,
+  Search,
   Settings,
   ShoppingBag,
   UserCog,
@@ -22,9 +23,11 @@ import { ALL_BRANCHES, BranchSwitcher } from '../../components/BranchSwitcher/Br
 import { EmployeeChip } from '../../components/EmployeeChip/EmployeeChip';
 import { LanguageSwitch } from '../../components/LanguageSwitch/LanguageSwitch';
 import { NotificationBell } from '../../components/NotificationBell/NotificationBell';
+import { Button } from '../../components/Button/Button';
+import { Sheet } from '../../components/Drawer/Drawer';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
+import { SearchInput } from '../../components/SearchInput/SearchInput';
 import type { Action } from '../../components/types';
-import { Input } from '../../primitives/input';
 import { useNow } from '../../providers/clock';
 import { useFormat } from '../../providers/format';
 import { useCataloguePersona } from '../catalogue-providers';
@@ -128,6 +131,8 @@ export function ShellDemo() {
   const now = useNow();
   const { me, allowAll, branch, setBranch } = useBranchChoice();
   const [pressed, setPressed] = useState('');
+  const [query, setQuery] = useState('');
+  const [searching, setSearching] = useState(false);
   const notifications = useFixtureNotifications();
   const items = useBottomItems();
   const person = SIGNED_IN[persona];
@@ -158,11 +163,21 @@ export function ShellDemo() {
           />
         }
         search={
-          <Input
-            type="search"
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            onSearch={(text) => setPressed(log('searched', { text }))}
             placeholder={common('search.placeholder')}
-            aria-label={common('search.placeholder')}
-            className="h-10 w-56"
+            className="w-64"
+          />
+        }
+        mobileSearch={
+          <Button
+            variant="ghost"
+            iconOnly
+            icon={<Search />}
+            aria-label={common('action.search')}
+            onClick={() => setSearching(true)}
           />
         }
         bell={
@@ -203,6 +218,19 @@ export function ShellDemo() {
           <p className="text-sm text-muted-foreground">{t('content')}</p>
           <HandlerLog label={log('label')} value={pressed} />
         </div>
+        {/* Below 768 px the search icon opens the full-screen search (AD-NAV-05). */}
+        <Sheet open={searching} onOpenChange={setSearching} title={common('action.search')}>
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            onSearch={(text) => {
+              setPressed(log('searched', { text }));
+              setSearching(false);
+            }}
+            placeholder={common('search.placeholder')}
+            autoFocus
+          />
+        </Sheet>
       </AppShell>
     </div>
   );

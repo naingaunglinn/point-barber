@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from 'cn';
-import { Search, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
@@ -13,10 +13,10 @@ import {
   type StatusTable,
 } from '@point/shared';
 
-import { Input } from '../../primitives/input';
 import { useNow } from '../../providers/clock';
 import { useFormat } from '../../providers/format';
 import { Button } from '../Button/Button';
+import { SearchInput } from '../SearchInput/SearchInput';
 import { DateInput } from '../DateInput/DateInput';
 import {
   filterFromSearch,
@@ -125,20 +125,11 @@ export function FilterBar({
   return (
     <div className="flex flex-col gap-3" data-slot="filter-bar">
       {search === undefined ? null : (
-        <div className="relative flex items-center">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute start-3 size-4 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            value={value.q ?? ''}
-            placeholder={search.placeholder}
-            aria-label={search.placeholder}
-            onChange={(event) => onChange({ ...value, q: event.target.value })}
-            className="h-12 ps-9 text-base md:h-10"
-          />
-        </div>
+        <SearchInput
+          value={value.q ?? ''}
+          placeholder={search.placeholder}
+          onChange={(q) => onChange({ ...value, q })}
+        />
       )}
       <div role="group" className="flex flex-wrap gap-2" data-slot="date-presets">
         {presets.map((preset) => (

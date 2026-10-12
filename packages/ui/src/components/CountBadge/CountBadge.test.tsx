@@ -14,6 +14,9 @@ describe('CountBadge', () => {
     const badge = container.querySelector('[data-slot="count-badge"]') as HTMLElement;
     expect(badge.textContent).toBe('99+');
     expect(badge.className).toContain('start-full');
+    // The digits' optical centre differs by font: Latin 19 px, Myanmar 23 px.
+    expect(badge.className).toContain('leading-[19px]');
+    expect(badge.className).toContain('[&:lang(my)]:leading-[23px]');
     expect(badge.getAttribute('aria-hidden')).toBeNull();
     expect(render(<CountBadge count={0} />).container.innerHTML).toBe('');
   });

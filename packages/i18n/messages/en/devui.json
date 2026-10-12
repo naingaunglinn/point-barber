@@ -167,7 +167,8 @@
     "profile": "onOpenProfile() — {name}",
     "step": "onStepPress(\"{key}\")",
     "added": "onAdd({cell})",
-    "submitted": "onSubmit() — valid"
+    "submitted": "onSubmit() — valid",
+    "searched": "onSearch(\"{text}\")"
   },
   "bell": {
     "discount": "{name} asks for a discount at {branch}",

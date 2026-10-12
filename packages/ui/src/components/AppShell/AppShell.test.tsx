@@ -30,7 +30,7 @@ const NAV: readonly ShellModule[] = [
   { key: 'settings', label: 'Settings', icon: <Settings />, href: '/settings' },
 ];
 // Slot stand-ins: the shell only places them.
-const [BRANCH, TITLE, BELL, LANGUAGE, USER, CONTENT, BREADCRUMB] = [
+const [BRANCH, TITLE, BELL, LANGUAGE, USER, CONTENT, BREADCRUMB, SEARCH] = [
   'Point 3.0',
   'Sales list',
   'Notifications',
@@ -38,11 +38,13 @@ const [BRANCH, TITLE, BELL, LANGUAGE, USER, CONTENT, BREADCRUMB] = [
   'U Kyaw Zin',
   'content',
   'Sales / Sales list',
+  'Search',
 ];
 const SLOTS = {
   branchSwitcher: <button type="button">{BRANCH}</button>,
   title: TITLE,
   search: <input type="search" />,
+  mobileSearch: <button type="button">{SEARCH}</button>,
   bell: <button type="button">{BELL}</button>,
   language: <button type="button">{LANGUAGE}</button>,
   userMenu: <button type="button">{USER}</button>,
@@ -82,11 +84,21 @@ describe('AppShell', () => {
     renderShell();
     expect(
       [...slot('top-bar').children].map((child) => (child as HTMLElement).dataset.slot),
-    ).toEqual(['top-branch', 'top-title', 'top-search', 'top-bell', 'top-language', 'top-user']);
-    // Below 768 px: title, branch chip, bell (AD-LAY-03); search, language and user menu move away.
+    ).toEqual([
+      'top-branch',
+      'top-title',
+      'top-search',
+      'top-search-mobile',
+      'top-bell',
+      'top-language',
+      'top-user',
+    ]);
+    // Below 768 px: title, branch chip, search icon, bell (AD-LAY-03 · AD-NAV-05); the search field,
+    // language and user menu move away; from 768 px the search icon gives way to the field.
     expect(classes('top-title')).toContain('order-1');
     expect(classes('top-branch')).toContain('order-2');
-    expect(classes('top-bell')).toContain('order-3');
+    expect(classes('top-search-mobile')).toEqual(expect.arrayContaining(['order-3', 'md:hidden']));
+    expect(classes('top-bell')).toContain('order-4');
     for (const name of ['top-search', 'top-language', 'top-user']) {
       expect(classes(name)).toEqual(expect.arrayContaining(['hidden', 'md:block']));
     }

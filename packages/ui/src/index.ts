@@ -152,6 +152,7 @@ export {
   type ReasonResult,
   type ReasonSource,
 } from './components/ReasonDialog/ReasonDialog';
+export { SearchInput, type SearchInputProps } from './components/SearchInput/SearchInput';
 export { StatusBadge, type StatusBadgeProps } from './components/StatusBadge/StatusBadge';
 export { Stepper, type Step, type StepperProps } from './components/Stepper/Stepper';
 export { TextInput, type TextInputProps } from './components/TextInput/TextInput';

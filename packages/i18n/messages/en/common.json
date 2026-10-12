@@ -19,7 +19,8 @@
     "columns": "Columns",
     "next": "Next",
     "previous": "Previous",
-    "more": "More"
+    "more": "More",
+    "search": "Search"
   },
   "format": {
     "unit": {

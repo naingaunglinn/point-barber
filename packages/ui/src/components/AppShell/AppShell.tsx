@@ -12,7 +12,8 @@ import { NavIcon, type NavLinkItem } from '../BottomNav/BottomNav';
 // The frame of every staff screen (AD-LAY-01 · AD-LAY-02 · AD-LAY-03 · AD-VIS-10 · AD-VIS-11 · AD-VIS-07 ·
 // design D10), switched by CSS at Tailwind's `md` (768 px) and `lg` (1024 px), so the server renders the
 // right layout for every width:
-// - below 768 px: a top app bar (title, branch chip, bell) and the bottom navigation; 16 px gutter;
+// - below 768 px: a top app bar (title, branch chip, search icon, bell — AD-LAY-03, AD-NAV-05) and the
+//   bottom navigation; 16 px gutter;
 // - 768–1023 px: the icon rail (64 px; icon-only, the label is the accessible name and a tooltip —
 //   AD-VIS-11 v1.8); the screens of the active module become tabs at the top of the content (AD-LAY-02);
 // - from 1024 px: the rail, the collapsible sub-navigation panel (240 px) and the top bar in the order
@@ -46,7 +47,10 @@ export interface AppShellProps {
    * only when there is no breadcrumb. */
   readonly title?: ReactNode;
   readonly breadcrumb?: ReactNode;
+  /** The search field from 768 px (AD-NAV-05). */
   readonly search?: ReactNode;
+  /** Below 768 px: the search icon that opens the full-screen search (AD-NAV-05). */
+  readonly mobileSearch?: ReactNode;
   readonly bell?: ReactNode;
   readonly language?: ReactNode;
   readonly userMenu?: ReactNode;
@@ -66,7 +70,8 @@ function activeClass(active: boolean) {
 
 export function AppShell(props: AppShellProps) {
   const { nav, activeKey, activeItemKey, children, bottomNav, branchSwitcher } = props;
-  const { title, breadcrumb, search, bell, language, userMenu, height = 'viewport' } = props;
+  const { title, breadcrumb, search, mobileSearch, bell, language, userMenu } = props;
+  const { height = 'viewport' } = props;
   const [collapsed, setCollapsed] = useState(false);
   const headingId = useId();
   const listId = useId();
@@ -190,8 +195,13 @@ export function AppShell(props: AppShellProps) {
                 {search}
               </div>
             )}
+            {mobileSearch === undefined ? null : (
+              <div data-slot="top-search-mobile" className="order-3 md:hidden">
+                {mobileSearch}
+              </div>
+            )}
             {bell === undefined ? null : (
-              <div data-slot="top-bell" className="order-3 md:order-none">
+              <div data-slot="top-bell" className="order-4 md:order-none">
                 {bell}
               </div>
             )}

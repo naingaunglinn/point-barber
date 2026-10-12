@@ -167,7 +167,8 @@
     "profile": "onOpenProfile() — {name}",
     "step": "onStepPress(\"{key}\")",
     "added": "onAdd({cell})",
-    "submitted": "onSubmit() — မှန်"
+    "submitted": "onSubmit() — မှန်",
+    "searched": "onSearch(\"{text}\")"
   },
   "bell": {
     "discount": "{name} က {branch} တွင် လျှော့ဈေး တောင်းထားသည်",

@@ -10,12 +10,11 @@ import { CardList } from '../../components/CardList/CardList';
 import { DataTable, type DataTableColumn } from '../../components/DataTable/DataTable';
 import { FilterBar } from '../../components/FilterBar/FilterBar';
 import { filterFromSearch, type FilterValue } from '../../components/FilterBar/filter-address';
-import { FormField } from '../../components/FormField/FormField';
 import { MoneyText } from '../../components/MoneyText/MoneyText';
 import { Pagination } from '../../components/Pagination/Pagination';
 import { usePagedList, type PageSize } from '../../components/Pagination/use-paged-list';
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge';
-import { TextInput } from '../../components/TextInput/TextInput';
+import { SearchInput } from '../../components/SearchInput/SearchInput';
 import type { CardSpec } from '../../components/types';
 import { useFormat } from '../../providers/format';
 import { useCataloguePersona } from '../catalogue-providers';
@@ -220,11 +219,12 @@ export function PagingDemo() {
         checked={!withTotal}
         onChange={(off) => setWithTotal(!off)}
       />
-      <div className="max-w-xs">
-        <FormField label={t('searchRows')}>
-          {(control) => <TextInput {...control} value={search} onChange={setSearch} />}
-        </FormField>
-      </div>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder={t('searchRows')}
+        className="max-w-xs"
+      />
       <ol className="grid grid-cols-5 gap-1 text-sm" data-testid="paged-rows">
         {list.items.map((row) => (
           <li key={row.position}>{t('row', { n: row.position })}</li>
