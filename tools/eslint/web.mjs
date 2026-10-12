@@ -6,6 +6,8 @@
 // One `no-restricted-syntax` entry holds every selector: a later config object for the same files
 // would replace it, not add to it.
 import n from 'eslint-plugin-n';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import react from 'eslint-plugin-react';
 
 import point from '../eslint-plugin-point/index.mjs';
 
@@ -33,6 +35,10 @@ const STYLE_COLOUR =
   'Colour in `style` — use a token (`var(--…)`) from packages/ui/tokens.css (CG-UI-05 · AD-VIS-01 · AD-IMPL-05).';
 const STYLE_FONT =
   '`fontFamily` in `style` — fonts are set only in packages/ui/tokens.css (CG-UI-05 · AD-VIS-01 · D-UX-02).';
+const RADIX_IMPORT =
+  'Radix primitive outside packages/ui — screens use the shared components of @point/ui (AD-IMPL-02 · CG-UI-04).';
+const FORM_ELEMENT =
+  'Raw form element outside packages/ui — use the shared component (Button, TextInput, MoneyInput …) of @point/ui (AD-IMPL-02 · CG-UI-04).';
 const PARSE_FLOAT =
   'parseFloat — money is an integer number of kyats and is never parsed as a float (CG-MONEY-01 · AD-IMPL-05 · D-PLT-04).';
 
@@ -96,6 +102,18 @@ const FUNCTION_RULES = [
   { selector: `TemplateElement[value.raw=/${FUNCTION}/i]`, message: COLOUR_FUNCTION },
 ];
 
+/** Radix only inside packages/ui (11.8): the `@radix-ui/*` packages and the `radix-ui` umbrella. */
+const RADIX_RULES = [
+  {
+    selector: String.raw`ImportDeclaration[source.value=/^(@radix-ui\/|radix-ui(\/|$))/]`,
+    message: RADIX_IMPORT,
+  },
+  {
+    selector: String.raw`ImportExpression[source.value=/^(@radix-ui\/|radix-ui(\/|$))/]`,
+    message: RADIX_IMPORT,
+  },
+];
+
 /** The token file's own test and the catalogue's token table compare and print computed values. */
 const TOKEN_READERS = [
   'packages/ui/src/tokens.test.ts',
@@ -108,6 +126,37 @@ export default [
     rules: {
       'no-restricted-syntax': ['error', ...TEXT_RULES, ...COLOUR_RULES, ...FUNCTION_RULES],
     },
+  },
+  {
+    // Outside packages/ui the screens use the shared components (AD-IMPL-02 · design D14 row 60): no
+    // Radix import (one list with the rules above — a later object replaces the rule) and no raw form
+    // element.
+    files: ['apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
+    plugins: { react },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...TEXT_RULES,
+        ...COLOUR_RULES,
+        ...FUNCTION_RULES,
+        ...RADIX_RULES,
+      ],
+      'react/forbid-elements': [
+        'error',
+        {
+          forbid: ['button', 'input', 'select', 'textarea'].map((element) => ({
+            element,
+            message: FORM_ELEMENT,
+          })),
+        },
+      ],
+    },
+  },
+  {
+    // Accessibility checked statically (AD-A11Y-01 · CG-UI-10 · design D14 row 65); axe runs on the
+    // catalogue in CI.
+    ...jsxA11y.flatConfigs.recommended,
+    files: WEB_SOURCE,
   },
   {
     // The same list without the colour functions (a later object replaces the rule — see the top).

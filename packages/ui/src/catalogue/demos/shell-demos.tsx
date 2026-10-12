@@ -246,7 +246,12 @@ export function ShellDemo() {
           <HandlerLog label={log('label')} value={pressed} />
         </div>
         {/* Below 768 px the search icon opens the full-screen search (AD-NAV-05). */}
-        <Sheet open={searching} onOpenChange={setSearching} title={common('action.search')}>
+        <Sheet
+          open={searching}
+          onOpenChange={setSearching}
+          title={common('action.search')}
+          focusFirstField
+        >
           <SearchInput
             value={query}
             onChange={setQuery}
@@ -255,7 +260,6 @@ export function ShellDemo() {
               setSearching(false);
             }}
             placeholder={common('search.placeholder')}
-            autoFocus
           />
         </Sheet>
       </AppShell>

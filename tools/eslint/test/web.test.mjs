@@ -116,12 +116,11 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
   it.each(SCOPES)(
     'Scenario: Raw text in an attribute — placeholder="Name or phone" fails (%s)',
     async (scope) => {
-      expect(await lintFixture('raw-attribute.tsx', `${scope}/raw-attribute.tsx`)).toEqual([
-        {
-          ruleId: 'no-restricted-syntax',
-          message: expect.stringContaining('aria-label / placeholder / title / alt'),
-        },
-      ]);
+      // Under apps/web the raw <input> is reported too (11.8).
+      expect(await lintFixture('raw-attribute.tsx', `${scope}/raw-attribute.tsx`)).toContainEqual({
+        ruleId: 'no-restricted-syntax',
+        message: expect.stringContaining('aria-label / placeholder / title / alt'),
+      });
     },
   );
 
@@ -139,7 +138,7 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
   );
 
   it('Scenario: Raw text in an attribute — a language key and an empty alt pass', async () => {
-    expect(await lintFixture('attribute-key.tsx', 'apps/web/app/attribute-key.tsx')).toEqual([]);
+    expect(await lintFixture('attribute-key.tsx', 'packages/ui/src/attribute-key.tsx')).toEqual([]);
   });
 
   it('passes the punctuation design D14 allows: · — ＋ * ▲ ▼', async () => {
@@ -183,6 +182,56 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
     expect(await lint("export const x = 'rgb(0, 0, 0)';\n", path)).toEqual([]);
     expect(await lint('export const x = <div className="bg-blue-500" />;\n', path)).toHaveLength(1);
   });
+
+  // ui-foundation "Raw form elements and Radix primitives are used only inside packages/ui" (AD-IMPL-02).
+  it('Scenario: A hand-made input in a screen — <input> and @radix-ui/react-dialog fail under apps/web/app/staff', async () => {
+    const messages = await lintFixture('hand-made-input.tsx', 'apps/web/app/staff/page.tsx');
+    expect(messages.map((m) => m.ruleId).sort()).toEqual([
+      'no-restricted-syntax',
+      'react/forbid-elements',
+    ]);
+    expect(messages.find((m) => m.ruleId === 'no-restricted-syntax')?.message).toContain(
+      'Radix primitive',
+    );
+  });
+
+  it('Scenario: A hand-made input in a screen — the same code passes inside packages/ui/src', async () => {
+    expect(await lintFixture('hand-made-input.tsx', 'packages/ui/src/components/X/X.tsx')).toEqual(
+      [],
+    );
+  });
+
+  it.each(['button', 'select', 'textarea'])('forbids <%s> in apps/web', async (element) => {
+    const messages = await lint(`export const x = <${element} />;\n`, 'apps/web/app/x.tsx');
+    expect(messages.map((m) => m.ruleId)).toEqual(['react/forbid-elements']);
+  });
+
+  it('forbids the radix-ui umbrella package in apps/web', async () => {
+    const messages = await lint(
+      "import { Dialog } from 'radix-ui';\nexport const d = Dialog;\n",
+      'apps/web/app/x.tsx',
+    );
+    expect(messages.map((m) => m.ruleId)).toEqual(['no-restricted-syntax']);
+  });
+
+  it('keeps the text and colour rules in apps/web', async () => {
+    expect(await lintFixture('raw-jsx-text.tsx', 'apps/web/app/staff/x.tsx')).toHaveLength(1);
+    expect(await lint("export const x = 'rgb(0, 0, 0)';\n", 'apps/web/app/x.ts')).toHaveLength(1);
+  });
+
+  // ui-foundation "Accessibility is checked statically and on the catalogue" (AD-A11Y-01 · design D14 row 65).
+  it.each(SCOPES)(
+    'Scenario: Static check — <img src={url} /> without alt fails with jsx-a11y/alt-text (%s)',
+    async (scope) => {
+      const messages = await lint(
+        'declare const url: string;\nexport const x = <img src={url} />;\n',
+        `${scope}/x.tsx`,
+      );
+      expect(messages).toEqual([
+        { ruleId: 'jsx-a11y/alt-text', message: expect.stringContaining('alt') },
+      ]);
+    },
+  );
 
   it('does not apply outside apps/web and packages/ui', async () => {
     expect(await lintFixture('hex-colour.ts', 'apps/api/src/hex-colour.ts')).toEqual([]);
