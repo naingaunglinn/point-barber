@@ -7,13 +7,13 @@ Language files for the web app — AD-IMPL-03 · D-PLT-03 · design D6 of `add-s
 and their `status.*` / `error.*` / `reason.*` keys. Every string a person can see comes from these files
 (CG-I18N-01, AD-L10N-01); both languages have the same key set and no empty value — `pnpm i18n:check`.
 
-| File              | Holds                                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------- |
-| `src/config.ts`   | `LOCALES` (`my`, `en`), `DEFAULT_LOCALE` `my`, `NAMESPACES`                                    |
-| `src/messages.ts` | `loadMessages(locale)` — the namespace files of one language                                   |
-| `src/locale.ts`   | `resolveLocale` (account → system default; cookie `point_locale` before a session), the cookie |
-| `src/keys.d.ts`   | Typed keys: a key that is not in the English files fails `tsc`                                 |
-| `src/request.ts`  | The next-intl request config of the staff tree (time zone `Asia/Yangon`)                       |
+| File                    | Holds                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/config.ts`         | `LOCALES` (`my`, `en`), `DEFAULT_LOCALE` `my`, `NAMESPACES`                                    |
+| `src/messages.ts`       | `loadMessages(locale)` — the namespace files of one language                                   |
+| `src/resolve-locale.ts` | `resolveLocale` (account → system default; cookie `point_locale` before a session), the cookie |
+| `src/keys.d.ts`         | Typed keys: a key that is not in the English files fails `tsc`                                 |
+| `src/request.ts`        | The next-intl request config of the staff tree (time zone `Asia/Yangon`)                       |
 
 - **No workspace dependency** (design D1). `@point/shared` depends on this package for the formatter
   words `common.format.*` — the only link between the two.

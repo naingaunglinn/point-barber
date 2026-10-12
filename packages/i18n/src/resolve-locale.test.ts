@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { LOCALE_COOKIE, localeCookie, localeCookieUpdate, resolveLocale } from './locale';
+import { LOCALE_COOKIE, localeCookie, localeCookieUpdate, resolveLocale } from './resolve-locale';
 
 // ui-foundation "The language is the account's, else the system default; the cookie serves only
 // before a session exists" (D-PLT-03 · AD-L10N-06 · AD-L10N-04 · design D6).

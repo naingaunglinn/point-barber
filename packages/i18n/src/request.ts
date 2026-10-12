@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { getRequestConfig } from 'next-intl/server';
 
-import { LOCALE_COOKIE, resolveLocale } from './locale';
+import { LOCALE_COOKIE, resolveLocale } from './resolve-locale';
 import { loadMessages } from './messages';
 
 // The next-intl request config of the staff tree: no locale segment in the address — the language
