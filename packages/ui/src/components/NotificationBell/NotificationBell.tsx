@@ -59,7 +59,10 @@ export function unreadBadge(count: number): string | null {
 
 const ITEM_CLASS = 'flex min-w-0 flex-1 flex-col text-start';
 
-/** The item's link (`href`); an item without one is a button that only reports the press. */
+/**
+ * The item's link (`href`, for a new tab); a plain click only reports the press — the caller navigates.
+ * An item without a link is a button.
+ */
 function ItemLink({
   item,
   onOpen,
@@ -74,7 +77,25 @@ function ItemLink({
       {children}
     </button>
   ) : (
-    <a href={item.href} className={ITEM_CLASS} onClick={onOpen}>
+    <a
+      href={item.href}
+      className={ITEM_CLASS}
+      onClick={(event) => {
+        // A plain click is the app's navigation (the caller routes in onOpenItem, keeping the query
+        // cache); Ctrl / ⌘ / Shift / middle click keep the browser's own new-tab behaviour.
+        if (
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        event.preventDefault();
+        onOpen();
+      }}
+    >
       {children}
     </a>
   );

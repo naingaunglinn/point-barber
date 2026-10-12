@@ -17,6 +17,8 @@ import { BlockedReasonProvider } from './blocked-reason';
 // `add-foundation-auth-access` binds the real catalogue once (`createGrants(PERMISSIONS)`), the
 // catalogue page binds the seven-code fixture catalogue. The provider holds the `/me` slice; the gate
 // shows its children only when can() is true. They only shape the UI — the API checks every request.
+// `blocked = { reason }` disables the `Button`s below the gate (with the reason under each); a control
+// that is not a Button does not read it — gate such a control with `blocked = 'hidden'` and a LockBanner.
 
 /** A held permission the record's state forbids: disabled with the reason, or hidden (a LockBanner says why). */
 export type Blocked = { readonly reason: string } | 'hidden';
