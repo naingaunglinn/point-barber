@@ -52,6 +52,9 @@ export const ManualIncomeStatus = { PENDING: 1, APPROVED: 2, REJECTED: 3 } as co
 export const EmployeeReceivableStatus = { CANCELLED: 0, ACTIVE: 1, SETTLED: 2 } as const;
 /** part1. */
 export const UserStatus = { DISABLED: 0, ACTIVE: 1, INVITED: 2 } as const;
+/** part1 — branches.status (`0 INACTIVE · 1 ACTIVE`). Not a badge of AD-CMP-05, so not in STATUS_BY_TABLE. */
+export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 /** part1 — D-EMP-04. */
 export const EmployeeStatus = { INACTIVE: 0, ACTIVE: 1, RESIGNED: 2, TERMINATED: 3 } as const;
 /** part8 — D-DAT-01. */

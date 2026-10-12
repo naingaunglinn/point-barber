@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { STATUS_BY_TABLE } from './status.js';
+import { BranchStatus, STATUS_BY_TABLE } from './status.js';
 
 // D-DB-03 · API-DATA-04 · AD-IMPL-04: every status code of the 19 tables of AD-CMP-05 has a named
 // constant. The values are the DBML notes of point-sdd/docs/db (parts 1–8); this test pins each one.
@@ -27,6 +27,11 @@ describe('status constants', () => {
       import_job_rows: { PENDING: 1, VALID: 2, ERROR: 3, IMPORTED: 4, SKIPPED: 5 },
       backup_runs: { RUNNING: 1, SUCCESS: 2, FAILED: 3 },
     });
+  });
+
+  it('pins branches.status (part1 — not a badge of AD-CMP-05)', () => {
+    expect(BranchStatus).toEqual({ INACTIVE: 0, ACTIVE: 1 });
+    expect(Object.values(STATUS_BY_TABLE)).not.toContain(BranchStatus);
   });
 
   it('holds the 71 (table, code) pairs of AD-CMP-05, codes unique per table', () => {

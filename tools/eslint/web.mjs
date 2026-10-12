@@ -7,11 +7,15 @@
 // would replace it, not add to it.
 import n from 'eslint-plugin-n';
 
+import point from '../eslint-plugin-point/index.mjs';
+
 const WEB_SOURCE = [
   'apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
   'packages/ui/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
 ];
 const DEV1_WORKSPACES = [...WEB_SOURCE, 'packages/i18n/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
+/** apps/web and every package (design D14 row 37); apps/api is enabled by add-walkin-visit-checkout. */
+const MONEY_SCOPE = ['apps/web/**/*.{ts,tsx,mts,cts}', 'packages/*/**/*.{ts,tsx,mts,cts}'];
 
 const RAW_TEXT =
   'Raw UI text in JSX — every visible string comes from the my / en language files (CG-I18N-01 · AD-L10N-01 · D-PLT-03).';
@@ -123,6 +127,42 @@ export default [
       // and packages/i18n read none.
       'n/no-process-env': 'error',
     },
+  },
+  {
+    // Money only through the helpers of packages/shared/src/money (CG-MONEY-03 · design D14).
+    files: MONEY_SCOPE,
+    ignores: ['packages/shared/src/money/**'],
+    plugins: { point },
+    rules: { 'point/no-number-money': 'error' },
+  },
+  {
+    // Dates, times and numbers only through the shared formatter (AD-FMT-00 · design D14 row 44).
+    files: MONEY_SCOPE,
+    ignores: ['packages/shared/src/format/**'],
+    plugins: { point },
+    rules: { 'point/no-locale-format': 'error' },
+  },
+  {
+    // The supplied clock and the Asia/Yangon zone (D-PLT-15 · CG-TIME-03 / 04 · design D14 rows 42 / 43).
+    files: MONEY_SCOPE,
+    plugins: { point },
+    rules: { 'point/no-device-clock': 'error' },
+  },
+  {
+    // ClockProvider is where the device clock is read once, to advance the supplied instant.
+    files: ['packages/ui/src/providers/clock.tsx'],
+    rules: { 'point/no-device-clock': ['error', { clock: false }] },
+  },
+  {
+    // The time and format helpers work in Asia/Yangon explicitly.
+    files: ['packages/shared/src/time/**', 'packages/shared/src/format/**'],
+    rules: { 'point/no-device-clock': ['error', { localTime: false }] },
+  },
+  {
+    // Status codes by their named constants (D-DB-03 · AD-IMPL-04 · design D14 row 7).
+    files: WEB_SOURCE,
+    plugins: { point },
+    rules: { 'point/no-raw-status': 'error' },
   },
   {
     // The one reader of process.env in the web app, config files (design D19), and the build step
