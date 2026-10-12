@@ -1,0 +1,43 @@
+{
+  "title": "UI catalogue",
+  "notice": "Development tool — fixture data only, nothing is saved.",
+  "nav": {
+    "sections": "Sections"
+  },
+  "control": {
+    "language": "Language",
+    "theme": "Theme",
+    "persona": "Persona",
+    "clock": "Clock"
+  },
+  "language": {
+    "my": "Myanmar",
+    "en": "English"
+  },
+  "theme": {
+    "staff": "Staff app",
+    "site": "Website"
+  },
+  "persona": {
+    "admin": "Admin",
+    "manager": "Manager",
+    "barber": "Barber",
+    "branchHolder": "Branch-scope holder"
+  },
+  "section": {
+    "tokens": "Tokens",
+    "fonts": "Fonts",
+    "formatters": "Formatters",
+    "buttonsForms": "Buttons and forms",
+    "inputs": "Inputs",
+    "badgesChips": "Badges and chips",
+    "dialogsOverlays": "Dialogs and overlays",
+    "lists": "Lists",
+    "states": "States",
+    "permissions": "Permissions",
+    "shell": "Shell",
+    "chartsKpi": "Charts and KPI",
+    "pickers": "Pickers",
+    "dataLess": "Data-less components"
+  }
+}

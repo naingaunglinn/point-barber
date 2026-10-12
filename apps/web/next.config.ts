@@ -6,12 +6,12 @@ import type { NextConfig } from 'next';
 // AI agent. Claude Code would load those files as instructions; its instructions come only from the
 // repository's CLAUDE.md and the coding guideline (design D17).
 // `globalNotFound`: each route tree has its own root layout (add-shared-ui-components design D1), so
-// the 404 of an unmatched URL is app/global-not-found.tsx. `transpilePackages`: @point/ui ships its
-// TypeScript sources.
+// the 404 of an unmatched URL is app/global-not-found.tsx. `transpilePackages`: @point/i18n and
+// @point/ui ship their TypeScript sources.
 const nextConfig: NextConfig = {
   output: 'standalone',
   agentRules: false,
-  transpilePackages: ['@point/ui'],
+  transpilePackages: ['@point/i18n', '@point/ui'],
   experimental: { globalNotFound: true },
 };
 

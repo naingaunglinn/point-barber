@@ -18,6 +18,7 @@
     "format:check": "prettier --check .",
     "guards": "node tools/guards/run-all.mjs",
     "fonts:check": "node tools/guards/check-fonts.mjs",
+    "i18n:check": "node tools/guards/check-i18n.mjs",
     "db:migrate": "node --env-file-if-exists=.env db/scripts/migrate.mjs",
     "db:build-baseline": "node db/scripts/build-baseline.mjs",
     "db:test": "node --env-file-if-exists=.env db/scripts/run-constraint-tests.mjs",

@@ -1,0 +1,43 @@
+{
+  "title": "UI အစိတ်အပိုင်း စာရင်း",
+  "notice": "ဖန်တီးသူများအတွက် ကိရိယာ — နမူနာဒေတာသာ၊ ဘာမှ မသိမ်းပါ။",
+  "nav": {
+    "sections": "အပိုင်းများ"
+  },
+  "control": {
+    "language": "ဘာသာစကား",
+    "theme": "အသွင်အပြင်",
+    "persona": "အခန်းကဏ္ဍ",
+    "clock": "အချိန်"
+  },
+  "language": {
+    "my": "မြန်မာ",
+    "en": "အင်္ဂလိပ်"
+  },
+  "theme": {
+    "staff": "ဝန်ထမ်း App",
+    "site": "ဝက်ဘ်ဆိုက်"
+  },
+  "persona": {
+    "admin": "Admin",
+    "manager": "မန်နေဂျာ",
+    "barber": "ဆံပင်ညှပ်ဆရာ",
+    "branchHolder": "ဆိုင်ခွဲအတွက်သာ ခွင့်ရသူ"
+  },
+  "section": {
+    "tokens": "Token များ",
+    "fonts": "ဖောင့်များ",
+    "formatters": "ပုံစံချ function များ",
+    "buttonsForms": "ခလုတ်နှင့် ဖောင်များ",
+    "inputs": "ထည့်သွင်းကွက်များ",
+    "badgesChips": "Badge နှင့် Chip များ",
+    "dialogsOverlays": "Dialog နှင့် Overlay များ",
+    "lists": "စာရင်းများ",
+    "states": "အခြေအနေများ",
+    "permissions": "ခွင့်ပြုချက်များ",
+    "shell": "App မူဘောင်",
+    "chartsKpi": "ဂရပ်နှင့် KPI",
+    "pickers": "ရွေးချယ်ကွက်များ",
+    "dataLess": "ဒေတာမလိုသော အစိတ်အပိုင်းများ"
+  }
+}

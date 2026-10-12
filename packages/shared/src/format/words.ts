@@ -1,5 +1,9 @@
-// The words the formatters write (D-PLT-03): the `common.format.*` texts of the
-// add-shared-ui-components brief. Task 3.8 reads them from the language files instead.
+import en from '@point/i18n/messages/en/common.json' with { type: 'json' };
+import my from '@point/i18n/messages/my/common.json' with { type: 'json' };
+
+// The words the formatters write (D-PLT-03 · AD-FMT-00): read from the `common.format.*` keys of the
+// language files, so a wording fix there changes the formatters too. The only dependency between
+// the two packages is this one, shared → i18n (design D1).
 export type Locale = 'my' | 'en';
 
 export interface FormatWords {
@@ -21,25 +25,32 @@ export interface FormatWords {
   };
 }
 
+type Format = typeof en.format;
+
+function wordsOf(format: Format, locale: Locale): FormatWords {
+  const { unit, weekday, relative } = format;
+  // The brief marks `unit.kyat` and `unit.lakh` "not used in en": the English files repeat the
+  // Myanmar text only to keep the key sets equal (`pnpm i18n:check`), and the formatters ignore it.
+  const myanmarOnly = (text: string) => (locale === 'my' ? text : null);
+  return {
+    unit: { ks: unit.ks, kyat: myanmarOnly(unit.kyat), lakh: myanmarOnly(unit.lakh) },
+    min: format.min,
+    hour: format.hour,
+    pcs: format.pcs,
+    weekday: [
+      weekday.mon,
+      weekday.tue,
+      weekday.wed,
+      weekday.thu,
+      weekday.fri,
+      weekday.sat,
+      weekday.sun,
+    ],
+    relative: { ...relative },
+  };
+}
+
 export const FORMAT_WORDS: Readonly<Record<Locale, FormatWords>> = {
-  en: {
-    unit: { ks: 'Ks', kyat: null, lakh: null },
-    min: 'min',
-    hour: 'h',
-    pcs: 'pcs',
-    weekday: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    relative: { justNow: 'just now', minAgo: '{n} min ago', hourAgo: '{n} h ago' },
-  },
-  my: {
-    unit: { ks: 'Ks', kyat: 'ကျပ်', lakh: 'သိန်း' },
-    min: 'မိနစ်',
-    hour: 'နာရီ',
-    pcs: 'ခု',
-    weekday: ['တနင်္လာ', 'အင်္ဂါ', 'ဗုဒ္ဓဟူး', 'ကြာသပတေး', 'သောကြာ', 'စနေ', 'တနင်္ဂနွေ'],
-    relative: {
-      justNow: 'ယခုလေးတင်',
-      minAgo: 'လွန်ခဲ့သော {n} မိနစ်',
-      hourAgo: 'လွန်ခဲ့သော {n} နာရီ',
-    },
-  },
+  en: wordsOf(en.format, 'en'),
+  my: wordsOf(my.format, 'my'),
 };

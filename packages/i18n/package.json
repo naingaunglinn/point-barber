@@ -3,9 +3,21 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./request": "./src/request.ts",
+    "./messages/*": "./messages/*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
-  }
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "next": "16.3.8",
+    "next-intl": "4.14.9",
+    "typescript": "6.0.3"
+  },
+  "files": [
+    "messages",
+    "src"
+  ]
 }

@@ -1,0 +1,126 @@
+{
+  "action": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Retry",
+    "keep": "Keep",
+    "goBack": "Go back",
+    "discard": "Discard",
+    "keepEditing": "Keep editing",
+    "clearAll": "Clear all",
+    "add": "Add",
+    "approve": "Approve",
+    "reject": "Reject",
+    "markAllRead": "Mark all read",
+    "delete": "Delete",
+    "showAsTable": "Show as table",
+    "showAsChart": "Show as chart",
+    "columns": "Columns",
+    "next": "Next",
+    "previous": "Previous",
+    "more": "More"
+  },
+  "format": {
+    "unit": {
+      "ks": "Ks",
+      "kyat": "ကျပ်",
+      "lakh": "သိန်း"
+    },
+    "min": "min",
+    "hour": "h",
+    "pcs": "pcs",
+    "weekday": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "relative": {
+      "justNow": "just now",
+      "minAgo": "{n} min ago",
+      "hourAgo": "{n} h ago"
+    }
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "preset": {
+      "thisWeek": "This week",
+      "last7Days": "Last 7 days",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "custom": "Custom",
+      "today": "Today",
+      "yesterday": "Yesterday"
+    }
+  },
+  "bilingual": {
+    "hint": "Leave English empty to show the Myanmar text",
+    "mm": "Myanmar",
+    "en": "English"
+  },
+  "zawgyi": {
+    "converted": "Converted from Zawgyi to Unicode. Please check the text."
+  },
+  "confirm": {
+    "irreversible": "This can't be undone."
+  },
+  "form": {
+    "discard": {
+      "title": "Discard changes?"
+    }
+  },
+  "offline": {
+    "banner": "No connection. Money actions can't be saved right now. Write the service on paper and add it later with Late entry.",
+    "help": "How to add it later"
+  },
+  "error": {
+    "id": "Error ID: {id}"
+  },
+  "slots": {
+    "empty": "No times left on this day"
+  },
+  "grid": {
+    "notSold": "Not sold here",
+    "usesShopPrice": "Uses shop price · {price}",
+    "changeFrom": "Change prices from",
+    "copyFromBranch": "Copy from branch…",
+    "shop": "Shop",
+    "home": "Home"
+  },
+  "qr": {
+    "permissionDenied": "Camera access is off. Allow the camera for this site in the browser settings, then try again.",
+    "noCamera": "No camera was found on this device."
+  },
+  "upload": {
+    "hint": "{types} · up to {max_mb} MB",
+    "inProgress": "Uploading… wait until it finishes.",
+    "remove": "Remove"
+  },
+  "notifications": {
+    "today": "Today",
+    "earlier": "Earlier",
+    "empty": "No notifications"
+  },
+  "branch": {
+    "all": "All branches"
+  },
+  "stepper": {
+    "compact": "Step {n} of {m} · {name}"
+  },
+  "kpi": {
+    "updated": "Updated {time}"
+  },
+  "list": {
+    "total": "Total {n}",
+    "pageSize": "Rows per page"
+  },
+  "amountHeader": "Amount ({unit})",
+  "search": {
+    "placeholder": "Search"
+  }
+}
