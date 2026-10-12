@@ -4,6 +4,9 @@
  * (`:root[data-tree="site"]`). A colour or a `font-family` declaration anywhere else fails
  * `pnpm guards` (check-css.mjs) and lint (tools/eslint/web.mjs). */
 @import 'tailwindcss';
+/* Enter / exit animations and the data-state variants of the shadcn/ui primitives (src/primitives). */
+@import 'tw-animate-css';
+@import './primitives.css';
 
 /* Shared components live outside the app that builds this file. */
 @source './src';
