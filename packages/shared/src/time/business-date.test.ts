@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { businessDateOf, todayMmt } from './business-date.js';
+import { businessDateOf, todayMmt, mmtDate } from './business-date.js';
 
 // ui-foundation · "Dates and times are formatted in Myanmar Time whatever the device time zone is"
 // and "Today and now come from the supplied clock" (D-PLT-15 · AD-FMT-11 · CG-TIME-04 · CG-TIME-05).
@@ -36,5 +36,21 @@ describe('todayMmt', () => {
     expect(todayMmt('2026-10-05T10:42:00+06:30')).toBe('2026-10-05');
     expect(todayMmt('2026-10-05T17:29:30Z')).toBe('2026-10-05');
     expect(todayMmt('2026-10-05T17:30:30Z')).toBe('2026-10-06');
+  });
+});
+
+// The day of a business date in Myanmar Time, for the DateInput calendar (AD-FORM-15 · design D5):
+// the same instant whatever the process time zone is (three-zone run).
+describe('mmtDate', () => {
+  it('is 00:00 MMT of the day, and its business date is the same day', () => {
+    expect(mmtDate('2026-10-05').toISOString()).toBe('2026-10-05T00:00:00.000+06:30');
+    expect(businessDateOf(mmtDate('2026-10-05'))).toBe('2026-10-05');
+    expect(new Date(mmtDate('2026-10-05').getTime()).toISOString()).toBe(
+      '2026-10-04T17:30:00.000Z',
+    );
+  });
+
+  it('refuses a text that is not a business date', () => {
+    expect(() => mmtDate('05/10/2026')).toThrow(RangeError);
   });
 });

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Plus } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { renderIntl } from '../../test/intl';
 import { Button } from './Button';
 
 // ui-foundation "Buttons follow one hierarchy, one size rule and one loading behaviour" (AD-CMP-01 ·
@@ -117,6 +118,24 @@ describe('Button', () => {
       </Button>
     );
     expect([unnamed, labelled]).toHaveLength(2);
+  });
+
+  it('an icon-only button can be named by a label element, and passes extra attributes on', () => {
+    renderIntl(
+      <>
+        <span id="date-label">{ADD}</span>
+        <Button
+          iconOnly
+          icon={<Plus />}
+          aria-labelledby="date-label"
+          aria-expanded={false}
+          aria-haspopup="dialog"
+        />
+      </>,
+    );
+    const button = screen.getByRole('button', { name: ADD });
+    expect(button.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('a disabled reason disables the button and is linked as its description', () => {

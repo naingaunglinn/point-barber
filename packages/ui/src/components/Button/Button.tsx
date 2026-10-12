@@ -3,7 +3,15 @@
 import { cva } from 'class-variance-authority';
 import { cn } from 'cn';
 import { LoaderCircle } from 'lucide-react';
-import { useId, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import {
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+  type Ref,
+} from 'react';
 
 // The one button of the system (AD-CMP-01 · AD-LAY-04 · AD-A11Y-05 · AD-NET-01 · design D10): four
 // variants; 48 px high below 768 px and 40 px from 768 px, with an invisible area that keeps the
@@ -36,7 +44,21 @@ const buttonVariants = cva(
   },
 );
 
-interface CommonProps {
+/** Attributes a wrapper may add (a Radix trigger, a menu): passed on to the `<button>`. */
+type PassedAttributes = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  | 'children'
+  | 'className'
+  | 'disabled'
+  | 'form'
+  | 'onClick'
+  | 'type'
+  | 'aria-label'
+  | 'aria-labelledby'
+>;
+
+interface CommonProps extends PassedAttributes {
+  readonly ref?: Ref<HTMLButtonElement>;
   /** Default `secondary`; one `primary` per view (AD-CMP-01). */
   readonly variant?: ButtonVariant;
   /** Set by the caller while its request runs; the button also tracks a promise its `onClick` returns. */
@@ -59,13 +81,18 @@ interface LabelledProps extends CommonProps {
   readonly 'aria-label'?: string;
 }
 
-interface IconOnlyProps extends CommonProps {
+interface IconOnlyBase extends CommonProps {
   readonly iconOnly: true;
   readonly icon: ReactNode;
-  /** Required: an icon alone has no name (AD-A11Y-05). */
-  readonly 'aria-label': string;
   readonly children?: never;
 }
+
+/** Required: an icon alone has no name (AD-A11Y-05) — a translated label, or the id of a label element. */
+type IconOnlyProps = IconOnlyBase &
+  (
+    | { readonly 'aria-label': string; readonly 'aria-labelledby'?: never }
+    | { readonly 'aria-labelledby': string; readonly 'aria-label'?: never }
+  );
 
 export type ButtonProps = LabelledProps | IconOnlyProps;
 
@@ -82,7 +109,15 @@ export function Button(props: ButtonProps) {
     className,
     onClick,
     iconOnly = false,
-  } = props;
+    children,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledBy,
+    ...passed
+  } = props as LabelledProps &
+    Partial<Omit<IconOnlyBase, 'iconOnly' | 'icon' | 'children'>> & {
+      readonly iconOnly?: boolean;
+      readonly 'aria-labelledby'?: string;
+    };
   const reasonId = useId();
   const running = useRef(false);
   const [pending, setPending] = useState(false);
@@ -104,10 +139,12 @@ export function Button(props: ButtonProps) {
 
   const button = (
     <button
+      {...passed}
       type={type}
       form={form}
       data-variant={variant}
-      aria-label={props['aria-label']}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       aria-busy={busy || undefined}
       aria-describedby={disabledReason === undefined ? undefined : reasonId}
       disabled={busy || blocked}
@@ -126,7 +163,7 @@ export function Button(props: ButtonProps) {
       ) : (
         icon
       )}
-      {iconOnly ? null : props.children}
+      {iconOnly ? null : children}
     </button>
   );
 

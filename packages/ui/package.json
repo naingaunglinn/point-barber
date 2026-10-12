@@ -8,7 +8,8 @@
     "./tokens.css": "./tokens.css"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:zones": "node ../../tools/test-zones.mjs packages/ui/src/components/DateInput packages/ui/src/components/DateText packages/ui/src/providers/clock.test.tsx"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

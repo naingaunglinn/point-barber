@@ -9,6 +9,7 @@ import { errorMessageKey } from '@point/shared';
 // label above the control, a `--destructive` asterisk right after the label of a required field, and
 // the message of `error.<code>` directly under the control, linked by `aria-describedby`. The control's
 // border is `--field-border`; an invalid control keeps a `--destructive` outline (the primitives).
+// The label's id is `<control id>-label`, so a control's own button can be named by it.
 
 /** A message code: a catalogue code, `too_small` / `too_big` / `invalid_type`, or a client-only key. */
 export interface FieldError {
@@ -44,7 +45,7 @@ export function FormField({ label, required = false, helper, error, children }: 
   const describedBy = [error ? errorId : null, helper ? helperId : null].filter(Boolean).join(' ');
   return (
     <div className="flex flex-col gap-1.5" data-slot="form-field">
-      <label htmlFor={id} className="text-sm font-semibold">
+      <label id={`${id}-label`} htmlFor={id} className="text-sm font-semibold">
         <span>{label}</span>
         {required ? (
           <span data-slot="required-mark" aria-hidden className="ms-1 text-destructive">

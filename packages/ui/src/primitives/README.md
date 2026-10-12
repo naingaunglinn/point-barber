@@ -20,6 +20,8 @@ Changed after generation, and only this (re-apply it when a part is generated ag
   `--focus-outline` of `tokens.css` applies; `border-input` → `border-[var(--field-border)]`; an invalid control
   keeps a 2 px `--destructive` outline (D-UI-01) instead of a ring.
 - **Inputs stay at 16 px** (AD-VIS-06: no iOS zoom): `md:text-sm` removed from `input` and `textarea`.
+- **No locale formatting outside the formatter** (AD-FMT-00): the calendar's month-dropdown formatter
+  (`toLocaleString`) is removed; the caption label of react-day-picker is used.
 - **No dark mode** (the system has one light theme per tree): every `dark:` class removed, and the toaster no
   longer reads `next-themes`.
 - **No literal UI text** (CG-I18N-01): the close labels of `dialog` and `sheet` come from `common.action.close`.
