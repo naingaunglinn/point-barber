@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e:catalogue": "playwright test -c dev-ui/playwright.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

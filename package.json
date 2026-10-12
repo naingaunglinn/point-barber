@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "typecheck": "turbo run typecheck",
     "test": "vitest run",
+    "test:zones": "pnpm --recursive run test:zones",
     "test:int": "turbo run test:int",
     "e2e": "turbo run e2e",
     "format": "prettier --write .",
