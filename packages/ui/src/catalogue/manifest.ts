@@ -84,8 +84,10 @@ export interface ManifestDemo {
   /** Key under `devui.demo`. */
   readonly title: keyof Messages['devui']['demo'];
   readonly Demo: ComponentType;
-  /** Spans the whole section width (the shell). */
+  /** Spans the whole section width (lists, grids, the shell). */
   readonly wide?: boolean;
+  /** Runs edge to edge inside its card, without padding (the shell, which is a frame itself). */
+  readonly bleed?: boolean;
 }
 
 export interface ManifestEntry {
@@ -312,7 +314,7 @@ export const MANIFEST: readonly ManifestEntry[] = [
     name: 'AppShell',
     section: 'shell',
     rules: ['AD-LAY-01', 'AD-LAY-02', 'AD-LAY-03', 'AD-VIS-10', 'AD-VIS-11', 'AD-NAV-02'],
-    demos: [{ id: 'persona', title: 'shellPersona', Demo: ShellDemo, wide: true }],
+    demos: [{ id: 'persona', title: 'shellPersona', Demo: ShellDemo, wide: true, bleed: true }],
   },
   {
     name: 'BottomNav',

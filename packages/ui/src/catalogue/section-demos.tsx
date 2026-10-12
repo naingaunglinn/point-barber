@@ -30,17 +30,18 @@ export function SectionDemos({ section }: { readonly section: CatalogueSectionId
             </p>
           </header>
           <div className="grid gap-4 lg:grid-cols-2">
-            {entry.demos.map(({ id, title, Demo, wide }) => (
+            {entry.demos.map(({ id, title, Demo, wide, bleed }) => (
               <div
                 key={id}
                 data-testid={`demo-${entry.name}-${id}`}
                 className={cn(
                   'flex min-w-0 flex-col gap-3 rounded-lg border border-border',
-                  // A wide demo (the shell) runs edge to edge, so it keeps the width it is tested at.
-                  wide ? 'pt-4 lg:col-span-2' : 'p-4',
+                  wide && 'lg:col-span-2',
+                  // The shell runs edge to edge, so it keeps the width it is tested at.
+                  bleed ? 'pt-4' : 'p-4',
                 )}
               >
-                <h4 className={cn('text-sm font-semibold text-muted-foreground', wide && 'px-4')}>
+                <h4 className={cn('text-sm font-semibold text-muted-foreground', bleed && 'px-4')}>
                   {t(`demo.${title}`)}
                 </h4>
                 <Demo />
