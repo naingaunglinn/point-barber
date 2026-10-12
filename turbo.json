@@ -4,11 +4,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build", "generate"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "public/fonts/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "public/fonts/**", "public/vendor/**"]
     },
     "build:catalogue": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "public/fonts/**"]
+      "outputs": [".next/**", "!.next/cache/**", "public/fonts/**", "public/vendor/**"]
     },
     "lint": {},
     "typecheck": {
