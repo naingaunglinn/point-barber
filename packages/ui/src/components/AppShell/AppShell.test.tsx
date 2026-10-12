@@ -102,7 +102,7 @@ describe('AppShell', () => {
     for (const link of within(rail).getAllByRole('link')) {
       expect(link.querySelector('svg')).not.toBeNull();
       expect(link.textContent).not.toBe('');
-      expect(link.className).toContain('break-words');
+      expect(link.lastElementChild?.className).toContain('break-words');
       expect(link.className).not.toMatch(/truncate|overflow-hidden|line-clamp/);
     }
     expect(within(rail).getByRole('link', { name: 'Sales' }).getAttribute('aria-current')).toBe(

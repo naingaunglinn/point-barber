@@ -37,8 +37,11 @@ export type BottomNavProps = { readonly activeKey?: string } & (
   | { readonly items: UpTo5<NavLinkItem>; readonly centre?: undefined }
 );
 
+/** Breaks at word boundaries first (Myanmar too); inside a word only when the word is wider than the item. */
+export const LABEL_CLASS = 'max-w-full break-words';
+
 const ITEM_CLASS =
-  'relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-start gap-1 px-1 py-1.5 text-center text-xs leading-tight break-words';
+  'relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-start gap-1 px-0.5 py-1.5 text-center text-xs leading-tight';
 
 export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
   const link = (item: NavLinkItem) => {
@@ -55,18 +58,18 @@ export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
             active ? 'font-semibold text-primary' : 'text-muted-foreground',
           )}
         >
-          <span className="relative" aria-hidden>
-            {item.icon}
+          <span className="relative">
+            <span aria-hidden>{item.icon}</span>
+            {badge === null ? null : (
+              <span
+                data-slot="nav-badge"
+                className="absolute -end-3 -top-1 min-w-5 rounded-full bg-destructive px-1 text-center text-xs font-semibold text-destructive-foreground"
+              >
+                {badge}
+              </span>
+            )}
           </span>
-          <span>{item.label}</span>
-          {badge === null ? null : (
-            <span
-              data-slot="nav-badge"
-              className="absolute start-1/2 top-0.5 ms-2 min-w-5 rounded-full bg-destructive px-1 text-center text-xs font-semibold text-destructive-foreground"
-            >
-              {badge}
-            </span>
-          )}
+          <span className={LABEL_CLASS}>{item.label}</span>
         </Link>
       </li>
     );
@@ -93,7 +96,7 @@ export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
               >
                 {centre.icon}
               </span>
-              <span>{centre.label}</span>
+              <span className={LABEL_CLASS}>{centre.label}</span>
             </button>
           </li>
         )}

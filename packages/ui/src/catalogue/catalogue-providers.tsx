@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 
 import type { Locale } from '@point/i18n';
 
@@ -13,6 +13,11 @@ import { PERSONA_GRANTS, type Persona } from './personas';
 // What every demo of the catalogue reads (design D12): the language and the money profile of the
 // `theme` parameter (staff → `app`, site → `site`), and the grants of the `as` persona over the
 // fixture catalogue. The clock is the page's ClockProvider.
+const PersonaContext = createContext<Persona>('admin');
+
+/** The persona of `?as=` — the catalogue's user id on this device (design D10), never a permission. */
+export const useCataloguePersona = (): Persona => useContext(PersonaContext);
+
 export function CatalogueProviders({
   lang,
   theme,
@@ -27,8 +32,10 @@ export function CatalogueProviders({
   return (
     <FormatProvider locale={lang} profile={theme === 'site' ? 'site' : 'app'}>
       <FixtureGrantsProvider me={PERSONA_GRANTS[as]}>
-        {children}
-        <Toaster />
+        <PersonaContext.Provider value={as}>
+          {children}
+          <Toaster />
+        </PersonaContext.Provider>
       </FixtureGrantsProvider>
     </FormatProvider>
   );

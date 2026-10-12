@@ -25,7 +25,7 @@ const NOTIFICATION_TEXT = {
   [NotificationCategory.SECURITY]: 'security',
 } as const;
 
-function useFixtureNotifications(): NotificationItem[] {
+export function useFixtureNotifications(): NotificationItem[] {
   const t = useTranslations('devui.bell');
   const { locale } = useFormat('NotificationBell demo');
   const branch = B3 === undefined ? '' : localized(B3, 'name', locale);

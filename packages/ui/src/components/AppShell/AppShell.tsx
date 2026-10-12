@@ -7,7 +7,7 @@ import { useId, useState, type ReactNode } from 'react';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../primitives/tooltip';
 import { Button } from '../Button/Button';
-import type { NavLinkItem } from '../BottomNav/BottomNav';
+import { LABEL_CLASS, type NavLinkItem } from '../BottomNav/BottomNav';
 
 // The frame of every staff screen (AD-LAY-01 · AD-LAY-02 · AD-LAY-03 · AD-VIS-10 · AD-VIS-11 · AD-VIS-07 ·
 // design D10), switched by CSS at Tailwind's `md` (768 px) and `lg` (1024 px), so the server renders the
@@ -50,7 +50,7 @@ export interface AppShellProps {
 }
 
 const RAIL_ITEM =
-  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 text-center text-xs leading-tight break-words [&_svg]:size-5';
+  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-0.5 py-1.5 text-center text-xs leading-tight [&_svg]:size-5';
 const SCREEN_LINK = 'flex min-h-11 items-center rounded-md px-3 text-sm break-words';
 
 function activeClass(active: boolean) {
@@ -87,7 +87,7 @@ export function AppShell(props: AppShellProps) {
       <div data-slot="app-shell" className="flex min-h-dvh bg-background text-foreground">
         <nav
           data-slot="rail"
-          className="sticky top-0 hidden w-16 shrink-0 flex-col gap-1 self-start border-e border-border p-1 md:flex"
+          className="sticky top-0 hidden w-16 shrink-0 flex-col gap-1 self-start border-e border-border p-0.5 md:flex"
         >
           <ul className="flex flex-col gap-1">
             {nav.map((item) => {
@@ -102,7 +102,7 @@ export function AppShell(props: AppShellProps) {
                         className={cn(RAIL_ITEM, activeClass(active))}
                       >
                         <span aria-hidden>{item.icon}</span>
-                        <span>{item.label}</span>
+                        <span className={LABEL_CLASS}>{item.label}</span>
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right">{item.label}</TooltipContent>

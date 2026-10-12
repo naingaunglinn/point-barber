@@ -20,8 +20,10 @@ const MORE = item('more', 'More', <Ellipsis />);
 const START = 'Start';
 
 const labels = () =>
-  [...document.querySelectorAll('[data-slot="bottom-nav"] li')].map((li) =>
-    (li.querySelector('a, button') as HTMLElement).textContent?.replace(/\d+$/, ''),
+  [...document.querySelectorAll('[data-slot="bottom-nav"] li')].map(
+    (li) =>
+      // The label is the last child; the badge sits on the icon.
+      (li.querySelector('a, button') as HTMLElement).lastElementChild?.textContent,
   );
 
 describe('BottomNav', () => {
@@ -60,7 +62,7 @@ describe('BottomNav', () => {
   it('labels wrap instead of being cut', () => {
     render(<BottomNav items={[TODAY, BOOKINGS, CUSTOMERS, MORE]} />);
     for (const link of screen.getAllByRole('link')) {
-      expect(link.className).toContain('break-words');
+      expect(link.lastElementChild?.className).toContain('break-words');
       expect(link.className).not.toMatch(/truncate|overflow-hidden|line-clamp/);
     }
   });

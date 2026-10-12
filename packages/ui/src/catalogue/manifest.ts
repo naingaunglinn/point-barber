@@ -11,6 +11,14 @@ import {
   QrMockDemo,
 } from './demos/notification-demos';
 import { CanTableDemo, GateDemo } from './demos/permission-demos';
+import {
+  BottomNavCentreDemo,
+  BottomNavPlainDemo,
+  BranchSwitcherDemo,
+  PageHeaderFourDemo,
+  PageHeaderTwoDemo,
+  ShellDemo,
+} from './demos/shell-demos';
 import { UploadDocumentDemo, UploadImageDemo, UploadImportDemo } from './demos/upload-demos';
 import type { CatalogueSectionId } from './sections';
 
@@ -22,6 +30,8 @@ export interface ManifestDemo {
   /** Key under `devui.demo`. */
   readonly title: keyof Messages['devui']['demo'];
   readonly Demo: ComponentType;
+  /** Spans the whole section width (the shell). */
+  readonly wide?: boolean;
 }
 
 export interface ManifestEntry {
@@ -53,6 +63,36 @@ export const MANIFEST: readonly ManifestEntry[] = [
     section: 'permissions',
     rules: ['AD-PERM-03', 'AD-PERM-05', 'API-AUTH-05', 'ADR-012'],
     demos: [{ id: 'persona', title: 'canTable', Demo: CanTableDemo }],
+  },
+  {
+    name: 'AppShell',
+    section: 'shell',
+    rules: ['AD-LAY-01', 'AD-LAY-02', 'AD-LAY-03', 'AD-VIS-10', 'AD-VIS-11', 'AD-NAV-02'],
+    demos: [{ id: 'persona', title: 'shellPersona', Demo: ShellDemo, wide: true }],
+  },
+  {
+    name: 'BottomNav',
+    section: 'shell',
+    rules: ['AD-NAV-01', 'AD-LAY-03', 'AD-VIS-11'],
+    demos: [
+      { id: 'centre', title: 'bottomCentre', Demo: BottomNavCentreDemo },
+      { id: 'no-centre', title: 'bottomPlain', Demo: BottomNavPlainDemo },
+    ],
+  },
+  {
+    name: 'BranchSwitcher',
+    section: 'shell',
+    rules: ['AD-NAV-04', 'AD-PERM-04', 'D-DSH-01', 'D-ROLE-03'],
+    demos: [{ id: 'persona', title: 'branchPersona', Demo: BranchSwitcherDemo }],
+  },
+  {
+    name: 'PageHeader',
+    section: 'shell',
+    rules: ['AD-LAY-05', 'AD-LAY-04'],
+    demos: [
+      { id: 'four-secondary', title: 'headerFour', Demo: PageHeaderFourDemo },
+      { id: 'two-secondary', title: 'headerTwo', Demo: PageHeaderTwoDemo },
+    ],
   },
   {
     name: 'NotificationBell',

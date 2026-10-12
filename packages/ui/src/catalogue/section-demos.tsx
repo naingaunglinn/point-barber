@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
 
 import { anchorOf, MANIFEST } from './manifest';
@@ -29,13 +30,17 @@ export function SectionDemos({ section }: { readonly section: CatalogueSectionId
             </p>
           </header>
           <div className="grid gap-4 lg:grid-cols-2">
-            {entry.demos.map(({ id, title, Demo }) => (
+            {entry.demos.map(({ id, title, Demo, wide }) => (
               <div
                 key={id}
                 data-testid={`demo-${entry.name}-${id}`}
-                className="flex min-w-0 flex-col gap-3 rounded-lg border border-border p-4"
+                className={cn(
+                  'flex min-w-0 flex-col gap-3 rounded-lg border border-border',
+                  // A wide demo (the shell) runs edge to edge, so it keeps the width it is tested at.
+                  wide ? 'pt-4 lg:col-span-2' : 'p-4',
+                )}
               >
-                <h4 className="text-sm font-semibold text-muted-foreground">
+                <h4 className={cn('text-sm font-semibold text-muted-foreground', wide && 'px-4')}>
                   {t(`demo.${title}`)}
                 </h4>
                 <Demo />

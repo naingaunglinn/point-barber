@@ -34,7 +34,7 @@ export type PermissionGateProps<C extends PermissionCatalogue, K extends keyof C
 
 export function createGrants<const C extends PermissionCatalogue>(catalogue: C) {
   const bind = createCan(catalogue);
-  const GrantsContext = createContext<Can<C> | null>(null);
+  const GrantsContext = createContext<{ readonly me: MeGrants; readonly can: Can<C> } | null>(null);
 
   function GrantsProvider({
     me,
@@ -43,16 +43,20 @@ export function createGrants<const C extends PermissionCatalogue>(catalogue: C) 
     readonly me: MeGrants;
     readonly children: ReactNode;
   }) {
-    const can = useMemo(() => bind(me), [me]);
-    return <GrantsContext.Provider value={can}>{children}</GrantsContext.Provider>;
+    const value = useMemo(() => ({ me, can: bind(me) }), [me]);
+    return <GrantsContext.Provider value={value}>{children}</GrantsContext.Provider>;
   }
 
-  function useCan(): Can<C> {
-    const can = useContext(GrantsContext);
-    if (can === null)
+  function useGrants() {
+    const value = useContext(GrantsContext);
+    if (value === null)
       throw new Error('useCan() and PermissionGate need a GrantsProvider above them');
-    return can;
+    return value;
   }
+
+  const useCan = (): Can<C> => useGrants().can;
+  /** The `/me` slice itself — `branches_in_scope` for the BranchSwitcher. */
+  const useMe = (): MeGrants => useGrants().me;
 
   function PermissionGate<K extends keyof C & string>(props: PermissionGateProps<C, K>) {
     const { code, children, blocked, fallback = null, ...options } = props;
@@ -65,5 +69,5 @@ export function createGrants<const C extends PermissionCatalogue>(catalogue: C) 
     return <>{children}</>;
   }
 
-  return { GrantsProvider, PermissionGate, useCan };
+  return { GrantsProvider, PermissionGate, useCan, useMe };
 }

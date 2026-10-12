@@ -91,7 +91,13 @@
     "approvalDecide": "Discount request — the user may decide",
     "approvalView": "Discount request — view only",
     "qrMock": "Mock source (no camera)",
-    "qrCamera": "Camera source"
+    "qrCamera": "Camera source",
+    "shellPersona": "Staff shell for the persona — resize the window: phone below 768 px, rail from 768 px, sub-navigation from 1024 px",
+    "bottomCentre": "Five items with the centre action",
+    "bottomPlain": "No create action — four items, no centre",
+    "branchPersona": "Branches in the persona's scope",
+    "headerFour": "One primary and four secondary actions",
+    "headerTwo": "One primary and two secondary actions"
   },
   "log": {
     "label": "Handler call:",
@@ -103,7 +109,10 @@
     "result": "onResult(\"{text}\")",
     "error": "onError(\"{kind}\")",
     "saved": "submit with {count} files",
-    "cancelBooking": "Cancel booking pressed"
+    "cancelBooking": "Cancel booking pressed",
+    "start": "centre.onPress()",
+    "branch": "onChange(\"{choice}\")",
+    "pressed": "{label} pressed"
   },
   "bell": {
     "discount": "{name} asks for a discount at {branch}",
@@ -146,5 +155,28 @@
     "company": "company level",
     "yes": "yes",
     "no": "no"
+  },
+  "shell": {
+    "home": "Home",
+    "calendar": "Calendar",
+    "sales": "Sales",
+    "customers": "Customers",
+    "team": "Team",
+    "money": "Money",
+    "settings": "Settings",
+    "today": "Today",
+    "receipts": "Receipts",
+    "bookings": "Bookings",
+    "more": "More",
+    "start": "＋ Start",
+    "breadcrumb": "{group} › {screen}",
+    "subtitle": "{branch} · {date}",
+    "content": "Page content",
+    "newBooking": "New booking",
+    "export": "Export",
+    "print": "Print",
+    "importFile": "Import",
+    "pointThree": "Point 3.0",
+    "demoDate": "05/Oct/2026"
   }
 }

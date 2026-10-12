@@ -9,4 +9,5 @@ export const {
   GrantsProvider: FixtureGrantsProvider,
   PermissionGate: FixturePermissionGate,
   useCan: useFixtureCan,
+  useMe: useFixtureMe,
 } = createGrants(FIXTURE_PERMISSIONS);

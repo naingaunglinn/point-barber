@@ -91,7 +91,13 @@
     "approvalDecide": "လျှော့ဈေး တောင်းဆိုချက် — ဆုံးဖြတ်ခွင့် ရှိ",
     "approvalView": "လျှော့ဈေး တောင်းဆိုချက် — ကြည့်ရုံသာ",
     "qrMock": "Mock source (ကင်မရာ မလို)",
-    "qrCamera": "ကင်မရာ source"
+    "qrCamera": "ကင်မရာ source",
+    "shellPersona": "Persona အတွက် staff shell — window အရွယ် ပြောင်းကြည့်ပါ: 768 px အောက် ဖုန်း၊ 768 px မှ rail၊ 1024 px မှ sub-navigation",
+    "bottomCentre": "Centre action ပါ item ငါးခု",
+    "bottomPlain": "ဖန်တီးခွင့် မရှိ — item လေးခု၊ centre မရှိ",
+    "branchPersona": "Persona ရဲ့ scope ထဲက ဆိုင်ခွဲများ",
+    "headerFour": "Primary တစ်ခုနှင့် secondary လေးခု",
+    "headerTwo": "Primary တစ်ခုနှင့် secondary နှစ်ခု"
   },
   "log": {
     "label": "Handler ခေါ်မှု:",
@@ -103,7 +109,10 @@
     "result": "onResult(\"{text}\")",
     "error": "onError(\"{kind}\")",
     "saved": "ဖိုင် {count} ခုဖြင့် submit",
-    "cancelBooking": "Cancel booking ကို နှိပ်ပြီး"
+    "cancelBooking": "Cancel booking ကို နှိပ်ပြီး",
+    "start": "centre.onPress()",
+    "branch": "onChange(\"{choice}\")",
+    "pressed": "{label} ကို နှိပ်ပြီး"
   },
   "bell": {
     "discount": "{name} က {branch} တွင် လျှော့ဈေး တောင်းထားသည်",
@@ -146,5 +155,28 @@
     "company": "Company level",
     "yes": "ရ",
     "no": "မရ"
+  },
+  "shell": {
+    "home": "ပင်မ",
+    "calendar": "ပြက္ခဒိန်",
+    "sales": "အရောင်း",
+    "customers": "ဖောက်သည်များ",
+    "team": "ဝန်ထမ်း",
+    "money": "ငွေစာရင်း",
+    "settings": "ဆက်တင်",
+    "today": "ယနေ့",
+    "receipts": "ဘောင်ချာများ",
+    "bookings": "Booking များ",
+    "more": "နောက်ထပ်",
+    "start": "＋ စမည်",
+    "breadcrumb": "{group} › {screen}",
+    "subtitle": "{branch} · {date}",
+    "content": "စာမျက်နှာ အကြောင်းအရာ",
+    "newBooking": "Booking အသစ်",
+    "export": "Export",
+    "print": "Print",
+    "importFile": "Import",
+    "pointThree": "ပွိုင့် ၃.၀",
+    "demoDate": "05/Oct/2026"
   }
 }
