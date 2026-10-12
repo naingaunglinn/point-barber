@@ -16,9 +16,12 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:zones": "node scripts/test-zones.mjs"
   },
   "dependencies": {
+    "@date-fns/tz": "1.5.0",
+    "date-fns": "4.4.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
