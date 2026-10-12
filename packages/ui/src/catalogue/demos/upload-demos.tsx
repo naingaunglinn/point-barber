@@ -11,7 +11,6 @@ import {
   type UploadFunction,
 } from '../../components/AttachmentUploader/AttachmentUploader';
 import { Button } from '../../components/Button/Button';
-import { FormField } from '../../components/FormField/FormField';
 import { HandlerLog } from '../demo-frame';
 
 // AttachmentUploader demos (task 9.3 · AD-FORM-16 · API-LIM-03): a fake upload that reports progress
@@ -46,16 +45,32 @@ function UploaderDemo({
   purpose,
   label,
   multiple = false,
+  withSave = false,
 }: {
   readonly purpose: UploadPurpose;
   readonly label: 'photo' | 'documents' | 'importFile';
   readonly multiple?: boolean;
+  /** The form's Save, disabled while an upload runs (AD-FORM-16) — shown once, on the photo demo. */
+  readonly withSave?: boolean;
 }) {
   const t = useTranslations('devui.upload');
   const log = useTranslations('devui.log');
   const [files, setFiles] = useState<readonly UploadedFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState('');
+  const uploader = (
+    <AttachmentUploader
+      aria-label={t(label)}
+      purpose={purpose}
+      maxMb={10}
+      upload={fakeUpload}
+      value={files}
+      multiple={multiple}
+      onChange={setFiles}
+      onBusyChange={setBusy}
+    />
+  );
+  if (!withSave) return uploader;
   return (
     <form
       className="flex flex-col gap-3"
@@ -64,20 +79,7 @@ function UploaderDemo({
         setSaved(log('saved', { count: files.length }));
       }}
     >
-      <FormField label={t(label)}>
-        {(control) => (
-          <AttachmentUploader
-            {...control}
-            purpose={purpose}
-            maxMb={10}
-            upload={fakeUpload}
-            value={files}
-            multiple={multiple}
-            onChange={setFiles}
-            onBusyChange={setBusy}
-          />
-        )}
-      </FormField>
+      {uploader}
       <div>
         <Button type="submit" variant="primary" disabled={busy}>
           {t('save')}
@@ -88,7 +90,7 @@ function UploaderDemo({
   );
 }
 
-export const UploadImageDemo = () => <UploaderDemo purpose="image" label="photo" />;
+export const UploadImageDemo = () => <UploaderDemo purpose="image" label="photo" withSave />;
 export const UploadDocumentDemo = () => (
   <UploaderDemo purpose="document" label="documents" multiple />
 );

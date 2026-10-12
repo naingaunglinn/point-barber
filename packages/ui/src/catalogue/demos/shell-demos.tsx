@@ -139,59 +139,72 @@ export function ShellDemo() {
       : { label: t('start'), icon: <Scissors />, onPress: () => setPressed(log('start')) };
 
   return (
-    <AppShell
-      nav={useModules()}
-      activeKey="sales"
-      activeItemKey="today"
-      title={t('today')}
-      breadcrumb={t('breadcrumb', { group: t('sales'), screen: t('today') })}
-      branchSwitcher={
-        <BranchSwitcher
-          branches={me.branches_in_scope}
-          value={branch}
-          userId={persona}
-          allowAll={allowAll}
-          onChange={setBranch}
-        />
-      }
-      search={
-        <Input
-          type="search"
-          placeholder={common('search.placeholder')}
-          aria-label={common('search.placeholder')}
-          className="h-10 w-56"
-        />
-      }
-      bell={
-        <NotificationBell
-          unreadCount={notifications.filter((item) => !item.read).length}
-          items={notifications}
-          onOpenItem={() => undefined}
-          onMarkAllRead={() => undefined}
-          onDelete={() => undefined}
-        />
-      }
-      language={<LanguageSwitch value={locale} onChange={(next) => setParam('lang', next)} />}
-      userMenu={
-        person === null ? undefined : <EmployeeChip name={localized(person, 'name', locale)} />
-      }
-      bottomNav={
-        start === undefined ? (
-          <BottomNav items={items} activeKey="today" />
-        ) : (
-          <BottomNav items={items} centre={start} activeKey="today" />
-        )
-      }
-    >
-      <PageHeader
+    // A phone-sized frame: the shell fills it and its bars stick inside it.
+    <div className="h-[40rem] overflow-y-auto border-t border-border" data-slot="shell-frame">
+      <AppShell
+        height="parent"
+        nav={useModules()}
+        activeKey="sales"
+        activeItemKey="today"
         title={t('today')}
-        subtitle={t('subtitle', { branch: scope, date: formatDate(todayMmt(now), { locale }) })}
-      />
-      <div className="mt-4 flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">{t('content')}</p>
-        <HandlerLog label={log('label')} value={pressed} />
-      </div>
-    </AppShell>
+        breadcrumb={t('breadcrumb', { group: t('sales'), screen: t('today') })}
+        branchSwitcher={
+          <BranchSwitcher
+            branches={me.branches_in_scope}
+            value={branch}
+            userId={persona}
+            allowAll={allowAll}
+            onChange={setBranch}
+          />
+        }
+        search={
+          <Input
+            type="search"
+            placeholder={common('search.placeholder')}
+            aria-label={common('search.placeholder')}
+            className="h-10 w-56"
+          />
+        }
+        bell={
+          <NotificationBell
+            unreadCount={notifications.filter((item) => !item.read).length}
+            items={notifications}
+            onOpenItem={() => undefined}
+            onMarkAllRead={() => undefined}
+            onDelete={() => undefined}
+          />
+        }
+        language={<LanguageSwitch value={locale} onChange={(next) => setParam('lang', next)} />}
+        userMenu={
+          person === null ? undefined : (
+            // The own name opens the own profile (owner 12/Oct/2026); the page itself belongs to
+            // add-foundation-auth-access.
+            <EmployeeChip
+              name={localized(person, 'name', locale)}
+              onOpenProfile={() =>
+                setPressed(log('profile', { name: localized(person, 'name', locale) }))
+              }
+            />
+          )
+        }
+        bottomNav={
+          start === undefined ? (
+            <BottomNav items={items} activeKey="today" />
+          ) : (
+            <BottomNav items={items} centre={start} activeKey="today" />
+          )
+        }
+      >
+        <PageHeader
+          title={t('today')}
+          subtitle={t('subtitle', { branch: scope, date: formatDate(todayMmt(now), { locale }) })}
+        />
+        <div className="mt-4 flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">{t('content')}</p>
+          <HandlerLog label={log('label')} value={pressed} />
+        </div>
+      </AppShell>
+    </div>
   );
 }
 

@@ -18,7 +18,8 @@ import { NavIcon, type NavLinkItem } from '../BottomNav/BottomNav';
 // - from 1024 px: the rail, the collapsible sub-navigation panel (240 px) and the top bar in the order
 //   branch switcher · breadcrumb (the title when there is none) · search · bell · language · user menu;
 //   24 px content padding. The page's title itself is its PageHeader `h1`.
-// Each slot is rendered once. The top bar and the bottom navigation are sticky, not fixed.
+// Each slot is rendered once. The rail and the sub-navigation are full-height columns whose content
+// sticks to the top; the top bar and the bottom navigation are sticky, not fixed.
 
 export interface ShellScreen {
   readonly key: string;
@@ -49,6 +50,11 @@ export interface AppShellProps {
   readonly bell?: ReactNode;
   readonly language?: ReactNode;
   readonly userMenu?: ReactNode;
+  /**
+   * `viewport` (default): the shell is at least the screen's height. `parent`: it fills the box it sits
+   * in — a framed preview such as the catalogue — and its bars stick inside that box.
+   */
+  readonly height?: 'viewport' | 'parent';
 }
 
 const RAIL_ITEM = 'flex size-12 items-center justify-center rounded-md [&_svg]:size-5';
@@ -60,7 +66,7 @@ function activeClass(active: boolean) {
 
 export function AppShell(props: AppShellProps) {
   const { nav, activeKey, activeItemKey, children, bottomNav, branchSwitcher } = props;
-  const { title, breadcrumb, search, bell, language, userMenu } = props;
+  const { title, breadcrumb, search, bell, language, userMenu, height = 'viewport' } = props;
   const [collapsed, setCollapsed] = useState(false);
   const headingId = useId();
   const listId = useId();
@@ -85,12 +91,19 @@ export function AppShell(props: AppShellProps) {
 
   return (
     <TooltipProvider>
-      <div data-slot="app-shell" className="flex min-h-dvh bg-background text-foreground">
+      <div
+        data-slot="app-shell"
+        className={cn(
+          'flex bg-background text-foreground',
+          height === 'viewport' ? 'min-h-dvh' : 'min-h-full',
+        )}
+      >
         <nav
           data-slot="rail"
-          className="sticky top-0 hidden w-16 shrink-0 flex-col items-center self-start border-e border-border py-2 md:flex"
+          className="hidden w-16 shrink-0 flex-col border-e border-border md:flex"
         >
-          <ul className="flex flex-col items-center gap-2">
+          {/* The column (and its divider) runs the full height; the icons stay in view. */}
+          <ul className="sticky top-0 flex flex-col items-center gap-2 py-2">
             {nav.map((item) => {
               const active = item.key === activeKey;
               return (
@@ -118,30 +131,32 @@ export function AppShell(props: AppShellProps) {
             aria-labelledby={headingId}
             data-collapsed={collapsed || undefined}
             className={cn(
-              'sticky top-0 hidden shrink-0 flex-col gap-1 self-start border-e border-border p-2 lg:flex',
+              'hidden shrink-0 flex-col border-e border-border lg:flex',
               collapsed ? 'w-14' : 'w-60',
             )}
           >
-            <div className="flex items-center justify-between gap-2">
-              <h2
-                id={headingId}
-                className={cn('px-2 font-semibold break-words', collapsed && 'sr-only')}
-              >
-                {module.label}
-              </h2>
-              <Button
-                variant="ghost"
-                iconOnly
-                icon={collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-                aria-labelledby={headingId}
-                aria-expanded={!collapsed}
-                aria-controls={listId}
-                onClick={() => setCollapsed((value) => !value)}
-              />
+            <div className="sticky top-0 flex flex-col gap-1 p-2">
+              <div className="flex items-center justify-between gap-2">
+                <h2
+                  id={headingId}
+                  className={cn('px-2 font-semibold break-words', collapsed && 'sr-only')}
+                >
+                  {module.label}
+                </h2>
+                <Button
+                  variant="ghost"
+                  iconOnly
+                  icon={collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+                  aria-labelledby={headingId}
+                  aria-expanded={!collapsed}
+                  aria-controls={listId}
+                  onClick={() => setCollapsed((value) => !value)}
+                />
+              </div>
+              <ul id={listId} hidden={collapsed} className="flex flex-col gap-1">
+                {screenLinks('')}
+              </ul>
             </div>
-            <ul id={listId} hidden={collapsed} className="flex flex-col gap-1">
-              {screenLinks('')}
-            </ul>
           </nav>
         )}
         <div className="flex min-w-0 flex-1 flex-col">

@@ -132,7 +132,30 @@ export function PriceGridDemo() {
   const [homeCells, setHomeCells] = useState<readonly PriceCell[]>([]);
   const [location, setLocation] = useState<GridLocation>('shop');
   const [from, setFrom] = useState<BusinessDate | null>(null);
+  const [changed, setChanged] = useState('');
   const cells = location === 'shop' ? shopCells : homeCells;
+  // The cell that changed, as the editor reports it (`null` = not sold here; 0 is a price).
+  const report = (next: readonly PriceCell[]) => {
+    const key = (cell: PriceCell) => cell.valueIds.join('|');
+    const before = new Map(cells.map((cell) => [key(cell), cell]));
+    const cell = next.find((item) => {
+      const old = before.get(key(item));
+      return (
+        old === undefined ||
+        old.price_amount !== item.price_amount ||
+        old.duration_minutes !== item.duration_minutes
+      );
+    });
+    if (cell !== undefined) {
+      setChanged(
+        JSON.stringify({
+          ...cell,
+          price_amount: cell.price_amount === null ? null : moneyToWire(cell.price_amount),
+        }),
+      );
+    }
+    (location === 'shop' ? setShopCells : setHomeCells)(next);
+  };
   return (
     <div className="flex flex-col gap-2">
       <PriceGridEditor
@@ -145,20 +168,12 @@ export function PriceGridDemo() {
         shopCells={shopCells}
         defaultDurationMinutes={90}
         effectiveFrom={from ?? undefined}
-        onChange={location === 'shop' ? setShopCells : setHomeCells}
+        onChange={report}
         onLocationChange={setLocation}
         onEffectiveFromChange={setFrom}
         onCopyFromBranch={() => undefined}
       />
-      <HandlerLog
-        label={log('reported')}
-        value={JSON.stringify(
-          cells.map((cell) => ({
-            ...cell,
-            price_amount: cell.price_amount === null ? null : moneyToWire(cell.price_amount),
-          })),
-        )}
-      />
+      <HandlerLog label={log('reported')} value={changed} />
     </div>
   );
 }

@@ -8,7 +8,6 @@ import type { BusinessDate, Mmk } from '@point/shared';
 import { BilingualInput, type Bilingual } from '../../components/BilingualInput/BilingualInput';
 import { DateInput } from '../../components/DateInput/DateInput';
 import { DateText } from '../../components/DateText/DateText';
-import { FormField } from '../../components/FormField/FormField';
 import { MoneyInput } from '../../components/MoneyInput/MoneyInput';
 import { MoneyText } from '../../components/MoneyText/MoneyText';
 import { PhoneInput, type PhoneValue } from '../../components/PhoneInput/PhoneInput';
@@ -17,7 +16,9 @@ import { HandlerLog } from '../demo-frame';
 import { DATES, DEMO_SALES } from '../fixtures';
 
 // Input demos (task 9.3 · AD-FORM-09..15 · AD-FMT-01 · AD-FMT-02 · D-PLT-04 · D-PLT-05 · design D12):
-// each shows the value it reports, so the spec cases can be read off the page.
+// each shows the value it reports, so the spec cases can be read off the page. The demo's title names the
+// field, so the control takes that name as its accessible name instead of repeating it as a label (the
+// label above a control is the FormField demo's subject).
 
 export function MoneyInputDemo() {
   const t = useTranslations('devui.inputs');
@@ -25,9 +26,7 @@ export function MoneyInputDemo() {
   const [value, setValue] = useState<Mmk | null>(null);
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <FormField label={t('price')}>
-        {(control) => <MoneyInput {...control} value={value} onChange={setValue} />}
-      </FormField>
+      <MoneyInput aria-label={t('price')} value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={value === null ? 'null' : String(value)} />
     </div>
   );
@@ -52,9 +51,7 @@ export function PhoneInputDemo() {
   const [value, setValue] = useState<PhoneValue>({ raw: '', e164: null });
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <FormField label={t('phone')}>
-        {(control) => <PhoneInput {...control} value={value.raw} onChange={setValue} />}
-      </FormField>
+      <PhoneInput aria-label={t('phone')} value={value.raw} onChange={setValue} />
       <HandlerLog label={log('reported')} value={JSON.stringify(value)} />
     </div>
   );
@@ -66,9 +63,8 @@ export function BilingualInputDemo() {
   const [value, setValue] = useState<Bilingual>({ mm: '', en: null });
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <FormField label={t('serviceName')} required>
-        {(control) => <BilingualInput {...control} value={value} onChange={setValue} />}
-      </FormField>
+      {/* The pair labels its own two inputs (Myanmar, required; English). */}
+      <BilingualInput value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={JSON.stringify(value)} />
     </div>
   );
@@ -80,9 +76,7 @@ export function TextInputDemo() {
   const [value, setValue] = useState('');
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <FormField label={t('note')}>
-        {(control) => <TextInput {...control} multiline value={value} onChange={setValue} />}
-      </FormField>
+      <TextInput aria-label={t('note')} multiline value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={JSON.stringify(value)} />
     </div>
   );
@@ -94,9 +88,7 @@ export function DateInputDemo() {
   const [value, setValue] = useState<BusinessDate | null>(null);
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <FormField label={t('visitDate')}>
-        {(control) => <DateInput {...control} value={value} onChange={setValue} />}
-      </FormField>
+      <DateInput aria-label={t('visitDate')} value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={value ?? 'null'} />
     </div>
   );

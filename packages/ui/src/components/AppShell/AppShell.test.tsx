@@ -154,6 +154,18 @@ describe('AppShell', () => {
     expect(subNav.className).toContain('w-60');
   });
 
+  it('is at least the screen high, or fills its parent in a framed preview', () => {
+    const { unmount } = renderShell();
+    expect(classes('app-shell')).toContain('min-h-dvh');
+    unmount();
+    render(
+      <AppShell nav={NAV} height="parent">
+        <p>{CONTENT}</p>
+      </AppShell>,
+    );
+    expect(classes('app-shell')).toContain('min-h-full');
+  });
+
   it('a module without screens has no sub-navigation', () => {
     render(
       <AppShell nav={NAV} activeKey="home">

@@ -10,7 +10,8 @@ import { CountBadge } from '../CountBadge/CountBadge';
 // (24 px icons, no visible label — owner 12/Oct/2026); each label is screen-reader text inside the item,
 // so the name is "Today 3" with its badge. The centre item is the user's most frequent create action,
 // filled with `--primary` and larger; without a create action there is no centre (4 items). Badges count
-// unfinished work. The caller chooses the set by permissions (AD-NAV-01).
+// unfinished work. The caller chooses the set by permissions (AD-NAV-01). It does not position itself:
+// AppShell keeps it at the bottom of the screen.
 
 export interface NavLinkItem {
   readonly key: string;
@@ -84,7 +85,7 @@ export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
   return (
     <nav
       data-slot="bottom-nav"
-      className="sticky bottom-0 z-30 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
+      className="border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="flex items-stretch">
         {items.slice(0, centre === undefined ? items.length : middle).map(link)}

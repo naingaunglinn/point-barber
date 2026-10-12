@@ -26,7 +26,10 @@ export function DemoToggle({
   );
 }
 
-/** The last handler call of a demo, announced politely. */
+/**
+ * The last handler call of a demo, announced politely. The live region is always there (so the first call
+ * is announced); its text appears only once something happened.
+ */
 export function HandlerLog({
   label,
   value,
@@ -36,9 +39,13 @@ export function HandlerLog({
 }) {
   return (
     <p className="text-sm text-muted-foreground" role="status" data-slot="handler-log">
-      <span className="font-semibold">{label}</span>{' '}
-      {/* Values are often JSON without spaces: they may break anywhere. */}
-      <span className="wrap-anywhere">{value}</span>
+      {value === '' || value === null || value === undefined ? null : (
+        <>
+          <span className="font-semibold">{label}</span>{' '}
+          {/* Values are often JSON without spaces: they may break anywhere. */}
+          <span className="wrap-anywhere">{value}</span>
+        </>
+      )}
     </p>
   );
 }

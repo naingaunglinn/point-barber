@@ -88,7 +88,7 @@ export function EmployeeChipDemo() {
 export function DataTextDemo() {
   const { locale } = useFormat('DataText demo');
   return (
-    <ul className="flex flex-col gap-1 text-sm">
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
       {Object.values(PEOPLE).map((person) => (
         <li key={person.code}>
           <DataText>{localized(person, 'name', locale)}</DataText>
