@@ -45,6 +45,13 @@ export interface ChartProps {
 
 export const MAX_SERIES = 6;
 
+/**
+ * The size Recharts draws at before it measures its container. The primitive's default (320 px wide)
+ * overflows a narrower phone layout for a moment, so the chart starts 1 px wide and takes the container's
+ * width on its first measurement.
+ */
+const FIRST_DRAW = { width: 1, height: 256 } as const;
+
 function checkSeries(series: readonly ChartSeries[]): void {
   if (series.length > MAX_SERIES) {
     throw new RangeError(
@@ -182,6 +189,7 @@ export function BarChart(props: ChartProps) {
       className="min-h-64 w-full"
       aria-label={yLabel}
       role="img"
+      initialDimension={FIRST_DRAW}
     >
       <RechartsBarChart data={rowsOf(series)} margin={{ top: 24, right: 8, left: 8, bottom: 24 }}>
         <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -234,6 +242,7 @@ export function LineChart(props: ChartProps) {
       className="min-h-64 w-full"
       aria-label={yLabel}
       role="img"
+      initialDimension={FIRST_DRAW}
     >
       <RechartsLineChart data={rowsOf(series)} margin={{ top: 24, right: 16, left: 8, bottom: 24 }}>
         <CartesianGrid vertical={false} stroke="var(--border)" />

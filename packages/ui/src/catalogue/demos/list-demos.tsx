@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -8,7 +9,7 @@ import { BookingStatus, localized, SaleStatus, type CursorPage, type Instant } f
 import { CardList } from '../../components/CardList/CardList';
 import { DataTable, type DataTableColumn } from '../../components/DataTable/DataTable';
 import { FilterBar } from '../../components/FilterBar/FilterBar';
-import type { FilterValue } from '../../components/FilterBar/filter-address';
+import { filterFromSearch, type FilterValue } from '../../components/FilterBar/filter-address';
 import { FormField } from '../../components/FormField/FormField';
 import { MoneyText } from '../../components/MoneyText/MoneyText';
 import { Pagination } from '../../components/Pagination/Pagination';
@@ -105,6 +106,8 @@ export function SalesListDemo() {
         onChange={setFilter}
         search={{ placeholder: t('searchReceipt') }}
         statuses={{ table: 'sales', codes: Object.values(SaleStatus) }}
+        // The bookings demo owns the address (`q`, `from`, `to`, `status`); this one keeps its filter local.
+        syncToUrl={false}
       />
       <DataTable
         columns={columns}
@@ -159,7 +162,11 @@ export function CardListDemo() {
 export function FilterBarDemo() {
   const t = useTranslations('devui.lists');
   const log = useTranslations('devui.log');
-  const [filter, setFilter] = useState<FilterValue>({});
+  const params = useSearchParams();
+  // The filter starts from the address, so a reload keeps it (AD-LIST-01).
+  const [filter, setFilter] = useState<FilterValue>(() =>
+    filterFromSearch(new URLSearchParams(params.toString())),
+  );
   return (
     <div className="flex flex-col gap-2">
       <FilterBar
