@@ -39,5 +39,45 @@
     "chartsKpi": "ဂရပ်နှင့် KPI",
     "pickers": "ရွေးချယ်ကွက်များ",
     "dataLess": "ဒေတာမလိုသော အစိတ်အပိုင်းများ"
+  },
+  "tokens": {
+    "swatches": "အရောင် token များ",
+    "token": "Token",
+    "sample": "နမူနာ",
+    "value": "တွက်ထားသော တန်ဖိုး",
+    "note": "မှတ်ချက်",
+    "aliasOf": "{token} ၏ alias",
+    "pending": "owner တန်ဖိုး စောင့်ဆိုင်းဆဲ (OPEN-30)",
+    "decorationNote": "စာလုံးကြီးနှင့် icon အတွက်သာ၊ နောက်ခံ သို့မဟုတ် card ပေါ်တွင်သာ",
+    "contrast": "အရောင် ကွာခြားမှု",
+    "pair": "အတွဲ",
+    "ratio": "အချိုး",
+    "limit": "အနည်းဆုံး",
+    "mark": "ရလဒ်",
+    "on": "{background} ပေါ်ရှိ {foreground}",
+    "focusOutline": "focus outline = {token}",
+    "inputBorder": "input border = {token}",
+    "markPass": "အောင်",
+    "markLargeOnly": "စာလုံးကြီးနှင့် icon အတွက်သာ",
+    "markNotAllowed": "မသုံးရ",
+    "markFail": "မအောင်",
+    "measuring": "တိုင်းနေသည်…",
+    "ratioValue": "{ratio} : 1"
+  },
+  "fonts": {
+    "samples": "မြန်မာ စမ်းသပ်စာကြောင်းများ (AD-VIS-05)",
+    "faces": "Font face များ",
+    "family": "Family",
+    "weightColumn": "အထူ",
+    "status": "အခြေအနေ",
+    "tabular": "ဂဏန်း ကော်လံ (tabular)",
+    "digits": "မြန်မာ ဂဏန်းများ",
+    "siteHeadings": "ဝက်ဘ်ဆိုက် ခေါင်းစဉ်",
+    "semibold": "အထူ 600 မြန်မာ label",
+    "legend": "တစ်ကြောင်းစီ: အထူ 400 · အထူ 700 · နှိုင်းယှဉ်ရန် system-ui"
+  },
+  "formatters": {
+    "function": "Function",
+    "input": "ထည့်သွင်းချက်"
   }
 }

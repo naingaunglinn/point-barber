@@ -345,6 +345,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The device's own font, only for the comparison samples of the catalogue's Fonts section
+ * (AD-VIS-05 · design D3): a width measured against it shows that the self-hosted face is drawn. */
+@utility font-system-ui {
+  font-family: system-ui;
+}
+
 @layer base {
   [lang] {
     font-family: var(--font-sans);

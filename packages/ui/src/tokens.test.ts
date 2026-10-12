@@ -4,43 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { declarationsOf } from './test/css-declarations';
+
 // Unit tests of packages/ui/tokens.css (task 1.9 · design D2 · AD-VIS-03 · D-UX-02 · FE-VIS-01a).
 // The file is read as text: each top-level rule's selector and its custom-property declarations.
 
 const ui = join(dirname(fileURLToPath(import.meta.url)), '..');
-
-type Declarations = Map<string, string>;
-
-/** Custom-property declarations of every top-level rule whose selector list is exactly `selector`. */
-function declarationsOf(css: string, selector: string): Declarations {
-  const text = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const result: Declarations = new Map();
-  let depth = 0;
-  let start = 0;
-  let header = '';
-  for (let i = 0; i < text.length; i += 1) {
-    const char = text[i];
-    if (char === '{') {
-      if (depth === 0) {
-        header = text.slice(start, i).trim().replace(/\s+/g, ' ');
-        start = i + 1;
-      }
-      depth += 1;
-    } else if (char === '}') {
-      depth -= 1;
-      if (depth === 0) {
-        if (header === selector) {
-          for (const match of text.slice(start, i).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
-            const [, name, value] = match;
-            if (name !== undefined && value !== undefined) result.set(name, value.trim());
-          }
-        }
-        start = i + 1;
-      }
-    }
-  }
-  return result;
-}
 
 const tokens = readFileSync(join(ui, 'tokens.css'), 'utf8');
 const snapshot = readFileSync(join(ui, 'tokens.neutral.snapshot.css'), 'utf8');

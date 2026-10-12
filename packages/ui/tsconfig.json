@@ -6,7 +6,8 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "customConditions": ["source"]
   },
-  "include": ["src"]
+  "include": ["src", "vitest.config.ts", "vitest.setup.ts"]
 }

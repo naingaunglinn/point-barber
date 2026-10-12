@@ -55,3 +55,11 @@ export function getEnv(): WebEnv {
   });
   return cached;
 }
+
+/**
+ * The development catalogue `/dev/ui` (AD-IMPL-06 · design D12). `NEXT_PUBLIC_DEV_CATALOGUE=1` is set
+ * only by the `dev` and `build:catalogue` scripts of apps/web and inlined at build time, so every
+ * other build — the production image included — answers 404 on `/dev/ui`, whatever the runtime
+ * environment says. Not part of the schema above: the flag is never in `.env.example` or an env file.
+ */
+export const DEV_CATALOGUE = process.env.NEXT_PUBLIC_DEV_CATALOGUE === '1';
