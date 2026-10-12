@@ -5,9 +5,8 @@
 // Alias: `pnpm i18n:check`. Checks the repository it lives in; `--root=<dir>` checks another tree.
 //
 // The constant files are loaded by Node's type stripping, so they and the status map keep
-// import-free, plain `as const` objects. The status map (packages/ui/src/status/status-map.ts,
-// task 7.8) exports `DERIVED_STATES` (table → state → style) and `FLAGS` (key → style); until it
-// exists the guard says so and checks the rest.
+// import-free, plain `as const` objects. The status map (packages/ui/src/status/status-map.ts)
+// exports `DERIVED_STATES` (table → state → style) and `FLAGS` (key → style); without it the guard fails.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -61,23 +60,26 @@ export async function requiredKeys(root) {
   for (const group of ['ErrorCode', 'FieldIssueCode', 'ClientMessageCode']) {
     for (const code of Object.values(errorCodes[group] ?? {})) keys.push(`error.${code}`);
   }
-  const hasMap = existsSync(join(root, STATUS_MAP));
-  if (hasMap) {
-    const { DERIVED_STATES, FLAGS } = await load(root, STATUS_MAP);
-    for (const [table, states] of Object.entries(DERIVED_STATES)) {
-      for (const name of Object.keys(states)) keys.push(`status.${table}.${name}`);
-    }
-    for (const flag of Object.keys(FLAGS)) keys.push(`status.flag.${flag}`);
+  if (!existsSync(join(root, STATUS_MAP))) {
+    return {
+      keys,
+      missing: [`check-i18n: ${STATUS_MAP} not found — the derived states and flags need it`],
+    };
   }
-  return { keys, hasMap };
+  const { DERIVED_STATES, FLAGS } = await load(root, STATUS_MAP);
+  for (const [table, states] of Object.entries(DERIVED_STATES)) {
+    for (const name of Object.keys(states)) keys.push(`status.${table}.${name}`);
+  }
+  for (const flag of Object.keys(FLAGS)) keys.push(`status.flag.${flag}`);
+  return { keys, missing: [] };
 }
 
 /** Every finding, one line each, in a stable order. */
 export async function findProblems(root) {
   const languages = LANGUAGES.map((lang) => ({ lang, ...readLanguage(root, lang) }));
-  const { keys: required, hasMap } = await requiredKeys(root);
+  const { keys: required, missing } = await requiredKeys(root);
   const all = new Set([...languages.flatMap(({ values }) => [...values.keys()]), ...required]);
-  const problems = [];
+  const problems = [...missing];
   for (const { lang, values, unreadable } of languages) {
     problems.push(...unreadable);
     for (const key of [...all].sort()) {
@@ -87,7 +89,7 @@ export async function findProblems(root) {
       }
     }
   }
-  return { problems, keys: all.size, hasMap };
+  return { problems, keys: all.size };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
@@ -95,12 +97,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const root = arg
     ? resolve(arg.slice('--root='.length))
     : resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-  const { problems, keys, hasMap } = await findProblems(root);
-  if (!hasMap) {
-    console.log(
-      `check-i18n: status map not found (${STATUS_MAP}, task 7.8) — derived states and flags not checked`,
-    );
-  }
+  const { problems, keys } = await findProblems(root);
   for (const line of problems) console.error(line);
   if (problems.length === 0) console.log(`check-i18n: ok — ${keys} keys in my and en`);
   process.exit(problems.length === 0 ? 0 : 1);

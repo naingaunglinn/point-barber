@@ -13,7 +13,7 @@ const CONSTANTS = 'packages/shared/src/constants';
 const STATUS_MAP = 'packages/ui/src/status/status-map.ts';
 const roots = [];
 
-/** A temporary tree with this repository's language files and the two constant files. */
+/** A temporary tree with this repository's language files, the two constant files and the status map. */
 function copyOfRepo() {
   const root = mkdtempSync(join(tmpdir(), 'check-i18n-'));
   roots.push(root);
@@ -22,6 +22,8 @@ function copyOfRepo() {
   for (const name of ['status.ts', 'error-codes.ts']) {
     cpSync(join(repo, CONSTANTS, name), join(root, CONSTANTS, name));
   }
+  mkdirSync(dirname(join(root, STATUS_MAP)), { recursive: true });
+  cpSync(join(repo, STATUS_MAP), join(root, STATUS_MAP));
   return root;
 }
 
@@ -138,7 +140,7 @@ describe('check-i18n (pnpm i18n:check)', () => {
     expect(lines.filter((line) => line === 'my: missing common.action.save')).toHaveLength(1);
   });
 
-  describe('with the status map (task 7.8)', () => {
+  describe('with the status map', () => {
     const MAP = `export const DERIVED_STATES = {
   payments: { VOIDED: { tone: 'muted' } },
   daily_closings: { OPEN_PAST: { tone: 'warning' } },
@@ -154,7 +156,7 @@ export const FLAGS = {
       write(root, STATUS_MAP, MAP);
       const { status, output } = run(root);
       expect(status).toBe(0);
-      expect(output).not.toContain('status map not found');
+      expect(output).toMatch(/check-i18n: ok/);
     });
 
     it('fails on a derived state without a label', () => {
@@ -175,10 +177,21 @@ export const FLAGS = {
       expect(output).toContain('en: missing status.flag.overtime');
     });
 
-    it('says so when the map does not exist yet', () => {
-      const { status, output } = run(copyOfRepo());
-      expect(status).toBe(0);
-      expect(output).toContain('status map not found');
+    it('fails when the status map is missing', () => {
+      const root = copyOfRepo();
+      rmSync(join(root, STATUS_MAP));
+      const { status, output } = run(root);
+      expect(status).toBe(1);
+      expect(output).toContain('status-map.ts not found');
+    });
+
+    it('fails on a derived state of the real map without a label', () => {
+      const root = copyOfRepo();
+      for (const lang of ['my', 'en'])
+        edit(root, lang, 'status', (json) => delete json.payments.KBZPAY_UNVERIFIED);
+      const { status, output } = run(root);
+      expect(status).toBe(1);
+      expect(output).toContain('my: missing status.payments.KBZPAY_UNVERIFIED');
     });
   });
 });
