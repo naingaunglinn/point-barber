@@ -35,7 +35,7 @@ export function CardList<T>({ rows, rowKey, card, loading = false, onRowPress }:
         return (
           <li
             key={rowKey(row)}
-            className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
+            className="flex items-start gap-3 rounded-md border border-border bg-card p-3"
             data-slot="card"
           >
             {onRowPress === undefined ? (

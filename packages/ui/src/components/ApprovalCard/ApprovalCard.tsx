@@ -58,7 +58,7 @@ export function ApprovalCard(props: ApprovalCardProps) {
   const [note, setNote] = useState('');
   return (
     <article
-      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
+      className="flex flex-col gap-3 rounded-md border border-border bg-card p-4"
       data-slot="approval-card"
     >
       <header className="flex flex-wrap items-start justify-between gap-2">

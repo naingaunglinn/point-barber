@@ -13,8 +13,8 @@ export type SkeletonShape = 'text' | 'row' | 'card' | 'tile';
 const SHAPE: Readonly<Record<SkeletonShape, string>> = {
   text: 'h-4 w-full',
   row: 'h-12 w-full md:h-14',
-  card: 'h-24 w-full rounded-lg',
-  tile: 'h-28 w-full rounded-lg',
+  card: 'h-24 w-full rounded-md',
+  tile: 'h-28 w-full rounded-md',
 };
 
 export interface SkeletonProps {

@@ -60,7 +60,7 @@ export function KpiTile({ label, value, updatedAt, comparison, href }: KpiTilePr
       </span>
     </>
   );
-  const classes = 'flex flex-col gap-1 rounded-lg border border-border bg-card p-4';
+  const classes = 'flex flex-col gap-1 rounded-md border border-border bg-card p-4';
   return href === undefined ? (
     <div className={classes} data-slot="kpi-tile">
       {body}
