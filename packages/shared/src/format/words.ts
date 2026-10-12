@@ -29,8 +29,9 @@ type Format = typeof en.format;
 
 function wordsOf(format: Format, locale: Locale): FormatWords {
   const { unit, weekday, relative } = format;
-  // The brief marks `unit.kyat` and `unit.lakh` "not used in en": the English files repeat the
-  // Myanmar text only to keep the key sets equal (`pnpm i18n:check`), and the formatters ignore it.
+  // `unit.kyat` and `unit.lakh` are Myanmar-only units: English shows `unit.ks`. The `en` files keep
+  // the keys for equal key sets (`pnpm i18n:check`) — `unit.kyat` = "Ks" (owner 12/Oct/2026), `unit.lakh`
+  // repeats the Myanmar word — and the formatters ignore both.
   const myanmarOnly = (text: string) => (locale === 'my' ? text : null);
   return {
     unit: { ks: unit.ks, kyat: myanmarOnly(unit.kyat), lakh: myanmarOnly(unit.lakh) },

@@ -24,7 +24,7 @@
   "format": {
     "unit": {
       "ks": "Ks",
-      "kyat": "ကျပ်",
+      "kyat": "Ks",
       "lakh": "သိန်း"
     },
     "min": "min",
