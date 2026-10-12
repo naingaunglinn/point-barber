@@ -20,6 +20,9 @@ Changed after generation, and only this (re-apply it when a part is generated ag
   / `border-ring` / `outline-ring` classes and `outline-none` on interactive parts are removed, so the 2 px
   `--focus-outline` of `tokens.css` applies; `border-input` → `border-[var(--field-border)]`; an invalid control
   keeps a 2 px `--destructive` outline (D-UI-01) instead of a ring.
+- **Touch targets** (AD-A11Y-05 · AD-VIS-07): a tabs trigger is at least 44 × 44 px and 8 px from the next one;
+  the list grows with them (no fixed `h-8`) and wraps. The trigger's own 1 px `focus-visible:outline-1` is
+  removed, so the 2 px `--focus-outline` applies.
 - **Inputs stay at 16 px** (AD-VIS-06: no iOS zoom): `md:text-sm` removed from `input` and `textarea`.
 - **No locale formatting outside the formatter** (AD-FMT-00): the calendar's month-dropdown formatter
   (`toLocaleString`) is removed; the caption label of react-day-picker is used.

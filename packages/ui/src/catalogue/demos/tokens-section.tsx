@@ -67,11 +67,49 @@ export function TokensSection({ tree }: Readonly<{ tree: Tree }>) {
     return pair.foreground;
   };
 
+  const swatch = (token: Token) => (
+    <span
+      className="inline-block size-6 shrink-0 rounded-sm border border-border bg-[var(--swatch)]"
+      style={{ '--swatch': `var(${token})` } as CSSProperties}
+    />
+  );
+  const valueOf = (token: Token) => {
+    const colour = colours?.get(token);
+    return colour === undefined ? t('tokens.measuring') : rgbText(colour);
+  };
+  const notes = (token: Token) => {
+    const alias = ALIASES[tree][token];
+    return (
+      <ul>
+        {alias === undefined ? null : <li>{t('tokens.aliasOf', { token: alias })}</li>}
+        {tree === 'staff' && PENDING_OWNER_VALUE.includes(token) ? (
+          <li>{t('tokens.pending')}</li>
+        ) : null}
+        {SITE_ONLY_TOKENS.includes(token) ? <li>{t('tokens.decorationNote')}</li> : null}
+      </ul>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div>
         <h3 className="mb-2 text-lg font-bold">{t('tokens.swatches')}</h3>
-        <div className="overflow-x-auto">
+        {/* One entry per token below 768 px, so nothing scrolls sideways (AD-LIST-02). */}
+        <ul className="flex flex-col text-sm md:hidden">
+          {tokens.map((token) => (
+            <li key={token} className="flex items-start gap-3 border-b border-border py-2">
+              {swatch(token)}
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <code lang="en" className="wrap-anywhere">
+                  {token}
+                </code>
+                <span className="font-numeric">{valueOf(token)}</span>
+                {notes(token)}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border">
@@ -83,7 +121,6 @@ export function TokensSection({ tree }: Readonly<{ tree: Tree }>) {
             </thead>
             <tbody>
               {tokens.map((token) => {
-                const alias = ALIASES[tree][token];
                 const colour = colours?.get(token);
                 return (
                   <tr
@@ -95,28 +132,9 @@ export function TokensSection({ tree }: Readonly<{ tree: Tree }>) {
                     <td className="py-2 pr-4" lang="en">
                       <code>{token}</code>
                     </td>
-                    <td className="py-2 pr-4">
-                      <span
-                        className="inline-block size-6 rounded-sm border border-border bg-[var(--swatch)]"
-                        style={{ '--swatch': `var(${token})` } as CSSProperties}
-                      />
-                    </td>
-                    <td className="py-2 pr-4 font-numeric">
-                      {colour === undefined ? t('tokens.measuring') : rgbText(colour)}
-                    </td>
-                    <td className="py-2">
-                      <ul>
-                        {alias === undefined ? null : (
-                          <li>{t('tokens.aliasOf', { token: alias })}</li>
-                        )}
-                        {tree === 'staff' && PENDING_OWNER_VALUE.includes(token) ? (
-                          <li>{t('tokens.pending')}</li>
-                        ) : null}
-                        {SITE_ONLY_TOKENS.includes(token) ? (
-                          <li>{t('tokens.decorationNote')}</li>
-                        ) : null}
-                      </ul>
-                    </td>
+                    <td className="py-2 pr-4">{swatch(token)}</td>
+                    <td className="py-2 pr-4 font-numeric">{valueOf(token)}</td>
+                    <td className="py-2">{notes(token)}</td>
                   </tr>
                 );
               })}

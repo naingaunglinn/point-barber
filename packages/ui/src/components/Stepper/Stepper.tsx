@@ -3,6 +3,7 @@
 import { cn } from 'cn';
 import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 
 // Where the user is in a multi-step flow (AD-CMP-12 · AD-WIZ-01 · design D10): from 768 px every step in
 // a row with connectors — done steps carry a check and can be pressed to go back, later steps cannot;
@@ -27,14 +28,16 @@ export function Stepper({ steps, onStepPress }: StepperProps) {
     steps.findIndex((step) => step.state === 'current'),
   );
   const current = steps[index];
+  const compactId = useId();
   return (
     <div data-slot="stepper">
       <div className="flex flex-col gap-2 md:hidden" data-slot="stepper-compact">
-        <p className="text-sm font-semibold">
+        <p id={compactId} className="text-sm font-semibold">
           {t('compact', { n: index + 1, m: steps.length, name: current?.label ?? '' })}
         </p>
         <div
           role="progressbar"
+          aria-labelledby={compactId}
           aria-valuemin={1}
           aria-valuemax={steps.length}
           aria-valuenow={index + 1}

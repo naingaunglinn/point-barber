@@ -16,8 +16,9 @@ import {
 import { useBlockedReason } from '../../permissions/blocked-reason';
 
 // The one button of the system (AD-CMP-01 · AD-LAY-04 · AD-A11Y-05 · AD-NET-01 · design D10): four
-// variants; 48 px high below 768 px and 40 px from 768 px, with an invisible area that keeps the
-// touch target at 44 px or more; the focus outline of tokens.css (`--focus-outline`). While its action
+// variants; 48 px high below 768 px and 40 px from 768 px, where an invisible 2 px margin keeps the
+// touch target at 44 px (below 768 px the button itself is the target, so 8 px between two buttons is
+// 8 px between their targets — AD-VIS-07); the focus outline of tokens.css (`--focus-outline`). While its action
 // runs it keeps its label, shows a spinner and stays disabled, so a double tap calls the action once.
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
@@ -38,8 +39,8 @@ const buttonVariants = cva(
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90',
       },
       shape: {
-        label: 'h-12 px-4 after:inset-x-0 after:-inset-y-0.5 md:h-10',
-        icon: 'size-12 after:-inset-0.5 md:size-10',
+        label: 'h-12 px-4 md:h-10 md:after:inset-x-0 md:after:-inset-y-0.5',
+        icon: 'size-12 md:size-10 md:after:-inset-0.5',
       },
       fullWidth: { true: 'w-full', false: '' },
     },

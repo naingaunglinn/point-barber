@@ -39,7 +39,10 @@ export function OfflineBanner({ helpHref, apiUnreachable = false }: OfflineBanne
     >
       <WifiOff aria-hidden className="size-5 shrink-0" />
       <p className="flex-1 font-semibold">{t('banner')}</p>
-      <a href={helpHref} className="font-semibold underline underline-offset-4">
+      <a
+        href={helpHref}
+        className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+      >
         {t('help')}
       </a>
     </div>

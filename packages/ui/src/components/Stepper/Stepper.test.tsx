@@ -25,6 +25,8 @@ describe('Stepper', () => {
     expect(compact?.className).toContain('md:hidden');
     expect(compact?.textContent).toBe('Step 2 of 4 · Payment');
     expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
+    // The bar is named by the line above it (axe aria-progressbar-name).
+    expect(screen.getByRole('progressbar', { name: 'Step 2 of 4 · Payment' })).toBeDefined();
   });
 
   it('Scenario: Going back to a completed step — Services is reported, Finish is not a button', () => {

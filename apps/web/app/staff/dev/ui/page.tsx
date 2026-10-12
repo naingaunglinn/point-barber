@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { NextIntlClientProvider, createTranslator } from 'next-intl';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -44,12 +45,21 @@ type Props = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
+async function paramsOf(searchParams: Props['searchParams']): Promise<CatalogueParams> {
+  return parseCatalogueParams(await searchParams, (await cookies()).get(LOCALE_COOKIE)?.value);
+}
+
+/** The page title in the chosen language (WCAG 2.4.2 — axe `document-title`). */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  if (!DEV_CATALOGUE) return {};
+  const { lang } = await paramsOf(searchParams);
+  const t = createTranslator({ locale: lang, messages: loadMessages(lang), namespace: 'devui' });
+  return { title: t('title') };
+}
+
 export default async function CataloguePage({ searchParams }: Props) {
   if (!DEV_CATALOGUE) notFound();
-  const params = parseCatalogueParams(
-    await searchParams,
-    (await cookies()).get(LOCALE_COOKIE)?.value,
-  );
+  const params = await paramsOf(searchParams);
   const messages = loadMessages(params.lang);
   const t = createTranslator({ locale: params.lang, messages, namespace: 'devui' });
 
@@ -78,10 +88,14 @@ export default async function CataloguePage({ searchParams }: Props) {
             </div>
           </header>
           <nav aria-label={t('nav.sections')} className="border-b border-border px-4 py-2">
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <ul className="flex flex-wrap gap-2 text-sm">
               {CATALOGUE_SECTIONS.map(({ id, label }) => (
                 <li key={id}>
-                  <a href={`#${id}`} className="underline-offset-4 hover:underline">
+                  {/* 44 px targets 8 px apart, like every control (AD-A11Y-05 · AD-VIS-07). */}
+                  <a
+                    href={`#${id}`}
+                    className="inline-flex min-h-11 min-w-11 items-center px-2 underline-offset-4 hover:underline"
+                  >
                     {t(`section.${label}`)}
                   </a>
                 </li>

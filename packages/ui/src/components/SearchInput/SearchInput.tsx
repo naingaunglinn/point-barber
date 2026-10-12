@@ -40,7 +40,11 @@ export function SearchInput({
     onSearch?.(value);
   };
   return (
-    <div role="search" className={cn('flex items-stretch', className)} data-slot="search-input">
+    <div
+      role="search"
+      className={cn('flex items-stretch gap-2', className)}
+      data-slot="search-input"
+    >
       <Input
         ref={input}
         type="search"
@@ -55,7 +59,7 @@ export function SearchInput({
           event.preventDefault();
           search();
         }}
-        className="h-12 min-w-0 flex-1 rounded-e-none text-base md:h-10"
+        className="h-12 min-w-0 flex-1 text-base md:h-10"
       />
       <Button
         variant="secondary"
@@ -63,7 +67,6 @@ export function SearchInput({
         icon={<Search />}
         aria-label={t('search')}
         onClick={search}
-        className="rounded-s-none border-s-0"
       />
     </div>
   );

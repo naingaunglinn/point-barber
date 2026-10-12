@@ -104,7 +104,7 @@ export function DateInput({
   return (
     <div className="flex flex-col gap-1" data-slot="date-input">
       <Popover open={open} onOpenChange={setOpen}>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Input
             {...control}
             id={inputId}

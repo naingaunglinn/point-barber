@@ -33,7 +33,7 @@ export function LanguageSwitch({ value, onChange }: LanguageSwitchProps) {
   return (
     <div
       role="group"
-      className="inline-flex rounded-md border border-border p-0.5"
+      className="inline-flex gap-2 rounded-md border border-border p-0.5"
       data-slot="language-switch"
     >
       {LOCALES.map((locale) => {

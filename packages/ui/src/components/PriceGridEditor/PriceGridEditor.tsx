@@ -16,7 +16,7 @@ import {
 } from '@point/shared';
 
 import { Input } from '../../primitives/input';
-import { Tabs, TabsList, TabsTrigger } from '../../primitives/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../primitives/tabs';
 import { useNow } from '../../providers/clock';
 import { useFormat } from '../../providers/format';
 import {
@@ -60,6 +60,8 @@ export interface GridBranch {
 }
 
 export type GridLocation = 'shop' | 'home';
+
+const LOCATIONS: readonly GridLocation[] = ['shop', 'home'];
 
 export interface PriceGridEditorProps {
   readonly mode: 'simple' | 'options';
@@ -143,7 +145,7 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
     }
     return (
       <div
-        className="flex min-w-36 flex-col gap-1"
+        className="flex min-w-36 flex-col gap-2"
         data-slot="price-cell"
         data-cell={keyOf(valueIds)}
       >
@@ -170,39 +172,15 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
             const digits = normalizeDigits(event.target.value).replace(/\D/g, '');
             update(valueIds, { duration_minutes: digits === '' ? null : Number(digits) });
           }}
-          className="h-10 text-end font-numeric text-base"
+          className="h-12 text-end font-numeric text-base md:h-10"
         />
       </div>
     );
   };
 
-  return (
-    <div className="flex flex-col gap-4" data-slot="price-grid">
-      <span id={notSoldId} hidden>
-        {t('notSold')}
-      </span>
-      <Tabs value={branchId} onValueChange={(id) => props.onBranchChange?.(id)}>
-        <TabsList>
-          {branches.map((branch) => (
-            <TabsTrigger key={branch.id} value={branch.id} className="min-h-11">
-              <DataText>{localized(branch, 'name', locale)}</DataText>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      <Tabs
-        value={location}
-        onValueChange={(value) => props.onLocationChange?.(value as GridLocation)}
-      >
-        <TabsList>
-          <TabsTrigger value="shop" className="min-h-11">
-            {t('shop')}
-          </TabsTrigger>
-          <TabsTrigger value="home" className="min-h-11">
-            {t('home')}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+  // The grid of the chosen branch and location.
+  const editor = (
+    <>
       {readOnly ? null : (
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-48">
@@ -273,6 +251,45 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
           </tbody>
         </table>
       </div>
+    </>
+  );
+
+  // Branch and location are two sets of tabs over the one grid: each trigger controls its own panel,
+  // and only the panel of the chosen branch and location holds the grid (WAI-ARIA tabs — every
+  // `aria-controls` names a panel that exists).
+  return (
+    <div className="flex flex-col gap-4" data-slot="price-grid">
+      <span id={notSoldId} hidden>
+        {t('notSold')}
+      </span>
+      <Tabs value={branchId} onValueChange={(id) => props.onBranchChange?.(id)} className="gap-4">
+        <TabsList>
+          {branches.map((branch) => (
+            <TabsTrigger key={branch.id} value={branch.id}>
+              <DataText>{localized(branch, 'name', locale)}</DataText>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {branches.map((branch) => (
+          <TabsContent key={branch.id} value={branch.id} className="text-base">
+            <Tabs
+              value={location}
+              onValueChange={(value) => props.onLocationChange?.(value as GridLocation)}
+              className="gap-4"
+            >
+              <TabsList>
+                <TabsTrigger value="shop">{t('shop')}</TabsTrigger>
+                <TabsTrigger value="home">{t('home')}</TabsTrigger>
+              </TabsList>
+              {LOCATIONS.map((value) => (
+                <TabsContent key={value} value={value} className="flex flex-col gap-4 text-base">
+                  {editor}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }

@@ -87,7 +87,7 @@ export function BottomNav({ items, centre, activeKey }: BottomNavProps) {
       data-slot="bottom-nav"
       className="border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="flex items-stretch">
+      <ul className="flex items-stretch gap-2">
         {items.slice(0, centre === undefined ? items.length : middle).map(link)}
         {centre === undefined ? null : (
           <li className="flex min-w-0 flex-1 justify-center">

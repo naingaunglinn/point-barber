@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { Button } from '../../components/Button/Button';
 import { LockBanner } from '../../components/LockBanner/LockBanner';
@@ -25,7 +25,7 @@ export function GateDemo() {
   const blocked = closed ? (hidden ? ('hidden' as const) : { reason: t('reason') }) : undefined;
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-x-6">
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
         <DemoToggle label={t('dayClosed')} checked={closed} onChange={setClosed} />
         <DemoToggle label={t('lockBannerVariant')} checked={hidden} onChange={setHidden} />
       </div>
@@ -62,49 +62,71 @@ export function CanTableDemo() {
     return { code, level, answers };
   });
   const cell = (answer: Answer) => (answer === null ? DASH : answer ? t('yes') : t('no'));
+  const columns = [t('any'), t('atB3'), t('atB1'), t('company')];
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm" data-testid="can-table">
-        <thead>
-          <tr className="border-b border-border text-start">
-            <th scope="col" className="py-2 pe-3 text-start">
-              {t('code')}
-            </th>
-            <th scope="col" className="py-2 pe-3 text-start">
-              {t('level')}
-            </th>
-            <th scope="col" className="py-2 pe-3 text-start">
-              {t('any')}
-            </th>
-            <th scope="col" className="py-2 pe-3 text-start">
-              {t('atB3')}
-            </th>
-            <th scope="col" className="py-2 pe-3 text-start">
-              {t('atB1')}
-            </th>
-            <th scope="col" className="py-2 pe-3 text-start">
-              {t('company')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ code, level, answers }) => (
-            <tr key={code} className="border-b border-border" data-code={code}>
-              <td className="py-2 pe-3" lang="en">
-                <code>{code}</code>
-              </td>
-              <td className="py-2 pe-3" lang="en">
-                <code>{level}</code>
-              </td>
+    <>
+      {/* One entry per code below 768 px, so nothing scrolls sideways (AD-LIST-02). */}
+      <ul className="flex flex-col text-sm md:hidden">
+        {rows.map(({ code, level, answers }) => (
+          <li key={code} className="flex flex-col gap-1 border-b border-border py-2">
+            <p className="flex flex-wrap gap-x-3" lang="en">
+              <code className="font-semibold">{code}</code>
+              <code className="text-muted-foreground">{level}</code>
+            </p>
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3">
               {answers.map((answer, index) => (
-                <td key={index} className="py-2 pe-3" data-answer={String(answer)}>
-                  {cell(answer)}
-                </td>
+                <Fragment key={index}>
+                  <dt>{columns[index]}</dt>
+                  <dd>{cell(answer)}</dd>
+                </Fragment>
               ))}
+            </dl>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-sm" data-testid="can-table">
+          <thead>
+            <tr className="border-b border-border text-start">
+              <th scope="col" className="py-2 pe-3 text-start">
+                {t('code')}
+              </th>
+              <th scope="col" className="py-2 pe-3 text-start">
+                {t('level')}
+              </th>
+              <th scope="col" className="py-2 pe-3 text-start">
+                {t('any')}
+              </th>
+              <th scope="col" className="py-2 pe-3 text-start">
+                {t('atB3')}
+              </th>
+              <th scope="col" className="py-2 pe-3 text-start">
+                {t('atB1')}
+              </th>
+              <th scope="col" className="py-2 pe-3 text-start">
+                {t('company')}
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map(({ code, level, answers }) => (
+              <tr key={code} className="border-b border-border" data-code={code}>
+                <td className="py-2 pe-3" lang="en">
+                  <code>{code}</code>
+                </td>
+                <td className="py-2 pe-3" lang="en">
+                  <code>{level}</code>
+                </td>
+                {answers.map((answer, index) => (
+                  <td key={index} className="py-2 pe-3" data-answer={String(answer)}>
+                    {cell(answer)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

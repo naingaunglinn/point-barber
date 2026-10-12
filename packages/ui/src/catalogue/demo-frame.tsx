@@ -1,7 +1,7 @@
 'use client';
 
 import { Checkbox } from '../primitives/checkbox';
-import { useId, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 // Small parts the demos share (design D12): a labelled switch for a demo's own setting, and the line
 // that shows what a handler received — the catalogue has no API, so a demo shows the call instead.
@@ -15,14 +15,12 @@ export function DemoToggle({
   readonly checked: boolean;
   readonly onChange: (checked: boolean) => void;
 }) {
-  const id = useId();
+  // The whole 44 px row is the touch target (AD-A11Y-05): a click on the label toggles the box.
   return (
-    <div className="flex min-h-11 items-center gap-2">
-      <Checkbox id={id} checked={checked} onCheckedChange={(value) => onChange(value === true)} />
-      <label htmlFor={id} className="text-sm">
-        {label}
-      </label>
-    </div>
+    <label className="flex min-h-11 items-center gap-2 text-sm">
+      <Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} />
+      {label}
+    </label>
   );
 }
 
