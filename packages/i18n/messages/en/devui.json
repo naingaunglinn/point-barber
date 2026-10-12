@@ -144,7 +144,8 @@
     "timeSlots": "Start times on 05/Oct/2026",
     "optionPicker": "Hair colour at Point 3.0",
     "priceGrid": "Hair colour price grid at Point 3.0",
-    "priceGridHome": "Haircut at Point 2.0 — Home tab"
+    "priceGridHome": "Haircut at Point 2.0 — Home tab",
+    "receiptSale": "Sale receipt — English in both languages"
   },
   "log": {
     "label": "Handler call:",
@@ -233,7 +234,8 @@
     "print": "Print",
     "importFile": "Import",
     "pointThree": "Point 3.0",
-    "demoDate": "05/Oct/2026"
+    "demoDate": "05/Oct/2026",
+    "userMenuNote": "The menu entries (AD-NAV-07) come with add-foundation-auth-access"
   },
   "buttons": {
     "save": "Save",

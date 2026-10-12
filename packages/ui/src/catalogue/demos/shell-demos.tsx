@@ -3,6 +3,7 @@
 import {
   Banknote,
   CalendarDays,
+  ChevronDown,
   Ellipsis,
   House,
   Scissors,
@@ -28,6 +29,11 @@ import { Sheet } from '../../components/Drawer/Drawer';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { SearchInput } from '../../components/SearchInput/SearchInput';
 import type { Action } from '../../components/types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '../../primitives/dropdown-menu';
 import { useNow } from '../../providers/clock';
 import { useFormat } from '../../providers/format';
 import { useCataloguePersona } from '../catalogue-providers';
@@ -194,12 +200,28 @@ export function ShellDemo() {
           person === null ? undefined : (
             // The own name opens the own profile (owner 12/Oct/2026); the page itself belongs to
             // add-foundation-auth-access.
-            <EmployeeChip
-              name={localized(person, 'name', locale)}
-              onOpenProfile={() =>
-                setPressed(log('profile', { name: localized(person, 'name', locale) }))
-              }
-            />
+            <div className="flex items-center gap-2">
+              <EmployeeChip
+                name={localized(person, 'name', locale)}
+                onOpenProfile={() =>
+                  setPressed(log('profile', { name: localized(person, 'name', locale) }))
+                }
+              />
+              {/* ▾ opens the user menu (AD-NAV-07 v1.8 — owner 12/Oct/2026). */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    iconOnly
+                    icon={<ChevronDown />}
+                    aria-label={common('action.more')}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-w-72 p-3 text-sm">
+                  {t('userMenuNote')}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )
         }
         bottomNav={

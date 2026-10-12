@@ -73,7 +73,8 @@
   "form": {
     "discard": {
       "title": "Discard changes?"
-    }
+    },
+    "note": "Note"
   },
   "offline": {
     "banner": "No connection. Money actions can't be saved right now. Write the service on paper and add it later with Late entry.",

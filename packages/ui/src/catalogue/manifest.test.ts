@@ -55,11 +55,8 @@ const SUPPORTING = [
   'DataText',
 ];
 
-/**
- * Not built yet: task 7.37 waits for the owner (the `ReceiptLine` shape and the receipt label texts —
- * point-sdd work/pr2-notes, owner questions 4 and 5). Task 9.1 stays open until this list is empty.
- */
-const PENDING = ['ReceiptRenderer'];
+/** Names without a demo yet — none since ReceiptRenderer (task 7.37, owner answers of 12/Oct/2026). */
+const PENDING: readonly string[] = [];
 
 describe('catalogue manifest', () => {
   it('Scenario: Every shared component has a demo — 38 + 7 names, each with at least one demo', () => {

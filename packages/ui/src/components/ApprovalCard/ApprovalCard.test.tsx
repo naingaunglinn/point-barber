@@ -73,7 +73,7 @@ describe('ApprovalCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
     expect(onApprove).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Reject' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Reject' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note' }), {
       target: { value: '  Price already discounted ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Reject' }));

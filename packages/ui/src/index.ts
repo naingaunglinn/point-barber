@@ -144,6 +144,12 @@ export {
 export { type QrErrorKind } from './components/QrScanner/camera';
 export { QrScanner, type QrScannerProps, type QrSource } from './components/QrScanner/QrScanner';
 export {
+  descriptionOf,
+  ReceiptRenderer,
+  type ReceiptLanguage,
+  type ReceiptRendererProps,
+} from './components/ReceiptRenderer/ReceiptRenderer';
+export {
   ReasonDialog,
   type MasterReason,
   type NoteMode,

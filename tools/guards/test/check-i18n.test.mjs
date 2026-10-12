@@ -113,6 +113,22 @@ describe('check-i18n (pnpm i18n:check)', () => {
     expect(output).toContain('my: empty common.search.placeholder');
   });
 
+  // Owner 12/Oct/2026 (point-sdd review §0.15): receipts are English only.
+  it('Scenario: Receipt labels without Myanmar text — null only for receipt.* in my', () => {
+    const root = copyOfRepo();
+    edit(root, 'my', 'receipt', (json) => (json.total = null));
+    expect(run(root).status).toBe(0);
+    edit(root, 'my', 'common', (json) => (json.action.save = null));
+    edit(root, 'en', 'receipt', (json) => (json.subtotal = null));
+    edit(root, 'my', 'receipt', (json) => delete json.tax);
+    const { status, output } = run(root);
+    expect(status).toBe(1);
+    expect(output).toContain('my: empty common.action.save');
+    expect(output).toContain('en: empty receipt.subtotal');
+    expect(output).toContain('my: missing receipt.tax');
+    expect(output).not.toContain('receipt.total');
+  });
+
   it('fails on a namespace file that exists in one language only', () => {
     const root = copyOfRepo();
     write(root, `${MESSAGES}/en/pos.json`, JSON.stringify({ title: 'Checkout' }));

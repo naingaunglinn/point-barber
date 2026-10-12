@@ -10,9 +10,11 @@ import { Button } from '../../components/Button/Button';
 import { MoneyText } from '../../components/MoneyText/MoneyText';
 import { NotificationBell } from '../../components/NotificationBell/NotificationBell';
 import { QrScanner } from '../../components/QrScanner/QrScanner';
+import { ReceiptRenderer } from '../../components/ReceiptRenderer/ReceiptRenderer';
 import { useFormat } from '../../providers/format';
 import { HandlerLog } from '../demo-frame';
 import { BRANCHES, DISCOUNT_APPROVAL, NOTIFICATIONS, PEOPLE } from '../fixtures';
+import { RECEIPT_VIEW } from '../receipt-view';
 
 // Demos of the data-less components (task 9.12 · AD-NTF-01 · AD-NTF-04 · AD-ATT-01 · AD-QA-03): the bell
 // with the three fixture notifications at the catalogue clock, the discount approval, and the QR
@@ -165,3 +167,6 @@ function ScannerDemo({ camera }: { readonly camera: boolean }) {
 
 export const QrMockDemo = () => <ScannerDemo camera={false} />;
 export const QrCameraDemo = () => <ScannerDemo camera />;
+
+/** The receipt of spec-fixtures §8 — English in both UI languages (AD-RCPT-01). */
+export const ReceiptSaleDemo = () => <ReceiptRenderer receipt={RECEIPT_VIEW} />;

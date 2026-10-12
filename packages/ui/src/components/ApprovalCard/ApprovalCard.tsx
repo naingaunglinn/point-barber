@@ -9,6 +9,7 @@ import { Button } from '../Button/Button';
 import { DataText } from '../DataText/DataText';
 import { DateText } from '../DateText/DateText';
 import { EmployeeChip, type EmployeeChipProps } from '../EmployeeChip/EmployeeChip';
+import { FormField } from '../FormField/FormField';
 import { TextInput } from '../TextInput/TextInput';
 
 // A request waiting for a decision (AD-NTF-04 · AD-POS-16 · AD-PERM-02 · design D10): the requester as an
@@ -52,6 +53,7 @@ export function ApprovalCard(props: ApprovalCardProps) {
     onReject,
   } = props;
   const t = useTranslations('common.action');
+  const form = useTranslations('common.form');
   const [rejecting, setRejecting] = useState(false);
   const [note, setNote] = useState('');
   return (
@@ -92,7 +94,9 @@ export function ApprovalCard(props: ApprovalCardProps) {
       </p>
       {!canDecide ? null : rejecting ? (
         <div className="flex flex-col gap-2">
-          <TextInput multiline aria-label={t('reject')} value={note} onChange={setNote} />
+          <FormField label={form('note')}>
+            {(control) => <TextInput {...control} multiline value={note} onChange={setNote} />}
+          </FormField>
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
             <Button onClick={() => setRejecting(false)}>{t('goBack')}</Button>
             <Button variant="destructive" onClick={() => onReject(note.trim())}>

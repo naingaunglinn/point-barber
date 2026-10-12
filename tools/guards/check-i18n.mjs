@@ -2,6 +2,8 @@
 // keys, no value is empty, every status constant (packages/shared/src/constants/status.ts), every
 // derived state and flag of the status map and every error code (constants/error-codes.ts) has its
 // label. One line per finding, `<lang>: missing <key>` / `<lang>: empty <key>`; exit code 1.
+// One exception: a `receipt.*` value in `my` may be `null` — receipts are printed in English only
+// (AD-RCPT-01) and the Myanmar texts are written when a Myanmar receipt is wanted (owner 12/Oct/2026).
 // Alias: `pnpm i18n:check`. Checks the repository it lives in; `--root=<dir>` checks another tree.
 //
 // The constant files are loaded by Node's type stripping, so they and the status map keep
@@ -16,6 +18,9 @@ const MESSAGES = 'packages/i18n/messages';
 const STATUS = 'packages/shared/src/constants/status.ts';
 const ERROR_CODES = 'packages/shared/src/constants/error-codes.ts';
 const STATUS_MAP = 'packages/ui/src/status/status-map.ts';
+
+/** A value that may stay `null`: the Myanmar receipt labels. */
+const mayBeNull = (lang, key) => lang === 'my' && key.startsWith('receipt.');
 
 /** `{ action: { retry: 'Retry' } }` → [['action.retry', 'Retry']]. */
 function leaves(tree, prefix = '') {
@@ -84,6 +89,7 @@ export async function findProblems(root) {
     problems.push(...unreadable);
     for (const key of [...all].sort()) {
       if (!values.has(key)) problems.push(`${lang}: missing ${key}`);
+      else if (values.get(key) === null && mayBeNull(lang, key)) continue;
       else if (typeof values.get(key) !== 'string' || values.get(key).trim() === '') {
         problems.push(`${lang}: empty ${key}`);
       }

@@ -144,7 +144,8 @@
     "timeSlots": "05/Oct/2026 ရဲ့ စချိန်များ",
     "optionPicker": "Point 3.0 ဆံပင်ဆေးဆိုး",
     "priceGrid": "Point 3.0 ဆံပင်ဆေးဆိုး ဈေးဇယား",
-    "priceGridHome": "Point 2.0 ဆံပင်ညှပ် — အိမ် tab"
+    "priceGridHome": "Point 2.0 ဆံပင်ညှပ် — အိမ် tab",
+    "receiptSale": "အရောင်း receipt — ဘာသာ ၂ မျိုးလုံးမှာ English"
   },
   "log": {
     "label": "Handler ခေါ်မှု:",
@@ -233,7 +234,8 @@
     "print": "Print",
     "importFile": "Import",
     "pointThree": "ပွိုင့် ၃.၀",
-    "demoDate": "05/Oct/2026"
+    "demoDate": "05/Oct/2026",
+    "userMenuNote": "Menu ထဲက item များ (AD-NAV-07) ကို add-foundation-auth-access မှာ ထည့်ပါမယ်"
   },
   "buttons": {
     "save": "သိမ်းမည်",

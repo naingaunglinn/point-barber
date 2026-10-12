@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { formatMoney } from '../format/money.js';
 import type { Mmk } from './mmk.js';
-import { moneyFromWire, moneyToWire, parseMoneyInput, sumMoney } from './money.js';
+import { moneyFromWire, moneyToWire, negateMoney, parseMoneyInput, sumMoney } from './money.js';
 
 // ui-foundation · "Money is an integer end to end in front-end code"
 // (D-PLT-04 · API-DATA-02 · AD-IMPL-05 · AD-FORM-11 · CG-MONEY-02).
@@ -71,5 +71,13 @@ describe('sumMoney', () => {
   it('the sum of nothing is 0, and the result is Mmk', () => {
     expect(sumMoney([])).toBe(0n);
     expectTypeOf(sumMoney).returns.toEqualTypeOf<Mmk>();
+  });
+});
+
+describe('negateMoney', () => {
+  it('turns the 1,000 discount into -1,000 Ks and back', () => {
+    const discount = moneyFromWire(1000);
+    expect(formatMoney(negateMoney(discount), { locale: 'en', profile: 'app' })).toBe('-1,000 Ks');
+    expect(negateMoney(negateMoney(discount))).toBe(1000n);
   });
 });

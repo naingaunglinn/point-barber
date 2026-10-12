@@ -47,6 +47,7 @@ import {
   BellListDemo,
   QrCameraDemo,
   QrMockDemo,
+  ReceiptSaleDemo,
 } from './demos/notification-demos';
 import { CanTableDemo, GateDemo } from './demos/permission-demos';
 import {
@@ -420,6 +421,12 @@ export const MANIFEST: readonly ManifestEntry[] = [
       { id: 'mock', title: 'qrMock', Demo: QrMockDemo },
       { id: 'camera', title: 'qrCamera', Demo: QrCameraDemo },
     ],
+  },
+  {
+    name: 'ReceiptRenderer',
+    section: 'data-less-components',
+    rules: ['AD-RCPT-01', 'D-PAY-06'],
+    demos: [{ id: 'sale', title: 'receiptSale', Demo: ReceiptSaleDemo }],
   },
 ];
 
