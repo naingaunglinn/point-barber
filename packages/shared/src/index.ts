@@ -22,6 +22,7 @@ export * from './schemas/system-status.js';
 export * from './shapes.js';
 export * from './text/digits.js';
 export * from './text/localized.js';
+export * from './text/zawgyi.js';
 export * from './time/business-date.js';
 export * from './time/date-input.js';
 export * from './time/instant.js';
