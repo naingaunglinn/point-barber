@@ -6,6 +6,7 @@
 // One `no-restricted-syntax` entry holds every selector: a later config object for the same files
 // would replace it, not add to it.
 import n from 'eslint-plugin-n';
+import pluginQuery from '@tanstack/eslint-plugin-query';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 
@@ -39,6 +40,14 @@ const RADIX_IMPORT =
   'Radix primitive outside packages/ui — screens use the shared components of @point/ui (AD-IMPL-02 · CG-UI-04).';
 const FORM_ELEMENT =
   'Raw form element outside packages/ui — use the shared component (Button, TextInput, MoneyInput …) of @point/ui (AD-IMPL-02 · CG-UI-04).';
+const SECOND_LIBRARY =
+  'Second library — HTTP goes through the one API client, forms use React Hook Form + Zod, server state lives in TanStack Query (CG-UI-03 · CG-UI-06 · CG-UI-07).';
+const INLINE_QUERY_KEY =
+  "Inline `queryKey` array — take the key from the module's key factory (`*.keys.ts`) (CG-UI-07).";
+const ON_MUTATE =
+  '`onMutate` — nothing about money or status is shown as done before the server says so; optimistic updates only in the allow-listed files (CG-UI-08).';
+const FETCH =
+  '`fetch` in a component, hook or packages/ui — all HTTP goes through the one typed API client (CG-UI-03 · ADR-009).';
 const PARSE_FLOAT =
   'parseFloat — money is an integer number of kyats and is never parsed as a float (CG-MONEY-01 · AD-IMPL-05 · D-PLT-04).';
 
@@ -114,6 +123,39 @@ const RADIX_RULES = [
   },
 ];
 
+/** Web data rules (11.10 · design D14 rows 59, 62, 63). */
+const LIBRARY = String.raw`^(axios|formik|yup|joi|redux|@reduxjs\/toolkit|react-redux|zustand|jotai|swr)(\/|$)`;
+const DATA_RULES = [
+  { selector: `ImportDeclaration[source.value=/${LIBRARY}/]`, message: SECOND_LIBRARY },
+  { selector: `ImportExpression[source.value=/${LIBRARY}/]`, message: SECOND_LIBRARY },
+  { selector: "Property[key.name='onMutate']", message: ON_MUTATE },
+];
+const QUERY_KEY_RULES = [
+  { selector: "Property[key.name='queryKey'] > ArrayExpression", message: INLINE_QUERY_KEY },
+];
+
+/**
+ * Files that may update optimistically (CG-UI-08: trivial, reversible UI state — notification read, panel
+ * collapsed, column settings). None yet; the change that adds one lists it here.
+ */
+const ON_MUTATE_ALLOWED = [];
+
+/** One `no-restricted-syntax` list for a set of files — a later object replaces the whole rule. */
+function syntax({ functions = true, radix = false, queryKey = true, onMutate = false } = {}) {
+  return [
+    'error',
+    ...TEXT_RULES,
+    ...COLOUR_RULES,
+    ...(functions ? FUNCTION_RULES : []),
+    ...(onMutate ? DATA_RULES.filter((rule) => rule.message !== ON_MUTATE) : DATA_RULES),
+    ...(queryKey ? QUERY_KEY_RULES : []),
+    ...(radix ? RADIX_RULES : []),
+  ];
+}
+
+const APP_WEB = 'apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}';
+const KEY_FACTORIES = '**/*.keys.{ts,tsx}';
+
 /** The token file's own test and the catalogue's token table compare and print computed values. */
 const TOKEN_READERS = [
   'packages/ui/src/tokens.test.ts',
@@ -121,26 +163,14 @@ const TOKEN_READERS = [
 ];
 
 export default [
-  {
-    files: WEB_SOURCE,
-    rules: {
-      'no-restricted-syntax': ['error', ...TEXT_RULES, ...COLOUR_RULES, ...FUNCTION_RULES],
-    },
-  },
+  { files: WEB_SOURCE, rules: { 'no-restricted-syntax': syntax() } },
   {
     // Outside packages/ui the screens use the shared components (AD-IMPL-02 · design D14 row 60): no
-    // Radix import (one list with the rules above — a later object replaces the rule) and no raw form
-    // element.
-    files: ['apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'],
+    // Radix import and no raw form element.
+    files: [APP_WEB],
     plugins: { react },
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...TEXT_RULES,
-        ...COLOUR_RULES,
-        ...FUNCTION_RULES,
-        ...RADIX_RULES,
-      ],
+      'no-restricted-syntax': syntax({ radix: true }),
       'react/forbid-elements': [
         'error',
         {
@@ -152,17 +182,30 @@ export default [
       ],
     },
   },
+  // The key factories build query keys (CG-UI-07).
+  {
+    files: [`packages/ui/${KEY_FACTORIES}`],
+    rules: { 'no-restricted-syntax': syntax({ queryKey: false }) },
+  },
+  {
+    files: [`apps/web/${KEY_FACTORIES}`],
+    rules: { 'no-restricted-syntax': syntax({ queryKey: false, radix: true }) },
+  },
+  ...(ON_MUTATE_ALLOWED.length === 0
+    ? []
+    : [
+        { files: ON_MUTATE_ALLOWED, rules: { 'no-restricted-syntax': syntax({ onMutate: true }) } },
+      ]),
+  // The token readers may print colour functions.
+  { files: TOKEN_READERS, rules: { 'no-restricted-syntax': syntax({ functions: false }) } },
   {
     // Accessibility checked statically (AD-A11Y-01 · CG-UI-10 · design D14 row 65); axe runs on the
     // catalogue in CI.
     ...jsxA11y.flatConfigs.recommended,
     files: WEB_SOURCE,
   },
-  {
-    // The same list without the colour functions (a later object replaces the rule — see the top).
-    files: TOKEN_READERS,
-    rules: { 'no-restricted-syntax': ['error', ...TEXT_RULES, ...COLOUR_RULES] },
-  },
+  // TanStack Query's recommended rules (CG-UI-07 · design D14 row 62).
+  ...pluginQuery.configs['flat/recommended'].map((config) => ({ ...config, files: WEB_SOURCE })),
   {
     files: DEV1_WORKSPACES,
     plugins: { n },
@@ -175,6 +218,22 @@ export default [
       // CG-SEC-05: the web app reads its environment only through apps/web/env.ts; packages/ui
       // and packages/i18n read none.
       'n/no-process-env': 'error',
+    },
+  },
+  {
+    // No `fetch` in packages/ui and in the components and hooks of apps/web (CG-UI-03); the API client
+    // module uses it. One list with the parseFloat ban — a later object replaces the rule.
+    files: [
+      'packages/ui/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
+      'apps/web/**/*.{tsx,jsx}',
+      'apps/web/**/use-*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'parseFloat', message: PARSE_FLOAT },
+        { name: 'fetch', message: FETCH },
+      ],
     },
   },
   {

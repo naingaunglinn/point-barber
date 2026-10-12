@@ -233,6 +233,49 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
     },
   );
 
+  // Web data rules (CG-UI-03 · CG-UI-06 · CG-UI-07 · CG-UI-08 · design D14 rows 59, 62, 63).
+  it('fails on fetch, a second library, an inline queryKey and onMutate in packages/ui', async () => {
+    const messages = await lintFixture('data-rules.tsx', 'packages/ui/src/hooks/use-sales.tsx');
+    expect(messages.filter((m) => m.ruleId === 'no-restricted-globals')).toHaveLength(1);
+    const syntax = messages
+      .filter((m) => m.ruleId === 'no-restricted-syntax')
+      .map((m) => m.message.split(' — ')[0]);
+    expect(syntax.sort()).toEqual(
+      ['Inline `queryKey` array', 'Second library', 'Second library', '`onMutate`'].sort(),
+    );
+  });
+
+  it.each(['redux', 'jotai', 'swr', 'formik', 'yup', 'joi', '@reduxjs/toolkit'])(
+    'fails on importing %s',
+    async (name) => {
+      const messages = await lint(
+        `import x from '${name}';\nexport const y = x;\n`,
+        'apps/web/app/x.ts',
+      );
+      expect(messages.map((m) => m.message)).toEqual([expect.stringContaining('Second library')]);
+    },
+  );
+
+  it('allows fetch in the API client module of apps/web, not in its components and hooks', async () => {
+    const code = "export const get = () => fetch('/api/v1/me');\n";
+    expect(await lint(code, 'apps/web/lib/api-client.ts')).toEqual([]);
+    expect(await lint(code, 'apps/web/app/staff/page.tsx')).toHaveLength(1);
+    expect(await lint(code, 'apps/web/lib/use-me.ts')).toHaveLength(1);
+  });
+
+  it('allows an array queryKey inside a key factory', async () => {
+    const code = "export const saleKeys = { all: { queryKey: ['sales'] } };\n";
+    expect(await lint(code, 'apps/web/lib/sales.keys.ts')).toEqual([]);
+    expect(await lint(code, 'apps/web/lib/sales.ts')).toHaveLength(1);
+  });
+
+  it('runs the TanStack Query recommended rules', async () => {
+    const code =
+      'declare const useQuery: (o: object) => unknown;\nexport const useX = (id: string) => useQuery({ queryKey: saleKeys.one(), queryFn: () => id });\ndeclare const saleKeys: { one: () => string[] };\n';
+    const messages = await lint(code, 'packages/ui/src/use-x.ts');
+    expect(messages.some((m) => m.ruleId?.startsWith('@tanstack/query/'))).toBe(true);
+  });
+
   it('does not apply outside apps/web and packages/ui', async () => {
     expect(await lintFixture('hex-colour.ts', 'apps/api/src/hex-colour.ts')).toEqual([]);
   });
