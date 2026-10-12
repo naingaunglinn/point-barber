@@ -41,14 +41,19 @@ describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
     },
   );
 
-  it.each(['/_next/static/chunks/main.js', '/_next/image', '/fonts/pyidaungsu-regular.woff2'])(
-    'skips %s',
+  it.each([
+    '/_next/static/chunks/main.js',
+    '/_next/image',
+    '/fonts/pyidaungsu-regular.woff2',
+    '/vendor/zxing-wasm@3.1.3/zxing_reader.wasm',
+  ])('skips %s', (path) => {
+    expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(false);
+  });
+
+  it.each(['/staff/fonts/x.woff2', '/fontsx', '/staff/vendor/x.wasm', '/vendorx'])(
+    'still runs for %s',
     (path) => {
-      expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(false);
+      expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(true);
     },
   );
-
-  it.each(['/staff/fonts/x.woff2', '/fontsx'])('still runs for %s', (path) => {
-    expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(true);
-  });
 });

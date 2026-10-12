@@ -13,6 +13,8 @@ import {
   type Ref,
 } from 'react';
 
+import { useBlockedReason } from '../../permissions/blocked-reason';
+
 // The one button of the system (AD-CMP-01 · AD-LAY-04 · AD-A11Y-05 · AD-NET-01 · design D10): four
 // variants; 48 px high below 768 px and 40 px from 768 px, with an invisible area that keeps the
 // touch target at 44 px or more; the focus outline of tokens.css (`--focus-outline`). While its action
@@ -65,7 +67,10 @@ interface CommonProps extends PassedAttributes {
   readonly loading?: boolean;
   readonly icon?: ReactNode;
   readonly fullWidth?: boolean;
-  /** Disabled, with this sentence (translated) shown under the button and linked as its description. */
+  /**
+   * Disabled, with this sentence (translated) shown under the button and linked as its description.
+   * Inside a blocked PermissionGate the gate's reason is used when none is given.
+   */
   readonly disabledReason?: string;
   readonly disabled?: boolean;
   readonly type?: 'button' | 'submit';
@@ -102,7 +107,7 @@ export function Button(props: ButtonProps) {
     loading = false,
     icon,
     fullWidth = false,
-    disabledReason,
+    disabledReason: ownReason,
     disabled = false,
     type = 'button',
     form,
@@ -112,12 +117,15 @@ export function Button(props: ButtonProps) {
     children,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
+    'aria-describedby': ariaDescribedBy,
     ...passed
   } = props as LabelledProps &
     Partial<Omit<IconOnlyBase, 'iconOnly' | 'icon' | 'children'>> & {
       readonly iconOnly?: boolean;
       readonly 'aria-labelledby'?: string;
     };
+  const gateReason = useBlockedReason();
+  const disabledReason = ownReason ?? gateReason ?? undefined;
   const reasonId = useId();
   const running = useRef(false);
   const [pending, setPending] = useState(false);
@@ -146,7 +154,11 @@ export function Button(props: ButtonProps) {
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-busy={busy || undefined}
-      aria-describedby={disabledReason === undefined ? undefined : reasonId}
+      aria-describedby={
+        [ariaDescribedBy, disabledReason === undefined ? undefined : reasonId]
+          .filter(Boolean)
+          .join(' ') || undefined
+      }
       disabled={busy || blocked}
       className={cn(
         buttonVariants({ variant, shape: iconOnly ? 'icon' : 'label', fullWidth }),

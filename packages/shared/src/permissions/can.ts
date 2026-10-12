@@ -5,16 +5,17 @@ import type { Grant, MeGrants } from './grants.js';
 export type Level = 'company' | 'branch' | 'mixed' | 'shared' | 'private';
 
 /** Options each level accepts — the type refuses a check the level does not have. */
-type OptionsFor<L extends Level> = L extends 'branch'
+export type CanOptions<L extends Level> = L extends 'branch'
   ? { readonly branchId?: string }
   : L extends 'company'
     ? { readonly level?: 'company' }
     : { readonly branchId?: string; readonly level?: 'company' };
 
-type Catalogue = Readonly<Record<string, { readonly level: Level }>>;
+/** Permission code → its data level (`definitions/permissions.json`, or a test fixture). */
+export type PermissionCatalogue = Readonly<Record<string, { readonly level: Level }>>;
 
-export interface Can<C extends Catalogue> {
-  <K extends keyof C & string>(code: K, options?: OptionsFor<C[K]['level']>): boolean;
+export interface Can<C extends PermissionCatalogue> {
+  <K extends keyof C & string>(code: K, options?: CanOptions<C[K]['level']>): boolean;
   (code: 'earnings.view_own'): boolean;
 }
 
@@ -28,7 +29,7 @@ function reaches(grant: Grant, branchId: string): boolean {
  * `createCan(catalogue)(me)(code, options)`. A code outside the catalogue does not compile
  * (D-ROLE-08). `add-foundation-auth-access` binds the real catalogue of permissions.json.
  */
-export function createCan<const C extends Catalogue>(catalogue: C) {
+export function createCan<const C extends PermissionCatalogue>(catalogue: C) {
   return (me: MeGrants): Can<C> =>
     ((code: string, options: { branchId?: string; level?: 'company' } = {}): boolean => {
       if (code === 'earnings.view_own') return me.effective.show_own_earnings;

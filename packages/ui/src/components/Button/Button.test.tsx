@@ -153,6 +153,20 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  it("keeps the caller's description next to the disabled reason", () => {
+    render(
+      <>
+        <span id="row-name">{CLOSED}</span>
+        <Button aria-describedby="row-name" disabledReason={CLOSED}>
+          {REOPEN}
+        </Button>
+      </>,
+    );
+    const ids = screen.getByRole('button', { name: 'Reopen day' }).getAttribute('aria-describedby');
+    expect(ids?.split(' ')).toHaveLength(2);
+    expect(ids?.startsWith('row-name ')).toBe(true);
+  });
+
   it('passes `type="submit"` through for form buttons', () => {
     render(<Button type="submit">{SAVE}</Button>);
     expect(screen.getByRole('button').getAttribute('type')).toBe('submit');

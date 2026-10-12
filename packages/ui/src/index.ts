@@ -32,6 +32,121 @@ export { MoneyText, type MoneyTextProps } from './components/MoneyText/MoneyText
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './components/Skeleton/Skeleton';
 export { toast, Toaster } from './components/Toaster/Toaster';
 
+export {
+  ApprovalCard,
+  type ApprovalCardProps,
+  type ApprovalFact,
+} from './components/ApprovalCard/ApprovalCard';
+export {
+  AttachmentUploader,
+  type AttachmentUploaderProps,
+  type UploadedFile,
+  type UploadFunction,
+  type UploadResult,
+} from './components/AttachmentUploader/AttachmentUploader';
+export {
+  BilingualInput,
+  type Bilingual,
+  type BilingualInputProps,
+} from './components/BilingualInput/BilingualInput';
+export { CardList, type CardListProps } from './components/CardList/CardList';
+export {
+  BarChart,
+  LineChart,
+  MAX_SERIES,
+  type ChartProps,
+  type ChartSeries,
+  type ChartValueKind,
+} from './components/Chart/Chart';
+export { ConfirmDialog, type ConfirmDialogProps } from './components/ConfirmDialog/ConfirmDialog';
+export {
+  DataTable,
+  type DataTableColumn,
+  type DataTableProps,
+} from './components/DataTable/DataTable';
+export { DateInput, type DateInputProps } from './components/DateInput/DateInput';
+export { EmployeeChip, type EmployeeChipProps } from './components/EmployeeChip/EmployeeChip';
+export { EmptyState, type EmptyStateProps } from './components/EmptyState/EmptyState';
+export {
+  ErrorState,
+  type ErrorProblem,
+  type ErrorStateProps,
+} from './components/ErrorState/ErrorState';
+export {
+  filterFromSearch,
+  searchWithFilter,
+  type FilterPreset,
+  type FilterValue,
+} from './components/FilterBar/filter-address';
+export { ALL_PRESETS, FilterBar, type FilterBarProps } from './components/FilterBar/FilterBar';
+export { FlagChip, type FlagChipProps } from './components/FlagChip/FlagChip';
+export {
+  KpiRow,
+  KpiTile,
+  type KpiComparison,
+  type KpiTileProps,
+} from './components/KpiTile/KpiTile';
+export {
+  LockBanner,
+  ReadOnlyFields,
+  type LockBannerProps,
+  type ReadOnlyField,
+} from './components/LockBanner/LockBanner';
+export { MoneyInput, type MoneyInputProps } from './components/MoneyInput/MoneyInput';
+export {
+  NotificationBell,
+  type NotificationBellProps,
+} from './components/NotificationBell/NotificationBell';
+export { OfflineBanner, type OfflineBannerProps } from './components/OfflineBanner/OfflineBanner';
+export {
+  OptionPicker,
+  type OptionGroup,
+  type OptionGroups,
+  type OptionPickerProps,
+  type OptionValue,
+  type SoldCell,
+} from './components/OptionPicker/OptionPicker';
+export { Pagination } from './components/Pagination/Pagination';
+export {
+  PAGE_SIZES,
+  usePagedList,
+  type PagedList,
+  type PagedListOptions,
+  type PageSize,
+} from './components/Pagination/use-paged-list';
+export {
+  PhoneInput,
+  type PhoneInputProps,
+  type PhoneValue,
+} from './components/PhoneInput/PhoneInput';
+export {
+  PriceGridEditor,
+  type GridBranch,
+  type GridLocation,
+  type PriceCell,
+  type PriceGridEditorProps,
+  type PriceGridGroups,
+} from './components/PriceGridEditor/PriceGridEditor';
+export { type QrErrorKind } from './components/QrScanner/camera';
+export { QrScanner, type QrScannerProps, type QrSource } from './components/QrScanner/QrScanner';
+export {
+  ReasonDialog,
+  type MasterReason,
+  type NoteMode,
+  type PresetReason,
+  type ReasonDialogProps,
+  type ReasonResult,
+  type ReasonSource,
+} from './components/ReasonDialog/ReasonDialog';
+export { StatusBadge, type StatusBadgeProps } from './components/StatusBadge/StatusBadge';
+export { Stepper, type Step, type StepperProps } from './components/Stepper/Stepper';
+export { TextInput, type TextInputProps } from './components/TextInput/TextInput';
+export {
+  TimeSlotPicker,
+  type TimeSlotPickerProps,
+} from './components/TimeSlotPicker/TimeSlotPicker';
+export type { Action, CardFields, CardSpec } from './components/types';
+
 export { FormAlert } from './forms/FormAlert';
 export {
   applyProblem,
@@ -43,3 +158,5 @@ export {
 } from './forms/use-app-form';
 
 export { DESKTOP, TABLET, useMinWidth } from './hooks/use-min-width';
+
+export { createGrants, type Blocked, type PermissionGateProps } from './permissions/grants';

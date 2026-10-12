@@ -1,12 +1,13 @@
 import { isLocale, resolveLocale, type Locale } from '@point/i18n';
 import { toDate, type Instant } from '@point/shared';
 import type { Tree } from '@point/ui';
+import { PERSONAS, type Persona } from '@point/ui/catalogue';
 
 // The query parameters of the catalogue (AD-IMPL-06 · design D12): `lang`, `theme`, `as`, `now`. They
 // win over the cookie `point_locale` for this page only; an unknown value keeps the default.
 
-export const PERSONAS = ['admin', 'manager', 'barber', 'branch-holder'] as const;
-export type Persona = (typeof PERSONAS)[number];
+// The personas and their grants live with the catalogue's fixtures (packages/ui/src/catalogue/personas.ts).
+export { PERSONAS, type Persona };
 
 /** Monday 05/Oct/2026 10:42 MMT — the catalogue clock of the spec. */
 export const DEFAULT_NOW: Instant = '2026-10-05T10:42:00+06:30';

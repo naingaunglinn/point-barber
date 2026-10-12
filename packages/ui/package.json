@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test:zones": "node ../../tools/test-zones.mjs packages/ui/src/components/DateInput packages/ui/src/components/DateText packages/ui/src/providers/clock.test.tsx"
+    "test:zones": "node ../../tools/test-zones.mjs packages/ui/src/components/DateInput packages/ui/src/components/DateText packages/ui/src/providers/clock.test.tsx packages/ui/src/components/NotificationBell"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
@@ -17,6 +17,7 @@
     "@point/shared": "workspace:*",
     "@tanstack/react-query": "5.104.1",
     "@tanstack/react-table": "9.2.6",
+    "barcode-detector": "3.2.2",
     "class-variance-authority": "0.7.1",
     "cmdk": "1.1.1",
     "cn": "0.4.0",

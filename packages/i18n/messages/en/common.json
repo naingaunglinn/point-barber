@@ -102,6 +102,7 @@
     "remove": "Remove"
   },
   "notifications": {
+    "title": "Notifications",
     "today": "Today",
     "earlier": "Earlier",
     "empty": "No notifications"
