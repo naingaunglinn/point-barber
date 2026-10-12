@@ -97,7 +97,54 @@
     "bottomPlain": "No create action — four items, no centre",
     "branchPersona": "Branches in the persona's scope",
     "headerFour": "One primary and four secondary actions",
-    "headerTwo": "One primary and two secondary actions"
+    "headerTwo": "One primary and two secondary actions",
+    "buttonVariants": "Variants, icon-only, blocked with a reason",
+    "buttonLoading": "Loading — a double tap calls once",
+    "form": "Form — Save validates; the buttons answer as the server",
+    "textInput": "Multi-line note (Zawgyi is converted)",
+    "languageSwitch": "Language switch (keeps what the demos hold)",
+    "moneyInput": "Price in whole kyats",
+    "moneyText": "Amounts of the four B3 sales",
+    "phoneInput": "Phone typed as the customer says it",
+    "bilingualInput": "Service name in Myanmar and English",
+    "dateInput": "Date typed or picked",
+    "dateText": "Today, yesterday and an older date",
+    "statusMap": "Every status of the one map",
+    "flags": "Every flag",
+    "employeeChip": "Without a photo, with a photo, with a profile action",
+    "dataText": "Names marked for their script",
+    "reasonMaster": "Cancel booking — master list of 4",
+    "reasonSeven": "Master list of 7 — radio group",
+    "reasonEight": "Master list of 8 — searchable list",
+    "reasonPreset": "Late entry — preset reasons",
+    "reasonFree": "Refund — free text, mapped to the request body",
+    "confirmTransfer": "Send transfer",
+    "drawer": "Booking drawer — address key, unsaved changes, widths",
+    "sheet": "Full-screen and bottom sheets",
+    "dialog": "Plain dialog",
+    "salesList": "Sales — filters, sorting, totals, columns per user",
+    "nineColumns": "Nine columns — seven shown at 768–1023 px",
+    "paging": "56 rows, cursor paging",
+    "cardList": "Sales as cards",
+    "filterBar": "Booking filters in the address",
+    "slowLoad": "Slow load (2 s) — skeleton after 400 ms",
+    "fastLoad": "Fast load (200 ms) — no skeleton",
+    "tableLoading": "Table while loading",
+    "emptyBookings": "Empty bookings — action by permission",
+    "errorStates": "Error texts by code",
+    "closedDay": "Closed day — read-only values, reopen by permission",
+    "offline": "Offline banner",
+    "toast": "Success toast",
+    "stepper": "Checkout steps, on step 2",
+    "kpiSix": "Six tiles",
+    "kpiSeven": "Seven tiles — the seventh wraps",
+    "revenueBar": "Revenue by branch",
+    "lineThree": "Three series",
+    "lineSix": "Six series",
+    "timeSlots": "Start times on 05/Oct/2026",
+    "optionPicker": "Hair colour at Point 3.0",
+    "priceGrid": "Hair colour price grid at Point 3.0",
+    "priceGridHome": "Haircut at Point 2.0 — Home tab"
   },
   "log": {
     "label": "Handler call:",
@@ -112,7 +159,15 @@
     "cancelBooking": "Cancel booking pressed",
     "start": "centre.onPress()",
     "branch": "onChange(\"{choice}\")",
-    "pressed": "{label} pressed"
+    "pressed": "{label} pressed",
+    "reported": "Reported value:",
+    "sort": "onSortChange(\"{sort}\")",
+    "problem": "server answered {code}",
+    "retried": "onRetry() × {count}",
+    "profile": "onOpenProfile() — {name}",
+    "step": "onStepPress(\"{key}\")",
+    "added": "onAdd({cell})",
+    "submitted": "onSubmit() — valid"
   },
   "bell": {
     "discount": "{name} asks for a discount at {branch}",
@@ -178,5 +233,133 @@
     "importFile": "Import",
     "pointThree": "Point 3.0",
     "demoDate": "05/Oct/2026"
+  },
+  "buttons": {
+    "save": "Save",
+    "export": "Export",
+    "add": "Add",
+    "delete": "Delete",
+    "edit": "Edit",
+    "reopen": "Reopen day",
+    "closedReason": "Only an admin can reopen a closed day.",
+    "calls": "Calls: {count}"
+  },
+  "form": {
+    "name": "Name",
+    "phone": "Phone",
+    "amount": "Amount",
+    "note": "Note",
+    "submit": "Save",
+    "serverAnswer": "Answer as the server",
+    "answer": {
+      "phone_invalid": "phone_invalid on Phone",
+      "forbidden": "forbidden (no field)",
+      "too_big": "too_big 100 on Name",
+      "too_small_1": "too_small 1 on Name",
+      "too_small_2": "too_small 2 on Name",
+      "invalid_type": "invalid_type on Amount"
+    }
+  },
+  "inputs": {
+    "price": "Price",
+    "phone": "Customer phone",
+    "serviceName": "Service name",
+    "note": "Note",
+    "visitDate": "Visit date"
+  },
+  "lists": {
+    "receiptNo": "Receipt no.",
+    "finishedOn": "Finished on",
+    "barber": "Barber",
+    "services": "Services",
+    "status": "Status",
+    "customer": "Customer",
+    "method": "Payment",
+    "cash": "Cash",
+    "lines": "Lines",
+    "searchReceipt": "Search receipt number",
+    "searchBooking": "Search customer name or phone",
+    "withholdTotal": "The server does not send the total",
+    "searchRows": "Search rows",
+    "row": "Row {n}",
+    "requests": "Requests:"
+  },
+  "reasons": {
+    "extra": "Reason {n}",
+    "requestBody": "Request body:",
+    "cancel": {
+      "verb": "Cancel booking",
+      "consequence": "{customer}'s booking of 05/Oct/2026 2:30 PM with {barber} at Point 3.0 is cancelled."
+    },
+    "lateEntry": {
+      "verb": "Add late entry",
+      "consequence": "The visit is recorded on 04/Oct/2026 with the reason you choose."
+    },
+    "refund": {
+      "verb": "Refund sale",
+      "consequence": "The money of sale B3-2026-OCT-00003 goes back to {customer}."
+    }
+  },
+  "confirm": {
+    "sendTransfer": "Send transfer",
+    "sendConsequence": "Stock leaves Point 1.0 now. You can't edit or cancel this transfer after sending.",
+    "calls": "Calls: {count}"
+  },
+  "drawer": {
+    "open": "Open booking",
+    "title": "Booking",
+    "customerName": "Customer name",
+    "body": "The body scrolls; the header and the action bar stay.",
+    "width": "{px} px",
+    "openFull": "Open full-screen sheet",
+    "openBottom": "Open bottom sheet",
+    "sheetTitle": "New booking",
+    "openDialog": "Open dialog",
+    "dialogTitle": "Rename branch"
+  },
+  "states": {
+    "load": "Load ({ms} ms)",
+    "loaded": "Data loaded.",
+    "emptyTitle": "No bookings today.",
+    "emptyBody": "Walk-ins are recorded from ＋ Start.",
+    "newBooking": "New booking",
+    "closedBy": "{date} at {branch} was closed by {name} at {time}",
+    "adminCanReopen": "An admin can reopen the day",
+    "reopenDay": "Reopen day",
+    "salesCount": "Sales",
+    "salesTotal": "Total",
+    "apiUnreachable": "The API is unreachable",
+    "offlineHint": "Or switch the browser offline (DevTools › Network › Offline).",
+    "raiseToast": "Save",
+    "saved": "Saved ({n})"
+  },
+  "stepper": {
+    "services": "Services",
+    "payment": "Payment",
+    "review": "Review",
+    "finish": "Finish"
+  },
+  "kpi": {
+    "salesToday": "Sales today",
+    "visits": "Visits",
+    "customers": "Customers",
+    "averageSale": "Average sale",
+    "discounts": "Discounts",
+    "refunds": "Refunds",
+    "expenses": "Expenses",
+    "vsLastMonday": "vs last Monday"
+  },
+  "charts": {
+    "revenue": "Revenue",
+    "branch": "Branch",
+    "day": "Day",
+    "series": "Series {n}"
+  },
+  "pickers": {
+    "noTimesLeft": "No times left",
+    "startTime": "Start time",
+    "colour": "Colour",
+    "length": "Length",
+    "chooseOptions": "Choose options"
   }
 }

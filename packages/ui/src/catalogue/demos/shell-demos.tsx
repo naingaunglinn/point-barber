@@ -31,6 +31,7 @@ import { useCataloguePersona } from '../catalogue-providers';
 import { HandlerLog } from '../demo-frame';
 import { useFixtureCan, useFixtureMe } from '../fixture-grants';
 import { PEOPLE } from '../fixtures';
+import { useCatalogueParam } from './frame-controls';
 import { useFixtureNotifications } from './notification-demos';
 
 // Shell demos (task 9.9 · AD-LAY-01..05 · AD-NAV-01 · AD-NAV-02 · AD-NAV-04 · design D12). The modules
@@ -123,6 +124,7 @@ export function ShellDemo() {
   const log = useTranslations('devui.log');
   const { locale } = useFormat('AppShell demo');
   const persona = useCataloguePersona();
+  const setParam = useCatalogueParam();
   const now = useNow();
   const { me, allowAll, branch, setBranch } = useBranchChoice();
   const [pressed, setPressed] = useState('');
@@ -169,17 +171,7 @@ export function ShellDemo() {
           onDelete={() => undefined}
         />
       }
-      language={
-        <LanguageSwitch
-          value={locale}
-          onChange={(next) => {
-            // The catalogue's `lang` parameter wins over the cookie (design D12).
-            const url = new URL(window.location.href);
-            url.searchParams.set('lang', next);
-            window.location.assign(url);
-          }}
-        />
-      }
+      language={<LanguageSwitch value={locale} onChange={(next) => setParam('lang', next)} />}
       userMenu={
         person === null ? undefined : <EmployeeChip name={localized(person, 'name', locale)} />
       }

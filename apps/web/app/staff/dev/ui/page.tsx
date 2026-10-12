@@ -2,11 +2,12 @@ import { NextIntlClientProvider, createTranslator } from 'next-intl';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import { LOCALE_COOKIE, LOCALES, loadMessages } from '@point/i18n';
+import { LOCALE_COOKIE, loadMessages } from '@point/i18n';
 import { formatDateTime } from '@point/shared';
 import { ClockProvider } from '@point/ui';
 import {
   CATALOGUE_SECTIONS,
+  CatalogueControls,
   CatalogueProviders,
   FontsSection,
   FormattersSection,
@@ -19,20 +20,11 @@ import {
 // (scripts/write-catalogue-flag.mjs).
 import { DEV_CATALOGUE } from '../../../../catalogue-flag.generated';
 import { HtmlAttributes } from './html-attributes';
-import { catalogueHref, parseCatalogueParams, PERSONAS, type CatalogueParams } from './params';
+import { parseCatalogueParams, type CatalogueParams } from './params';
 
 // The component catalogue `/dev/ui` (AD-IMPL-06 · design D12): every shared component in Myanmar and
 // English, on fixture data, with no login and no API. Only the `dev` and `build:catalogue` builds
 // have it; any other build answers 404.
-
-const PERSONA_LABEL = {
-  admin: 'admin',
-  manager: 'manager',
-  barber: 'barber',
-  'branch-holder': 'branchHolder',
-} as const;
-
-const TREES = ['staff', 'site'] as const;
 
 /** Tokens, Fonts and Formatters have their own tables; the other sections render the manifest. */
 function sectionContent(id: CatalogueSectionId, params: CatalogueParams) {
@@ -61,16 +53,6 @@ export default async function CataloguePage({ searchParams }: Props) {
   const messages = loadMessages(params.lang);
   const t = createTranslator({ locale: params.lang, messages, namespace: 'devui' });
 
-  const link = (change: Partial<CatalogueParams>, current: boolean, label: string) => (
-    <a
-      href={catalogueHref(params, change)}
-      aria-current={current ? 'true' : undefined}
-      className="rounded-md px-2 py-1 underline-offset-4 hover:underline aria-[current]:bg-primary aria-[current]:text-primary-foreground"
-    >
-      {label}
-    </a>
-  );
-
   return (
     <NextIntlClientProvider
       locale={params.lang}
@@ -85,38 +67,15 @@ export default async function CataloguePage({ searchParams }: Props) {
           <header className="border-b border-border px-4 py-4">
             <h1 className="text-2xl font-bold">{t('title')}</h1>
             <p className="text-sm text-muted-foreground">{t('notice')}</p>
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.language')}</dt>
-                {LOCALES.map((lang) => (
-                  <dd key={lang}>{link({ lang }, params.lang === lang, t(`language.${lang}`))}</dd>
-                ))}
+            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              <CatalogueControls lang={params.lang} theme={params.theme} as={params.as} />
+              <div className="flex items-center gap-2">
+                <span className="font-bold">{t('control.clock')}</span>
+                <time dateTime={params.now} data-testid="catalogue-clock">
+                  {formatDateTime(params.now, { locale: params.lang })}
+                </time>
               </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.theme')}</dt>
-                {TREES.map((theme) => (
-                  <dd key={theme}>
-                    {link({ theme }, params.theme === theme, t(`theme.${theme}`))}
-                  </dd>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.persona')}</dt>
-                {PERSONAS.map((as) => (
-                  <dd key={as}>
-                    {link({ as }, params.as === as, t(`persona.${PERSONA_LABEL[as]}`))}
-                  </dd>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.clock')}</dt>
-                <dd>
-                  <time dateTime={params.now} data-testid="catalogue-clock">
-                    {formatDateTime(params.now, { locale: params.lang })}
-                  </time>
-                </dd>
-              </div>
-            </dl>
+            </div>
           </header>
           <nav aria-label={t('nav.sections')} className="border-b border-border px-4 py-2">
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">

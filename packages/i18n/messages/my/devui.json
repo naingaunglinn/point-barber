@@ -97,7 +97,54 @@
     "bottomPlain": "ဖန်တီးခွင့် မရှိ — item လေးခု၊ centre မရှိ",
     "branchPersona": "Persona ရဲ့ scope ထဲက ဆိုင်ခွဲများ",
     "headerFour": "Primary တစ်ခုနှင့် secondary လေးခု",
-    "headerTwo": "Primary တစ်ခုနှင့် secondary နှစ်ခု"
+    "headerTwo": "Primary တစ်ခုနှင့် secondary နှစ်ခု",
+    "buttonVariants": "ပုံစံများ၊ icon သက်သက်၊ အကြောင်းပြချက်နဲ့ ပိတ်ထား",
+    "buttonLoading": "Loading — နှစ်ချက်နှိပ်လည်း တစ်ကြိမ်ပဲ ခေါ်",
+    "form": "Form — Save က စစ်; ခလုတ်တွေက server အဖြေအဖြစ်",
+    "textInput": "မှတ်ချက် စာကြောင်းများ (Zawgyi ကို ပြောင်း)",
+    "languageSwitch": "ဘာသာ ပြောင်း (demo ထဲက တန်ဖိုး မပျောက်)",
+    "moneyInput": "ကျပ် အပြည့် ဈေးနှုန်း",
+    "moneyText": "B3 အရောင်း ၄ ခုရဲ့ ငွေ",
+    "phoneInput": "Customer ပြောသလို ရိုက်ထားတဲ့ ဖုန်း",
+    "bilingualInput": "ဝန်ဆောင်မှု နာမည် မြန်မာ / အင်္ဂလိပ်",
+    "dateInput": "ရက်စွဲ ရိုက် (သို့) ရွေး",
+    "dateText": "ယနေ့၊ မနေ့နဲ့ အရင်ရက်",
+    "statusMap": "Map တစ်ခုတည်းက status အားလုံး",
+    "flags": "Flag အားလုံး",
+    "employeeChip": "Photo မပါ၊ Photo ပါ၊ profile နှိပ်လို့ရ",
+    "dataText": "စာလုံးအမျိုးအစား မှတ်ထားတဲ့ နာမည်များ",
+    "reasonMaster": "Booking ဖျက် — master စာရင်း ၄ ခု",
+    "reasonSeven": "Master စာရင်း ၇ ခု — radio group",
+    "reasonEight": "Master စာရင်း ၈ ခု — ရှာလို့ရတဲ့ စာရင်း",
+    "reasonPreset": "နောက်မှ ထည့်သွင်း — preset အကြောင်းပြချက်",
+    "reasonFree": "ငွေပြန်အမ်း — စာသား၊ request body သို့ map",
+    "confirmTransfer": "လွှဲပြောင်းမှု ပို့",
+    "drawer": "Booking drawer — address key၊ မသိမ်းရသေးတာ၊ အကျယ်",
+    "sheet": "Full-screen နဲ့ အောက်ခြေ sheet",
+    "dialog": "ရိုးရိုး dialog",
+    "salesList": "အရောင်း — filter၊ sort၊ စုစုပေါင်း၊ user တစ်ယောက်ချင်း column",
+    "nineColumns": "Column ၉ ခု — 768–1023 px မှာ ၇ ခုပြ",
+    "paging": "Row ၅၆ ခု၊ cursor paging",
+    "cardList": "အရောင်းကို card အဖြစ်",
+    "filterBar": "Address ထဲက booking filter",
+    "slowLoad": "နှေးတဲ့ load (2 s) — 400 ms ကြာမှ skeleton",
+    "fastLoad": "မြန်တဲ့ load (200 ms) — skeleton မပြ",
+    "tableLoading": "Load လုပ်နေတုန်း table",
+    "emptyBookings": "Booking မရှိ — ခွင့်ရှိမှ action ပြ",
+    "errorStates": "Code အလိုက် error စာ",
+    "closedDay": "ပိတ်ပြီးတဲ့နေ့ — ကြည့်ရုံ၊ ခွင့်ရှိမှ ပြန်ဖွင့်",
+    "offline": "Offline banner",
+    "toast": "အောင်မြင်ကြောင်း toast",
+    "stepper": "ငွေရှင်းအဆင့်များ၊ အဆင့် ၂",
+    "kpiSix": "Tile ၆ ခု",
+    "kpiSeven": "Tile ၇ ခု — ၇ ခုမြောက် အောက်ဆင်း",
+    "revenueBar": "ဆိုင်ခွဲအလိုက် ဝင်ငွေ",
+    "lineThree": "Series ၃ ခု",
+    "lineSix": "Series ၆ ခု",
+    "timeSlots": "05/Oct/2026 ရဲ့ စချိန်များ",
+    "optionPicker": "Point 3.0 ဆံပင်ဆေးဆိုး",
+    "priceGrid": "Point 3.0 ဆံပင်ဆေးဆိုး ဈေးဇယား",
+    "priceGridHome": "Point 2.0 ဆံပင်ညှပ် — အိမ် tab"
   },
   "log": {
     "label": "Handler ခေါ်မှု:",
@@ -112,7 +159,15 @@
     "cancelBooking": "Cancel booking ကို နှိပ်ပြီး",
     "start": "centre.onPress()",
     "branch": "onChange(\"{choice}\")",
-    "pressed": "{label} ကို နှိပ်ပြီး"
+    "pressed": "{label} ကို နှိပ်ပြီး",
+    "reported": "ပြန်ပေးတဲ့ တန်ဖိုး:",
+    "sort": "onSortChange(\"{sort}\")",
+    "problem": "Server အဖြေ {code}",
+    "retried": "onRetry() × {count}",
+    "profile": "onOpenProfile() — {name}",
+    "step": "onStepPress(\"{key}\")",
+    "added": "onAdd({cell})",
+    "submitted": "onSubmit() — မှန်"
   },
   "bell": {
     "discount": "{name} က {branch} တွင် လျှော့ဈေး တောင်းထားသည်",
@@ -178,5 +233,133 @@
     "importFile": "Import",
     "pointThree": "ပွိုင့် ၃.၀",
     "demoDate": "05/Oct/2026"
+  },
+  "buttons": {
+    "save": "သိမ်းမည်",
+    "export": "Export",
+    "add": "ထည့်မည်",
+    "delete": "ဖျက်မည်",
+    "edit": "ပြင်မည်",
+    "reopen": "နေ့ ပြန်ဖွင့်မည်",
+    "closedReason": "ပိတ်ပြီးတဲ့နေ့ကို Admin ပဲ ပြန်ဖွင့်နိုင်ပါတယ်။",
+    "calls": "ခေါ်ကြိမ်: {count}"
+  },
+  "form": {
+    "name": "နာမည်",
+    "phone": "ဖုန်း",
+    "amount": "ငွေပမာဏ",
+    "note": "မှတ်ချက်",
+    "submit": "သိမ်းမည်",
+    "serverAnswer": "Server အဖြေအဖြစ်",
+    "answer": {
+      "phone_invalid": "ဖုန်းမှာ phone_invalid",
+      "forbidden": "forbidden (field မရှိ)",
+      "too_big": "နာမည်မှာ too_big 100",
+      "too_small_1": "နာမည်မှာ too_small 1",
+      "too_small_2": "နာမည်မှာ too_small 2",
+      "invalid_type": "ငွေပမာဏမှာ invalid_type"
+    }
+  },
+  "inputs": {
+    "price": "ဈေးနှုန်း",
+    "phone": "Customer ဖုန်း",
+    "serviceName": "ဝန်ဆောင်မှု နာမည်",
+    "note": "မှတ်ချက်",
+    "visitDate": "လာတဲ့ရက်"
+  },
+  "lists": {
+    "receiptNo": "ဘောင်ချာ နံပါတ်",
+    "finishedOn": "ပြီးချိန်",
+    "barber": "Barber",
+    "services": "ဝန်ဆောင်မှုများ",
+    "status": "အခြေအနေ",
+    "customer": "Customer",
+    "method": "ငွေပေးချေမှု",
+    "cash": "ငွေသား",
+    "lines": "အရေအတွက်",
+    "searchReceipt": "ဘောင်ချာ နံပါတ် ရှာ",
+    "searchBooking": "Customer နာမည် (သို့) ဖုန်း ရှာ",
+    "withholdTotal": "Server က စုစုပေါင်း မပို့",
+    "searchRows": "Row ရှာ",
+    "row": "Row {n}",
+    "requests": "Request များ:"
+  },
+  "reasons": {
+    "extra": "အကြောင်းပြချက် {n}",
+    "requestBody": "Request body:",
+    "cancel": {
+      "verb": "Booking ဖျက်မည်",
+      "consequence": "{barber} နဲ့ 05/Oct/2026 2:30 PM Point 3.0 မှာ {customer} ရဲ့ booking ကို ဖျက်ပါမယ်။"
+    },
+    "lateEntry": {
+      "verb": "နောက်မှ ထည့်သွင်းမည်",
+      "consequence": "ရွေးတဲ့ အကြောင်းပြချက်နဲ့ 04/Oct/2026 ရက်မှာ visit ကို မှတ်ပါမယ်။"
+    },
+    "refund": {
+      "verb": "ငွေပြန်အမ်းမည်",
+      "consequence": "B3-2026-OCT-00003 အရောင်းရဲ့ ငွေကို {customer} ဆီ ပြန်ပေးပါမယ်။"
+    }
+  },
+  "confirm": {
+    "sendTransfer": "လွှဲပြောင်းမှု ပို့မည်",
+    "sendConsequence": "Point 1.0 က ပစ္စည်း အခု ထွက်သွားပါမယ်။ ပို့ပြီးရင် ဒီလွှဲပြောင်းမှုကို ပြင်လို့ ဖျက်လို့ မရပါ။",
+    "calls": "ခေါ်ကြိမ်: {count}"
+  },
+  "drawer": {
+    "open": "Booking ဖွင့်မည်",
+    "title": "Booking",
+    "customerName": "Customer နာမည်",
+    "body": "အလယ်ပိုင်း scroll ရ; ခေါင်းနဲ့ action bar မရွေ့။",
+    "width": "{px} px",
+    "openFull": "Full-screen sheet ဖွင့်မည်",
+    "openBottom": "အောက်ခြေ sheet ဖွင့်မည်",
+    "sheetTitle": "Booking အသစ်",
+    "openDialog": "Dialog ဖွင့်မည်",
+    "dialogTitle": "ဆိုင်ခွဲ နာမည်ပြောင်း"
+  },
+  "states": {
+    "load": "Load ({ms} ms)",
+    "loaded": "Data ရပြီ။",
+    "emptyTitle": "ယနေ့ booking မရှိပါ။",
+    "emptyBody": "Walk-in ကို ＋ စမည် ကနေ မှတ်ပါ။",
+    "newBooking": "Booking အသစ်",
+    "closedBy": "{date} {branch} ကို {name} က {time} မှာ ပိတ်ခဲ့သည်",
+    "adminCanReopen": "Admin က နေ့ကို ပြန်ဖွင့်နိုင်ပါသည်",
+    "reopenDay": "နေ့ ပြန်ဖွင့်မည်",
+    "salesCount": "အရောင်း",
+    "salesTotal": "စုစုပေါင်း",
+    "apiUnreachable": "API ကို မရောက်",
+    "offlineHint": "(သို့) browser ကို offline လုပ်ပါ (DevTools › Network › Offline)။",
+    "raiseToast": "သိမ်းမည်",
+    "saved": "သိမ်းပြီး ({n})"
+  },
+  "stepper": {
+    "services": "ဝန်ဆောင်မှု",
+    "payment": "ငွေပေးချေ",
+    "review": "စစ်ဆေး",
+    "finish": "ပြီးဆုံး"
+  },
+  "kpi": {
+    "salesToday": "ယနေ့ အရောင်း",
+    "visits": "Visit",
+    "customers": "Customer",
+    "averageSale": "ပျမ်းမျှ အရောင်း",
+    "discounts": "လျှော့ဈေး",
+    "refunds": "ငွေပြန်အမ်း",
+    "expenses": "အသုံးစရိတ်",
+    "vsLastMonday": "ပြီးခဲ့တဲ့ တနင်္လာနေ့နဲ့"
+  },
+  "charts": {
+    "revenue": "ဝင်ငွေ",
+    "branch": "ဆိုင်ခွဲ",
+    "day": "ရက်",
+    "series": "Series {n}"
+  },
+  "pickers": {
+    "noTimesLeft": "အချိန် မကျန်",
+    "startTime": "စချိန်",
+    "colour": "အရောင်",
+    "length": "အရှည်",
+    "chooseOptions": "ရွေးမည်"
   }
 }

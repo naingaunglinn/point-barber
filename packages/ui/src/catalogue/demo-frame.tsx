@@ -36,7 +36,9 @@ export function HandlerLog({
 }) {
   return (
     <p className="text-sm text-muted-foreground" role="status" data-slot="handler-log">
-      <span className="font-semibold">{label}</span> <span>{value}</span>
+      <span className="font-semibold">{label}</span>{' '}
+      {/* Values are often JSON without spaces: they may break anywhere. */}
+      <span className="wrap-anywhere">{value}</span>
     </p>
   );
 }

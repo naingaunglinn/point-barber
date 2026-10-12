@@ -23,7 +23,7 @@ export function Pagination<T>({ list }: Readonly<{ list: PagedList<T> }>) {
           {t('list.total', { n: list.total })}
         </span>
       )}
-      <div className="ms-auto flex items-center gap-2">
+      <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
         {desktop ? (
           <span className="flex items-center gap-2 text-sm">
             <label htmlFor={sizeId}>{t('list.pageSize')}</label>
