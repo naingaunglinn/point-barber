@@ -1,0 +1,367 @@
+/* The only token file of the system (AD-VIS-01 · design D2): every colour, font, type size, spacing
+ * step, radius, elevation and motion value is a variable here, mapped into the Tailwind theme. Both
+ * route trees import it from their root layout; the site tree overrides its own block
+ * (`:root[data-tree="site"]`). A colour or a `font-family` declaration anywhere else fails
+ * `pnpm guards` (check-css.mjs) and lint (tools/eslint/web.mjs). */
+@import 'tailwindcss';
+
+/* Shared components live outside the app that builds this file. */
+@source './src';
+
+/* No default Tailwind palette: `bg-blue-500` or `text-white` produce no CSS, so only the semantic
+ * tokens below exist (design D2). The same for the type scale (seven sizes) and the weights
+ * 400 / 500 / 600 / 700 (AD-VIS-06). */
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --spacing: 0.25rem; /* the 4 px grid (AD-VIS-07) */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-info-subtle: var(--info-subtle);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Type scale (AD-VIS-06). The line-height is read where the text is, so `:lang(my)` below
+   * gives Myanmar text its taller lines whatever the UI language is (AD-L10N-04). */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: var(--leading-xs);
+  --text-sm: 0.875rem;
+  --text-sm--line-height: var(--leading-sm);
+  --text-base: 1rem;
+  --text-base--line-height: var(--leading-base);
+  --text-lg: 1.125rem;
+  --text-lg--line-height: var(--leading-lg);
+  --text-xl: 1.25rem;
+  --text-xl--line-height: var(--leading-xl);
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: var(--leading-2xl);
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: var(--leading-3xl);
+
+  /* One radius scale (AD-VIS-08): sm = radius − 4 px, md = radius − 2 px, lg = radius. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  /* Elevation: flat surfaces, one raised and one overlay shadow (AD-VIS-02). */
+  --shadow-raised: var(--elevation-raised);
+  --shadow-overlay: var(--elevation-overlay);
+}
+
+/* ── Staff tree (and the default for both trees) ─────────────────────────────────────────────── */
+:root {
+  /* shadcn/ui `neutral`, light theme — the values of tokens.neutral.snapshot.css, unchanged: the
+   * owner has not given the admin palette yet (AD-VIS-03 · OPEN-30). */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Tokens of admin §3.1 that neutral does not have: aliases of neutral tokens, never a new colour
+   * (design D2). Each comment keeps the placeholder of admin §3.1. Until the owner's values
+   * arrive, success / warning / info badges are told apart by icon and text (AD-A11Y-03). */
+  --success: var(--foreground); /* {{COLOR_SUCCESS}} — OPEN-30 */
+  --warning: var(--foreground); /* {{COLOR_WARNING}} — OPEN-30 */
+  --info: var(--foreground); /* {{COLOR_INFO}} — OPEN-30 */
+  --success-foreground: var(--background); /* {{COLOR_SUCCESS}} — OPEN-30 */
+  --warning-foreground: var(--background); /* {{COLOR_WARNING}} — OPEN-30 */
+  --info-foreground: var(--background); /* {{COLOR_INFO}} — OPEN-30 */
+  --success-subtle: var(--muted); /* {{COLOR_SUCCESS}} — OPEN-30 */
+  --warning-subtle: var(--muted); /* {{COLOR_WARNING}} — OPEN-30 */
+  --info-subtle: var(--muted); /* {{COLOR_INFO}} — OPEN-30 */
+  --danger-subtle: var(--muted); /* {{COLOR_DANGER_SUBTLE}} — OPEN-30 */
+  /* {{COLOR_DANGER_FG}} — absent from the Tailwind 4 neutral theme */
+  --destructive-foreground: var(--primary-foreground);
+  --chart-6: var(--muted-foreground); /* {{COLOR_CHART_1..6}} — neutral has five chart colours */
+
+  /* Focus outline and input border (AD-VIS-03 v1.7 — owner S15): until the admin palette arrives
+   * they use existing neutral tokens, `--foreground` (19.80 : 1) and `--muted-foreground`
+   * (4.74 : 1); `--ring` and `--input` keep their neutral values. No component uses `--ring` or
+   * `--input` directly. */
+  --focus-outline: var(--foreground);
+  --field-border: var(--muted-foreground);
+
+  /* Spacing (AD-VIS-07): page gutter below 768 px, content padding from 1024 px, and the least
+   * gap between two touch targets. */
+  --gutter: 1rem;
+  --content-padding: 1.5rem;
+  --target-gap: 0.5rem;
+
+  --radius: 0.5rem; /* AD-VIS-08 */
+
+  /* Elevation (AD-VIS-02): the neutral shadows of shadcn/ui. */
+  --elevation-flat: none;
+  --elevation-raised: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --elevation-overlay: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Motion (AD-VIS-09): 150 ms hover and press, 200 ms drawers and sheets, never more than 300 ms;
+   * ease-out on enter, ease-in on exit. */
+  --motion-fast: 150ms;
+  --motion-overlay: 200ms;
+  --motion-max: 300ms;
+  --ease-enter: ease-out;
+  --ease-exit: ease-in;
+}
+
+/* Reduced motion (AD-A11Y-06): no slide, no zoom — the durations become 0. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-overlay: 0ms;
+    --motion-max: 0ms;
+  }
+}
+
+/* ── Site tree ───────────────────────────────────────────────────────────────────────────────── */
+/* The website palette of FE-VIS-01a (v1.7 — D-UX-02, REC-41): exactly these 24 colour declarations,
+ * all 🔒. Colour tokens it does not name (`--popover`, the `-subtle` aliases, the chart colours)
+ * keep their declarations above. `--decoration` exists only here and only for large text, icons
+ * and decoration on `--background` or `--card` (FE-VIS-01b). */
+:root[data-tree='site'] {
+  --background: #eeeeee;
+  --foreground: #000000;
+  --decoration: #dc5f00;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --ring: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --muted: #e0e0e0;
+  --muted-foreground: #555555;
+  --border: #c4c4c4;
+  --input: #707070;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --accent: #e0e0e0;
+  --accent-foreground: #000000;
+  --destructive: #c8281b;
+  --destructive-foreground: #ffffff;
+  --success: #0e4a28;
+  --success-foreground: #ffffff;
+  --warning: #6a3a00;
+  --warning-foreground: #ffffff;
+  --info: #0b5cad;
+  --info-foreground: #ffffff;
+
+  /* The palette is set, so the two component variables point back at it (AD-VIS-03 v1.7):
+   * `--ring` 18.10 : 1 on the background, `--input` 4.27 : 1 (4.95 : 1 on a white card). */
+  --focus-outline: var(--ring);
+  --field-border: var(--input);
+}
+
+/* ── Line-heights by the language of the text (AD-VIS-06 · AD-L10N-04) ──────────────────────── */
+/* Latin: 12 / 16 · 14 / 20 · 16 / 24 · 18 / 28 · 20 / 28 · 24 / 32 · 30 / 36 px. An element with
+ * another `lang` inside Myanmar text (the English receipt in the Myanmar UI) gets them back. */
+:root,
+[lang]:not(:lang(my)) {
+  --leading-xs: 1rem;
+  --leading-sm: 1.25rem;
+  --leading-base: 1.5rem;
+  --leading-lg: 1.75rem;
+  --leading-xl: 1.75rem;
+  --leading-2xl: 2rem;
+  --leading-3xl: 2.25rem;
+}
+
+/* Myanmar: 20 · 24 · 28 · 30 · 32 · 38 · 46 px, and never a synthesised bold or italic. */
+:lang(my) {
+  --leading-xs: 1.25rem;
+  --leading-sm: 1.5rem;
+  --leading-base: 1.75rem;
+  --leading-lg: 1.875rem;
+  --leading-xl: 2rem;
+  --leading-2xl: 2.375rem;
+  --leading-3xl: 2.875rem;
+  font-synthesis: none;
+}
+
+/* ── Fonts (AD-VIS-05 · FE-VIS-02 · FE-PERF-06 · design D3) ──────────────────────────────────── */
+/* Self-hosted WOFF2 subsets of packages/ui/fonts (build-subsets.sh). The web app serves that folder
+ * at /fonts/ on its own origin, so these URLs and the preloads of fontPreloads() are the same. */
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/roboto-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Archivo Black';
+  src: url('/fonts/archivo-black-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Pyidaungsu has 400 and 700 only: weight 500 matches 400 and 600 matches 700 (AD-VIS-05), and
+ * `font-synthesis: none` on Myanmar text stops a faux bold. */
+@font-face {
+  font-family: 'Pyidaungsu';
+  src: url('/fonts/pyidaungsu-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pyidaungsu';
+  src: url('/fonts/pyidaungsu-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Font stacks follow the tree and the language of the text: for Myanmar text the stack starts with
+ * `--font-myanmar` (D-UX-02). An element with a `lang` attribute applies the stack again
+ * (`@layer base` below), so a Myanmar name in the English UI, or the English receipt in the
+ * Myanmar UI, gets its own font. */
+:root {
+  --font-myanmar: 'Pyidaungsu';
+}
+
+:root,
+[lang]:not(:lang(my)) {
+  --font-sans: 'Manrope', 'Inter', var(--font-myanmar), system-ui, sans-serif;
+  --font-numeric: 'Inter', 'Manrope', system-ui, sans-serif;
+}
+
+:lang(my) {
+  --font-sans: var(--font-myanmar), 'Manrope', 'Inter', system-ui, sans-serif;
+  --font-numeric: var(--font-myanmar), 'Inter', 'Manrope', system-ui, sans-serif;
+}
+
+:root[data-tree='site'],
+:root[data-tree='site'] [lang]:not(:lang(my)) {
+  --font-sans: 'Roboto', var(--font-myanmar), system-ui, sans-serif;
+  --font-display: 'Archivo Black', 'Roboto', sans-serif;
+}
+
+/* A site display heading in Myanmar is set in Pyidaungsu Bold, never in Archivo Black (FE-VIS-02). */
+:root[data-tree='site']:lang(my),
+:root[data-tree='site'] :lang(my) {
+  --font-sans: var(--font-myanmar), 'Roboto', system-ui, sans-serif;
+  --font-display: var(--font-myanmar);
+}
+
+/* `font-display` exists in the site tree only; `font-numeric` has tabular figures (AD-FMT-01). */
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility font-numeric {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+  [lang] {
+    font-family: var(--font-sans);
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  /* The keyboard focus of every control: 2 px, offset 2 px (AD-A11Y-02 · design D10). */
+  :focus-visible {
+    outline: 2px solid var(--focus-outline);
+    outline-offset: 2px;
+  }
+}

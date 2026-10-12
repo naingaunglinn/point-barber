@@ -1,3 +1,3 @@
-// Empty on purpose: tokens.css and the AD-IMPL-02 shared components are added by
-// add-shared-ui-components (AD-IMPL-03).
-export {};
+// The public surface of @point/ui (AD-IMPL-03). tokens.css is imported by path:
+// `@point/ui/tokens.css`.
+export { fontPreloads, type FontPreload, type Locale, type Tree } from './fonts';

@@ -25,6 +25,7 @@ Thumbs.db
 .idea/
 
 # generated files and data dumps
+apps/web/public/fonts/
 *.dump
 *.sql.gz
 

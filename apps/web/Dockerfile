@@ -33,6 +33,8 @@ ENV NODE_ENV=production \
 WORKDIR /app
 COPY --from=build /repo/apps/web/.next/standalone ./
 COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
+# The self-hosted fonts, served at /fonts/ (copied from packages/ui/fonts by the build script).
+COPY --from=build /repo/apps/web/public ./apps/web/public
 # The next_cache volume is mounted here; created owned by `node` so the volume starts writable.
 RUN mkdir -p apps/web/.next/cache && chown node:node apps/web/.next/cache
 USER node

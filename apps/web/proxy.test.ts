@@ -16,7 +16,7 @@ function requestTo(host: string, path: string): NextRequest {
 }
 
 // Technical guarantee of task 5.3 (design D11): proxy.ts applies resolveRoute without losing the
-// query string, and its matcher skips only Next.js's own assets.
+// query string, and its matcher skips only Next.js's own assets and the self-hosted fonts.
 describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
   it('keeps the query string when it rewrites into a tree', () => {
     const response = proxy(requestTo('point.test', '/book?branch=B3&book=1'));
@@ -41,7 +41,14 @@ describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
     },
   );
 
-  it.each(['/_next/static/chunks/main.js', '/_next/image'])('skips %s', (path) => {
-    expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(false);
+  it.each(['/_next/static/chunks/main.js', '/_next/image', '/fonts/pyidaungsu-regular.woff2'])(
+    'skips %s',
+    (path) => {
+      expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(false);
+    },
+  );
+
+  it.each(['/staff/fonts/x.woff2', '/fontsx'])('still runs for %s', (path) => {
+    expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(true);
   });
 });
