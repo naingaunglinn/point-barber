@@ -101,7 +101,7 @@ describe('Button', () => {
   });
 
   it('an icon-only button is named by its aria-label and keeps the 44 px hit area on both axes', () => {
-    render(<Button iconOnly icon={<Plus />} aria-label="Add" />);
+    render(<Button iconOnly icon={<Plus />} aria-label={ADD} />);
     const button = screen.getByRole('button', { name: 'Add' });
     expect(button.className.split(' ')).toEqual(
       expect.arrayContaining(['size-12', 'md:size-10', 'md:after:-inset-0.5']),

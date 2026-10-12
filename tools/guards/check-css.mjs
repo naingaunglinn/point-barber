@@ -1,12 +1,16 @@
-// Colours and fonts in CSS come only from packages/ui/tokens.css (CG-UI-05 · AD-IMPL-05 ·
-// design D16). Fails on a hex colour, a font-family declaration or a font shorthand in any other
-// CSS file of the repository. rgb() / hsl() / oklch() values are added by add-shared-ui-components
-// (guideline §24 row 61). Checks the repository it lives in; `--root=<dir>` checks another tree.
+// Colours and fonts in CSS come only from packages/ui/tokens.css (CG-UI-05 · AD-IMPL-05 · AD-VIS-01 ·
+// design D16 · add-shared-ui-components design D14). Fails on a hex colour, a colour function
+// (rgb() / hsl() / hwb() / oklch() / oklab() / lab() / lch()), a font-family declaration or a font
+// shorthand in any other CSS file of the repository; the token file's reference snapshot of the
+// shadcn/ui neutral values may hold colours too (guideline §24 row 61). Checks the repository it lives
+// in; `--root=<dir>` checks another tree.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const TOKENS = 'packages/ui/tokens.css';
+/** Where colours and fonts may be written: the token file and its reference snapshot. */
+const ALLOWED = new Set([TOKENS, 'packages/ui/tokens.neutral.snapshot.css']);
 const SKIP_DIRS = new Set([
   '.git',
   '.next',
@@ -19,6 +23,7 @@ const SKIP_DIRS = new Set([
 ]);
 
 const HEX = /(?<![\w&])#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})(?![\w-])/i;
+const COLOUR_FUNCTION = /\b(?:rgba?|hsla?|hwb|oklch|oklab|lab|lch)\(/i;
 // `property: value` ended by `;` or `}`. A selector is ended by `{`, so `#add {` or `a:hover {`
 // is never read as a declaration.
 const DECLARATION = /([-\w]+)\s*:\s*([^;{}]*)(?=[;}])/g;
@@ -45,6 +50,7 @@ function problemOf(property, value) {
   if (property === 'font-family') return 'font-family';
   if (property === 'font' && !CSS_WIDE.has(value.toLowerCase())) return 'font shorthand';
   if (HEX.test(value)) return 'hex colour';
+  if (COLOUR_FUNCTION.test(value)) return 'colour function';
   return null;
 }
 
@@ -52,7 +58,7 @@ function problemOf(property, value) {
 export function findCssViolations(root) {
   const violations = [];
   for (const path of cssFiles(root)) {
-    if (path === TOKENS) continue;
+    if (ALLOWED.has(path)) continue;
     // Comments become spaces (line breaks kept), so `/* #fff */` is ignored and lines still count.
     const code = readFileSync(join(root, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (comment) =>
       comment.replace(/[^\n]/g, ' '),
