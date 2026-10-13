@@ -154,7 +154,8 @@ function ScannerDemo({ camera }: { readonly camera: boolean }) {
           hint={t('hint')}
           onResult={(text) => {
             setResult(log('result', { text }));
-            setOpen(false);
+            // The mock reports as it opens; it stays open, so its hint is seen, until it is closed.
+            if (camera) setOpen(false);
           }}
           onError={(kind) => setResult(log('error', { kind }))}
           onClose={() => setOpen(false)}
