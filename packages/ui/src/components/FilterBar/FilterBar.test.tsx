@@ -105,10 +105,20 @@ describe('FilterBar', () => {
     expect(window.location.search).toBe('?lang=en&status=1');
   });
 
+  it('Scenario: Custom range fields are labelled — "From" and "To", each field named by its label', () => {
+    renderIntl(<Bookings />);
+    preset('Custom');
+    const from = screen.getByRole('textbox', { name: 'From' });
+    const to = screen.getByRole('textbox', { name: 'To' });
+    expect(screen.getByText('From').closest('label')?.htmlFor).toBe(from.id);
+    expect(screen.getByText('To').closest('label')?.htmlFor).toBe(to.id);
+  });
+
   it('the custom range: the end date cannot be before the start date', () => {
     renderIntl(<Bookings />);
     preset('Custom');
-    const [from, to] = screen.getAllByRole('textbox', { name: 'Custom' }) as HTMLInputElement[];
+    const from = screen.getByRole('textbox', { name: 'From' }) as HTMLInputElement;
+    const to = screen.getByRole('textbox', { name: 'To' }) as HTMLInputElement;
     fireEvent.change(from as HTMLInputElement, { target: { value: '05/10/2026' } });
     fireEvent.blur(from as HTMLInputElement);
     fireEvent.change(to as HTMLInputElement, { target: { value: '04/10/2026' } });

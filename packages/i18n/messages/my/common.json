@@ -49,6 +49,8 @@
   "date": {
     "today": "ယနေ့",
     "yesterday": "မနေ့က",
+    "from": "စရက်",
+    "to": "ဆုံးရက်",
     "preset": {
       "thisWeek": "ဒီအပတ်",
       "last7Days": "ပြီးခဲ့သော 7 ရက်",

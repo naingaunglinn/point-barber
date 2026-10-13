@@ -18,6 +18,7 @@ import { useFormat } from '../../providers/format';
 import { Button } from '../Button/Button';
 import { SearchInput } from '../SearchInput/SearchInput';
 import { DateInput } from '../DateInput/DateInput';
+import { FormField } from '../FormField/FormField';
 import {
   filterFromSearch,
   searchWithFilter,
@@ -145,19 +146,28 @@ export function FilterBar({
         ))}
       </div>
       {value.preset === 'custom' ? (
+        // Each field has its visible label, so the start and the end are told apart (AD-A11Y-04).
         <div className="grid gap-2 md:grid-cols-2">
-          <DateInput
-            aria-label={t('common.date.preset.custom')}
-            value={value.from ?? null}
-            max={value.to}
-            onChange={(from) => onChange({ ...value, from: from ?? undefined })}
-          />
-          <DateInput
-            aria-label={t('common.date.preset.custom')}
-            value={value.to ?? null}
-            min={value.from}
-            onChange={(to) => onChange({ ...value, to: to ?? undefined })}
-          />
+          <FormField label={t('common.date.from')}>
+            {(control) => (
+              <DateInput
+                {...control}
+                value={value.from ?? null}
+                max={value.to}
+                onChange={(from) => onChange({ ...value, from: from ?? undefined })}
+              />
+            )}
+          </FormField>
+          <FormField label={t('common.date.to')}>
+            {(control) => (
+              <DateInput
+                {...control}
+                value={value.to ?? null}
+                min={value.from}
+                onChange={(to) => onChange({ ...value, to: to ?? undefined })}
+              />
+            )}
+          </FormField>
         </div>
       ) : null}
       {statuses === undefined ? null : (

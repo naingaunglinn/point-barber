@@ -49,6 +49,8 @@
   "date": {
     "today": "Today",
     "yesterday": "Yesterday",
+    "from": "From",
+    "to": "To",
     "preset": {
       "thisWeek": "This week",
       "last7Days": "Last 7 days",
