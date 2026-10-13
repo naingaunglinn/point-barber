@@ -217,7 +217,10 @@ export function ShellDemo() {
                     aria-label={common('action.more')}
                   />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-w-72 p-3 text-sm">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-72 max-w-[calc(100vw-2rem)] p-3 text-sm"
+                >
                   {t('userMenuNote')}
                 </DropdownMenuContent>
               </DropdownMenu>
