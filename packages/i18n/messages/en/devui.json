@@ -1,0 +1,83 @@
+{
+  "title": "UI catalogue",
+  "notice": "Development tool — fixture data only, nothing is saved.",
+  "nav": {
+    "sections": "Sections"
+  },
+  "control": {
+    "language": "Language",
+    "theme": "Theme",
+    "persona": "Persona",
+    "clock": "Clock"
+  },
+  "language": {
+    "my": "Myanmar",
+    "en": "English"
+  },
+  "theme": {
+    "staff": "Staff app",
+    "site": "Website"
+  },
+  "persona": {
+    "admin": "Admin",
+    "manager": "Manager",
+    "barber": "Barber",
+    "branchHolder": "Branch-scope holder"
+  },
+  "section": {
+    "tokens": "Tokens",
+    "fonts": "Fonts",
+    "formatters": "Formatters",
+    "buttonsForms": "Buttons and forms",
+    "inputs": "Inputs",
+    "badgesChips": "Badges and chips",
+    "dialogsOverlays": "Dialogs and overlays",
+    "lists": "Lists",
+    "states": "States",
+    "permissions": "Permissions",
+    "shell": "Shell",
+    "chartsKpi": "Charts and KPI",
+    "pickers": "Pickers",
+    "dataLess": "Data-less components"
+  },
+  "tokens": {
+    "swatches": "Colour tokens",
+    "token": "Token",
+    "sample": "Sample",
+    "value": "Computed value",
+    "note": "Note",
+    "aliasOf": "alias of {token}",
+    "pending": "owner value pending (OPEN-30)",
+    "decorationNote": "large text and icons only, on the background or a card",
+    "contrast": "Contrast",
+    "pair": "Pair",
+    "ratio": "Ratio",
+    "limit": "Limit",
+    "mark": "Mark",
+    "on": "{foreground} on {background}",
+    "focusOutline": "focus outline = {token}",
+    "inputBorder": "input border = {token}",
+    "markPass": "pass",
+    "markLargeOnly": "large text and icons only",
+    "markNotAllowed": "not allowed",
+    "markFail": "fails",
+    "measuring": "Measuring…",
+    "ratioValue": "{ratio} : 1"
+  },
+  "fonts": {
+    "samples": "Myanmar test strings (AD-VIS-05)",
+    "faces": "Font faces",
+    "family": "Family",
+    "weightColumn": "Weight",
+    "status": "Status",
+    "tabular": "Tabular figures",
+    "digits": "Myanmar digits",
+    "siteHeadings": "Site display heading",
+    "semibold": "Myanmar label at weight 600",
+    "legend": "Each line: weight 400 · weight 700 · system-ui, for comparison"
+  },
+  "formatters": {
+    "function": "Function",
+    "input": "Input"
+  }
+}

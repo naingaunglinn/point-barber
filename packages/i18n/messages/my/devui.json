@@ -1,0 +1,83 @@
+{
+  "title": "UI အစိတ်အပိုင်း စာရင်း",
+  "notice": "ဖန်တီးသူများအတွက် ကိရိယာ — နမူနာဒေတာသာ၊ ဘာမှ မသိမ်းပါ။",
+  "nav": {
+    "sections": "အပိုင်းများ"
+  },
+  "control": {
+    "language": "ဘာသာစကား",
+    "theme": "အသွင်အပြင်",
+    "persona": "အခန်းကဏ္ဍ",
+    "clock": "အချိန်"
+  },
+  "language": {
+    "my": "မြန်မာ",
+    "en": "အင်္ဂလိပ်"
+  },
+  "theme": {
+    "staff": "ဝန်ထမ်း App",
+    "site": "ဝက်ဘ်ဆိုက်"
+  },
+  "persona": {
+    "admin": "အက်ဒမင်",
+    "manager": "မန်နေဂျာ",
+    "barber": "ဆံပင်ညှပ်ဆရာ",
+    "branchHolder": "ဆိုင်ခွဲအတွက်သာ ခွင့်ရသူ"
+  },
+  "section": {
+    "tokens": "Token များ",
+    "fonts": "ဖောင့်များ",
+    "formatters": "ပုံစံချ function များ",
+    "buttonsForms": "ခလုတ်နှင့် ဖောင်များ",
+    "inputs": "ထည့်သွင်းကွက်များ",
+    "badgesChips": "Badge နှင့် Chip များ",
+    "dialogsOverlays": "Dialog နှင့် Overlay များ",
+    "lists": "စာရင်းများ",
+    "states": "အခြေအနေများ",
+    "permissions": "ခွင့်ပြုချက်များ",
+    "shell": "App မူဘောင်",
+    "chartsKpi": "ဂရပ်နှင့် KPI",
+    "pickers": "ရွေးချယ်ကွက်များ",
+    "dataLess": "ဒေတာမလိုသော အစိတ်အပိုင်းများ"
+  },
+  "tokens": {
+    "swatches": "အရောင် token များ",
+    "token": "Token အမည်",
+    "sample": "နမူနာ",
+    "value": "တွက်ထားသော တန်ဖိုး",
+    "note": "မှတ်ချက်",
+    "aliasOf": "{token} ၏ alias",
+    "pending": "owner တန်ဖိုး စောင့်ဆိုင်းဆဲ (OPEN-30)",
+    "decorationNote": "စာလုံးကြီးနှင့် icon အတွက်သာ၊ နောက်ခံ သို့မဟုတ် card ပေါ်တွင်သာ",
+    "contrast": "အရောင် ကွာခြားမှု",
+    "pair": "အတွဲ",
+    "ratio": "အချိုး",
+    "limit": "အနည်းဆုံး",
+    "mark": "ရလဒ်",
+    "on": "{background} ပေါ်ရှိ {foreground}",
+    "focusOutline": "Focus မျဉ်း = {token}",
+    "inputBorder": "ထည့်သွင်းကွက် ဘောင် = {token}",
+    "markPass": "အောင်",
+    "markLargeOnly": "စာလုံးကြီးနှင့် icon အတွက်သာ",
+    "markNotAllowed": "မသုံးရ",
+    "markFail": "မအောင်",
+    "measuring": "တိုင်းနေသည်…",
+    "ratioValue": "{ratio} : 1"
+  },
+  "fonts": {
+    "samples": "မြန်မာ စမ်းသပ်စာကြောင်းများ (AD-VIS-05)",
+    "faces": "Font face များ",
+    "family": "ဖောင့် အမျိုးအစား",
+    "weightColumn": "အထူ",
+    "status": "အခြေအနေ",
+    "tabular": "ဂဏန်း ကော်လံ (tabular)",
+    "digits": "မြန်မာ ဂဏန်းများ",
+    "siteHeadings": "ဝက်ဘ်ဆိုက် ခေါင်းစဉ်",
+    "semibold": "အထူ 600 မြန်မာ label",
+    "legend": "တစ်ကြောင်းစီ: အထူ 400 · အထူ 700 · နှိုင်းယှဉ်ရန် system-ui"
+  },
+  "formatters": {
+    "function": "Function အမည်",
+    "input": "ထည့်သွင်းချက်"
+  }
+}

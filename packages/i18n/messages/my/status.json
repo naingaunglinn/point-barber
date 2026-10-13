@@ -1,0 +1,151 @@
+{
+  "flag": {
+    "late_entry": "နောက်မှ ထည့်သွင်းခြင်း",
+    "proxy_recorded": "မှတ်သွင်းသူ {name}",
+    "home_service": "အိမ်တိုင်ရာရောက်",
+    "online_booking": "Online ချိန်းဆိုမှု",
+    "price_changed": "ဈေးပြင်ထား",
+    "discount": "လျှော့ဈေး",
+    "negative_stock": "လက်ကျန် အနုတ်",
+    "low_stock": "လက်ကျန် နည်း",
+    "manual_attendance": "လက်ဖြင့် မှတ်ထားသော တက်ရောက်မှု",
+    "attendance_late": "နောက်ကျ",
+    "attendance_absent": "ပျက်ကွက်",
+    "attendance_early_leave": "စောပြန်",
+    "pending_leave": "ခွင့် စောင့်ဆိုင်းဆဲ",
+    "difference_sale": "ကွာခြားငွေ ရောင်းချမှု",
+    "change_returned": "ပိုငွေ ပြန်အမ်းပြီး",
+    "transfer_short": "လို {n}",
+    "transfer_over": "ပို {n}",
+    "reopened": "ပြန်ဖွင့် ×{n}"
+  },
+  "bookings": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "BOOKED": "ချိန်းထားပြီး",
+    "STARTED": "စတင်ပြီး",
+    "COMPLETED": "ပြီးပြီ"
+  },
+  "visits": {
+    "INCOMPLETE": "မပြီးဆုံး",
+    "STARTED": "ဝန်ဆောင်မှု ပေးနေဆဲ",
+    "COMPLETED": "ငွေရှင်းရန် ကျန်",
+    "FINISHED": "အပြီးသတ်ပြီး"
+  },
+  "sales": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "OPEN": "ဖွင့်ထား",
+    "FINISHED": "အပြီးသတ်ပြီး"
+  },
+  "discount_requests": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "PENDING": "စောင့်ဆိုင်းဆဲ",
+    "APPROVED": "ခွင့်ပြုပြီး",
+    "REJECTED": "ငြင်းပယ်ပြီး"
+  },
+  "leaves": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "PENDING": "စောင့်ဆိုင်းဆဲ",
+    "APPROVED": "ခွင့်ပြုပြီး",
+    "REJECTED": "ငြင်းပယ်ပြီး"
+  },
+  "payroll_runs": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "DRAFT": "မူကြမ်း",
+    "CALCULATED": "တွက်ပြီး",
+    "FINALIZED": "အပြီးသတ် အတည်ပြုပြီး",
+    "PUBLISHED": "ထုတ်ပြန်ပြီး",
+    "PAID": "ပေးချေပြီး"
+  },
+  "attendance_exceptions": {
+    "VOID": "ပယ်ဖျက် (မှား)",
+    "OPEN": "ဖွင့်ထား",
+    "EXCUSED": "ခွင့်လွှတ်ပြီး",
+    "CONFIRMED": "အတည်ပြုပြီး",
+    "LEAVE": "ခွင့်အဖြစ် ပြောင်းပြီး"
+  },
+  "purchases": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "DRAFT": "မူကြမ်း",
+    "POSTED": "စာရင်းသွင်းပြီး"
+  },
+  "stock_transfers": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "DRAFT": "မူကြမ်း",
+    "SENT": "လမ်းတွင်",
+    "RECEIVED": "လက်ခံပြီး"
+  },
+  "stock_counts": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "IN_PROGRESS": "လုပ်ဆောင်နေဆဲ",
+    "POSTED": "စာရင်းသွင်းပြီး"
+  },
+  "daily_closings": {
+    "OPEN": "ဖွင့်ထား",
+    "CLOSED": "စာရင်းပိတ်ပြီး",
+    "OPEN_PAST": "စာရင်းမပိတ်ရသေး"
+  },
+  "expenses": {
+    "PENDING": "စောင့်ဆိုင်းဆဲ",
+    "APPROVED": "ခွင့်ပြုပြီး",
+    "REJECTED": "ငြင်းပယ်ပြီး",
+    "DELETED": "ဖျက်ပြီး"
+  },
+  "manual_incomes": {
+    "PENDING": "စောင့်ဆိုင်းဆဲ",
+    "APPROVED": "ခွင့်ပြုပြီး",
+    "REJECTED": "ငြင်းပယ်ပြီး",
+    "DELETED": "ဖျက်ပြီး"
+  },
+  "employee_receivables": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "ACTIVE": "ပေးရန် ကျန်",
+    "SETTLED": "ကျေပြီး"
+  },
+  "users": {
+    "DISABLED": "ပိတ်ထား",
+    "ACTIVE": "အသုံးပြုနေ",
+    "INVITED": "ဖိတ်ထားပြီး"
+  },
+  "employees": {
+    "INACTIVE": "အသုံးမပြု",
+    "ACTIVE": "အသုံးပြုနေ",
+    "RESIGNED": "နုတ်ထွက်ပြီး",
+    "TERMINATED": "ရပ်စဲပြီး"
+  },
+  "import_jobs": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး",
+    "UPLOADED": "တင်ပြီး",
+    "VALIDATED": "စစ်ဆေးပြီး",
+    "CONFIRMED": "အတည်ပြုပြီး",
+    "FAILED": "မအောင်မြင်"
+  },
+  "import_job_rows": {
+    "PENDING": "စောင့်ဆိုင်းဆဲ",
+    "VALID": "မှန်",
+    "ERROR": "အမှား",
+    "IMPORTED": "သွင်းပြီး",
+    "SKIPPED": "ကျော်ထား"
+  },
+  "backup_runs": {
+    "RUNNING": "လုပ်ဆောင်နေ",
+    "SUCCESS": "အောင်မြင်",
+    "FAILED": "မအောင်မြင်"
+  },
+  "payments": {
+    "VOIDED": "ပယ်ဖျက်ပြီး",
+    "KBZPAY_UNVERIFIED": "မစစ်ရသေး",
+    "KBZPAY_VERIFIED": "စစ်ပြီး"
+  },
+  "cash_outs": {
+    "OUTSTANDING": "ပြန်ထည့်ရန် ကျန်",
+    "RETURNED": "ပြန်ထည့်ပြီး",
+    "CONVERTED": "အသုံးစရိတ်အဖြစ် ပြောင်းပြီး",
+    "CANCELLED": "ပယ်ဖျက်ပြီး"
+  },
+  "cash_returns": {
+    "CANCELLED": "ပယ်ဖျက်ပြီး"
+  },
+  "master": {
+    "INACTIVE": "အသုံးမပြု"
+  }
+}

@@ -25,6 +25,8 @@ Thumbs.db
 .idea/
 
 # generated files and data dumps
+apps/web/public/fonts/
+apps/web/catalogue-flag.generated.ts
 *.dump
 *.sql.gz
 

@@ -2,20 +2,30 @@
   "name": "web",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3100",
-    "build": "next build",
+    "dev": "node scripts/copy-fonts.mjs && cross-env NEXT_PUBLIC_DEV_CATALOGUE=1 node scripts/write-catalogue-flag.mjs && next dev --port 3100",
+    "build": "node scripts/copy-fonts.mjs && node scripts/write-catalogue-flag.mjs && next build",
+    "build:catalogue": "node scripts/copy-fonts.mjs && cross-env NEXT_PUBLIC_DEV_CATALOGUE=1 node scripts/write-catalogue-flag.mjs && next build",
+    "generate": "node scripts/write-catalogue-flag.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@point/i18n": "workspace:*",
+    "@point/shared": "workspace:*",
+    "@point/ui": "workspace:*",
+    "lucide-react": "1.52.0",
     "next": "16.3.8",
+    "next-intl": "4.14.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "cross-env": "10.1.0",
+    "tailwindcss": "4.3.3",
     "typescript": "6.0.3"
   }
 }

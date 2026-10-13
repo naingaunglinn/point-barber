@@ -1,0 +1,151 @@
+{
+  "flag": {
+    "late_entry": "Late entry",
+    "proxy_recorded": "Recorded by {name}",
+    "home_service": "Home service",
+    "online_booking": "Online booking",
+    "price_changed": "Price changed",
+    "discount": "Discount",
+    "negative_stock": "Negative stock",
+    "low_stock": "Low stock",
+    "manual_attendance": "Manual attendance",
+    "attendance_late": "Late",
+    "attendance_absent": "Absent",
+    "attendance_early_leave": "Early leave",
+    "pending_leave": "Pending leave",
+    "difference_sale": "Difference sale",
+    "change_returned": "Change returned",
+    "transfer_short": "Short {n}",
+    "transfer_over": "Over {n}",
+    "reopened": "Reopened ×{n}"
+  },
+  "bookings": {
+    "CANCELLED": "Cancelled",
+    "BOOKED": "Booked",
+    "STARTED": "Started",
+    "COMPLETED": "Completed"
+  },
+  "visits": {
+    "INCOMPLETE": "Incomplete",
+    "STARTED": "In service",
+    "COMPLETED": "Awaiting payment",
+    "FINISHED": "Finished"
+  },
+  "sales": {
+    "CANCELLED": "Cancelled",
+    "OPEN": "Open",
+    "FINISHED": "Finished"
+  },
+  "discount_requests": {
+    "CANCELLED": "Cancelled",
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
+  },
+  "leaves": {
+    "CANCELLED": "Cancelled",
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
+  },
+  "payroll_runs": {
+    "CANCELLED": "Cancelled",
+    "DRAFT": "Draft",
+    "CALCULATED": "Calculated",
+    "FINALIZED": "Finalized",
+    "PUBLISHED": "Published",
+    "PAID": "Paid"
+  },
+  "attendance_exceptions": {
+    "VOID": "Void",
+    "OPEN": "Open",
+    "EXCUSED": "Excused",
+    "CONFIRMED": "Confirmed",
+    "LEAVE": "Leave"
+  },
+  "purchases": {
+    "CANCELLED": "Cancelled",
+    "DRAFT": "Draft",
+    "POSTED": "Posted"
+  },
+  "stock_transfers": {
+    "CANCELLED": "Cancelled",
+    "DRAFT": "Draft",
+    "SENT": "In transit",
+    "RECEIVED": "Received"
+  },
+  "stock_counts": {
+    "CANCELLED": "Cancelled",
+    "IN_PROGRESS": "In progress",
+    "POSTED": "Posted"
+  },
+  "daily_closings": {
+    "OPEN": "Open",
+    "CLOSED": "Closed",
+    "OPEN_PAST": "Not closed"
+  },
+  "expenses": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "DELETED": "Deleted"
+  },
+  "manual_incomes": {
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "DELETED": "Deleted"
+  },
+  "employee_receivables": {
+    "CANCELLED": "Cancelled",
+    "ACTIVE": "Outstanding",
+    "SETTLED": "Settled"
+  },
+  "users": {
+    "DISABLED": "Disabled",
+    "ACTIVE": "Active",
+    "INVITED": "Invited"
+  },
+  "employees": {
+    "INACTIVE": "Inactive",
+    "ACTIVE": "Active",
+    "RESIGNED": "Resigned",
+    "TERMINATED": "Terminated"
+  },
+  "import_jobs": {
+    "CANCELLED": "Cancelled",
+    "UPLOADED": "Uploaded",
+    "VALIDATED": "Validated",
+    "CONFIRMED": "Confirmed",
+    "FAILED": "Failed"
+  },
+  "import_job_rows": {
+    "PENDING": "Pending",
+    "VALID": "Valid",
+    "ERROR": "Error",
+    "IMPORTED": "Imported",
+    "SKIPPED": "Skipped"
+  },
+  "backup_runs": {
+    "RUNNING": "Running",
+    "SUCCESS": "Success",
+    "FAILED": "Failed"
+  },
+  "payments": {
+    "VOIDED": "Voided",
+    "KBZPAY_UNVERIFIED": "Unverified",
+    "KBZPAY_VERIFIED": "Verified"
+  },
+  "cash_outs": {
+    "OUTSTANDING": "Outstanding",
+    "RETURNED": "Returned",
+    "CONVERTED": "Charged to expense",
+    "CANCELLED": "Cancelled"
+  },
+  "cash_returns": {
+    "CANCELLED": "Cancelled"
+  },
+  "master": {
+    "INACTIVE": "Inactive"
+  }
+}

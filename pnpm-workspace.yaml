@@ -4,7 +4,10 @@ packages:
   - 'tools/*'
   - 'e2e'
 allowBuilds:
+  # next-intl's message extractor (dev tooling, not used here): prebuilt binaries, no install script.
+  '@parcel/watcher': false
   '@prisma/engines': true
+  '@swc/core': false
   prisma: true
 minimumReleaseAgeExclude:
   - '@turbo/darwin-64@2.11.7'

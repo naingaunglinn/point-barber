@@ -1,0 +1,17 @@
+{
+  "required": "This field is required.",
+  "date_invalid": "Enter a valid date, for example 05/Oct/2026.",
+  "phone_invalid": "Enter a valid phone number.",
+  "amount_invalid": "Enter a whole amount in kyats.",
+  "reason_required": "Enter a reason.",
+  "file_too_large": "The file is larger than {max_mb} MB.",
+  "file_type_not_allowed": "This file type is not allowed. Allowed: {allowed}.",
+  "too_small": "This value is too short or too small — minimum {minimum}.",
+  "too_big": "This value is too long or too large — maximum {maximum}.",
+  "invalid_type": "This value has the wrong format.",
+  "validation": "Check the marked fields.",
+  "forbidden": "You don't have access to this page. Ask an admin if you need it.",
+  "not_found": "This item doesn't exist or was archived.",
+  "internal_error": "Something went wrong on the server. Try again; if it happens again, give the error ID to an admin.",
+  "unknown": "Something went wrong. Try again."
+}

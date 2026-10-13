@@ -21,6 +21,7 @@
 **/coverage
 **/*.tsbuildinfo
 apps/api/src/generated
+apps/web/catalogue-flag.generated.ts
 playwright-report
 test-results
 

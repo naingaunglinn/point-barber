@@ -28,8 +28,9 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  // Everything except Next.js's own assets under /_next/. public/ holds no file yet; a file added
-  // there later gets its own exclusion here — never a "path with a dot" pattern, which would let
-  // /staff/<x>.<y> skip the 404 rule (design D11).
-  matcher: ['/((?!_next/).*)'],
+  // Everything except Next.js's own assets under /_next/ and the self-hosted fonts under /fonts/
+  // (public/fonts, copied from packages/ui/fonts — add-shared-ui-components design D3). A folder
+  // added to public/ later gets its own exclusion here — never a "path with a dot" pattern, which
+  // would let /staff/<x>.<y> skip the 404 rule (design D11).
+  matcher: ['/((?!_next/|fonts/).*)'],
 };
