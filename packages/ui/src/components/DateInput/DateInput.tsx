@@ -38,6 +38,8 @@ export interface DateInputProps {
   readonly name?: string;
   readonly onBlur?: () => void;
   readonly 'aria-label'?: string;
+  /** Labels the field by a visible element elsewhere (a heading) instead of `aria-label`. */
+  readonly 'aria-labelledby'?: string;
   readonly 'aria-invalid'?: true;
   readonly 'aria-describedby'?: string;
   readonly 'aria-required'?: true;
@@ -99,7 +101,7 @@ export function DateInput({
   // The calendar button is named by the field's label (FormField gives it `<id>-label`), else like the input.
   const buttonName =
     control['aria-label'] === undefined
-      ? { 'aria-labelledby': `${inputId}-label` as const }
+      ? { 'aria-labelledby': control['aria-labelledby'] ?? `${inputId}-label` }
       : { 'aria-label': control['aria-label'] };
 
   return (

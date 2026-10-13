@@ -13,6 +13,7 @@ import { MoneyText } from '../../components/MoneyText/MoneyText';
 import { PhoneInput, type PhoneValue } from '../../components/PhoneInput/PhoneInput';
 import { TextInput } from '../../components/TextInput/TextInput';
 import { HandlerLog } from '../demo-frame';
+import { useDemoTitleId } from '../demo-title';
 import { DATES, DEMO_SALES } from '../fixtures';
 
 // Input demos (task 9.3 · AD-FORM-09..15 · AD-FMT-01 · AD-FMT-02 · D-PLT-04 · D-PLT-05 · design D12):
@@ -21,12 +22,12 @@ import { DATES, DEMO_SALES } from '../fixtures';
 // label above a control is the FormField demo's subject).
 
 export function MoneyInputDemo() {
-  const t = useTranslations('devui.inputs');
+  const titleId = useDemoTitleId();
   const log = useTranslations('devui.log');
   const [value, setValue] = useState<Mmk | null>(null);
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <MoneyInput aria-label={t('price')} value={value} onChange={setValue} />
+      <MoneyInput aria-labelledby={titleId} value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={value === null ? 'null' : String(value)} />
     </div>
   );
@@ -46,19 +47,18 @@ export function MoneyTextDemo() {
 }
 
 export function PhoneInputDemo() {
-  const t = useTranslations('devui.inputs');
+  const titleId = useDemoTitleId();
   const log = useTranslations('devui.log');
   const [value, setValue] = useState<PhoneValue>({ raw: '', e164: null });
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <PhoneInput aria-label={t('phone')} value={value.raw} onChange={setValue} />
+      <PhoneInput aria-labelledby={titleId} value={value.raw} onChange={setValue} />
       <HandlerLog label={log('reported')} value={JSON.stringify(value)} />
     </div>
   );
 }
 
 export function BilingualInputDemo() {
-  const t = useTranslations('devui.inputs');
   const log = useTranslations('devui.log');
   const [value, setValue] = useState<Bilingual>({ mm: '', en: null });
   return (
@@ -71,24 +71,24 @@ export function BilingualInputDemo() {
 }
 
 export function TextInputDemo() {
-  const t = useTranslations('devui.inputs');
+  const titleId = useDemoTitleId();
   const log = useTranslations('devui.log');
   const [value, setValue] = useState('');
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <TextInput aria-label={t('note')} multiline value={value} onChange={setValue} />
+      <TextInput aria-labelledby={titleId} multiline value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={JSON.stringify(value)} />
     </div>
   );
 }
 
 export function DateInputDemo() {
-  const t = useTranslations('devui.inputs');
+  const titleId = useDemoTitleId();
   const log = useTranslations('devui.log');
   const [value, setValue] = useState<BusinessDate | null>(null);
   return (
     <div className="flex max-w-sm flex-col gap-2">
-      <DateInput aria-label={t('visitDate')} value={value} onChange={setValue} />
+      <DateInput aria-labelledby={titleId} value={value} onChange={setValue} />
       <HandlerLog label={log('reported')} value={value ?? 'null'} />
     </div>
   );

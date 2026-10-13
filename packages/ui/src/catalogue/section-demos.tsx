@@ -3,6 +3,7 @@
 import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
 
+import { DemoTitleProvider } from './demo-title';
 import { anchorOf, MANIFEST } from './manifest';
 import type { CatalogueSectionId } from './sections';
 
@@ -45,11 +46,14 @@ export function SectionDemos({ section }: { readonly section: CatalogueSectionId
                   )}
                 >
                   <h4
+                    id={`demo-${entry.name}-${id}-title`}
                     className={cn('text-sm font-semibold text-muted-foreground', bleed && 'px-4')}
                   >
                     {t(`demo.${title}`)}
                   </h4>
-                  <Demo />
+                  <DemoTitleProvider value={`demo-${entry.name}-${id}-title`}>
+                    <Demo />
+                  </DemoTitleProvider>
                 </div>
               ))}
             </div>

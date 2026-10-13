@@ -55,6 +55,8 @@ export interface AttachmentUploaderProps {
   readonly disabled?: boolean;
   readonly id?: string;
   readonly 'aria-label'?: string;
+  /** Labels the field by a visible element elsewhere (a heading) instead of `aria-label`. */
+  readonly 'aria-labelledby'?: string;
   readonly 'aria-invalid'?: true;
   readonly 'aria-describedby'?: string;
   readonly 'aria-required'?: true;
@@ -180,7 +182,7 @@ export function AttachmentUploader(props: AttachmentUploaderProps) {
     undefined;
   const name =
     control['aria-label'] === undefined
-      ? { 'aria-labelledby': `${id}-label` as const }
+      ? { 'aria-labelledby': control['aria-labelledby'] ?? `${id}-label` }
       : { 'aria-label': control['aria-label'] };
 
   let messages: ReactNode = null;

@@ -46,6 +46,8 @@ export interface MoneyInputProps {
   readonly name?: string;
   readonly onBlur?: () => void;
   readonly 'aria-label'?: string;
+  /** Labels the field by a visible element elsewhere (a heading) instead of `aria-label`. */
+  readonly 'aria-labelledby'?: string;
   readonly 'aria-invalid'?: true;
   readonly 'aria-describedby'?: string;
   readonly 'aria-required'?: true;

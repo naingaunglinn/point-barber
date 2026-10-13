@@ -12,6 +12,7 @@ import {
 } from '../../components/AttachmentUploader/AttachmentUploader';
 import { Button } from '../../components/Button/Button';
 import { HandlerLog } from '../demo-frame';
+import { useDemoTitleId } from '../demo-title';
 
 // AttachmentUploader demos (task 9.3 · AD-FORM-16 · API-LIM-03): a fake upload that reports progress
 // for about two seconds and never sends the file; the demo form's "Save" is disabled while it runs.
@@ -43,24 +44,23 @@ const fakeUpload: UploadFunction = (file, onProgress) =>
 
 function UploaderDemo({
   purpose,
-  label,
   multiple = false,
   withSave = false,
 }: {
   readonly purpose: UploadPurpose;
-  readonly label: 'photo' | 'documents' | 'importFile';
   readonly multiple?: boolean;
   /** The form's Save, disabled while an upload runs (AD-FORM-16) — shown once, on the photo demo. */
   readonly withSave?: boolean;
 }) {
   const t = useTranslations('devui.upload');
+  const titleId = useDemoTitleId();
   const log = useTranslations('devui.log');
   const [files, setFiles] = useState<readonly UploadedFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState('');
   const uploader = (
     <AttachmentUploader
-      aria-label={t(label)}
+      aria-labelledby={titleId}
       purpose={purpose}
       maxMb={10}
       upload={fakeUpload}
@@ -90,8 +90,6 @@ function UploaderDemo({
   );
 }
 
-export const UploadImageDemo = () => <UploaderDemo purpose="image" label="photo" withSave />;
-export const UploadDocumentDemo = () => (
-  <UploaderDemo purpose="document" label="documents" multiple />
-);
-export const UploadImportDemo = () => <UploaderDemo purpose="import" label="importFile" />;
+export const UploadImageDemo = () => <UploaderDemo purpose="image" withSave />;
+export const UploadDocumentDemo = () => <UploaderDemo purpose="document" multiple />;
+export const UploadImportDemo = () => <UploaderDemo purpose="import" />;
