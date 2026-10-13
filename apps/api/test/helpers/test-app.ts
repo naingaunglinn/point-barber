@@ -10,9 +10,17 @@ import { configureApp } from '../../src/bootstrap.js';
 import { Clock } from '../../src/common/clock/clock.js';
 import { DatabaseProbe } from '../../src/common/database/prisma.service.js';
 import { LOGGER, createLogger } from '../../src/common/logging/logger.js';
+import { PlatformModule } from '../../src/modules/platform/index.js';
+import { AuditFixtureController } from '../fixtures/audit.controller.js';
+import { ContextFixtureController } from '../fixtures/context.controller.js';
 import { FixturesController } from '../fixtures/fixtures.controller.js';
+import { fixtureActorMiddleware } from './fixture-actor.js';
 
-@Module({ imports: [AppModule], controllers: [FixturesController] })
+@Module({
+  // The modules whose exports the fixture controllers inject (one instance each, shared with AppModule).
+  imports: [AppModule, PlatformModule],
+  controllers: [FixturesController, ContextFixtureController, AuditFixtureController],
+})
 class TestAppModule {}
 
 export class FixedClock extends Clock {
@@ -61,6 +69,7 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: false });
   configureApp(app);
+  app.use(fixtureActorMiddleware);
   await app.init();
   return {
     app,
