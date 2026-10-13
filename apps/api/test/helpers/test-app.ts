@@ -14,12 +14,18 @@ import { PlatformModule } from '../../src/modules/platform/index.js';
 import { AuditFixtureController } from '../fixtures/audit.controller.js';
 import { ContextFixtureController } from '../fixtures/context.controller.js';
 import { FixturesController } from '../fixtures/fixtures.controller.js';
+import { IdempotentRowsFixtureController } from '../fixtures/idempotent-rows.controller.js';
 import { fixtureActorMiddleware } from './fixture-actor.js';
 
 @Module({
   // The modules whose exports the fixture controllers inject (one instance each, shared with AppModule).
   imports: [AppModule, PlatformModule],
-  controllers: [FixturesController, ContextFixtureController, AuditFixtureController],
+  controllers: [
+    FixturesController,
+    ContextFixtureController,
+    AuditFixtureController,
+    IdempotentRowsFixtureController,
+  ],
 })
 class TestAppModule {}
 

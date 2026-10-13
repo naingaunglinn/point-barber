@@ -25,6 +25,8 @@ export interface RequestContextData {
   /** `X-Client`: web, android-shell, windows-shell (API-AUD-02). */
   client?: string;
   audit?: AuditIntent;
+  /** Set by Idempotency.run on a replay: the response is 200 with Idempotent-Replayed (D14). */
+  idempotent_replayed?: boolean;
 }
 
 const storage = new AsyncLocalStorage<RequestContextData>();

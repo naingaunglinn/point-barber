@@ -10,6 +10,7 @@ import type { Request, Response } from 'express';
 import type { Logger } from 'pino';
 
 import { AppConfig } from '../config/config.js';
+import { isClientRequestIdConflict } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
 import { ProblemException } from './problem.exception.js';
 import { RequestContext } from './request-context.js';
@@ -36,6 +37,10 @@ const isBodyParserError = (error: unknown): error is BodyParserError =>
 /** Maps anything thrown to a ProblemException; null = an unexpected failure (500). */
 function toProblem(error: unknown): ProblemException | null {
   if (error instanceof ProblemException) return error;
+  // Two requests with one Idempotency-Key: the second hit the client_request_id index (CG-DB-12 ·
+  // add-foundation-auth-access D14); its transaction is aborted and the retry replays.
+  if (isClientRequestIdConflict(error))
+    return new ProblemException(ErrorCode.IDEMPOTENCY_IN_PROGRESS, 409);
   // The JSON body could not be read: unparseable or above the 1 MB limit (design D7, reading 5).
   if (isBodyParserError(error))
     return new ProblemException(ErrorCode.VALIDATION, 400, { errors: [] });
