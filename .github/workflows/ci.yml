@@ -144,8 +144,36 @@ jobs:
   integration:
     name: integration
     runs-on: ubuntu-24.04
-    services: *postgres-service
-    env: *postgres-env
+    # PostgreSQL as in job `db`, plus Mailpit: the mail tests deliver over SMTP and read the message
+    # back through Mailpit's API (add-foundation-auth-access task 2.10 · ADR-007).
+    services:
+      postgres:
+        image: postgres:16.15-bookworm
+        env:
+          POSTGRES_USER: point
+          POSTGRES_PASSWORD: point_ci
+          POSTGRES_DB: point
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U point"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.31.4
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGPASSWORD: point_ci
+      POSTGRES_USER: point
+      POSTGRES_DB: point
+      POINT_APP_DB_PASSWORD: app_ci
+      SMTP_HOST: localhost
+      MAIL_TRANSPORT: mailpit
     steps:
       - uses: actions/checkout@v7
 

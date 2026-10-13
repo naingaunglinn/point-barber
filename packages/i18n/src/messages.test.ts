@@ -12,6 +12,6 @@ describe('language files', () => {
 
   it.each(LOCALES)('loads the namespaces of this change for %s', (locale) => {
     expect(Object.keys(loadMessages(locale)).sort()).toEqual([...NAMESPACES].sort());
-    expect(NAMESPACES).toEqual(['common', 'status', 'error', 'reason', 'devui']);
+    expect(NAMESPACES).toEqual(['common', 'status', 'error', 'reason', 'devui', 'auth']);
   });
 });

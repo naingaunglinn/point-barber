@@ -5,7 +5,7 @@ export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'my';
 
 /** One JSON file per namespace and language (design D6); feature changes add their own. */
-export const NAMESPACES = ['common', 'status', 'error', 'reason', 'devui'] as const;
+export const NAMESPACES = ['common', 'status', 'error', 'reason', 'devui', 'auth'] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
 export function isLocale(value: unknown): value is Locale {
