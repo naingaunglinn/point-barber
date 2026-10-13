@@ -172,9 +172,7 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
           <Input
             type="text"
             inputMode="numeric"
-            {...(headers === ''
-              ? { 'aria-label': [label, words('min')].filter(Boolean).join(' · ') }
-              : { 'aria-labelledby': `${headers} ${minutesId}` })}
+            aria-labelledby={headers === '' ? minutesId : `${headers} ${minutesId}`}
             placeholder={String(defaultDurationMinutes)}
             value={
               current?.duration_minutes === null || current === undefined
