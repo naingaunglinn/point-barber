@@ -144,6 +144,10 @@ describe('LineChart', () => {
     expect(document.querySelector('.recharts-line')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show as table' }));
     expect(document.querySelectorAll('[data-slot="chart-table"] tbody tr')).toHaveLength(3);
+    // The table scrolls sideways inside a region that takes the keyboard focus, named like the chart.
+    const region = screen.getByRole('region', { name: AMOUNT });
+    expect(region.getAttribute('tabindex')).toBe('0');
+    expect(region.querySelector('[data-slot="chart-table"]')).not.toBeNull();
   });
 });
 

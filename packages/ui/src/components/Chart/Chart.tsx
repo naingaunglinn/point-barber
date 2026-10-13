@@ -85,10 +85,12 @@ function configOf(series: readonly ChartSeries[]): ChartConfig {
   );
 }
 
-function ChartTable({ series, xLabel, yKind }: Omit<ChartProps, 'yLabel'>) {
+function ChartTable({ series, xLabel, yLabel, yKind }: ChartProps) {
   const rows = rowsOf(series);
   return (
-    <div className="overflow-x-auto">
+    // A wide table scrolls sideways on a phone: the region takes the keyboard focus so the arrow keys
+    // scroll it (WCAG 2.1.1, axe scrollable-region-focusable), named like the chart.
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={yLabel}>
       <table className="w-full text-sm" data-slot="chart-table">
         <thead>
           <tr className="border-b border-border">
@@ -171,7 +173,12 @@ function Frame({
         </Button>
       </div>
       {asTable ? (
-        <ChartTable series={props.series} xLabel={props.xLabel} yKind={props.yKind} />
+        <ChartTable
+          series={props.series}
+          xLabel={props.xLabel}
+          yLabel={props.yLabel}
+          yKind={props.yKind}
+        />
       ) : (
         chart
       )}
