@@ -64,11 +64,15 @@ The rules for `main` (design D15):
 | Merge method            | Squash merge only (no merge commits, no rebase merge)                    |
 | Direct pushes to `main` | None                                                                     |
 
-Both repositories must be private (ADR-016 Decision 8). Today both are still public, and making them
-private is on the owner's sheet. GitHub enforces protection rules on a private repository only on a
-paid plan, which is also an owner item.
+`point-sdd` is private. `point-barber` is public until V1 is complete (ADR-016 Amendment 1, owner
+12/Oct/2026): GitHub Free gives a private repository 2,000 Actions minutes a month, which this CI
+would use up, while a public one has unlimited minutes and branch protection. So GitHub enforces the
+settings above on `main` (Settings → Branches), with no bypass for admins. While the repository is
+public, no screenshot of the shop's current system and no real customer or staff data is committed
+(CG-SEC-11).
 
-**Until the plan allows it, the two developers keep these rules by hand:**
+**The same rules, which every developer keeps anyway — and by hand if `point-barber` turns private
+before a paid plan (coding guideline OPEN-CG-06):**
 
 - merge only when all seven jobs are green;
 - never approve your own pull request;
@@ -78,8 +82,8 @@ paid plan, which is also an owner item.
 - always choose **Squash and merge**;
 - never push to `main`.
 
-When the plan is in place, the repository admin turns on the settings above and changes this
-paragraph.
+When V1 is complete, the owner makes `point-barber` private and decides the paid plan; this section
+changes with it.
 
 ## Claude Code hook
 
