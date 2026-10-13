@@ -17,6 +17,7 @@ import { useFormat } from '../../providers/format';
 import { Button } from '../Button/Button';
 import { DataText } from '../DataText/DataText';
 import { Dialog } from '../Dialog/Dialog';
+import { FormField } from '../FormField/FormField';
 import { TextInput } from '../TextInput/TextInput';
 import { FieldMessage } from '../FormField/FieldMessage';
 
@@ -150,7 +151,6 @@ export function ReasonDialog({
   const reasonError = showErrors && reasonMissing;
   const noteError = showErrors && noteMissing;
   const reasonErrorId = `${ids}-reason-error`;
-  const noteErrorId = `${ids}-note-error`;
 
   return (
     <Dialog
@@ -187,7 +187,8 @@ export function ReasonDialog({
             aria-label={title}
             aria-invalid={reasonError || undefined}
             aria-describedby={reasonError ? reasonErrorId : undefined}
-            className="flex flex-col gap-0"
+            // 44 px rows 8 px apart (AD-A11Y-05).
+            className="flex flex-col gap-2"
           >
             {options.map((option) => {
               const id = `${ids}-${option.value}`;
@@ -206,7 +207,11 @@ export function ReasonDialog({
         ) : null}
         {options.length > RADIO_LIMIT ? (
           <Command className="rounded-md border border-border" aria-label={title}>
-            <CommandInput placeholder={t('common.search.placeholder')} className="text-base" />
+            <CommandInput
+              placeholder={t('common.search.placeholder')}
+              aria-label={t('common.search.placeholder')}
+              className="text-base"
+            />
             <CommandList role="listbox" aria-invalid={reasonError || undefined}>
               <CommandEmpty />
               {options.map((option) => (
@@ -228,22 +233,16 @@ export function ReasonDialog({
           <FieldMessage id={reasonErrorId}>{t('error.reason_required')}</FieldMessage>
         ) : null}
         {noteShown ? (
-          <div className="flex flex-col gap-1">
-            <TextInput
-              multiline
-              value={noteText}
-              onChange={setNoteText}
-              // No "Note" label in the language files (design D6): the note is named by the reason it
-              // explains, or by the title for a free-text reason.
-              aria-label={picked?.label ?? title}
-              aria-required={noteRequired || undefined}
-              aria-invalid={noteError || undefined}
-              aria-describedby={noteError ? noteErrorId : undefined}
-            />
-            {noteError ? (
-              <FieldMessage id={noteErrorId}>{t('error.reason_required')}</FieldMessage>
-            ) : null}
-          </div>
+          // The visible label "Note" (AD-A11Y-04); the asterisk marks a note the reason needs.
+          <FormField
+            label={t('common.form.note')}
+            required={noteRequired}
+            error={noteError ? { code: 'reason_required' } : undefined}
+          >
+            {(control) => (
+              <TextInput multiline value={noteText} onChange={setNoteText} {...control} />
+            )}
+          </FormField>
         ) : null}
       </div>
     </Dialog>

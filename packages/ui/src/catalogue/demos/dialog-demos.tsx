@@ -90,7 +90,9 @@ function ReasonDemo({
         consequence={consequence}
         source={source}
         confirmLabel={t(`${kind}.verb`)}
-        note={source.type === 'free' ? 'required' : 'by-reason'}
+        // Cancelling a booking shows the note field, optional unless the reason needs it (AD-RSN-01): with
+        // no note the result is `{ reason_id, note: null }`; a late entry shows it only for OTHER.
+        note={source.type === 'free' ? 'required' : kind === 'cancel' ? 'optional' : 'by-reason'}
         cancelLabel={kind === 'cancel' ? 'keep' : 'goBack'}
         destructive={kind !== 'lateEntry'}
         onConfirm={(value) => {

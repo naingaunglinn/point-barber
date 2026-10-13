@@ -102,6 +102,10 @@ describe('ReasonDialog', () => {
     );
     open();
     fireEvent.click(screen.getByRole('radio', { name: 'Customer wants to change' }));
+    // The optional note: the visible label "Note" without the required mark.
+    const note = screen.getByRole('textbox', { name: 'Note' });
+    expect(note.getAttribute('aria-required')).toBeNull();
+    expect(document.querySelector('[data-slot="required-mark"]')).toBeNull();
     confirm();
     expect(onConfirm).toHaveBeenCalledWith({ reason_id: 'r1', note: null });
     expect(screen.queryByRole('alertdialog')).toBeNull();
@@ -120,8 +124,13 @@ describe('ReasonDialog', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Other' }));
     confirm();
     expect(onConfirm).not.toHaveBeenCalled();
-    const note = screen.getByRole('textbox', { name: 'Other' });
-    expect(note.getAttribute('aria-describedby')).toContain(required()?.id);
+    const note = screen.getByRole('textbox', { name: 'Note' });
+    expect(screen.getByText('Note').closest('label')?.htmlFor).toBe(note.id);
+    expect(note.getAttribute('aria-required')).toBe('true');
+    expect(document.querySelector('[data-slot="required-mark"]')).not.toBeNull();
+    const message = required()?.closest('[data-slot="field-message"]');
+    expect(message?.id).toBeTruthy();
+    expect(note.getAttribute('aria-describedby')).toContain(message?.id);
     expect(screen.getByRole('alertdialog')).toBeDefined();
     fireEvent.change(note, { target: { value: 'wrong phone' } });
     confirm();
@@ -162,7 +171,7 @@ describe('ReasonDialog', () => {
     open();
     confirm();
     expect(required()).not.toBeNull();
-    fireEvent.change(screen.getByRole('textbox', { name: TITLE }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note' }), {
       target: { value: 'Customer charged twice' },
     });
     confirm();

@@ -23,6 +23,10 @@ Changed after generation, and only this (re-apply it when a part is generated ag
 - **Touch targets** (AD-A11Y-05 · AD-VIS-07): a tabs trigger is at least 44 × 44 px and 8 px from the next one;
   the list grows with them (no fixed `h-8`) and wraps. The trigger's own 1 px `focus-visible:outline-1` is
   removed, so the 2 px `--focus-outline` applies.
+- **Command search** (`command.tsx`, the searchable reason list): the input group is 48 px tall on a phone and
+  40 px from 768 px (as `SearchInput`), the input fills its height, and the input's `outline-hidden` is removed, so the 2 px `--focus-outline`
+  shows (group 10, checklist items 2 and 3). `input-group.tsx`: the invalid outline colour class had lost its
+  `has-[…]:` prefix and is restored.
 - **Inputs stay at 16 px** (AD-VIS-06: no iOS zoom): `md:text-sm` removed from `input` and `textarea`.
 - **No locale formatting outside the formatter** (AD-FMT-00): the calendar's month-dropdown formatter
   (`toLocaleString`) is removed; the caption label of react-day-picker is used; the day button's
