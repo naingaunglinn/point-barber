@@ -55,7 +55,8 @@ const CATEGORY_ICON: Readonly<Record<NotificationCategory, LucideIcon>> = {
 /** `99+` above 99; nothing at 0 (the shared count badge). */
 export const unreadBadge = countText;
 
-const ITEM_CLASS = 'flex min-w-0 flex-1 flex-col text-start';
+/** A 44 px target even for a one-line item in the English UI (AD-A11Y-05). */
+const ITEM_CLASS = 'flex min-h-11 min-w-0 flex-1 flex-col justify-center text-start';
 
 /**
  * The item's link (`href`, for a new tab); a plain click only reports the press — the caller navigates.

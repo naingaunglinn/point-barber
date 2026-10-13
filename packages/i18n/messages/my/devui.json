@@ -133,7 +133,7 @@
     "emptyBookings": "Booking မရှိ — ခွင့်ရှိမှ action ပြ",
     "errorStates": "Code အလိုက် error စာ",
     "closedDay": "ပိတ်ပြီးတဲ့နေ့ — ကြည့်ရုံ၊ ခွင့်ရှိမှ ပြန်ဖွင့်",
-    "offline": "Offline banner",
+    "offline": "အင်တာနက် မရချိန် banner",
     "toast": "အောင်မြင်ကြောင်း toast",
     "stepper": "ငွေရှင်းအဆင့်များ၊ အဆင့် ၂",
     "kpiSix": "Tile ၆ ခု",
@@ -204,12 +204,12 @@
     "cancelBooking": "Booking ဖျက်မည်"
   },
   "can": {
-    "code": "Code",
-    "level": "Level",
+    "code": "ကုဒ်",
+    "level": "အဆင့်",
     "any": "can(code)",
     "atB3": "ဆိုင်ခွဲ B3",
     "atB1": "ဆိုင်ခွဲ B1",
-    "company": "Company level",
+    "company": "ကုမ္ပဏီ အဆင့်",
     "yes": "ရ",
     "no": "မရ"
   },
@@ -230,16 +230,16 @@
     "subtitle": "{branch} · {date}",
     "content": "စာမျက်နှာ အကြောင်းအရာ",
     "newBooking": "Booking အသစ်",
-    "export": "Export",
-    "print": "Print",
-    "importFile": "Import",
+    "export": "ထုတ်ယူမည်",
+    "print": "ပုံနှိပ်မည်",
+    "importFile": "တင်သွင်းမည်",
     "pointThree": "ပွိုင့် ၃.၀",
     "demoDate": "05/Oct/2026",
     "userMenuNote": "Menu ထဲက item များ (AD-NAV-07) ကို add-foundation-auth-access မှာ ထည့်ပါမယ်"
   },
   "buttons": {
     "save": "သိမ်းမည်",
-    "export": "Export",
+    "export": "ထုတ်ယူမည်",
     "add": "ထည့်မည်",
     "delete": "ဖျက်မည်",
     "edit": "ပြင်မည်",
@@ -273,10 +273,10 @@
   "lists": {
     "receiptNo": "ဘောင်ချာ နံပါတ်",
     "finishedOn": "ပြီးချိန်",
-    "barber": "Barber",
+    "barber": "ဆံပင်ညှပ်ဆရာ",
     "services": "ဝန်ဆောင်မှုများ",
     "status": "အခြေအနေ",
-    "customer": "Customer",
+    "customer": "ဖောက်သည်",
     "method": "ငွေပေးချေမှု",
     "cash": "ငွေသား",
     "lines": "အရေအတွက်",
@@ -284,12 +284,12 @@
     "searchBooking": "Customer နာမည် (သို့) ဖုန်း ရှာ",
     "withholdTotal": "Server က စုစုပေါင်း မပို့",
     "searchRows": "Row ရှာ",
-    "row": "Row {n}",
+    "row": "အတန်း {n}",
     "requests": "Request များ:"
   },
   "reasons": {
     "extra": "အကြောင်းပြချက် {n}",
-    "requestBody": "Request body:",
+    "requestBody": "ပို့မည့် request body:",
     "cancel": {
       "verb": "Booking ဖျက်မည်",
       "consequence": "{barber} နဲ့ 05/Oct/2026 2:30 PM Point 3.0 မှာ {customer} ရဲ့ booking ကို ဖျက်ပါမယ်။"
@@ -310,7 +310,7 @@
   },
   "drawer": {
     "open": "Booking ဖွင့်မည်",
-    "title": "Booking",
+    "title": "Booking အချက်အလက်",
     "customerName": "Customer နာမည်",
     "body": "အလယ်ပိုင်း scroll ရ; ခေါင်းနဲ့ action bar မရွေ့။",
     "width": "{px} px",
@@ -321,7 +321,7 @@
     "dialogTitle": "ဆိုင်ခွဲ နာမည်ပြောင်း"
   },
   "states": {
-    "load": "Load ({ms} ms)",
+    "load": "Data ယူမည် ({ms} ms)",
     "loaded": "Data ရပြီ။",
     "emptyTitle": "ယနေ့ booking မရှိပါ။",
     "emptyBody": "Walk-in ကို ＋ စမည် ကနေ မှတ်ပါ။",
@@ -344,8 +344,8 @@
   },
   "kpi": {
     "salesToday": "ယနေ့ အရောင်း",
-    "visits": "Visit",
-    "customers": "Customer",
+    "visits": "Visit အရေအတွက်",
+    "customers": "ဖောက်သည်",
     "averageSale": "ပျမ်းမျှ အရောင်း",
     "discounts": "လျှော့ဈေး",
     "refunds": "ငွေပြန်အမ်း",
@@ -356,7 +356,7 @@
     "revenue": "ဝင်ငွေ",
     "branch": "ဆိုင်ခွဲ",
     "day": "ရက်",
-    "series": "Series {n}"
+    "series": "အုပ်စု {n}"
   },
   "pickers": {
     "noTimesLeft": "အချိန် မကျန်",

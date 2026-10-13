@@ -90,6 +90,10 @@ describe('NotificationBell', () => {
     expect(screen.getByRole('link', { name: /New booking/ }).getAttribute('href')).toBe(
       '/bookings/b1',
     );
+    // A one-line item is still a 44 px target (AD-A11Y-05).
+    for (const item of items) {
+      expect(item.querySelector('a, button:not([aria-label])')?.className).toContain('min-h-11');
+    }
   });
 
   it('Scenario: Mark all read — the handler is called once and no request leaves the page', () => {
