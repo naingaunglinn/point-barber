@@ -32,6 +32,7 @@ import type { Action } from '../../components/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../../primitives/dropdown-menu';
 import { useNow } from '../../providers/clock';
@@ -217,11 +218,12 @@ export function ShellDemo() {
                     aria-label={common('action.more')}
                   />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-72 max-w-[calc(100vw-2rem)] p-3 text-sm"
-                >
-                  {t('userMenuNote')}
+                <DropdownMenuContent align="end" className="w-72 max-w-[calc(100vw-2rem)]">
+                  {/* A menu holds at least one item (axe aria-required-children): the note stands in,
+                      disabled, until the entries arrive. */}
+                  <DropdownMenuItem disabled className="min-h-11 text-sm whitespace-normal">
+                    {t('userMenuNote')}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
