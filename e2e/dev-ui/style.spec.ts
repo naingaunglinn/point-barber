@@ -14,8 +14,10 @@ async function tabTo(page: Page, target: Locator): Promise<void> {
   await expect(target).toBeFocused();
 }
 
+/** The outline once the focus transition has ended (`transition-colors` also animates its colour). */
 function outlineOf(target: Locator) {
-  return target.evaluate((el) => {
+  return target.evaluate(async (el) => {
+    await Promise.all(el.getAnimations().map((animation) => animation.finished));
     const style = getComputedStyle(el);
     return { width: style.outlineWidth, style: style.outlineStyle, colour: style.outlineColor };
   });
