@@ -98,6 +98,10 @@ describe('Drawer', () => {
         'data-[side=right]:md:left-auto',
       ]),
     );
+    // The list beside the panel stays readable: the overlay dims it without a blur.
+    const overlay = document.querySelector('[data-slot="sheet-overlay"]');
+    expect(overlay?.className).toContain('bg-foreground/10');
+    expect(overlay?.className).not.toContain('blur');
   });
 
   it('passes the clamped width to the panel', () => {
