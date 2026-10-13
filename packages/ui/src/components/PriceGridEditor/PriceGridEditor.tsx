@@ -93,6 +93,7 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
   const words = useTranslations('common.format');
   const { locale, profile } = useFormat('PriceGridEditor');
   const notSoldId = useId();
+  const gridId = useId();
   const tomorrow = nextBusinessDate(todayMmt(useNow()));
   const effectiveFrom = props.effectiveFrom ?? tomorrow;
 
@@ -117,8 +118,15 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
     value: { readonly name: { readonly mm: string; readonly en: string | null } } | undefined,
   ) => (value === undefined ? '' : bilingualText(value.name, locale));
 
+  // A cell's fields are labelled by the visible row and column headers (AD-A11Y-04); the duration
+  // field also by its visible unit.
+  const headerId = (kind: 'row' | 'column', value: { readonly id: string } | undefined) =>
+    value === undefined ? undefined : `${gridId}-${kind}-${value.id}`;
+
   const cell = (row: (typeof rows)[number], column: (typeof columns)[number]): ReactNode => {
     const valueIds = [row?.id, column?.id].filter((id): id is string => id !== undefined);
+    const headers = [headerId('row', row), headerId('column', column)].filter(Boolean).join(' ');
+    const minutesId = `${gridId}-minutes-${valueIds.join('-') || 'single'}`;
     const current = byKey.get(keyOf(valueIds));
     const shopPrice = shopByKey.get(keyOf(valueIds))?.price_amount ?? null;
     const label = [nameOf(row), nameOf(column)].filter(Boolean).join(' · ');
@@ -150,7 +158,9 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
         data-cell={keyOf(valueIds)}
       >
         <MoneyInput
-          aria-label={label === '' ? t('shop') : label}
+          {...(headers === ''
+            ? { 'aria-label': label === '' ? t('shop') : label }
+            : { 'aria-labelledby': headers })}
           value={current?.price_amount ?? null}
           placeholder={empty}
           title={notSold ? t('notSold') : undefined}
@@ -158,22 +168,29 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
           lakhHelper={false}
           onChange={(price) => update(valueIds, { price_amount: price })}
         />
-        <Input
-          type="text"
-          inputMode="numeric"
-          aria-label={[label, words('min')].filter(Boolean).join(' · ')}
-          placeholder={String(defaultDurationMinutes)}
-          value={
-            current?.duration_minutes === null || current === undefined
-              ? ''
-              : String(current.duration_minutes)
-          }
-          onChange={(event) => {
-            const digits = normalizeDigits(event.target.value).replace(/\D/g, '');
-            update(valueIds, { duration_minutes: digits === '' ? null : Number(digits) });
-          }}
-          className="h-12 text-end font-numeric text-base md:h-10"
-        />
+        <div className="relative flex items-center">
+          <Input
+            type="text"
+            inputMode="numeric"
+            {...(headers === ''
+              ? { 'aria-label': [label, words('min')].filter(Boolean).join(' · ') }
+              : { 'aria-labelledby': `${headers} ${minutesId}` })}
+            placeholder={String(defaultDurationMinutes)}
+            value={
+              current?.duration_minutes === null || current === undefined
+                ? ''
+                : String(current.duration_minutes)
+            }
+            onChange={(event) => {
+              const digits = normalizeDigits(event.target.value).replace(/\D/g, '');
+              update(valueIds, { duration_minutes: digits === '' ? null : Number(digits) });
+            }}
+            className="h-12 pe-14 text-end font-numeric text-base md:h-10"
+          />
+          <span id={minutesId} className="pointer-events-none absolute end-3 text-muted-foreground">
+            {words('min')}
+          </span>
+        </div>
       </div>
     );
   };
@@ -226,7 +243,12 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
               <tr>
                 <td />
                 {columns.map((column) => (
-                  <th key={column?.id} scope="col" className="px-2 pb-2 text-start font-semibold">
+                  <th
+                    key={column?.id}
+                    id={headerId('column', column)}
+                    scope="col"
+                    className="px-2 pb-2 text-start font-semibold"
+                  >
                     <DataText>{nameOf(column)}</DataText>
                   </th>
                 ))}
@@ -237,7 +259,11 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
             {rows.map((row) => (
               <tr key={row?.id ?? 'simple'} className="border-t border-border">
                 {rowGroup === undefined ? null : (
-                  <th scope="row" className="py-2 pe-3 text-start font-semibold">
+                  <th
+                    id={headerId('row', row)}
+                    scope="row"
+                    className="py-2 pe-3 text-start font-semibold"
+                  >
                     <DataText>{nameOf(row)}</DataText>
                   </th>
                 )}

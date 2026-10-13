@@ -27,7 +27,9 @@ Changed after generation, and only this (re-apply it when a part is generated ag
 - **No locale formatting outside the formatter** (AD-FMT-00): the calendar's month-dropdown formatter
   (`toLocaleString`) is removed; the caption label of react-day-picker is used; the day button's
   `data-day` is the day's ISO date (`day.isoDate`) instead of `toLocaleDateString()`.
-- **Chart** (`chart.tsx`): the class overrides that matched Recharts' default strokes `#ccc` / `#fff` are removed
+- **Chart** (`chart.tsx`): the `outline-hidden` of the chart surface, layers and sectors is removed — the chart takes
+  keyboard focus, so the 2 px `--focus-outline` must show (group 10, checklist item 3); the class overrides that
+  matched Recharts' default strokes `#ccc` / `#fff` are removed
   (the chart components set token strokes), the tooltip writes `String(value)` instead of `toLocaleString()`,
   and the `.dark` theme entry is dropped.
 - **No dark mode** (the system has one light theme per tree): every `dark:` class removed, and the toaster no

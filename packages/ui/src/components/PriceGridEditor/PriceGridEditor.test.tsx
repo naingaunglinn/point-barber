@@ -78,12 +78,12 @@ describe('PriceGridEditor', () => {
       'Shop',
       'Home',
     ]);
-    expect(price('Black · Short').value).toBe('25,000');
+    expect(price('Black Short').value).toBe('25,000');
   });
 
   it('Scenario: Empty and zero in the Shop grid — Brown · Long shows — "Not sold here" and is null; 0 is a price', () => {
     const onChange = editor();
-    const long = price('Brown · Long');
+    const long = price('Brown Long');
     expect(long.value).toBe('');
     expect(long.getAttribute('placeholder')).toBe('—');
     expect(long.getAttribute('title')).toBe('Not sold here');
@@ -91,7 +91,7 @@ describe('PriceGridEditor', () => {
       document.getElementById(long.getAttribute('aria-describedby')?.split(' ')[0] ?? '')
         ?.textContent,
     ).toBe('Not sold here');
-    fireEvent.change(price('Brown · Short'), { target: { value: '0' } });
+    fireEvent.change(price('Brown Short'), { target: { value: '0' } });
     const cells = onChange.mock.lastCall?.[0] as PriceCell[];
     const short = cells.find((c) => c.valueIds.join() === 'Brown,Short');
     const longCell = cells.find((c) => c.valueIds.join() === 'Brown,Long');
@@ -130,14 +130,14 @@ describe('PriceGridEditor', () => {
   it('takes a duration in whole minutes and the service default as the placeholder', () => {
     const onChange = editor();
     const minutes = screen.getByRole('textbox', {
-      name: 'Black · Short · min',
+      name: 'Black Short min',
     }) as HTMLInputElement;
     expect(minutes.value).toBe('90');
     fireEvent.change(minutes, { target: { value: '၆၀' } });
     const cells = onChange.mock.lastCall?.[0] as PriceCell[];
     expect(cells.find((c) => c.valueIds.join() === 'Black,Short')?.duration_minutes).toBe(60);
     expect(
-      (screen.getByRole('textbox', { name: 'Brown · Long · min' }) as HTMLInputElement).placeholder,
+      (screen.getByRole('textbox', { name: 'Brown Long min' }) as HTMLInputElement).placeholder,
     ).toBe('90');
   });
 
