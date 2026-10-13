@@ -16,7 +16,12 @@ import {
 import { formatPercent, groupDigits, moneyFromWire } from '@point/shared';
 
 import { TABLET, useMinWidth } from '../../hooks/use-min-width';
-import { ChartContainer, type ChartConfig } from '../../primitives/chart';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from '../../primitives/chart';
 import { Button } from '../Button/Button';
 import { DataText } from '../DataText/DataText';
 
@@ -77,6 +82,17 @@ function rowsOf(series: readonly ChartSeries[]): Record<string, string | number>
     }
   }
   return [...byX.values()];
+}
+
+/** Several series are named in a legend, so a line or bar is never told by its colour alone (AD-A11Y-03). */
+function legendOf(series: readonly ChartSeries[]): ReactNode {
+  return series.length < 2 ? null : (
+    // Above the plot: below it, the legend would cover the x-axis title.
+    <ChartLegend
+      verticalAlign="top"
+      content={<ChartLegendContent verticalAlign="top" className="flex-wrap gap-x-4 gap-y-1" />}
+    />
+  );
 }
 
 function configOf(series: readonly ChartSeries[]): ChartConfig {
@@ -227,6 +243,7 @@ export function BarChart(props: ChartProps) {
             />
           </Bar>
         ))}
+        {legendOf(series)}
       </RechartsBarChart>
     </ChartContainer>
   );
@@ -273,6 +290,7 @@ export function LineChart(props: ChartProps) {
             isAnimationActive={false}
           />
         ))}
+        {legendOf(series)}
       </RechartsLineChart>
     </ChartContainer>
   );

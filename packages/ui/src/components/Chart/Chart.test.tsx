@@ -32,7 +32,13 @@ function giveChartsASize() {
     y: 0,
     toJSON: () => ({}),
   };
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(size as DOMRect);
+  // The legend is one line high, as in a browser; with the container's size it would take the whole plot.
+  const legend = { ...size, height: 24, bottom: 24 };
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    return (this.classList.contains('recharts-legend-wrapper') ? legend : size) as DOMRect;
+  });
   vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(400);
   vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(800);
@@ -130,6 +136,9 @@ describe('BarChart', () => {
     ]);
     const style = document.querySelector('[data-slot="chart"] style')?.textContent ?? '';
     for (let i = 1; i <= 6; i += 1) expect(style).toContain(`var(--chart-${i})`);
+    // Several series are named in a legend, never told by colour alone (AD-A11Y-03).
+    const legend = document.querySelector('.recharts-legend-wrapper');
+    expect(legend?.textContent).toBe('S0S1S2S3S4S5');
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() =>
       renderIntl(<BarChart series={many(7)} xLabel={BRANCH} yLabel={AMOUNT} yKind="money" />),
@@ -142,6 +151,8 @@ describe('LineChart', () => {
     mockViewport(1280);
     renderIntl(<LineChart series={[REVENUE]} xLabel={BRANCH} yLabel={AMOUNT} yKind="money" />);
     expect(document.querySelector('.recharts-line')).not.toBeNull();
+    // One series needs no legend: the value axis names it.
+    expect(document.querySelector('.recharts-legend-wrapper')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show as table' }));
     expect(document.querySelectorAll('[data-slot="chart-table"] tbody tr')).toHaveLength(3);
     // The table scrolls sideways inside a region that takes the keyboard focus, named like the chart.
