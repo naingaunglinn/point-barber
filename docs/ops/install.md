@@ -33,6 +33,14 @@ Once per server: the first staging server, the production server, or a replaceme
      The host in both URLs stays `postgres`.
    - `INTERNAL_SSR_KEY`, `INTERNAL_OPS_KEY`: two different values, each at least 16 characters,
      e.g. `openssl rand -hex 32`. The API does not start otherwise.
+   - `OTP_HMAC_SECRET`, `AUDIT_HASH_SECRET`: `openssl rand -hex 32` each (at least 32 bytes).
+     `MAIL_PAYLOAD_KEY`: `openssl rand -base64 32` (exactly 32 bytes). The API does not start
+     otherwise.
+   - `APP_ENV=production`, `MAIL_TRANSPORT=resend`, `RESEND_API_KEY` and `MAIL_FROM` with the
+     shop's verified sending domain. In production the API refuses any other mail transport.
+   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: the OAuth client of the staff sign-in, with the
+     redirect address `<APP_ORIGIN>/api/v1/auth/google/callback`.
+   - `COMPANY_NAME_MM` (and `COMPANY_NAME_EN`): written to the company row on the first start.
    - `APP_VERSION`: the release tag.
    - Leave `CADDY_GLOBAL_OPTIONS` empty and `CADDY_HSTS` at `max-age=31536000`.
 3. **Images.** `docker compose build`. _`add-staging-deploy` replaces this with a pull from the

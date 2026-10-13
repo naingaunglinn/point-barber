@@ -72,7 +72,7 @@ export class ProblemFilter implements ExceptionFilter {
       problem = new ProblemException(ErrorCode.INTERNAL_ERROR, 500);
     }
 
-    const { detail, errors, context } = problem.options;
+    const { detail, errors, context, extensions, headers } = problem.options;
     const body: Problem = {
       type: `${this.config.env.SITE_ORIGIN}/errors/${problem.code}`,
       title: titleOf(problem.code),
@@ -81,8 +81,10 @@ export class ProblemFilter implements ExceptionFilter {
       ...(detail === undefined ? {} : { detail }),
       ...(errors === undefined ? {} : { errors: [...errors] }),
       ...(context === undefined ? {} : { context: { ...context } }),
+      ...extensions,
       request_id: requestId,
     };
+    for (const [name, value] of Object.entries(headers ?? {})) res.setHeader(name, value);
     res.status(problem.status).type('application/problem+json').send(JSON.stringify(body));
   }
 }

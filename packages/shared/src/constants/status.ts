@@ -100,3 +100,40 @@ export type StatusTable = keyof typeof STATUS_BY_TABLE;
 /** A status code of one table: `StatusCode<'sales'>` = 0 | 1 | 2. */
 export type StatusCode<T extends StatusTable> =
   (typeof STATUS_BY_TABLE)[T][keyof (typeof STATUS_BY_TABLE)[T]];
+
+// add-foundation-auth-access — DB Part 1 v3.4, Part 1b v1, Part 8 v1.1 (task 1.2). Not in
+// STATUS_BY_TABLE: no status label shows them (AD-CMP-05). Each set equals the CHECK list of its
+// column in db/source (status.test.ts).
+
+/** part1 — roles.status. */
+export const RoleStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type RoleStatus = (typeof RoleStatus)[keyof typeof RoleStatus];
+
+/** part1 — branches.status. */
+export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
+
+/** part1 — employee_roles.scope_type; COMPANY reaches every branch, also later ones. */
+export const ScopeType = { COMPANY: 1, BRANCHES: 2 } as const;
+export type ScopeType = (typeof ScopeType)[keyof typeof ScopeType];
+
+/** part1b — user_sessions.login_method. */
+export const LoginMethod = { GOOGLE: 1, EMAIL_OTP: 2 } as const;
+export type LoginMethod = (typeof LoginMethod)[keyof typeof LoginMethod];
+
+/** part1b — user_sessions.revoke_reason; also the `reason` of a session_revoked problem. */
+export const RevokeReason = {
+  LOGOUT: 1,
+  DEVICE_REMOVED: 2,
+  ADMIN_REVOKE_ALL: 3,
+  ACCOUNT_INACTIVE: 4,
+} as const;
+export type RevokeReason = (typeof RevokeReason)[keyof typeof RevokeReason];
+
+/** part8 — audit_events.source. */
+export const AuditSource = { APP: 1, DB_TRIGGER: 2, SYSTEM_JOB: 3 } as const;
+export type AuditSource = (typeof AuditSource)[keyof typeof AuditSource];
+
+/** part1 — users.ui_language; NULL = the system default (D-PLT-03). */
+export const UiLanguage = { MY: 1, EN: 2 } as const;
+export type UiLanguage = (typeof UiLanguage)[keyof typeof UiLanguage];

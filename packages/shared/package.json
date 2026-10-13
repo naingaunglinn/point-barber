@@ -16,6 +16,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "permissions:generate": "node scripts/generate-permissions.mjs",
     "typecheck": "tsc --noEmit",
     "test:zones": "node scripts/test-zones.mjs"
   },

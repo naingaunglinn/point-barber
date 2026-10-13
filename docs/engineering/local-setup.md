@@ -59,6 +59,9 @@ Before the first start, change these:
 
 - **`INTERNAL_SSR_KEY`, `INTERNAL_OPS_KEY`:** required. Each must be at least 16 characters, and the
   two must differ, or the API does not start. Generate each one with `openssl rand -hex 32`.
+- **`OTP_HMAC_SECRET`, `AUDIT_HASH_SECRET`, `MAIL_PAYLOAD_KEY`:** required, or the API does not
+  start. The two HMAC secrets: `openssl rand -hex 32` each. `MAIL_PAYLOAD_KEY`:
+  `openssl rand -base64 32`.
 - **`POSTGRES_PASSWORD`, `POINT_APP_DB_PASSWORD`:** any URL-safe value. Hex is safest:
   `openssl rand -hex 16`.
   - Each password appears twice: `POSTGRES_PASSWORD` again in `MIGRATE_DATABASE_URL`, and
@@ -66,8 +69,9 @@ Before the first start, change these:
   - They take effect on the **first** start of the database volume. Later changes follow
     `docs/ops/secrets-rotation.md`.
 
-Leave the rest as it is for local work: the origins, `API_UPSTREAM` / `WEB_UPSTREAM`, `CADDY_*`, and
-the empty bucket block.
+Leave the rest as it is for local work: the origins, `API_UPSTREAM` / `WEB_UPSTREAM`, `CADDY_*`, the
+mail block (codes go to Mailpit, `http://localhost:8025`), the `change-me` Google values (Google
+sign-in is tested by hand with its own setup) and the empty bucket block.
 
 ## 4. Hosts file
 

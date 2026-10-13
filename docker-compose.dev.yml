@@ -7,7 +7,7 @@
 #   the database, the OTP inbox or the bucket of a developer machine.
 # - Host-run API / web: set API_UPSTREAM=host.docker.internal:3101 and
 #   WEB_UPSTREAM=host.docker.internal:3100 in .env (pnpm dev uses those ports).
-# - mailpit: the OTP inbox of the next change (ADR-007); minio under profile `storage` (ADR-014).
+# - mailpit: the inbox of the sign-in codes (ADR-007); minio under profile `storage` (ADR-014).
 services:
   caddy:
     ports:
@@ -26,6 +26,12 @@ services:
     environment:
       SITE_ORIGIN: https://point.test
       APP_ORIGIN: https://app.point.test
+      # Codes go to the local inbox, never to a real address (ADR-007 · design D8).
+      APP_ENV: development
+      MAIL_TRANSPORT: mailpit
+      SMTP_HOST: mailpit
+      SMTP_PORT: '1025'
+      MAIL_ALLOW_REAL: 'false'
 
   web:
     environment:

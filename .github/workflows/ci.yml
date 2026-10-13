@@ -213,12 +213,15 @@ jobs:
       - name: Hosts-file lines for the local origins (D12)
         run: echo "127.0.0.1 point.test app.point.test postgres" | sudo tee -a /etc/hosts
 
-      - name: .env from .env.example, with generated internal keys
+      - name: .env from .env.example, with generated internal keys and sign-in secrets
         run: |
           set -euo pipefail
           cp .env.example .env
           sed -i "s|^INTERNAL_SSR_KEY=.*|INTERNAL_SSR_KEY=$(openssl rand -hex 32)|" .env
           sed -i "s|^INTERNAL_OPS_KEY=.*|INTERNAL_OPS_KEY=$(openssl rand -hex 32)|" .env
+          sed -i "s|^OTP_HMAC_SECRET=.*|OTP_HMAC_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^AUDIT_HASH_SECRET=.*|AUDIT_HASH_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^MAIL_PAYLOAD_KEY=.*|MAIL_PAYLOAD_KEY=$(openssl rand -base64 32)|" .env
           sed -i "s|^APP_VERSION=.*|APP_VERSION=${GITHUB_SHA::12}|" .env
 
       - name: Build its own images (independent of job images — D15)

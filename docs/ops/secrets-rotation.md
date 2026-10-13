@@ -1,8 +1,8 @@
 # Secrets rotation
 
-**Completed by:** `add-staging-deploy` (rotation on the real server, the schedule). Session and sign-in
-secrets are added by `add-foundation-auth-access`, and the bucket keys by `add-attachments-upload` and
-`add-backup-restore`.
+**Completed by:** `add-staging-deploy` (rotation on the real server, the schedule). The sign-in and
+mail secrets are from `add-foundation-auth-access`; the bucket keys come with `add-attachments-upload`
+and `add-backup-restore`.
 
 ## Purpose
 
@@ -31,6 +31,29 @@ sets.
    - `INTERNAL_SSR_KEY`: `docker compose up -d api web`
    - `INTERNAL_OPS_KEY`: `docker compose up -d api backup`
 
+**`OTP_HMAC_SECRET`, `AUDIT_HASH_SECRET`, `MAIL_PAYLOAD_KEY`** (`api` only — design D18):
+
+1. Set the new value in `.env`: `openssl rand -hex 32` for the two HMAC secrets (at least 32 bytes),
+   `openssl rand -base64 32` for `MAIL_PAYLOAD_KEY` (exactly 32 bytes, base64).
+2. `docker compose up -d api`.
+
+What each rotation costs:
+
+- `OTP_HMAC_SECRET`: the sign-in codes in flight stop working (at most 5 minutes); people ask for a
+  new code.
+- `MAIL_PAYLOAD_KEY`: a sign-in e-mail still queued cannot be read; its job completes with a warning
+  and sends nothing. Those codes are at most 5 minutes old anyway.
+- `AUDIT_HASH_SECRET`: the `email_hash` of older `login.failed` rows can no longer be compared with
+  new ones. Rotate it only when it may have leaked.
+
+**`GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`** (provider secrets, `api` only):
+
+1. Create the new secret at the provider: Google Cloud console → the OAuth client → add a secret;
+   Resend → API keys → create.
+2. Set it in `.env` and `docker compose up -d api`.
+3. Sign in once with Google, or request one e-mail code, to check it.
+4. Delete the old secret at the provider.
+
 **`POINT_APP_DB_PASSWORD`** (role `point_app`):
 
 1. Set the new value in `.env`, both as `POINT_APP_DB_PASSWORD` and inside `DATABASE_URL`.
@@ -52,11 +75,12 @@ sets.
 - `GET https://<staff host>/api/v1/health` → `ok`. The API reconnected with the new password.
 - `docker compose exec web printenv INTERNAL_OPS_KEY` still prints nothing and exits with status 1.
 - After an owner-password change: `docker compose run --rm migrate` ends with
-  `migrate: 1 step(s) done`.
+  `migrate: 2 step(s) done`.
 
 ## If it fails
 
 - **`password authentication failed for user "point_app"`:** `DATABASE_URL` and the role's password
   differ. Repeat steps 1–3 of the `point_app` rotation.
-- **The API stops with `Invalid API environment`:** a key is shorter than 16 characters, or the two
-  keys are equal.
+- **The API stops with `Invalid API environment`:** the message names the variable. An internal key
+  is shorter than 16 characters, or the two internal keys are equal; an HMAC secret is shorter than
+  32 bytes; `MAIL_PAYLOAD_KEY` is not 32 bytes in base64.
