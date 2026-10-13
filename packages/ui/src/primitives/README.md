@@ -25,7 +25,8 @@ Changed after generation, and only this (re-apply it when a part is generated ag
   removed, so the 2 px `--focus-outline` applies.
 - **Inputs stay at 16 px** (AD-VIS-06: no iOS zoom): `md:text-sm` removed from `input` and `textarea`.
 - **No locale formatting outside the formatter** (AD-FMT-00): the calendar's month-dropdown formatter
-  (`toLocaleString`) is removed; the caption label of react-day-picker is used.
+  (`toLocaleString`) is removed; the caption label of react-day-picker is used; the day button's
+  `data-day` is the day's ISO date (`day.isoDate`) instead of `toLocaleDateString()`.
 - **Chart** (`chart.tsx`): the class overrides that matched Recharts' default strokes `#ccc` / `#fff` are removed
   (the chart components set token strokes), the tooltip writes `String(value)` instead of `toLocaleString()`,
   and the `.dark` theme entry is dropped.
