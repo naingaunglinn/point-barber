@@ -23,6 +23,9 @@ Changed after generation, and only this (re-apply it when a part is generated ag
 - **Touch targets** (AD-A11Y-05 · AD-VIS-07): a tabs trigger is at least 44 × 44 px and 8 px from the next one;
   the list grows with them (no fixed `h-8`) and wraps. The trigger's own 1 px `focus-visible:outline-1` is
   removed, so the 2 px `--focus-outline` applies.
+- **Menu items** (`dropdown-menu.tsx`): the item, checkbox item, radio item and sub-trigger lose `outline-hidden`, so a
+  keyboard-focused item shows the 2 px `--focus-outline` (group 10, checklist item 3); `-outline-offset-2` draws it
+  inside the item, because the menu clips its overflow.
 - **Sheet overlay** (`sheet.tsx`): the `backdrop-blur-xs` is removed, so the list beside a drawer stays readable
   under the 10 % dim (AD-CMP-08 "in context", group 10 case "Drawer on desktop and sheet on a phone").
 - **Command search** (`command.tsx`, the searchable reason list): the input group is 48 px tall on a phone and

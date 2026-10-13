@@ -156,6 +156,11 @@ describe('DataTable', () => {
       ctrlKey: false,
     });
     expect(screen.getAllByRole('menuitemcheckbox')).toHaveLength(9);
+    // A keyboard-focused item shows the 2 px focus outline, drawn inside the item (AD-A11Y-02).
+    for (const item of screen.getAllByRole('menuitemcheckbox')) {
+      expect(item.className).not.toContain('outline-hidden');
+      expect(item.className).toContain('-outline-offset-2');
+    }
   });
 
   it('Scenario: Column choice is per user — hidden for admin, visible for manager, still hidden for admin', () => {
