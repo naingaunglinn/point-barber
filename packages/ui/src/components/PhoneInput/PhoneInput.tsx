@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { formatPhone, normalizeDigits, normalizePhone, type E164 } from '@point/shared';
 
 import { Input } from '../../primitives/input';
+import { FieldMessage } from '../FormField/FieldMessage';
 
 // A phone number typed by a person (AD-FORM-10 · FE-CMP-06 · D-CUS-02 · AD-FMT-10 · design D10): the
 // field keeps what was typed (only ၀–၉ become 0–9), the grouped number is previewed under it once it is
@@ -105,11 +106,7 @@ export function PhoneInput({
         }}
         className="h-12 font-numeric text-base md:h-10"
       />
-      {ownMessage ? (
-        <p id={messageId} className="text-sm text-destructive">
-          {t('phone_invalid')}
-        </p>
-      ) : null}
+      {ownMessage ? <FieldMessage id={messageId}>{t('phone_invalid')}</FieldMessage> : null}
       {e164 === null ? null : (
         <p
           id={previewId}

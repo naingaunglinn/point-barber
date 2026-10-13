@@ -49,6 +49,8 @@ describe('FormField', () => {
       input.getAttribute('aria-describedby')?.split(' ')[0] ?? '',
     );
     expect(message?.textContent).toBe('This field is required.');
+    // Never colour alone (AD-A11Y-03): the message carries an icon, hidden from screen readers.
+    expect(message?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
     expect(message?.className).toContain('text-destructive');
     expect(input.nextElementSibling).toBe(message);
   });

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useId, useState, type FocusEvent } from 'react';
 
 import { TextInput } from '../TextInput/TextInput';
+import { FieldMessage } from '../FormField/FieldMessage';
 
 // A master name as a Myanmar and English pair (D-DB-04 · AD-FORM-09 · AD-FORM-13 · design D10): Myanmar
 // first and required, English second and optional — empty English is reported as `null`, and the
@@ -84,11 +85,7 @@ export function BilingualInput({
             onChange({ mm, en: value.en });
           }}
         />
-        {showMissing ? (
-          <p id={messageId} className="text-sm text-destructive">
-            {t('error.required')}
-          </p>
-        ) : null}
+        {showMissing ? <FieldMessage id={messageId}>{t('error.required')}</FieldMessage> : null}
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor={enId} className="text-sm">

@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../primitives/popove
 import { useNow } from '../../providers/clock';
 import { useFormat } from '../../providers/format';
 import { Button } from '../Button/Button';
+import { FieldMessage } from '../FormField/FieldMessage';
 
 // A date typed or picked by a person (D-PLT-05 · D-PLT-15 · AD-FORM-15 · design D10): shown as
 // `DD/MMM/YYYY`; typed `DD/MM/YYYY` or `DD/MMM/YYYY` (Myanmar digits, any case) is read when the user
@@ -160,11 +161,7 @@ export function DateInput({
           />
         </PopoverContent>
       </Popover>
-      {ownMessage ? (
-        <p id={messageId} className="text-sm text-destructive">
-          {t('date_invalid')}
-        </p>
-      ) : null}
+      {ownMessage ? <FieldMessage id={messageId}>{t('date_invalid')}</FieldMessage> : null}
     </div>
   );
 }

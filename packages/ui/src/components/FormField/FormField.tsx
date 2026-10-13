@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useId, type ReactNode } from 'react';
 
 import { errorMessageKey } from '@point/shared';
+import { FieldMessage } from './FieldMessage';
 
 // One field of a form (D-UI-01 · AD-FORM-01 · AD-FORM-02 · AD-FORM-05 · AD-A11Y-04 · design D10): the
 // label above the control, a `--destructive` asterisk right after the label of a required field, and
@@ -60,9 +61,7 @@ export function FormField({ label, required = false, helper, error, children }: 
         'aria-required': required || undefined,
       })}
       {error ? (
-        <p id={errorId} className="text-sm text-destructive">
-          {t(errorMessageKey(error.code), error.params)}
-        </p>
+        <FieldMessage id={errorId}>{t(errorMessageKey(error.code), error.params)}</FieldMessage>
       ) : null}
       {helper ? (
         <p id={helperId} className="text-sm text-muted-foreground">

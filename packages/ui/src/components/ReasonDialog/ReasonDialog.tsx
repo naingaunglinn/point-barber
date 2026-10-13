@@ -18,6 +18,7 @@ import { Button } from '../Button/Button';
 import { DataText } from '../DataText/DataText';
 import { Dialog } from '../Dialog/Dialog';
 import { TextInput } from '../TextInput/TextInput';
+import { FieldMessage } from '../FormField/FieldMessage';
 
 // Every action that needs a reason (AD-RSN-01 · AD-RSN-02 · API-DATA-11 · AD-FORM-14 · design D9 /
 // D10): a title made of verb and object, the consequence, the reason control of its source — the
@@ -224,9 +225,7 @@ export function ReasonDialog({
           </Command>
         ) : null}
         {reasonError ? (
-          <p id={reasonErrorId} className="text-sm text-destructive">
-            {t('error.reason_required')}
-          </p>
+          <FieldMessage id={reasonErrorId}>{t('error.reason_required')}</FieldMessage>
         ) : null}
         {noteShown ? (
           <div className="flex flex-col gap-1">
@@ -242,9 +241,7 @@ export function ReasonDialog({
               aria-describedby={noteError ? noteErrorId : undefined}
             />
             {noteError ? (
-              <p id={noteErrorId} className="text-sm text-destructive">
-                {t('error.reason_required')}
-              </p>
+              <FieldMessage id={noteErrorId}>{t('error.reason_required')}</FieldMessage>
             ) : null}
           </div>
         ) : null}

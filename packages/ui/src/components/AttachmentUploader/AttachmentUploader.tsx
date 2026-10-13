@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from 'cn';
-import { Upload } from 'lucide-react';
+import { CircleAlert, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useEffect,
@@ -188,11 +188,14 @@ export function AttachmentUploader(props: AttachmentUploaderProps) {
     messages = (
       <div id={messageId} role="alert" className="flex flex-col gap-1 text-sm text-destructive">
         {refusals.map((refusal, index) => (
-          <p key={index} className="flex flex-wrap gap-x-2">
-            <span className="font-semibold">
-              <DataText>{refusal.name}</DataText>
+          <p key={index} className="flex items-start gap-1.5">
+            <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <span className="flex flex-wrap gap-x-2">
+              <span className="font-semibold">
+                <DataText>{refusal.name}</DataText>
+              </span>
+              <span>{t(errorMessageKey(refusal.code), refusal.params)}</span>
             </span>
-            <span>{t(errorMessageKey(refusal.code), refusal.params)}</span>
           </p>
         ))}
       </div>

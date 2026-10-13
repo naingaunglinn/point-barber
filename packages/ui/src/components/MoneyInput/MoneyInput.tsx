@@ -22,6 +22,7 @@ import {
 
 import { Input } from '../../primitives/input';
 import { useFormat } from '../../providers/format';
+import { FieldMessage } from '../FormField/FieldMessage';
 
 // Money typed by a person (D-PLT-04 · AD-FORM-11 · AD-FMT-10 · design D10): whole MMK only, the numeric
 // keypad, separators while typing, the unit of the language and profile as a suffix. The decimal-point
@@ -134,11 +135,7 @@ export function MoneyInput({
           {moneyUnit(locale, profile)}
         </span>
       </div>
-      {refused ? (
-        <p id={messageId} className="text-sm text-destructive">
-          {t('error.amount_invalid')}
-        </p>
-      ) : null}
+      {refused ? <FieldMessage id={messageId}>{t('error.amount_invalid')}</FieldMessage> : null}
       {lakh === null ? null : (
         <p
           id={helperId}
