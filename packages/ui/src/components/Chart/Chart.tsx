@@ -28,8 +28,9 @@ import { DataText } from '../DataText/DataText';
 // Simple charts (AD-CHART-01 · AD-A11Y-07 · design D10 / D11) on Recharts through the shadcn/ui chart
 // part: bar charts compare, line charts show a trend; at most 6 series in --chart-1 … --chart-6 (a 7th
 // is a programming error and throws); bars carry their values; a money axis groups thousands and its
-// title carries the unit; "Show as table" gives the same numbers as a table with column headers. Below
-// 768 px a bar chart is a ranked list with inline bars.
+// title carries the unit; two or more series are named in a legend; "Show as table" gives the same numbers
+// as a table with column headers, as cards below 768 px (AD-LIST-02). Below 768 px a bar chart is a ranked
+// list with inline bars; a line chart keeps its chart and gives its values through the table view.
 
 export interface ChartSeries {
   readonly key: string;
@@ -101,12 +102,42 @@ function configOf(series: readonly ChartSeries[]): ChartConfig {
   );
 }
 
-function ChartTable({ series, xLabel, yLabel, yKind }: ChartProps) {
+/** The table view below 768 px: a card per x value with every series' value, never scrolling sideways (AD-LIST-02). */
+function ChartCards({ series, yKind }: Pick<ChartProps, 'series' | 'yKind'>) {
   const rows = rowsOf(series);
   return (
-    // A wide table scrolls sideways on a phone: the region takes the keyboard focus so the arrow keys
-    // scroll it (WCAG 2.1.1, axe scrollable-region-focusable), named like the chart.
-    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={yLabel}>
+    <ul className="flex flex-col gap-2" data-slot="chart-cards">
+      {rows.map((row) => (
+        <li
+          key={String(row.x)}
+          className="flex flex-col gap-1 rounded-md border border-border bg-card p-3"
+          data-slot="card"
+        >
+          <p className="font-semibold">
+            <DataText>{String(row.x)}</DataText>
+          </p>
+          <dl className="flex flex-col gap-1 text-sm">
+            {series.map((s) => (
+              <div key={s.key} className="flex justify-between gap-3">
+                <dt className="min-w-0 break-words">{s.label}</dt>
+                <dd className="shrink-0 font-numeric">
+                  {typeof row[s.key] === 'number'
+                    ? formatChartValue(yKind, row[s.key] as number)
+                    : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ChartTable({ series, xLabel, yKind }: Omit<ChartProps, 'yLabel'>) {
+  const rows = rowsOf(series);
+  return (
+    <div className="overflow-x-auto">
       <table className="w-full text-sm" data-slot="chart-table">
         <thead>
           <tr className="border-b border-border">
@@ -189,12 +220,11 @@ function Frame({
         </Button>
       </div>
       {asTable ? (
-        <ChartTable
-          series={props.series}
-          xLabel={props.xLabel}
-          yLabel={props.yLabel}
-          yKind={props.yKind}
-        />
+        tablet ? (
+          <ChartTable series={props.series} xLabel={props.xLabel} yKind={props.yKind} />
+        ) : (
+          <ChartCards series={props.series} yKind={props.yKind} />
+        )
       ) : (
         chart
       )}

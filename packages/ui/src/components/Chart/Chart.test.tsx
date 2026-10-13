@@ -155,10 +155,36 @@ describe('LineChart', () => {
     expect(document.querySelector('.recharts-legend-wrapper')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show as table' }));
     expect(document.querySelectorAll('[data-slot="chart-table"] tbody tr')).toHaveLength(3);
-    // The table scrolls sideways inside a region that takes the keyboard focus, named like the chart.
-    const region = screen.getByRole('region', { name: AMOUNT });
-    expect(region.getAttribute('tabindex')).toBe('0');
-    expect(region.querySelector('[data-slot="chart-table"]')).not.toBeNull();
+  });
+
+  it('Scenario: Table view on a phone — a card per day with every series, no table', () => {
+    mockViewport(320);
+    const two: ChartSeries[] = [
+      {
+        key: 'a',
+        label: 'Series 1',
+        points: [
+          { x: '04/Oct/2026', y: 20000 },
+          { x: '05/Oct/2026', y: 24000 },
+        ],
+      },
+      {
+        key: 'b',
+        label: 'Series 2',
+        points: [
+          { x: '04/Oct/2026', y: 28000 },
+          { x: '05/Oct/2026', y: 32000 },
+        ],
+      },
+    ];
+    renderIntl(<LineChart series={two} xLabel="Day" yLabel={AMOUNT} yKind="money" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show as table' }));
+    expect(document.querySelector('table')).toBeNull();
+    const cards = [...document.querySelectorAll('[data-slot="chart-cards"] > li')];
+    expect(cards.map((card) => card.textContent)).toEqual([
+      '04/Oct/2026Series 120,000Series 228,000',
+      '05/Oct/2026Series 124,000Series 232,000',
+    ]);
   });
 });
 
