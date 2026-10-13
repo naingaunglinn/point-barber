@@ -25,7 +25,10 @@ raw JSX text (D-PLT-03).
   (host-run)"). The catalogue is at `/dev/ui` on the staff host.
 - Catalogue test build: `pnpm turbo run build:catalogue --filter=web`, then `next start` (design D12). The
   flag that turns the catalogue on is set only inside the `dev` and `build:catalogue` scripts — never in an
-  env file, a Dockerfile, a Compose file, a workflow or `next.config.ts`.
+  env file, a Dockerfile, a Compose file, a workflow or `next.config.ts`. Those scripts, `build` and
+  `generate` write it into `catalogue-flag.generated.ts` (git-ignored) before Next.js starts, so the page
+  reads a constant and no variable given to a running server can open the catalogue. After a fresh clone,
+  `pnpm --filter web generate` creates the file for the editor; `pnpm typecheck` runs it itself.
 
 **Test**
 

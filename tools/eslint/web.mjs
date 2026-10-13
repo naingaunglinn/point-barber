@@ -64,8 +64,14 @@ export default [
     },
   },
   {
-    // The one reader of process.env in the web app, and config files (design D19).
-    files: ['apps/web/env.ts', 'apps/web/*.config.{ts,mts,js,mjs}'],
+    // The one reader of process.env in the web app, config files (design D19), and the build step
+    // that turns the catalogue flag into a constant — the flag's only read, moved there from env.ts so
+    // that no run-time environment can open /dev/ui (add-shared-ui-components design D12).
+    files: [
+      'apps/web/env.ts',
+      'apps/web/*.config.{ts,mts,js,mjs}',
+      'apps/web/scripts/write-catalogue-flag.mjs',
+    ],
     rules: { 'n/no-process-env': 'off' },
   },
 ];

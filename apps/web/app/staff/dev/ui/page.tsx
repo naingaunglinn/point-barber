@@ -13,7 +13,9 @@ import {
   type CatalogueSectionId,
 } from '@point/ui/catalogue';
 
-import { DEV_CATALOGUE } from '../../../../env';
+// The catalogue flag as a build-time constant: no environment read at run time can open the page
+// (scripts/write-catalogue-flag.mjs).
+import { DEV_CATALOGUE } from '../../../../catalogue-flag.generated';
 import { HtmlAttributes } from './html-attributes';
 import { catalogueHref, parseCatalogueParams, PERSONAS, type CatalogueParams } from './params';
 
