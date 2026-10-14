@@ -6,6 +6,14 @@ export abstract class AppConfig {
   abstract readonly env: ApiEnv;
 }
 
+/**
+ * A command (db:seed, admin:create) starts the application without job workers: it runs its own
+ * steps and leaves the queues to the API (design D10). Called before the application is created.
+ */
+export function withoutJobWorkers(): void {
+  process.env.JOBS_IN_API = 'false';
+}
+
 export function loadAppConfig(): AppConfig {
   const env = parseApiEnv({
     DATABASE_URL: process.env.DATABASE_URL,

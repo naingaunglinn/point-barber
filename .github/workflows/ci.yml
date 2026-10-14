@@ -223,11 +223,12 @@ jobs:
             fi
           done
 
-      - name: The api image holds no test file and no environment file (D13)
+      # And no development fixture (D-PLT-11 · add-foundation-auth-access design D16).
+      - name: The api image holds no test file, no fixture and no environment file (D13)
         run: |
           set -euo pipefail
           found=$(docker run --rm --entrypoint sh "point-api:$APP_VERSION" -c \
-            'find / -xdev \( -path "/app/test*" -o -name ".env" -o -name ".env.*" -o -name "*.int.test.*" \) -print 2>/dev/null' || true)
+            'find / -xdev \( -path "/app/test*" -o -path "/app/db/seed*" -o -name ".env" -o -name ".env.*" -o -name "*.int.test.*" \) -print 2>/dev/null' || true)
           if [ -n "$found" ]; then echo "::error::unexpected files in the api image:"; echo "$found"; exit 1; fi
 
   e2e:

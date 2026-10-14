@@ -12,6 +12,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./testing": {
+      "source": "./src/testing/fixture-ids.ts",
+      "types": "./dist/testing/fixture-ids.d.ts",
+      "default": "./dist/testing/fixture-ids.js"
+    },
     "./definitions/*.json": "./definitions/*.json"
   },
   "scripts": {

@@ -157,13 +157,14 @@ export MIGRATE_DATABASE_URL='postgresql://point:<password>@localhost:5432/point'
 `pnpm db:test` also needs `psql` on your machine (section 1). The scripts pass the password to `psql`
 through `PGPASSWORD`, never on its command line.
 
-| Command                       | What                                                                    |
-| ----------------------------- | ----------------------------------------------------------------------- |
-| `pnpm db:migrate`             | Applies the migrations as the owner role (`MIGRATE_DATABASE_URL`)       |
-| `pnpm db:test`                | Runs the constraint tests, each file on its own fresh migrated database |
-| `pnpm db:check-introspection` | Checks that `db/schema.prisma` equals the database                      |
-| `pnpm db:check-source`        | Compares `db/source/` with `../point-sdd/docs/db/`                      |
-| `pnpm --filter api generate`  | Regenerates the Prisma client (`apps/api/src/generated/`, git-ignored)  |
+| Command                       | What                                                                                                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm db:migrate`             | Applies the migrations as the owner role (`MIGRATE_DATABASE_URL`)                                                                                          |
+| `pnpm db:seed`                | The base seed and the development fixture of `db/seed/fixtures` (as `point_app`, `DATABASE_URL`); twice changes nothing; refused when `APP_ENV=production` |
+| `pnpm db:test`                | Runs the constraint tests, each file on its own fresh migrated database                                                                                    |
+| `pnpm db:check-introspection` | Checks that `db/schema.prisma` equals the database                                                                                                         |
+| `pnpm db:check-source`        | Compares `db/source/` with `../point-sdd/docs/db/`                                                                                                         |
+| `pnpm --filter api generate`  | Regenerates the Prisma client (`apps/api/src/generated/`, git-ignored)                                                                                     |
 
 There are two roles:
 
