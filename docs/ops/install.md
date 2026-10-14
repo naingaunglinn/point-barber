@@ -50,6 +50,18 @@ Once per server: the first staging server, the production server, or a replaceme
    password and the `Asia/Yangon` time zone.
 5. **Migrate.** `docker compose run --rm migrate`, which runs `node db/scripts/migrate.mjs` as the
    owner role.
+6. **First company admin** (once per environment — P1-RULE-14). Wait until the API has started once:
+   its first start writes the permission catalogue, the company row and the seed roles. Then:
+
+   ```sh
+   docker compose exec api node dist/cli/admin-create.js \
+     --email <their e-mail> --name-mm "<name in Myanmar>" --name-en "<name in English>" --code <employee code>
+   ```
+
+   It prints the new employee code and exits with status 0. The person signs in with that e-mail
+   (Google or an e-mail code); no invitation e-mail is sent. The command refuses — status 1, one line on
+   stderr, nothing changed — once an active company admin exists (one who has not signed in yet
+   counts), and when the e-mail or the code is taken. Further admins are given the role in the app.
 
 ## Check
 

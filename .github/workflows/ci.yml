@@ -231,6 +231,9 @@ jobs:
             'find / -xdev \( -path "/app/test*" -o -path "/app/db/seed*" -o -name ".env" -o -name ".env.*" -o -name "*.int.test.*" \) -print 2>/dev/null' || true)
           if [ -n "$found" ]; then echo "::error::unexpected files in the api image:"; echo "$found"; exit 1; fi
 
+      - name: The api image carries the first-admin command (P1-RULE-14 · add-foundation-auth-access D10)
+        run: docker run --rm --entrypoint test "point-api:$APP_VERSION" -f /app/dist/cli/admin-create.js
+
   e2e:
     name: e2e
     runs-on: ubuntu-24.04

@@ -8,9 +8,11 @@ import { CurrentCompany } from './company/current-company.js';
 import { PeopleDirectory } from './directory/people-directory.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
+import { EmployeeRepository } from './repositories/employee.repository.js';
 import { PeopleRepository } from './repositories/people.repository.js';
 import { RoleRepository } from './repositories/role.repository.js';
 import { CompanyAdmin } from './roles/company-admin.js';
+import { FirstAdmin } from './roles/first-admin.js';
 import { SeedRoles } from './roles/seed-roles.js';
 import { BaseSeed } from './seed/base-seed.js';
 
@@ -24,6 +26,7 @@ import { BaseSeed } from './seed/base-seed.js';
     PeopleRepository,
     CatalogueRepository,
     CompanyRepository,
+    EmployeeRepository,
     RoleRepository,
     PeopleDirectory,
     CurrentCompany,
@@ -31,8 +34,16 @@ import { BaseSeed } from './seed/base-seed.js';
     PermissionCatalogue,
     SeedRoles,
     BaseSeed,
+    FirstAdmin,
   ],
-  exports: [PeopleDirectory, CurrentCompany, CompanyAdmin, PermissionCatalogue, BaseSeed],
+  exports: [
+    PeopleDirectory,
+    CurrentCompany,
+    CompanyAdmin,
+    PermissionCatalogue,
+    BaseSeed,
+    FirstAdmin,
+  ],
 })
 export class PeopleModule implements OnModuleInit {
   constructor(

@@ -20,6 +20,7 @@
     "fonts:check": "node tools/guards/check-fonts.mjs",
     "i18n:check": "node tools/guards/check-i18n.mjs",
     "db:migrate": "node --env-file-if-exists=.env db/scripts/migrate.mjs",
+    "admin:create": "turbo run build --filter=api --output-logs=errors-only && node --env-file-if-exists=.env apps/api/dist/cli/admin-create.js",
     "db:seed": "turbo run build --filter=api --output-logs=errors-only && node --env-file-if-exists=.env apps/api/dist/cli/seed.js",
     "db:build-baseline": "node db/scripts/build-baseline.mjs",
     "db:test": "node --env-file-if-exists=.env db/scripts/run-constraint-tests.mjs",
