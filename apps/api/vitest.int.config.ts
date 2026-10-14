@@ -18,6 +18,8 @@ export default defineConfig({
     include: ['test/**/*.int.test.ts'],
     environment: 'node',
     fileParallelism: false,
+    // point_it_template, copied by the tests that need a fresh database (test/helpers/databases.ts).
+    globalSetup: ['test/helpers/global-setup.ts'],
     testTimeout: 15_000,
     hookTimeout: 30_000,
     env: {

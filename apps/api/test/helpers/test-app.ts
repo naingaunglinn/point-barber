@@ -8,6 +8,7 @@ import supertest from 'supertest';
 import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/bootstrap.js';
 import { Clock } from '../../src/common/clock/clock.js';
+import { AppConfig, loadAppConfig } from '../../src/common/config/config.js';
 import { DatabaseProbe } from '../../src/common/database/prisma.service.js';
 import { LOGGER, createLogger } from '../../src/common/logging/logger.js';
 import { PlatformModule } from '../../src/modules/platform/index.js';
@@ -49,6 +50,10 @@ export interface TestApp {
 export interface TestAppOptions {
   readonly now?: Date;
   readonly probe?: DatabaseProbe;
+  /** Another database than DATABASE_URL — a fresh copy (helpers/databases.ts). */
+  readonly databaseUrl?: string;
+  /** JOBS_IN_API for this application: run the job workers (off by default in test:int). */
+  readonly jobs?: boolean;
 }
 
 /** The real application (guards, pipes, filter, middleware) with the fixture endpoints added. */
@@ -71,6 +76,17 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
     builder = builder.overrideProvider(Clock).useValue(new FixedClock(options.now));
   if (options.probe !== undefined)
     builder = builder.overrideProvider(DatabaseProbe).useValue(options.probe);
+  if (options.databaseUrl !== undefined || options.jobs !== undefined) {
+    const { env } = loadAppConfig();
+    const config: AppConfig = {
+      env: {
+        ...env,
+        DATABASE_URL: options.databaseUrl ?? env.DATABASE_URL,
+        JOBS_IN_API: options.jobs ?? env.JOBS_IN_API,
+      },
+    };
+    builder = builder.overrideProvider(AppConfig).useValue(config);
+  }
 
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: false });

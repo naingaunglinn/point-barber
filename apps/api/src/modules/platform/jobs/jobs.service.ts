@@ -33,6 +33,7 @@ interface Registration {
 export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly boss: PgBoss;
   private readonly registrations: Registration[] = [];
+  private readonly atStart: { name: string; data: object; options: JobSendOptions }[] = [];
   private started = false;
 
   constructor(
@@ -63,6 +64,7 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
     }
     this.started = true;
     for (const registration of this.registrations) await this.startWorker(registration);
+    for (const { name, data, options } of this.atStart) await this.boss.send(name, data, options);
   }
 
   async onApplicationShutdown(): Promise<void> {
@@ -77,6 +79,14 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
     options: JobSendOptions = {},
   ): Promise<string | null> {
     return this.boss.send(name, data, { ...options, db: fromPrisma(tx) });
+  }
+
+  /**
+   * Queues a job once pg-boss has started, at every API start (`sync.code_tables` — ADR-002). Not
+   * part of a business transaction, so no `tx`.
+   */
+  sendAtStart<T extends object>(name: string, data: T, options: JobSendOptions = {}): void {
+    this.atStart.push({ name, data, options });
   }
 
   /** Handles a queue in this process when JOBS_IN_API=true; each job's data reaches `handler`. */

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { PeopleModule } from '../people/index.js';
 import { Audit } from './audit/audit.service.js';
 import { AuditedInterceptor } from './audit/audited.js';
+import { CodeTables } from './code-tables/code-tables.js';
 import { Idempotency } from './idempotency/idempotency.service.js';
 import { IdempotentInterceptor } from './idempotency/idempotent.js';
 import { JobsModule } from './jobs/jobs.module.js';
@@ -19,12 +19,13 @@ import { SystemService } from './system/system.service.js';
 // the audit writer, idempotency, the rate limiter, background jobs, mail and the settings seams; the settings
 // store, notifications, attachments and documents with later changes.
 @Module({
-  imports: [PeopleModule, JobsModule, MailModule],
+  imports: [JobsModule, MailModule],
   controllers: [HealthController, StatusController],
   providers: [
     SystemService,
     Audit,
     AuditedInterceptor,
+    CodeTables,
     Idempotency,
     IdempotentInterceptor,
     RateLimiter,
@@ -36,6 +37,7 @@ import { SystemService } from './system/system.service.js';
   exports: [
     Audit,
     AuditedInterceptor,
+    CodeTables,
     Idempotency,
     IdempotentInterceptor,
     RateLimiter,

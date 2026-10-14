@@ -6,7 +6,6 @@ import type { AuditRow } from '../../../common/database/audit-row.js';
 import { TransactionScope } from '../../../common/database/transaction-scope.js';
 import { RequestContext } from '../../../common/http/request-context.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
-import { PeopleDirectory } from '../../people/index.js';
 import { withoutSecrets } from './secrets.js';
 
 // The application audit writer (API-AUD-01 · D-AUD-01 · P1-RULE-10 · design D12). A service calls
@@ -30,12 +29,22 @@ export interface AuditEvent {
   readonly employee_id?: string | null;
 }
 
+/** The primary branch of an employee today (D12): supplied by the people module, which owns it. */
+export type PrimaryBranchOf = (employeeId: string) => Promise<string | null>;
+
 @Injectable()
 export class Audit {
-  constructor(
-    private readonly clock: Clock,
-    private readonly people: PeopleDirectory,
-  ) {}
+  private primaryBranchOf: PrimaryBranchOf | undefined;
+
+  constructor(private readonly clock: Clock) {}
+
+  /**
+   * Called once by the people module at start-up. The platform module does not import people:
+   * people builds on platform (the audit writer, the jobs), so the rule comes in this way.
+   */
+  usePrimaryBranchOf(fn: PrimaryBranchOf): void {
+    this.primaryBranchOf = fn;
+  }
 
   /** One source-1 row for what the service did, written with its transaction. */
   async emit(event: AuditEvent): Promise<void> {
@@ -85,9 +94,11 @@ export class Audit {
     if (event.branch_id !== undefined && event.branch_id !== null) return event.branch_id;
     if (ctx?.audit?.target === 'employee') {
       const employeeId = event.employee_id ?? ctx.employee_id;
-      return employeeId === undefined || employeeId === null
-        ? null
-        : this.people.primaryBranchId(employeeId);
+      if (employeeId === undefined || employeeId === null) return null;
+      if (this.primaryBranchOf === undefined) {
+        throw new Error('Audit: no primary-branch rule registered (PeopleModule not loaded)');
+      }
+      return this.primaryBranchOf(employeeId);
     }
     return null;
   }
