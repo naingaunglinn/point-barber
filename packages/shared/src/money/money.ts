@@ -42,3 +42,8 @@ export function moneyToWire(amount: Mmk): number {
 export function sumMoney(amounts: readonly Mmk[]): Mmk {
   return amounts.reduce<bigint>((total, amount) => total + amount, 0n) as Mmk;
 }
+
+/** The amount with the opposite sign — a deduction shown as `-1,000 Ks` (a receipt's discount line). */
+export function negateMoney(amount: Mmk): Mmk {
+  return -amount as Mmk;
+}

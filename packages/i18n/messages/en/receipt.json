@@ -1,0 +1,12 @@
+{
+  "barber": "Barber",
+  "quantity": "{quantity} × {price}",
+  "subtotal": "Subtotal",
+  "approvedDiscount": "Approved discount",
+  "serviceCharge": "Service charge",
+  "tax": "Tax",
+  "total": "Total",
+  "changeReturned": "Change returned (cash)",
+  "refund": "Refund",
+  "original": "Original receipt"
+}

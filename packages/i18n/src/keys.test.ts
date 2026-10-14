@@ -7,7 +7,11 @@ import { loadMessages } from './messages';
 /** Every key of a namespace tree, dotted: `common.action.retry`. */
 function keysOf(tree: object, prefix = ''): string[] {
   return Object.entries(tree).flatMap(([key, value]) =>
-    typeof value === 'string' ? [`${prefix}${key}`] : keysOf(value as object, `${prefix}${key}.`),
+    typeof value === 'string'
+      ? [`${prefix}${key}`]
+      : value === null // a Myanmar receipt label (English only — owner 12/Oct/2026)
+        ? []
+        : keysOf(value as object, `${prefix}${key}.`),
   );
 }
 

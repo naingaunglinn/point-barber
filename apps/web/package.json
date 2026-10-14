@@ -2,9 +2,9 @@
   "name": "web",
   "private": true,
   "scripts": {
-    "dev": "node scripts/copy-fonts.mjs && cross-env NEXT_PUBLIC_DEV_CATALOGUE=1 node scripts/write-catalogue-flag.mjs && next dev --port 3100",
-    "build": "node scripts/copy-fonts.mjs && node scripts/write-catalogue-flag.mjs && next build",
-    "build:catalogue": "node scripts/copy-fonts.mjs && cross-env NEXT_PUBLIC_DEV_CATALOGUE=1 node scripts/write-catalogue-flag.mjs && next build",
+    "dev": "node scripts/copy-fonts.mjs && node scripts/copy-vendor.mjs && cross-env NEXT_PUBLIC_DEV_CATALOGUE=1 node scripts/write-catalogue-flag.mjs && next dev --port 3100",
+    "build": "node scripts/copy-fonts.mjs && node scripts/copy-vendor.mjs && node scripts/write-catalogue-flag.mjs && next build",
+    "build:catalogue": "node scripts/copy-fonts.mjs && node scripts/copy-vendor.mjs && cross-env NEXT_PUBLIC_DEV_CATALOGUE=1 node scripts/write-catalogue-flag.mjs && next build",
     "generate": "node scripts/write-catalogue-flag.mjs",
     "typecheck": "tsc --noEmit"
   },

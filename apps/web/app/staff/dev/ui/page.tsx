@@ -1,14 +1,18 @@
+import type { Metadata } from 'next';
 import { NextIntlClientProvider, createTranslator } from 'next-intl';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import { LOCALE_COOKIE, LOCALES, loadMessages } from '@point/i18n';
+import { LOCALE_COOKIE, loadMessages } from '@point/i18n';
 import { formatDateTime } from '@point/shared';
 import { ClockProvider } from '@point/ui';
 import {
   CATALOGUE_SECTIONS,
+  CatalogueControls,
+  CatalogueProviders,
   FontsSection,
   FormattersSection,
+  SectionDemos,
   TokensSection,
   type CatalogueSectionId,
 } from '@point/ui/catalogue';
@@ -17,22 +21,13 @@ import {
 // (scripts/write-catalogue-flag.mjs).
 import { DEV_CATALOGUE } from '../../../../catalogue-flag.generated';
 import { HtmlAttributes } from './html-attributes';
-import { catalogueHref, parseCatalogueParams, PERSONAS, type CatalogueParams } from './params';
+import { parseCatalogueParams, type CatalogueParams } from './params';
 
 // The component catalogue `/dev/ui` (AD-IMPL-06 · design D12): every shared component in Myanmar and
 // English, on fixture data, with no login and no API. Only the `dev` and `build:catalogue` builds
 // have it; any other build answers 404.
 
-const PERSONA_LABEL = {
-  admin: 'admin',
-  manager: 'manager',
-  barber: 'barber',
-  'branch-holder': 'branchHolder',
-} as const;
-
-const TREES = ['staff', 'site'] as const;
-
-/** The sections built so far; the others keep their anchor and title until their demos arrive. */
+/** Tokens, Fonts and Formatters have their own tables; the other sections render the manifest. */
 function sectionContent(id: CatalogueSectionId, params: CatalogueParams) {
   switch (id) {
     case 'tokens':
@@ -42,7 +37,7 @@ function sectionContent(id: CatalogueSectionId, params: CatalogueParams) {
     case 'formatters':
       return <FormattersSection />;
     default:
-      return null;
+      return <SectionDemos section={id} />;
   }
 }
 
@@ -50,24 +45,23 @@ type Props = Readonly<{
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
+async function paramsOf(searchParams: Props['searchParams']): Promise<CatalogueParams> {
+  return parseCatalogueParams(await searchParams, (await cookies()).get(LOCALE_COOKIE)?.value);
+}
+
+/** The page title in the chosen language (WCAG 2.4.2 — axe `document-title`). */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  if (!DEV_CATALOGUE) return {};
+  const { lang } = await paramsOf(searchParams);
+  const t = createTranslator({ locale: lang, messages: loadMessages(lang), namespace: 'devui' });
+  return { title: t('title') };
+}
+
 export default async function CataloguePage({ searchParams }: Props) {
   if (!DEV_CATALOGUE) notFound();
-  const params = parseCatalogueParams(
-    await searchParams,
-    (await cookies()).get(LOCALE_COOKIE)?.value,
-  );
+  const params = await paramsOf(searchParams);
   const messages = loadMessages(params.lang);
   const t = createTranslator({ locale: params.lang, messages, namespace: 'devui' });
-
-  const link = (change: Partial<CatalogueParams>, current: boolean, label: string) => (
-    <a
-      href={catalogueHref(params, change)}
-      aria-current={current ? 'true' : undefined}
-      className="rounded-md px-2 py-1 underline-offset-4 hover:underline aria-[current]:bg-primary aria-[current]:text-primary-foreground"
-    >
-      {label}
-    </a>
-  );
 
   return (
     <NextIntlClientProvider
@@ -83,60 +77,43 @@ export default async function CataloguePage({ searchParams }: Props) {
           <header className="border-b border-border px-4 py-4">
             <h1 className="text-2xl font-bold">{t('title')}</h1>
             <p className="text-sm text-muted-foreground">{t('notice')}</p>
-            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.language')}</dt>
-                {LOCALES.map((lang) => (
-                  <dd key={lang}>{link({ lang }, params.lang === lang, t(`language.${lang}`))}</dd>
-                ))}
+            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              <CatalogueControls lang={params.lang} theme={params.theme} as={params.as} />
+              <div className="flex items-center gap-2">
+                <span className="font-bold">{t('control.clock')}</span>
+                <time dateTime={params.now} data-testid="catalogue-clock">
+                  {formatDateTime(params.now, { locale: params.lang })}
+                </time>
               </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.theme')}</dt>
-                {TREES.map((theme) => (
-                  <dd key={theme}>
-                    {link({ theme }, params.theme === theme, t(`theme.${theme}`))}
-                  </dd>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.persona')}</dt>
-                {PERSONAS.map((as) => (
-                  <dd key={as}>
-                    {link({ as }, params.as === as, t(`persona.${PERSONA_LABEL[as]}`))}
-                  </dd>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <dt className="font-bold">{t('control.clock')}</dt>
-                <dd>
-                  <time dateTime={params.now} data-testid="catalogue-clock">
-                    {formatDateTime(params.now, { locale: params.lang })}
-                  </time>
-                </dd>
-              </div>
-            </dl>
+            </div>
           </header>
           <nav aria-label={t('nav.sections')} className="border-b border-border px-4 py-2">
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <ul className="flex flex-wrap gap-2 text-sm">
               {CATALOGUE_SECTIONS.map(({ id, label }) => (
                 <li key={id}>
-                  <a href={`#${id}`} className="underline-offset-4 hover:underline">
+                  {/* 44 px targets 8 px apart, like every control (AD-A11Y-05 · AD-VIS-07). */}
+                  <a
+                    href={`#${id}`}
+                    className="inline-flex min-h-11 min-w-11 items-center px-2 underline-offset-4 hover:underline"
+                  >
                     {t(`section.${label}`)}
                   </a>
                 </li>
               ))}
             </ul>
           </nav>
-          <main className="px-4 py-6">
-            {CATALOGUE_SECTIONS.map(({ id, label }) => (
-              <section key={id} id={id} aria-labelledby={`${id}-title`} className="mb-10">
-                <h2 id={`${id}-title`} className="mb-4 text-xl font-bold">
-                  {t(`section.${label}`)}
-                </h2>
-                {sectionContent(id, params)}
-              </section>
-            ))}
-          </main>
+          <CatalogueProviders lang={params.lang} theme={params.theme} as={params.as}>
+            <main className="px-4 py-6">
+              {CATALOGUE_SECTIONS.map(({ id, label }) => (
+                <section key={id} id={id} aria-labelledby={`${id}-title`} className="mb-10">
+                  <h2 id={`${id}-title`} className="mb-4 text-xl font-bold">
+                    {t(`section.${label}`)}
+                  </h2>
+                  {sectionContent(id, params)}
+                </section>
+              ))}
+            </main>
+          </CatalogueProviders>
         </div>
       </ClockProvider>
     </NextIntlClientProvider>
