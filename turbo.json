@@ -17,7 +17,13 @@
     "test": {},
     "test:int": {
       "cache": false,
-      "passThroughEnv": ["DATABASE_URL"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "MIGRATE_DATABASE_URL",
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "MAILPIT_API_URL"
+      ],
       "dependsOn": ["^build", "generate"]
     },
     "e2e": {
