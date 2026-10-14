@@ -48,6 +48,9 @@ test.describe('add-shared-ui-components · ui-foundation · The catalogue shows 
   });
 
   test('Scenario: Persona parameter', async ({ page, openCatalogue }) => {
+    // Opens the catalogue twice: with the parallel projects on one `next start`, one load can take
+    // 20–30 s, so the test gets three times the timeout (it failed 2 of 4 full local runs on 13/Oct).
+    test.slow();
     const gate = page.getByTestId('demo-PermissionGate-cancel-booking');
     const deleteRow = page.locator('[data-testid="can-table"] tr[data-code="booking.delete"]');
     const answers = () =>

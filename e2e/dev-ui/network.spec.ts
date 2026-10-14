@@ -31,6 +31,8 @@ test.describe('add-shared-ui-components · ui-foundation · The catalogue `/dev/
 
 test.describe('add-shared-ui-components · ui-foundation · Fonts are self-hosted WOFF2 files with their licences', () => {
   test('Scenario: No third-party font request', async ({ page, lang, openCatalogue }) => {
+    // Opens the catalogue three times; see "Persona parameter" in smoke.spec.ts.
+    test.slow();
     const requests = record(page);
     await openCatalogue({ lang: 'my' });
     await openCatalogue({ lang: 'en' });
