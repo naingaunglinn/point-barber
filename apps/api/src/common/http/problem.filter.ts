@@ -10,7 +10,7 @@ import type { Request, Response } from 'express';
 import type { Logger } from 'pino';
 
 import { AppConfig } from '../config/config.js';
-import { isClientRequestIdConflict } from '../database/errors.js';
+import { isClientRequestIdConflict, isPaymentReferenceConflict } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
 import { ProblemException } from './problem.exception.js';
 import { RequestContext } from './request-context.js';
@@ -41,6 +41,12 @@ function toProblem(error: unknown): ProblemException | null {
   // add-foundation-auth-access D14); its transaction is aborted and the retry replays.
   if (isClientRequestIdConflict(error))
     return new ProblemException(ErrorCode.IDEMPOTENCY_IN_PROGRESS, 409);
+  // The reference index behind the reference lock (add-walkin-visit-checkout design D9): the other
+  // payment's sale is still OPEN when this is reached, so no receipt number is known.
+  if (isPaymentReferenceConflict(error))
+    return new ProblemException(ErrorCode.DUPLICATE_REFERENCE, 409, {
+      context: { receipt_number: null },
+    });
   // The JSON body could not be read: unparseable or above the 1 MB limit (design D7, reading 5).
   if (isBodyParserError(error))
     return new ProblemException(ErrorCode.VALIDATION, 400, { errors: [] });
