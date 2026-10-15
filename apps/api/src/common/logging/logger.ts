@@ -6,14 +6,12 @@ import { type DestinationStream, type Logger, pino } from 'pino';
 export const LOGGER = Symbol('LOGGER');
 
 /**
- * Keys whose values never reach a log line (CG-OBS-03 · CG-SEC-06 · add-foundation-auth-access
- * D7 / D8): the mail job's template parameters, the sign-in code, the Google `state`, tokens,
- * cookies and the internal key.
+ * Keys whose values never reach a log line, wherever they appear (CG-OBS-03 · CG-SEC-06 ·
+ * add-foundation-auth-access D7 / D8): the mail job's template parameters, tokens, cookies and the
+ * internal key.
  */
 export const REDACTED_KEYS = [
   'params',
-  'code',
-  'state',
   'token',
   'cookie',
   'set-cookie',
@@ -21,13 +19,26 @@ export const REDACTED_KEYS = [
   'x-internal-key',
 ] as const;
 
+/**
+ * The sign-in code and the Google `state` by the paths they travel — a request body or query. Their
+ * names are common (an error's `code`, a job's `state`), so they are not redacted everywhere.
+ */
+const REDACTED_REQUEST_FIELDS = ['code', 'state'] as const;
+
 /** pino paths for each key at the top level and up to three levels deep (`*` = one level). */
-export const REDACT_PATHS = REDACTED_KEYS.flatMap((key) => {
-  const name = /^[a-z_]+$/.test(key) ? `.${key}` : `["${key}"]`;
-  return ['', '*', '*.*', '*.*.*'].map((prefix) =>
-    prefix === '' ? name.replace(/^\./, '') : `${prefix}${name}`,
-  );
-});
+export const REDACT_PATHS = [
+  ...REDACTED_KEYS.flatMap((key) => {
+    const name = /^[a-z_]+$/.test(key) ? `.${key}` : `["${key}"]`;
+    return ['', '*', '*.*', '*.*.*'].map((prefix) =>
+      prefix === '' ? name.replace(/^\./, '') : `${prefix}${name}`,
+    );
+  }),
+  ...REDACTED_REQUEST_FIELDS.flatMap((field) =>
+    ['body', 'query', 'req.body', 'req.query', '*.body', '*.query'].map(
+      (path) => `${path}.${field}`,
+    ),
+  ),
+];
 
 export function createLogger(level: string, destination?: DestinationStream): Logger {
   return pino(

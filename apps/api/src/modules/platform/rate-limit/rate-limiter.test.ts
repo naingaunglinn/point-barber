@@ -77,6 +77,30 @@ describe('RateLimiter', () => {
     });
   });
 
+  // PR #16 review: the map must not keep every IP and address it has ever seen.
+  it('forgets a key once its last hit has left the window (swept at most once a minute)', () => {
+    const { clock, rl } = limiter();
+    rl.hit('otp:email', 'once@point.test', 1, 60);
+    rl.hit('otp:ip', '203.0.113.10', 10, 3600);
+    expect(rl.size).toBe(2);
+    clock.set(at('09:01:30'));
+    rl.hit('otp:email', 'other@point.test', 1, 60);
+    // The e-mail key's window (60 s) has passed; the IP key's (1 hour) has not.
+    expect(rl.size).toBe(2);
+    clock.set(at('10:00:30'));
+    rl.hit('otp:email', 'third@point.test', 1, 60);
+    expect(rl.size).toBe(1);
+  });
+
+  it('does not sweep more than once a minute', () => {
+    const { clock, rl } = limiter();
+    rl.hit('otp:email', 'a@point.test', 1, 1);
+    clock.set(at('09:00:30'));
+    rl.hit('otp:email', 'b@point.test', 1, 1);
+    // Both windows have passed, but the last sweep was less than a minute ago.
+    expect(rl.size).toBe(2);
+  });
+
   it('keeps buckets and keys apart', () => {
     const { rl } = limiter();
     rl.hit('otp:email', 'a', 1, 60);

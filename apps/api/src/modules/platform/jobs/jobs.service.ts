@@ -97,7 +97,11 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
       options,
     };
     this.registrations.push(registration);
-    if (this.started) void this.startWorker(registration);
+    if (this.started) {
+      this.startWorker(registration).catch((err: unknown) => {
+        this.log.error({ err, queue: name }, 'job worker failed to start');
+      });
+    }
   }
 
   private async startWorker({ name, handler, options }: Registration): Promise<void> {
