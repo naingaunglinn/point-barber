@@ -9,3 +9,4 @@ export {
   type QuotedItem,
   toQuoteDto,
 } from './price-quote/price-quote.js';
+export { type ReadScope, ServiceCatalog } from './service-list/service-catalog.js';

@@ -7,6 +7,7 @@ import {
   ServicePricingMode,
   ServiceStatus,
 } from '../constants/status.js';
+import { listQuerySchema } from './list-query.js';
 import { codeOf, wireAmount, wireDate, wireDateTime } from './wire.js';
 
 // The service list and price quote DTOs of add-walkin-visit-checkout (tasks 2.4, 2.6), one per schema
@@ -50,8 +51,8 @@ export const quoteSchema = z.strictObject({
 export const durationRangeSchema = z.strictObject({ min: z.int(), max: z.int() });
 
 /**
- * `ServiceListItem` — P2.SVC.01. `unpriced_branch_ids` and `sold_here` belong to the management
- * filters (`sold=all`), which this change does not read.
+ * `ServiceListItem` — P2.SVC.01. `unpriced_branch_ids` = sold there but no price effective today;
+ * `sold_here` belongs to the management filter `sold=all`, which this change does not read.
  */
 export const serviceListItemSchema = z.strictObject({
   id: z.uuid(),
@@ -71,6 +72,32 @@ export const serviceListItemSchema = z.strictObject({
   sold_here: z.boolean().optional(),
 });
 
+/** `Category` — P2.CAT.01; `service_count` only with `include_counts` (not read by this change). */
+export const serviceCategorySchema = z.strictObject({
+  id: z.uuid(),
+  name_mm: z.string().max(150),
+  name_en: z.string().max(150).nullable(),
+  sort_order: z.int(),
+  status: codeOf(ServiceStatus),
+  service_count: z.int().optional(),
+  archived_at: wireDateTime.nullable(),
+  updated_at: wireDateTime,
+});
+
+/**
+ * P2.SVC.01 query — the operational filters only (design D12): the management filters `status`,
+ * `include_archived` and `sold` are not read yet and, like any unknown member, are stripped.
+ */
+export const servicesQuerySchema = listQuerySchema.extend({
+  q: z.string().max(100).optional(),
+  category_id: z.uuid().optional(),
+  branch_id: z.uuid().optional(),
+  pricing_mode: z.coerce
+    .number()
+    .pipe(z.literal([ServicePricingMode.SIMPLE, ServicePricingMode.OPTIONS]))
+    .optional(),
+});
+
 /** P2.PRC.06 request — 1 to 20 items, each with its variant key (task 2.6). */
 export const quoteRequestSchema = z.object({
   branch_id: z.uuid(),
@@ -86,4 +113,6 @@ export const quoteRequestSchema = z.object({
 export type QuoteItemDto = z.infer<typeof quoteItemSchema>;
 export type QuoteDto = z.infer<typeof quoteSchema>;
 export type ServiceListItemDto = z.infer<typeof serviceListItemSchema>;
+export type ServiceCategoryDto = z.infer<typeof serviceCategorySchema>;
+export type ServicesQuery = z.infer<typeof servicesQuerySchema>;
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;

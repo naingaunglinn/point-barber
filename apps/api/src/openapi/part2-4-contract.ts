@@ -86,6 +86,20 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       sold_here: { type: 'boolean' },
     },
   },
+  Category: {
+    type: 'object',
+    required: ['id', 'name_mm', 'name_en', 'sort_order', 'status', 'updated_at'],
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      name_mm: { type: 'string' },
+      name_en: { type: ['string', 'null'] },
+      sort_order: { type: 'integer' },
+      status: { type: 'integer', enum: [0, 1] },
+      service_count: { type: 'integer' },
+      archived_at: { type: ['string', 'null'], format: 'date-time' },
+      updated_at: { type: 'string', format: 'date-time' },
+    },
+  },
   UpcomingBooking: {
     type: 'object',
     properties: {
