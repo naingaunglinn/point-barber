@@ -1,0 +1,12 @@
+{
+  "barber": null,
+  "quantity": null,
+  "subtotal": null,
+  "approvedDiscount": null,
+  "serviceCharge": null,
+  "tax": null,
+  "total": null,
+  "changeReturned": null,
+  "refund": null,
+  "original": null
+}

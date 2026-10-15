@@ -19,7 +19,8 @@
     "columns": "Columns",
     "next": "Next",
     "previous": "Previous",
-    "more": "More"
+    "more": "More",
+    "search": "Search"
   },
   "format": {
     "unit": {
@@ -48,6 +49,8 @@
   "date": {
     "today": "Today",
     "yesterday": "Yesterday",
+    "from": "From",
+    "to": "To",
     "preset": {
       "thisWeek": "This week",
       "last7Days": "Last 7 days",
@@ -72,7 +75,8 @@
   "form": {
     "discard": {
       "title": "Discard changes?"
-    }
+    },
+    "note": "Note"
   },
   "offline": {
     "banner": "No connection. Money actions can't be saved right now. Write the service on paper and add it later with Late entry.",
@@ -102,6 +106,7 @@
     "remove": "Remove"
   },
   "notifications": {
+    "title": "Notifications",
     "today": "Today",
     "earlier": "Earlier",
     "empty": "No notifications"

@@ -146,3 +146,26 @@ describe('tokens.css — fonts and the two component variables per tree', () => 
     expect(site.get('--field-border')).toBe('var(--input)');
   });
 });
+
+// add-shared-ui-components task 6.14 · ui-foundation "Motion is short and honours reduced motion"
+// (AD-VIS-09 · AD-A11Y-06): 150 ms hover and press, 200 ms overlays, never over 300 ms; ease-out in,
+// ease-in out; every duration 0 ms with `prefers-reduced-motion: reduce`, so overlays appear without a
+// slide. The overlays read these through `OVERLAY_MOTION` (components/Dialog).
+describe('tokens.css — motion', () => {
+  it('has the three durations and the two easings', () => {
+    expect(['--motion-fast', '--motion-overlay', '--motion-max'].map((t) => staff.get(t))).toEqual([
+      '150ms',
+      '200ms',
+      '300ms',
+    ]);
+    expect([staff.get('--ease-enter'), staff.get('--ease-exit')]).toEqual(['ease-out', 'ease-in']);
+  });
+
+  it('sets every duration to 0 ms for reduced motion', () => {
+    const block =
+      /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(tokens)?.[1] ?? '';
+    for (const token of ['--motion-fast', '--motion-overlay', '--motion-max']) {
+      expect(block).toMatch(new RegExp(`${token}: 0ms;`));
+    }
+  });
+});

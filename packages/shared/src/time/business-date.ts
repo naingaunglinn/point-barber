@@ -1,5 +1,5 @@
 import { TZDate } from '@date-fns/tz';
-import { format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 
 import { APP_TIME_ZONE } from '../constants/time.js';
 import { toDate, type BusinessDate, type Instant } from './instant.js';
@@ -15,6 +15,18 @@ export function inMmt(value: Instant | Date): TZDate {
 /** The Myanmar calendar date of an instant: `2026-10-04T17:30:00Z` → `2026-10-05` (D-PLT-15). */
 export function businessDateOf(value: Instant | Date): BusinessDate {
   return format(inMmt(value), 'yyyy-MM-dd');
+}
+
+/** A business date as the start of that day in Myanmar Time — for a calendar widget in the zone. */
+export function mmtDate(day: BusinessDate): TZDate {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!match) throw new RangeError(`Not a business date: ${day}`);
+  return new TZDate(Number(match[1]), Number(match[2]) - 1, Number(match[3]), APP_TIME_ZONE);
+}
+
+/** The Myanmar calendar day after a business date (`2026-10-31` → `2026-11-01`). */
+export function nextBusinessDate(day: BusinessDate): BusinessDate {
+  return businessDateOf(addDays(mmtDate(day), 1));
 }
 
 /** Today in Myanmar Time, for the supplied `now` — never the device date (CG-TIME-03). */

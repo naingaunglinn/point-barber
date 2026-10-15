@@ -15,4 +15,7 @@ The staff tree keeps the shadcn/ui `neutral` values until the owner supplies the
 colours come from FE-VIS-01a. The shared components of AD-IMPL-02 (`AppShell`, `DataTable`, `MoneyInput`,
 `StatusBadge`, `PermissionGate` …) follow, each shown in the catalogue (CG-UI-04).
 
+`primitives.css` holds the Tailwind variants of the shadcn/ui parts (copied from the pinned CLI); `tokens.css`
+imports it with `tw-animate-css`.
+
 Run: `pnpm vitest run --project @point/ui` (Testing Library on jsdom) · `pnpm --filter @point/ui typecheck`.

@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Mmk } from '../money/mmk.js';
-import { formatMoney } from './money.js';
+import { formatMoney, moneyUnit } from './money.js';
 
 const ks = (amount: bigint) => amount as Mmk; // test values; production code builds Mmk through the parser and wire helpers
 
@@ -50,5 +50,16 @@ describe('formatMoney', () => {
     formatMoney(7000, { locale: 'en', profile: 'app' });
     // @ts-expect-error — neither is a bare bigint: only Mmk is.
     formatMoney(7000n, { locale: 'en', profile: 'app' });
+  });
+});
+
+// The unit word on its own: the MoneyInput suffix and the "Amount (Ks)" column header (AD-FMT-01 ·
+// AD-FORM-11 · FE-FMT-01).
+describe('moneyUnit', () => {
+  it('is ကျပ် in the Myanmar staff app and Ks everywhere else', () => {
+    expect(moneyUnit('my', 'app')).toBe('ကျပ်');
+    expect(moneyUnit('en', 'app')).toBe('Ks');
+    expect(moneyUnit('my', 'site')).toBe('Ks');
+    expect(moneyUnit('en', 'site')).toBe('Ks');
   });
 });
