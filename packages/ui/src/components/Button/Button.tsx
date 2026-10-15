@@ -25,7 +25,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
 const buttonVariants = cva(
   [
-    'relative inline-flex shrink-0 items-center justify-center gap-2 rounded-md border text-sm font-semibold whitespace-nowrap select-none',
+    'relative inline-flex max-w-full shrink-0 items-center justify-center gap-2 rounded-md border text-center text-sm font-semibold select-none',
     'transition-colors duration-[var(--motion-fast)] disabled:pointer-events-none disabled:opacity-50',
     "after:absolute after:content-[''] [&_svg]:size-5 [&_svg]:shrink-0",
   ],
@@ -39,7 +39,8 @@ const buttonVariants = cva(
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90',
       },
       shape: {
-        label: 'h-12 px-4 md:h-10 md:after:inset-x-0 md:after:-inset-y-0.5',
+        // A long label wraps (AD-L10N-04): the height is a minimum, and the label keeps its padding.
+        label: 'min-h-12 px-4 py-1 md:min-h-10 md:after:inset-x-0 md:after:-inset-y-0.5',
         icon: 'size-12 md:size-10 md:after:-inset-0.5',
       },
       fullWidth: { true: 'w-full', false: '' },

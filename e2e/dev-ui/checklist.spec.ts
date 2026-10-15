@@ -84,15 +84,23 @@ test.describe('add-shared-ui-components · ui-foundation · A shared component i
           const span = spans.at(-1) ?? el;
           (el.parentElement as HTMLElement).style.width = `${width}px`;
           span.textContent = text;
-          // An inline span has one client rect per line it runs over.
-          const lines = new Set([...span.getClientRects()].map((rect) => Math.round(rect.top)))
-            .size;
+          // The label's line boxes: a range over its text has a client rect per line (several on one
+          // line when Myanmar and Latin runs mix); a new line starts more than half a line lower.
+          const range = document.createRange();
+          range.selectNodeContents(span);
+          const rects = [...range.getClientRects()].sort((a, b) => a.top - b.top);
+          const half = Math.min(...rects.map((rect) => rect.height)) / 2;
+          const lines = rects.filter(
+            (rect, i) => i === 0 || rect.top - rects[i - 1]!.top > half,
+          ).length;
           return {
             lines,
             ellipsis: [el, span].some(
               (node) => getComputedStyle(node as Element).textOverflow === 'ellipsis',
             ),
             overflow: el.scrollWidth > el.clientWidth + 1,
+            // The element stays inside its box instead of growing past it.
+            wider: el.getBoundingClientRect().width > width + 1,
           };
         },
         [label, box] as const,
@@ -100,6 +108,7 @@ test.describe('add-shared-ui-components · ui-foundation · A shared component i
       expect(measured.lines).toBeGreaterThanOrEqual(2);
       expect(measured.ellipsis).toBe(false);
       expect(measured.overflow).toBe(false);
+      expect(measured.wider).toBe(false);
     }
   });
 });

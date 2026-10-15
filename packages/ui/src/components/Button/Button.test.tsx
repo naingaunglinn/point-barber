@@ -44,7 +44,19 @@ describe('Button', () => {
   it('is 48 px below 768 px and 40 px from 768 px, with a 44 px hit area', () => {
     render(<Button>{SAVE}</Button>);
     const classes = screen.getByRole('button').className.split(' ');
-    expect(classes).toEqual(expect.arrayContaining(['h-12', 'md:h-10', 'md:after:-inset-y-0.5']));
+    expect(classes).toEqual(
+      expect.arrayContaining(['min-h-12', 'md:min-h-10', 'md:after:-inset-y-0.5']),
+    );
+  });
+
+  it('Scenario: Long Myanmar label — the label wraps inside its box, never cut', () => {
+    render(<Button>{SAVE}</Button>);
+    const classes = screen.getByRole('button').className.split(' ');
+    // A minimum height, not a fixed one, so a second line has room; no nowrap and no truncation.
+    expect(classes).toEqual(expect.arrayContaining(['max-w-full', 'min-h-12']));
+    for (const fixed of ['h-12', 'whitespace-nowrap', 'truncate', 'text-ellipsis']) {
+      expect(classes).not.toContain(fixed);
+    }
   });
 
   it('Scenario: A double tap submits once — spinner next to the kept label, disabled until settled', async () => {
