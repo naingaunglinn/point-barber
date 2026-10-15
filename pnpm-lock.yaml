@@ -162,6 +162,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@prisma/adapter-pg@7.10.0': 28115b7b840975cb04cd9fffdb53a1d9752376fec384a90cab4f95e62e788296
+
 importers:
 
   .:
@@ -228,7 +231,7 @@ importers:
         version: link:../../packages/shared
       '@prisma/adapter-pg':
         specifier: 7.10.0
-        version: 7.10.0
+        version: 7.10.0(patch_hash=28115b7b840975cb04cd9fffdb53a1d9752376fec384a90cab4f95e62e788296)
       '@prisma/client':
         specifier: 7.10.0
         version: 7.10.0(prisma@7.10.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3))(typescript@6.0.3)
@@ -4193,7 +4196,7 @@ snapshots:
     dependencies:
       playwright: 1.63.0
 
-  '@prisma/adapter-pg@7.10.0':
+  '@prisma/adapter-pg@7.10.0(patch_hash=28115b7b840975cb04cd9fffdb53a1d9752376fec384a90cab4f95e62e788296)':
     dependencies:
       '@prisma/driver-adapter-utils': 7.10.0
       '@types/pg': 8.23.1
