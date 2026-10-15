@@ -161,12 +161,10 @@ describe('Audit.emit and the runner flush (task 2.3)', () => {
     const secrets = {
       token: 't',
       token_hash: 'th',
-      code: '48291735',
-      code_hash: 'ch',
+      code_hash: '48291735',
       google_subject: 'g',
       id_token: 'i',
       authorization_code: 'a',
-      state: 's',
       client_secret: 'cs',
       api_secret: 'as',
     };
@@ -184,6 +182,23 @@ describe('Audit.emit and the runner flush (task 2.3)', () => {
     expect(row?.before_data).toStrictEqual({ kept: 1 });
     expect(row?.after_data).toStrictEqual({ method: 'otp', nested: { kept: 2 } });
     expect(JSON.stringify(row)).not.toMatch(/48291735/);
+  });
+
+  it('keeps a business code, as a branch or a payment method carries it', async () => {
+    const requestId = randomUUID();
+    await asAung(requestId, () =>
+      runner.run(async () => {
+        await audit.emit({
+          action: 'fixture.update',
+          entity_type: 'fixtures',
+          before: { code: 'CASH', state: 1 },
+          after: { code: 'KBZPAY', nested: { code: 'YGN-01' } },
+        });
+      }),
+    );
+    const [row] = await rowsOf(requestId);
+    expect(row?.before_data).toStrictEqual({ code: 'CASH', state: 1 });
+    expect(row?.after_data).toStrictEqual({ code: 'KBZPAY', nested: { code: 'YGN-01' } });
   });
 
   it('cannot be used outside a transaction', async () => {
