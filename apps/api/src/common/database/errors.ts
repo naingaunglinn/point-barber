@@ -58,3 +58,15 @@ export function sqlStateOf(error: unknown): string | null {
     ?.driverAdapterError?.cause?.originalCode;
   return typeof code === 'string' ? code : null;
 }
+
+/**
+ * A write on a finished record that reached the guard triggers of DB Part 4 — `RAISE … 'finished_immutable'
+ * USING ERRCODE = 'P0001'` (P4-RULE-01 · design D9). The API checks the state first, so this is a bug.
+ */
+export function isFinishedImmutable(error: unknown): boolean {
+  if (sqlStateOf(error) !== 'P0001') return false;
+  const meta = (error as PrismaLikeError).meta as
+    { driverAdapterError?: { cause?: { originalMessage?: unknown } } } | undefined;
+  const message = meta?.driverAdapterError?.cause?.originalMessage;
+  return typeof message === 'string' && message.includes('finished_immutable');
+}

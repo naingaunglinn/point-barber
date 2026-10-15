@@ -54,6 +54,8 @@ export const ErrorCode = {
   NOT_ASSIGNED_TO_BRANCH: 'not_assigned_to_branch',
   // A payment method that is not ACTIVE — the code Part 7 §12 defines for it, applied to P4.PAY.02.
   METHOD_INACTIVE: 'method_inactive',
+  // 423 — a write on a finished record that reached the database guard (design D9: no endpoint should).
+  LOCKED: 'locked',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
