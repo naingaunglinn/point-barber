@@ -112,6 +112,170 @@ describe('tools/eslint/web.mjs (AD-IMPL-05 · design D16 · D19)', () => {
     },
   );
 
+  // ui-foundation "Lint fails on literal UI text" (AD-L10N-01 · AD-IMPL-05 · design D14).
+  it.each(SCOPES)(
+    'Scenario: Raw text in an attribute — placeholder="Name or phone" fails (%s)',
+    async (scope) => {
+      // Under apps/web the raw <input> is reported too (11.8).
+      expect(await lintFixture('raw-attribute.tsx', `${scope}/raw-attribute.tsx`)).toContainEqual({
+        ruleId: 'no-restricted-syntax',
+        message: expect.stringContaining('aria-label / placeholder / title / alt'),
+      });
+    },
+  );
+
+  it.each(['aria-label', 'title', 'alt'])(
+    'fails on a literal %s, also inside braces',
+    async (name) => {
+      for (const value of [`"Close"`, `{'Close'}`, '{`Close`}']) {
+        const messages = await lint(
+          `export const x = <b ${name}=${value} />;\n`,
+          'packages/ui/src/x.tsx',
+        );
+        expect(messages).toHaveLength(1);
+      }
+    },
+  );
+
+  it('Scenario: Raw text in an attribute — a language key and an empty alt pass', async () => {
+    expect(await lintFixture('attribute-key.tsx', 'packages/ui/src/attribute-key.tsx')).toEqual([]);
+  });
+
+  it('passes the punctuation design D14 allows: · — ＋ * ▲ ▼', async () => {
+    expect(await lintFixture('allowed-punctuation.tsx', 'packages/ui/src/marks.tsx')).toEqual([]);
+  });
+
+  // ui-foundation "Lint and guards fail on a colour or font outside the token file" (AD-VIS-01 · D-UX-02).
+  it.each([
+    ['a palette class', 'export const x = <div className="bg-blue-500" />;'],
+    ['an arbitrary hex class', 'export const x = <div className="text-[#DC5F00]" />;'],
+    ['a style colour', "export const x = <div style={{ color: '#000' }} />;"],
+    ['text-white', 'export const x = <div className="hover:text-white" />;'],
+    ['a colour function', "export const x = 'rgb(0, 0, 0)';"],
+    ['a named style colour', "export const x = <div style={{ backgroundColor: 'red' }} />;"],
+    ['a style font family', "export const x = <div style={{ fontFamily: 'Arial' }} />;"],
+  ])('Scenario: Colours in component code — %s fails', async (_case, code) => {
+    const messages = await lint(`${code}\n`, 'packages/ui/src/x.tsx');
+    expect(messages.length).toBeGreaterThan(0);
+    expect(messages.every((m) => m.ruleId === 'no-restricted-syntax')).toBe(true);
+  });
+
+  it('reports each case of the colour fixture', async () => {
+    const messages = await lintFixture('colour-in-code.tsx', 'apps/web/app/colour.tsx');
+    expect(new Set(messages.map((m) => m.message.split(' — ')[0]))).toEqual(
+      new Set([
+        'Tailwind palette colour class',
+        'Hex colour',
+        'Colour in `style`',
+        'rgb() / hsl() / oklch() colour',
+        '`fontFamily` in `style`',
+      ]),
+    );
+  });
+
+  it('passes token classes and token variables', async () => {
+    expect(await lintFixture('colour-tokens.tsx', 'packages/ui/src/tokens-ok.tsx')).toEqual([]);
+  });
+
+  it('lets the token readers print colour functions, nothing else', async () => {
+    const path = 'packages/ui/src/catalogue/demos/tokens-section.tsx';
+    expect(await lint("export const x = 'rgb(0, 0, 0)';\n", path)).toEqual([]);
+    expect(await lint('export const x = <div className="bg-blue-500" />;\n', path)).toHaveLength(1);
+  });
+
+  // ui-foundation "Raw form elements and Radix primitives are used only inside packages/ui" (AD-IMPL-02).
+  it('Scenario: A hand-made input in a screen — <input> and @radix-ui/react-dialog fail under apps/web/app/staff', async () => {
+    const messages = await lintFixture('hand-made-input.tsx', 'apps/web/app/staff/page.tsx');
+    expect(messages.map((m) => m.ruleId).sort()).toEqual([
+      'no-restricted-syntax',
+      'react/forbid-elements',
+    ]);
+    expect(messages.find((m) => m.ruleId === 'no-restricted-syntax')?.message).toContain(
+      'Radix primitive',
+    );
+  });
+
+  it('Scenario: A hand-made input in a screen — the same code passes inside packages/ui/src', async () => {
+    expect(await lintFixture('hand-made-input.tsx', 'packages/ui/src/components/X/X.tsx')).toEqual(
+      [],
+    );
+  });
+
+  it.each(['button', 'select', 'textarea'])('forbids <%s> in apps/web', async (element) => {
+    const messages = await lint(`export const x = <${element} />;\n`, 'apps/web/app/x.tsx');
+    expect(messages.map((m) => m.ruleId)).toEqual(['react/forbid-elements']);
+  });
+
+  it('forbids the radix-ui umbrella package in apps/web', async () => {
+    const messages = await lint(
+      "import { Dialog } from 'radix-ui';\nexport const d = Dialog;\n",
+      'apps/web/app/x.tsx',
+    );
+    expect(messages.map((m) => m.ruleId)).toEqual(['no-restricted-syntax']);
+  });
+
+  it('keeps the text and colour rules in apps/web', async () => {
+    expect(await lintFixture('raw-jsx-text.tsx', 'apps/web/app/staff/x.tsx')).toHaveLength(1);
+    expect(await lint("export const x = 'rgb(0, 0, 0)';\n", 'apps/web/app/x.ts')).toHaveLength(1);
+  });
+
+  // ui-foundation "Accessibility is checked statically and on the catalogue" (AD-A11Y-01 · design D14 row 65).
+  it.each(SCOPES)(
+    'Scenario: Static check — <img src={url} /> without alt fails with jsx-a11y/alt-text (%s)',
+    async (scope) => {
+      const messages = await lint(
+        'declare const url: string;\nexport const x = <img src={url} />;\n',
+        `${scope}/x.tsx`,
+      );
+      expect(messages).toEqual([
+        { ruleId: 'jsx-a11y/alt-text', message: expect.stringContaining('alt') },
+      ]);
+    },
+  );
+
+  // Web data rules (CG-UI-03 · CG-UI-06 · CG-UI-07 · CG-UI-08 · design D14 rows 59, 62, 63).
+  it('fails on fetch, a second library, an inline queryKey and onMutate in packages/ui', async () => {
+    const messages = await lintFixture('data-rules.tsx', 'packages/ui/src/hooks/use-sales.tsx');
+    expect(messages.filter((m) => m.ruleId === 'no-restricted-globals')).toHaveLength(1);
+    const syntax = messages
+      .filter((m) => m.ruleId === 'no-restricted-syntax')
+      .map((m) => m.message.split(' — ')[0]);
+    expect(syntax.sort()).toEqual(
+      ['Inline `queryKey` array', 'Second library', 'Second library', '`onMutate`'].sort(),
+    );
+  });
+
+  it.each(['redux', 'jotai', 'swr', 'formik', 'yup', 'joi', '@reduxjs/toolkit'])(
+    'fails on importing %s',
+    async (name) => {
+      const messages = await lint(
+        `import x from '${name}';\nexport const y = x;\n`,
+        'apps/web/app/x.ts',
+      );
+      expect(messages.map((m) => m.message)).toEqual([expect.stringContaining('Second library')]);
+    },
+  );
+
+  it('allows fetch in the API client module of apps/web, not in its components and hooks', async () => {
+    const code = "export const get = () => fetch('/api/v1/me');\n";
+    expect(await lint(code, 'apps/web/lib/api-client.ts')).toEqual([]);
+    expect(await lint(code, 'apps/web/app/staff/page.tsx')).toHaveLength(1);
+    expect(await lint(code, 'apps/web/lib/use-me.ts')).toHaveLength(1);
+  });
+
+  it('allows an array queryKey inside a key factory', async () => {
+    const code = "export const saleKeys = { all: { queryKey: ['sales'] } };\n";
+    expect(await lint(code, 'apps/web/lib/sales.keys.ts')).toEqual([]);
+    expect(await lint(code, 'apps/web/lib/sales.ts')).toHaveLength(1);
+  });
+
+  it('runs the TanStack Query recommended rules', async () => {
+    const code =
+      'declare const useQuery: (o: object) => unknown;\nexport const useX = (id: string) => useQuery({ queryKey: saleKeys.one(), queryFn: () => id });\ndeclare const saleKeys: { one: () => string[] };\n';
+    const messages = await lint(code, 'packages/ui/src/use-x.ts');
+    expect(messages.some((m) => m.ruleId?.startsWith('@tanstack/query/'))).toBe(true);
+  });
+
   it('does not apply outside apps/web and packages/ui', async () => {
     expect(await lintFixture('hex-colour.ts', 'apps/api/src/hex-colour.ts')).toEqual([]);
   });

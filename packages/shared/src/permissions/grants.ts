@@ -1,3 +1,5 @@
+import type { BranchStatus } from '../constants/status.js';
+
 // The access slice of `GET /v1/me` (P1.ME.01 · API-AUTH-05), mirrored as types so the session wiring
 // of add-foundation-auth-access is a drop-in (add-shared-ui-components design D7).
 
@@ -15,7 +17,7 @@ export interface BranchSummary {
   readonly name_mm: string;
   readonly name_en?: string | null;
   readonly phone?: string | null;
-  readonly status: 0 | 1;
+  readonly status: BranchStatus;
   readonly is_public: boolean;
 }
 

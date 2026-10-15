@@ -9,6 +9,8 @@ import { APP_ORIGIN, IS_CI, SITE_ORIGIN } from './hosts.js';
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
+  // The catalogue specs need the catalogue build, not the stack: dev-ui/playwright.config.ts.
+  testIgnore: ['dev-ui/**'],
   forbidOnly: IS_CI,
   retries: 0,
   workers: 1,

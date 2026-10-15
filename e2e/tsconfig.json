@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "lib": ["DOM", "DOM.Iterable", "ES2024"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "playwright-report", "test-results"]
