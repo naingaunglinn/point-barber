@@ -68,6 +68,16 @@ export class CustomersRepository {
     });
   }
 
+  summaries(
+    db: Tx,
+    ids: readonly string[],
+  ): Promise<{ id: string; name: string; phone: string }[]> {
+    return db.customers.findMany({
+      where: { id: { in: [...ids] } },
+      select: { id: true, name: true, phone: true },
+    });
+  }
+
   async reactivate(tx: Tx, id: string, at: Date): Promise<void> {
     await tx.customers.update({
       where: { id },

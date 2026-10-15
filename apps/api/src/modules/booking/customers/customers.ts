@@ -143,6 +143,15 @@ export class Customers {
     return { customer: ref(row), warnings: [] };
   }
 
+  /** `{ id, name, phone }` of customers (the Sale DTO's `customer`), keyed by id. */
+  async summaries(
+    db: Tx,
+    ids: readonly string[],
+  ): Promise<ReadonlyMap<string, { id: string; name: string; phone: string }>> {
+    const rows = await this.repository.summaries(db, [...new Set(ids)]);
+    return new Map(rows.map((row) => [row.id, row]));
+  }
+
   /**
    * P3.CUS.02 — an exact match of the normalised phone, inactive customers included; an archived one
    * is `{ customer: null, archived: true }`. `last_visit_at` counts only branches in the read scope.
