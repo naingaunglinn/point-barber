@@ -209,6 +209,11 @@ jobs:
           echo "::error::minio never became live"
           exit 1
 
+      # The DocumentRenderer's browser (ADR-013 · add-walkin-visit-checkout tasks 9.5 – 9.8): the headless
+      # shell of the pinned playwright-core, with its system libraries.
+      - name: Chromium headless shell (test/document-renderer.int.test.ts)
+        run: pnpm --filter api exec playwright-core install --with-deps --only-shell chromium
+
       - name: API integration tests (real app, real PostgreSQL 16, connected as point_app — D15)
         run: pnpm test:int
 
