@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AttachmentKind,
   AuditSource,
   BranchStatus,
   CustomerStatus,
@@ -128,6 +129,8 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['ServicePricingMode', ServicePricingMode, 'services', 'pricing_mode'],
     ['ServiceStatus', ServiceStatus, 'services', 'status'],
     ['CustomerStatus', CustomerStatus, 'customers', 'status'],
+    // task 3.6 — the receipt files
+    ['AttachmentKind', AttachmentKind, 'attachments', 'kind'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
   });
