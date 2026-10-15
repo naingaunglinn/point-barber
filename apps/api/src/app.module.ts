@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { CoreModule } from './common/core.module.js';
 import { DatabaseModule } from './common/database/database.module.js';
+import { BookingModule } from './modules/booking/index.js';
 import { CashClosingModule } from './modules/cash-closing/index.js';
 import { CatalogModule } from './modules/catalog/index.js';
 import { PayrollModule } from './modules/payroll/index.js';
@@ -15,6 +16,7 @@ import { SalesModule } from './modules/sales/index.js';
     DatabaseModule,
     PeopleModule,
     PlatformModule,
+    BookingModule,
     CashClosingModule,
     CatalogModule,
     PayrollModule,
