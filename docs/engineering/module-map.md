@@ -27,9 +27,11 @@ The API parts are in point-sdd [`docs/api/`](../../../point-sdd/docs/api/).
 
 ## Table ownership
 
-A module writes only the tables listed against it (rule 1 below). A module reads another module's
-table only through that module's `index.ts`, or in its own repository when the owning change says so.
-Each row is added by the change that first writes the table.
+A module writes only its own tables (rule 1 below). A module reads another module's table only
+through that module's `index.ts`, or in its own repository when the owning change says so. Each change
+adds rows for the tables it first writes. The list starts with `add-walkin-visit-checkout`; the tables
+written by earlier changes (`people`, `auth`, `platform`) are not listed yet — the table-ownership
+guard of `add-ci-guard-rails` completes the list before it reads it.
 
 | Module         | Writes                                                                                                                      | Added by                    |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
