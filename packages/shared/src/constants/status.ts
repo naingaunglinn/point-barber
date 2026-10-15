@@ -173,3 +173,45 @@ export const PriceSource = {
   HOME_FALLBACK_BRANCH: 4,
 } as const;
 export type PriceSource = (typeof PriceSource)[keyof typeof PriceSource];
+
+// add-walkin-visit-checkout — the enums of the Part 2 / 3 / 4 response DTOs (task 2.2 – 2.4). Each set
+// equals the CHECK list of its column in db/source (status.test.ts).
+
+/** part4 — visits.proxy_reason; NULL = recorded by the performer (D-VIS-04 / 12). */
+export const ProxyReason = { PHONE_UNAVAILABLE: 1, OTHER: 2 } as const;
+export type ProxyReason = (typeof ProxyReason)[keyof typeof ProxyReason];
+
+/** part4 — visits.late_entry_reason; NULL = not a late entry (D-VIS-13). */
+export const LateEntryReason = {
+  INTERNET_OUTAGE: 1,
+  POWER_OUTAGE: 2,
+  PHONE_BROKEN: 3,
+  FORGOT: 4,
+  OTHER: 9,
+} as const;
+export type LateEntryReason = (typeof LateEntryReason)[keyof typeof LateEntryReason];
+
+/** part4 — discount_codes.discount_type and discount_requests.discount_type. */
+export const DiscountType = { PERCENT: 1, AMOUNT: 2 } as const;
+export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType];
+
+/** part4 — sale_adjustments.adjustment_type; OTHER = a note only (F-P4-07). */
+export const SaleAdjustmentType = {
+  PAYMENT_METHOD: 1,
+  PERFORMER: 2,
+  COLLECTED_BY: 3,
+  OTHER: 9,
+} as const;
+export type SaleAdjustmentType = (typeof SaleAdjustmentType)[keyof typeof SaleAdjustmentType];
+
+/** part2 — services.pricing_mode (D-SVC-05). */
+export const ServicePricingMode = { SIMPLE: 1, OPTIONS: 2 } as const;
+export type ServicePricingMode = (typeof ServicePricingMode)[keyof typeof ServicePricingMode];
+
+/** part2 — services.status. */
+export const ServiceStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
+
+/** part3 — customers.status. */
+export const CustomerStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type CustomerStatus = (typeof CustomerStatus)[keyof typeof CustomerStatus];

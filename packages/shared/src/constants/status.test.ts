@@ -10,20 +10,27 @@ import { describe, expect, it } from 'vitest';
 import {
   AuditSource,
   BranchStatus,
+  CustomerStatus,
+  DiscountType,
   EmployeeStatus,
+  LateEntryReason,
   LocationType,
   LoginMethod,
   PaymentMethodKind,
   PaymentMethodStatus,
   PriceSource,
+  ProxyReason,
   ReceiptCounterKind,
   RefundKind,
   RevokeReason,
   RoleStatus,
   STATUS_BY_TABLE,
+  SaleAdjustmentType,
   SaleItemLineType,
   SaleStatus,
   ScopeType,
+  ServicePricingMode,
+  ServiceStatus,
   UiLanguage,
   UserStatus,
   VisitStatus,
@@ -75,6 +82,8 @@ const files = [
   'part1b-login-v1-constraints.sql',
   'part8-system-website-v1-constraints.sql',
   'part4-visits-sales-payments-v1-constraints.sql',
+  'part2-services-scheduling-v1-constraints.sql',
+  'part3-customers-booking-v3-constraints.sql',
 ].map((name) => readFileSync(join(source, name), 'utf8'));
 
 /** The values of `CHECK (<column> IN (…))` (or `<column> IS NULL OR <column> IN (…)`). */
@@ -111,6 +120,14 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['PaymentMethodStatus', PaymentMethodStatus, 'payment_methods', 'status'],
     ['RefundKind', RefundKind, 'refunds', 'kind'],
     ['ReceiptCounterKind', ReceiptCounterKind, 'receipt_counters', 'kind'],
+    // add-walkin-visit-checkout tasks 2.2 – 2.4 (the enums of the response DTOs)
+    ['ProxyReason', ProxyReason, 'visits', 'proxy_reason'],
+    ['LateEntryReason', LateEntryReason, 'visits', 'late_entry_reason'],
+    ['DiscountType', DiscountType, 'discount_requests', 'discount_type'],
+    ['SaleAdjustmentType', SaleAdjustmentType, 'sale_adjustments', 'adjustment_type'],
+    ['ServicePricingMode', ServicePricingMode, 'services', 'pricing_mode'],
+    ['ServiceStatus', ServiceStatus, 'services', 'status'],
+    ['CustomerStatus', CustomerStatus, 'customers', 'status'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
   });
