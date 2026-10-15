@@ -98,6 +98,8 @@ jobs:
   catalogue:
     name: catalogue
     runs-on: ubuntu-24.04
+    # About 4 minutes on green runs; a hung build or browser ends the job instead of holding the runner.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
