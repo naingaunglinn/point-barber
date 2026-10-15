@@ -113,6 +113,35 @@ export class SalesRepository {
     });
   }
 
+  /** FINISH step 14 — the sale becomes 2 FINISHED with its number and business date (design D5). */
+  async finish(
+    tx: Tx,
+    id: string,
+    finished: {
+      at: Date;
+      by_user_id: string;
+      business_date: string;
+      receipt: { number: string; year: number; month: number; seq: number };
+      customer_id: string | null;
+    },
+  ): Promise<void> {
+    await tx.sales.update({
+      where: { id },
+      data: {
+        status: SaleStatus.FINISHED,
+        finished_at: finished.at,
+        finished_by_user_id: finished.by_user_id,
+        business_date: new Date(`${finished.business_date}T00:00:00Z`),
+        receipt_number: finished.receipt.number,
+        receipt_year: finished.receipt.year,
+        receipt_month: finished.receipt.month,
+        receipt_seq: finished.receipt.seq,
+        customer_id: finished.customer_id,
+        updated_at: finished.at,
+      },
+    });
+  }
+
   async cancel(tx: Tx, id: string, at: Date): Promise<void> {
     await tx.sales.update({
       where: { id },

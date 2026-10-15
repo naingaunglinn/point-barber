@@ -6,9 +6,11 @@ import { Audit, CodeTables, PlatformModule } from '../platform/index.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CurrentCompany } from './company/current-company.js';
 import { Assignments } from './directory/assignments.js';
+import { BranchCodes } from './directory/branch-codes.js';
 import { DisplayNames } from './directory/display-names.js';
 import { PeopleDirectory } from './directory/people-directory.js';
 import { AssignmentsRepository } from './repositories/assignments.repository.js';
+import { BranchCodesRepository } from './repositories/branch-codes.repository.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
 import { DisplayNameRepository } from './repositories/display-name.repository.js';
@@ -29,6 +31,7 @@ import { BaseSeed } from './seed/base-seed.js';
   providers: [
     PeopleRepository,
     AssignmentsRepository,
+    BranchCodesRepository,
     CatalogueRepository,
     CompanyRepository,
     DisplayNameRepository,
@@ -37,6 +40,7 @@ import { BaseSeed } from './seed/base-seed.js';
     PeopleDirectory,
     DisplayNames,
     Assignments,
+    BranchCodes,
     CurrentCompany,
     CompanyAdmin,
     PermissionCatalogue,
@@ -48,6 +52,7 @@ import { BaseSeed } from './seed/base-seed.js';
     PeopleDirectory,
     DisplayNames,
     Assignments,
+    BranchCodes,
     CurrentCompany,
     CompanyAdmin,
     PermissionCatalogue,

@@ -4,9 +4,12 @@ import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import { BookingModule, Customers } from '../booking/index.js';
 import { CashClosingModule } from '../cash-closing/index.js';
 import { CatalogModule } from '../catalog/index.js';
+import { PayrollModule } from '../payroll/index.js';
 import { PeopleModule } from '../people/index.js';
 import { CodeTables, PlatformModule } from '../platform/index.js';
 import { SalesCustomerActivity } from './customer-activity/sales-customer-activity.js';
+import { ReceiptNumbers } from './finish/receipt-numbers.js';
+import { SalesFinish } from './finish/sales-finish.js';
 import { SaleLines } from './lines/sale-lines.js';
 import { Sales } from './lines/sales.js';
 import { Payments } from './payments/payments.js';
@@ -25,7 +28,14 @@ import { SaleView } from './view/sale-view.js';
 // part of the base seed — the system payment methods — joins sync.code_tables right after people's
 // base seed, the way people registers its steps.
 @Module({
-  imports: [PlatformModule, PeopleModule, BookingModule, CatalogModule, CashClosingModule],
+  imports: [
+    PlatformModule,
+    PeopleModule,
+    BookingModule,
+    CatalogModule,
+    CashClosingModule,
+    PayrollModule,
+  ],
   providers: [
     PaymentMethodsRepository,
     SalesRepository,
@@ -39,8 +49,10 @@ import { SaleView } from './view/sale-view.js';
     SaleLines,
     SaleView,
     Payments,
+    ReceiptNumbers,
+    SalesFinish,
   ],
-  exports: [PaymentMethodSeed, VisitsRegistry, Sales, SaleLines, SaleView, Payments],
+  exports: [PaymentMethodSeed, VisitsRegistry, Sales, SaleLines, SaleView, Payments, SalesFinish],
 })
 export class SalesModule implements OnModuleInit {
   constructor(

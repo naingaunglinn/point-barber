@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { runSeed } from '../../src/cli/run-seed.js';
 import { type FreshDatabase, freshDatabase } from './databases.js';
+import type { Clock } from '../../src/common/clock/clock.js';
 import { type TestApp, startTestApp } from './test-app.js';
 
 // add-walkin-visit-checkout — a fresh database with the base seed and every fixture module
@@ -17,9 +18,11 @@ export interface SeededApp extends TestApp {
   readonly db: FreshDatabase;
 }
 
-export async function seededApp(now: Date): Promise<SeededApp> {
+export async function seededApp(now: Date | Clock): Promise<SeededApp> {
   const db = await freshDatabase();
-  const t = await startTestApp({ databaseUrl: db.url, now });
+  const t = await startTestApp(
+    now instanceof Date ? { databaseUrl: db.url, now } : { databaseUrl: db.url, clock: now },
+  );
   await runSeed(t.app, FIXTURES);
   return {
     ...t,

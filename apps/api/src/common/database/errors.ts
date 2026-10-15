@@ -49,3 +49,12 @@ export function uniqueViolationIndex(error: unknown): string | null {
 export function isPaymentReferenceConflict(error: unknown): boolean {
   return uniqueViolationIndex(error) === 'payments_reference_unique';
 }
+
+/** The SQLSTATE of a failed query (`55P03` lock_not_available, `23505` …), from the driver adapter. */
+export function sqlStateOf(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null) return null;
+  const { meta } = error as PrismaLikeError;
+  const code = (meta as { driverAdapterError?: { cause?: DriverAdapterCause } } | undefined)
+    ?.driverAdapterError?.cause?.originalCode;
+  return typeof code === 'string' ? code : null;
+}

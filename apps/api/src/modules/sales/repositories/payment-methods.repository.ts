@@ -78,6 +78,11 @@ export class PaymentMethodsRepository {
     });
   }
 
+  /** The method with a code (the base seed's CASH, for the change of an over-transfer). */
+  byCode(db: Tx, code: string): Promise<PaymentMethodListRow | null> {
+    return db.payment_methods.findFirst({ where: { code }, select: LIST });
+  }
+
   find(db: Tx, id: string): Promise<PaymentMethodListRow | null> {
     return db.payment_methods.findUnique({ where: { id }, select: LIST });
   }

@@ -47,8 +47,23 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
+/** A clock a test moves (add-walkin-visit-checkout — month boundary, a visit across midnight). */
+export class MovableClock extends Clock {
+  constructor(private instant: Date) {
+    super();
+  }
+  override now(): Date {
+    return this.instant;
+  }
+  set(instant: Date): void {
+    this.instant = instant;
+  }
+}
+
 export interface TestAppOptions {
   readonly now?: Date;
+  /** A clock of the test's own, instead of the fixed one of `now`. */
+  readonly clock?: Clock;
   readonly probe?: DatabaseProbe;
   /** Another database than DATABASE_URL — a fresh copy (helpers/databases.ts). */
   readonly databaseUrl?: string;
@@ -72,7 +87,9 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   let builder = Test.createTestingModule({ imports: [TestAppModule] })
     .overrideProvider(LOGGER)
     .useValue(createLogger('info', stream));
-  if (options.now !== undefined)
+  if (options.clock !== undefined)
+    builder = builder.overrideProvider(Clock).useValue(options.clock);
+  else if (options.now !== undefined)
     builder = builder.overrideProvider(Clock).useValue(new FixedClock(options.now));
   if (options.probe !== undefined)
     builder = builder.overrideProvider(DatabaseProbe).useValue(options.probe);
