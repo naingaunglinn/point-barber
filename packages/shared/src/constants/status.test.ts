@@ -11,13 +11,22 @@ import {
   AuditSource,
   BranchStatus,
   EmployeeStatus,
+  LocationType,
   LoginMethod,
+  PaymentMethodKind,
+  PaymentMethodStatus,
+  PriceSource,
+  ReceiptCounterKind,
+  RefundKind,
   RevokeReason,
   RoleStatus,
   STATUS_BY_TABLE,
+  SaleItemLineType,
+  SaleStatus,
   ScopeType,
   UiLanguage,
   UserStatus,
+  VisitStatus,
 } from './status.js';
 
 // D-DB-03 · API-DATA-04 · AD-IMPL-04: every status code of the 19 tables of AD-CMP-05 has a named
@@ -65,6 +74,7 @@ const files = [
   'part1-foundation-v3-constraints.sql',
   'part1b-login-v1-constraints.sql',
   'part8-system-website-v1-constraints.sql',
+  'part4-visits-sales-payments-v1-constraints.sql',
 ].map((name) => readFileSync(join(source, name), 'utf8'));
 
 /** The values of `CHECK (<column> IN (…))` (or `<column> IS NULL OR <column> IN (…)`). */
@@ -92,7 +102,27 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['RevokeReason', RevokeReason, 'user_sessions', 'revoke_reason'],
     ['AuditSource', AuditSource, 'audit_events', 'source'],
     ['UiLanguage', UiLanguage, 'users', 'ui_language'],
+    // add-walkin-visit-checkout task 2.1
+    ['VisitStatus', VisitStatus, 'visits', 'status'],
+    ['LocationType', LocationType, 'visits', 'location_type'],
+    ['SaleStatus', SaleStatus, 'sales', 'status'],
+    ['SaleItemLineType', SaleItemLineType, 'sale_items', 'line_type'],
+    ['PaymentMethodKind', PaymentMethodKind, 'payment_methods', 'kind'],
+    ['PaymentMethodStatus', PaymentMethodStatus, 'payment_methods', 'status'],
+    ['RefundKind', RefundKind, 'refunds', 'kind'],
+    ['ReceiptCounterKind', ReceiptCounterKind, 'receipt_counters', 'kind'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
+  });
+});
+
+describe('PriceSource (P2-RULE-03 / 05 — an API value, no column)', () => {
+  it('names the four sources 1 – 4', () => {
+    expect(PriceSource).toStrictEqual({
+      BRANCH: 1,
+      BARBER_OVERRIDE: 2,
+      HOME: 3,
+      HOME_FALLBACK_BRANCH: 4,
+    });
   });
 });

@@ -137,3 +137,39 @@ export type AuditSource = (typeof AuditSource)[keyof typeof AuditSource];
 /** part1 — users.ui_language; NULL = the system default (D-PLT-03). */
 export const UiLanguage = { MY: 1, EN: 2 } as const;
 export type UiLanguage = (typeof UiLanguage)[keyof typeof UiLanguage];
+
+/** part4 — visits.location_type (D-SVC-06); also the `location_type` of a price quote. */
+export const LocationType = { BRANCH: 1, HOME: 2 } as const;
+export type LocationType = (typeof LocationType)[keyof typeof LocationType];
+
+/** part4 — sale_items.line_type; TRANSPORT_FEE = the home-service fee line (D-SVC-06). */
+export const SaleItemLineType = { SERVICE: 1, PRODUCT: 2, TRANSPORT_FEE: 3 } as const;
+export type SaleItemLineType = (typeof SaleItemLineType)[keyof typeof SaleItemLineType];
+
+/** part4 — payment_methods.kind (D-PAY-01). */
+export const PaymentMethodKind = { CASH: 1, MOBILE_WALLET: 2, BANK_TRANSFER: 3, CARD: 4 } as const;
+export type PaymentMethodKind = (typeof PaymentMethodKind)[keyof typeof PaymentMethodKind];
+
+/** part4 — payment_methods.status. */
+export const PaymentMethodStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type PaymentMethodStatus = (typeof PaymentMethodStatus)[keyof typeof PaymentMethodStatus];
+
+/** part4 — refunds.kind; OVERPAYMENT_RETURN = the change of a non-cash over-transfer (D-PAY-05). */
+export const RefundKind = { SALE_REFUND: 1, OVERPAYMENT_RETURN: 2 } as const;
+export type RefundKind = (typeof RefundKind)[keyof typeof RefundKind];
+
+/** part4 — receipt_counters.kind: the sale series and the RF series (D-PAY-06). */
+export const ReceiptCounterKind = { SALE: 1, REFUND: 2 } as const;
+export type ReceiptCounterKind = (typeof ReceiptCounterKind)[keyof typeof ReceiptCounterKind];
+
+/**
+ * Part 2 P2-RULE-03 / 05 — the `price_source` of a quote item (no column: an API value). HOME_FALLBACK_BRANCH
+ * = a HOME quote that used the branch-level BRANCH row because no HOME row exists.
+ */
+export const PriceSource = {
+  BRANCH: 1,
+  BARBER_OVERRIDE: 2,
+  HOME: 3,
+  HOME_FALLBACK_BRANCH: 4,
+} as const;
+export type PriceSource = (typeof PriceSource)[keyof typeof PriceSource];

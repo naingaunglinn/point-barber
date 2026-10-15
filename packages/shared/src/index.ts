@@ -15,6 +15,7 @@ export * from './permissions/can.js';
 export * from './permissions/catalogue.js';
 export * from './permissions/grants.js';
 export * from './permissions/schema.js';
+export * from './permissions/seed-codes.js';
 export * from './phone/phone.js';
 export * from './schemas/auth.js';
 export * from './schemas/branches.js';
