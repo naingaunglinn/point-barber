@@ -63,6 +63,10 @@ export class Sales {
     return sale;
   }
 
+  find(db: Tx, saleId: string): Promise<SaleRow | null> {
+    return this.sales.find(db, saleId);
+  }
+
   findByVisit(db: Tx, visitId: string): Promise<SaleRow | null> {
     return this.sales.findByVisit(db, visitId);
   }

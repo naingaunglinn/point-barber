@@ -69,6 +69,98 @@ export class PaymentsRepository {
     return rows.map(({ payment_methods, ...row }) => ({ ...row, method: payment_methods }));
   }
 
+  async insert(
+    tx: Tx,
+    row: {
+      id: string;
+      client_request_id: string;
+      sale_id: string;
+      payment_method_id: string;
+      amount: bigint;
+      external_reference: string | null;
+      collected_by_employee_id: string;
+      received_at: Date;
+      recorded_by_user_id: string;
+    },
+  ): Promise<void> {
+    await tx.payments.create({
+      data: { ...row, created_at: row.received_at },
+    });
+  }
+
+  /** The identifying fields of the payment stored under a client request id (design D7). */
+  findByClientRequestId(
+    db: Tx,
+    key: string,
+  ): Promise<{
+    id: string;
+    sale_id: string;
+    payment_method_id: string;
+    amount: bigint;
+    recorded_by_user_id: string;
+  } | null> {
+    return db.payments.findUnique({
+      where: { client_request_id: key },
+      select: {
+        id: true,
+        sale_id: true,
+        payment_method_id: true,
+        amount: true,
+        recorded_by_user_id: true,
+      },
+    });
+  }
+
+  find(
+    db: Tx,
+    id: string,
+  ): Promise<{ id: string; sale_id: string; voided_at: Date | null } | null> {
+    return db.payments.findUnique({
+      where: { id },
+      select: { id: true, sale_id: true, voided_at: true },
+    });
+  }
+
+  /** The sale of the non-voided payment that holds a reference of a method (D-PAY-02). */
+  async referenceHolder(
+    db: Tx,
+    methodId: string,
+    reference: string,
+  ): Promise<{ sale_status: number; receipt_number: string | null } | null> {
+    const row = await db.payments.findFirst({
+      where: { payment_method_id: methodId, external_reference: reference, voided_at: null },
+      select: { sales: { select: { status: true, receipt_number: true } } },
+    });
+    return row === null
+      ? null
+      : { sale_status: row.sales.status, receipt_number: row.sales.receipt_number };
+  }
+
+  /** One payment row, locked FOR UPDATE (void — design D4 step 3). */
+  async lockOne(tx: Tx, id: string): Promise<void> {
+    await tx.$queryRaw`SELECT id FROM payments WHERE id = ${id}::uuid FOR UPDATE`;
+  }
+
+  async markVoided(
+    tx: Tx,
+    id: string,
+    voiding: { at: Date; by_user_id: string; reason: string },
+  ): Promise<void> {
+    await tx.payments.update({
+      where: { id },
+      data: {
+        voided_at: voiding.at,
+        voided_by_user_id: voiding.by_user_id,
+        void_reason: voiding.reason,
+      },
+    });
+  }
+
+  /** `payref:<method_id>:<reference>` — exclusive, held to commit (P4-RULE-09 · CG-DB-08). */
+  async lockReference(tx: Tx, methodId: string, reference: string): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`payref:${methodId}:${reference}`}, 0))`;
+  }
+
   /** The payment rows of a sale, locked FOR UPDATE (INCOMPLETE — design D4). */
   async lockOfSale(tx: Tx, saleId: string): Promise<void> {
     await tx.$queryRaw`SELECT id FROM payments WHERE sale_id = ${saleId}::uuid FOR UPDATE`;

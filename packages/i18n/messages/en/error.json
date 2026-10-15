@@ -46,5 +46,6 @@
   "service_inactive": "This service is switched off.",
   "category_inactive": "This service's category is switched off.",
   "outside_window": "This date is too far ahead.",
-  "not_assigned_to_branch": "This person is not assigned to this branch on this date."
+  "not_assigned_to_branch": "This person is not assigned to this branch on this date.",
+  "method_inactive": "This payment method is switched off."
 }

@@ -9,3 +9,4 @@ export type { VisitForSale, VisitsPort } from './ports/visits-port.js';
 export { VisitsRegistry } from './ports/visits-registry.js';
 export type { SaleRow } from './repositories/sales.repository.js';
 export { type SaleViewer, SaleView } from './view/sale-view.js';
+export { PAYMENT_ADD, PAYMENT_VOID, Payments, toPaymentMethodDto } from './payments/payments.js';
