@@ -99,6 +99,14 @@ describe('Customers.matchOrCreate (P3-RULE-01)', () => {
     ]);
   });
 
+  it('a phone typed in Myanmar digits is stored with Western digits (AD-FMT-10)', async () => {
+    const result = await match('၀၉ ၄၅၀၀ ၄၄၅၅', 'Ma Hla');
+    expect([result.customer.phone, result.customer.phone_normalized]).toStrictEqual([
+      '09 4500 4455',
+      '+95945004455',
+    ]);
+  });
+
   it('Scenario: New phone without a name — 400 validation naming customer.name, no row', async () => {
     const error = await refusal(() => match('09 4500 9999'));
     expect([error?.code, error?.status]).toStrictEqual([ErrorCode.VALIDATION, 400]);

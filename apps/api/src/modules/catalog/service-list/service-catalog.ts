@@ -11,6 +11,7 @@ import {
 
 import { Clock } from '../../../common/clock/clock.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { type ReadScope, inReadScope } from '../../../common/access/read-scope.js';
 import { decodeCursor, encodeCursor } from '../../../common/http/cursor.js';
 import {
   type ServiceListRow,
@@ -22,12 +23,6 @@ import {
 // ACTIVE branch_services row there; a branch outside the caller's read scope is an empty list, not an
 // error. Catalogue order = sort_order, then the Myanmar name — the START chips are the first six
 // SIMPLE services of it (design D12).
-
-/** The caller's read scope: every branch, or these. */
-export type ReadScope = 'all' | readonly string[];
-
-const inScope = (scope: ReadScope, branchId: string): boolean =>
-  scope === 'all' || scope.includes(branchId);
 
 function toItem(row: ServiceListRow): ServiceListItemDto {
   const branchIds = row.branch_services.map((sold) => sold.branch_id);
@@ -77,7 +72,7 @@ export class ServiceCatalog {
     query: ServicesQuery,
     scope: ReadScope,
   ): Promise<CursorPage<ServiceListItemDto>> {
-    if (query.branch_id !== undefined && !inScope(scope, query.branch_id)) {
+    if (query.branch_id !== undefined && !inReadScope(scope, query.branch_id)) {
       return { items: [], next_cursor: null, total: null };
     }
     const rows = await this.repository.services(db, {

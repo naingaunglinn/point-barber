@@ -3,10 +3,12 @@ import {
   type CustomerLookupDto,
   CustomerStatus,
   ErrorCode,
+  normalizeDigits,
   normalizePhone,
   toMmtIso,
 } from '@point/shared';
 
+import type { ReadScope } from '../../../common/access/read-scope.js';
 import { Clock } from '../../../common/clock/clock.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
@@ -33,8 +35,6 @@ export interface MatchResult {
   readonly customer: CustomerRef;
   readonly warnings: readonly { readonly code: 'customer_restored' | 'customer_reactivated' }[];
 }
-
-export type ReadScope = 'all' | readonly string[];
 
 /**
  * The last finished visit of a customer at the branches in scope (P3.CUS.02 `last_visit_at`).
@@ -88,7 +88,8 @@ export class Customers {
         id,
         company_id: companyId,
         name,
-        phone: input.phone.trim(),
+        // Stored as typed, but with Western digits (AD-FMT-10): `၀၉ ၇၇၁၂ ၃၄၅၆` → `09 7712 3456`.
+        phone: normalizeDigits(input.phone).trim(),
         phone_normalized: normalized,
         at: now,
       }));

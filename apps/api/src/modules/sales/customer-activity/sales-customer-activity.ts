@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import type { ReadScope } from '../../../common/access/read-scope.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import type { CustomerActivity } from '../../booking/index.js';
 import { SalesRepository } from '../repositories/sales.repository.js';
