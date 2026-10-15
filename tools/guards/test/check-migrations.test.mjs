@@ -178,15 +178,18 @@ describe('check-migrations (CG-DB-02)', { timeout: 30_000 }, () => {
     git(outer, 'add', '.');
     git(outer, 'commit', '-q', '-m', 'chore(repo): outer');
     const before = git(outer, 'rev-parse', 'HEAD');
+    // The test's own git calls run while the hook's GIT_DIR is set: they must stay in their temp repo.
+    let cwd;
     process.env.GIT_DIR = join(outer, '.git');
     try {
-      const cwd = repo();
+      cwd = repo();
       write(cwd, '20261002000000_add_x', 'CREATE TABLE b (id int);\n');
       commit(cwd);
-      expect(checkMigrations({ cwd, baseRef: 'main' })).toEqual([]);
     } finally {
       delete process.env.GIT_DIR;
     }
+    // The guard itself runs without it, so its answer is about the temp repo (PR #17 review).
+    expect(checkMigrations({ cwd, baseRef: 'main' })).toEqual([]);
     expect(git(outer, 'rev-parse', 'HEAD')).toBe(before);
     expect(git(outer, 'config', '--get', 'core.bare').trim()).toBe('false');
     expect(git(outer, 'branch', '--list').trim()).toBe('* main');
