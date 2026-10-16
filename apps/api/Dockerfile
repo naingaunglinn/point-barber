@@ -44,8 +44,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 # Headless Chromium of the DocumentRenderer (ADR-013 · add-walkin-visit-checkout task 9.15): the
 # headless shell of the pinned playwright-core with its system libraries, in a root-owned folder the
-# `node` user reads; the server launches it as `node`, never as root. No system font is installed:
-# the documents inline their fonts (Pyidaungsu, Inter) from @point/documents, deployed with the api.
+# `node` user reads; the server launches it as `node`, never as root. The documents name only the fonts
+# they inline from @point/documents (Pyidaungsu, Inter — deployed with the api); the fonts --with-deps
+# installs are Chromium's fallback for a character neither of them has.
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 COPY --from=build /playwright-core /tmp/playwright-core
 RUN node /tmp/playwright-core/cli.js install --with-deps --only-shell chromium \

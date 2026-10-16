@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { type Server, createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { type PaperWidthMm, PRINTER_WIDTH_PX, receiptBaseCss } from '@point/documents';
+import { type PaperWidthMm, PRINTER_WIDTH_PX, receiptHtml } from '@point/documents';
+import type { ReceiptViewDto } from '@point/shared';
 
 import type { Browser } from 'playwright-core';
 import sharp from 'sharp';
@@ -135,27 +136,71 @@ describe('ChromiumDocumentRenderer (ADR-013)', () => {
   }, 30_000);
 });
 
-// Task 9.8 — golden images of Myanmar text (AD-RCPT-02 · ADR-013 decision 2): an item name with a kinzi
-// (အင်္ဂလိပ်) and a stacked consonant (မန္တလေး), shaped with the package fonts at both printer widths.
-// A wrong or missing font, or text drawn without shaping, changes far more than the tolerance allows
-// (a few edge pixels, for a different Linux font configuration). `UPDATE_GOLDEN=1` writes new images —
-// look at them before committing.
+// Task 9.8 — golden images of the receipt template (AD-RCPT-01 · AD-RCPT-02 · ADR-013 decision 2): the
+// split-payment receipt B3-2026-OCT-00002 with an item that has no English name — a kinzi (အင်္ဂလိပ်) and
+// a stacked consonant (မန္တလေး) — shaped with the package fonts at both printer widths. A wrong or missing
+// font, text drawn without shaping or a layout change moves far more than the tolerance allows (a few
+// edge pixels, for a different Linux font configuration). `UPDATE_GOLDEN=1` writes new images — look at
+// them before committing.
 const GOLDEN = new URL('./golden/', import.meta.url);
-const myanmar = (paper: PaperWidthMm) =>
-  `<!doctype html><html><head><meta charset="utf-8"><style>${receiptBaseCss(paper)}</style></head><body>` +
-  '<p>B3-2026-OCT-00002</p><p>အင်္ဂလိပ် ဆံပင်ညှပ် (မန္တလေး)</p><p>1 × 8,000 = 8,000</p>' +
-  '<p>မုတ်ဆိတ်ရိတ် ၁ × ၃,၀၀၀</p></body></html>';
+const receiptView: ReceiptViewDto = {
+  kind: 'sale',
+  number: 'B3-2026-OCT-00002',
+  original_number: null,
+  issued_at: '2026-10-05T10:50:00+06:30',
+  branch: { name: 'Point 3.0', address: null, phone: null, logo_url: null },
+  barbers: ['Ko Min'],
+  customer_name: null,
+  customer_phone_masked: null,
+  lines: [
+    {
+      description_en: null,
+      description_mm: 'အင်္ဂလိပ် ဆံပင်ညှပ် (မန္တလေး)',
+      option: null,
+      performer: 'Ko Min',
+      quantity: 1,
+      unit_price_amount: 8000,
+      amount: 8000,
+    },
+    {
+      description_en: 'Shave',
+      description_mm: 'မုတ်ဆိတ်ရိတ်',
+      option: null,
+      performer: 'Ko Min',
+      quantity: 1,
+      unit_price_amount: 3000,
+      amount: 3000,
+    },
+  ],
+  subtotal_amount: 11000,
+  discount_label: null,
+  discount_amount: 0,
+  service_charge_amount: null,
+  tax_amount: null,
+  total_amount: 11000,
+  payments: [
+    { method: 'Cash', amount: 5000, reference: null },
+    { method: 'KBZPay', amount: 6000, reference: 'KBZ0001234567' },
+  ],
+  change_returned: null,
+  footer: { opening_hours: 'Mon–Sun 9:00 AM – 9:00 PM', thank_you: null },
+  pdf_attachment_id: null,
+  png_attachment_id: null,
+  rendered_at: null,
+};
+const receipt = (paper: PaperWidthMm) =>
+  receiptHtml({ view: receiptView, company: 'Point Barbershop', paper });
 
 async function grey(png: Buffer) {
   return sharp(png).greyscale().raw().toBuffer({ resolveWithObject: true });
 }
 
-describe('Golden images — Myanmar shaping (task 9.8)', () => {
+describe('Golden images — the receipt with Myanmar shaping (task 9.8)', () => {
   it.each([58, 80] as const)(
     '%i mm',
     async (paper) => {
-      const png = await renderer.renderPng(myanmar(paper), PRINTER_WIDTH_PX[paper]);
-      const file = new URL(`myanmar-${paper}mm.png`, GOLDEN);
+      const png = await renderer.renderPng(receipt(paper), PRINTER_WIDTH_PX[paper]);
+      const file = new URL(`receipt-${paper}mm.png`, GOLDEN);
       if (process.env.UPDATE_GOLDEN === '1' || !existsSync(file)) {
         if (process.env.CI !== undefined)
           throw new Error(`golden image ${file.pathname} is missing`);

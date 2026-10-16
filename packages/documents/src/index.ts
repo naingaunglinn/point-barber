@@ -3,3 +3,4 @@
 export { receiptBaseCss, RECEIPT_BODY_PX } from './base-css.js';
 export { DOCUMENT_FONT_FAMILY, fontFaceCss, fontFile } from './fonts.js';
 export { type PaperWidthMm, PRINTER_WIDTH_PX } from './paper.js';
+export { Receipt, type ReceiptProps, receiptHtml, receiptMarkup } from './receipt/receipt.js';
