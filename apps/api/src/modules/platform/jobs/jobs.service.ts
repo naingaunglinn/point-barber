@@ -4,7 +4,13 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
-import { PgBoss, type SendOptions, type WorkOptions, fromPrisma } from 'pg-boss';
+import {
+  type JobWithMetadata,
+  PgBoss,
+  type SendOptions,
+  type WorkOptions,
+  fromPrisma,
+} from 'pg-boss';
 import type { Logger } from 'pino';
 
 import { AppConfig } from '../../../common/config/config.js';
@@ -18,7 +24,14 @@ import { LOGGER } from '../../../common/logging/logger.js';
 // `db` executor to the Prisma transaction — so a rolled-back transaction leaves no job. The workers
 // run in this process when JOBS_IN_API=true (the default), and stop with it.
 
-export type JobHandler<T> = (data: T, job: { readonly id: string }) => Promise<void>;
+/** The attempt a handler runs: `retry_count` 0 is the first; `retry_count = retry_limit` the last. */
+export interface JobAttempt {
+  readonly id: string;
+  readonly retry_count: number;
+  readonly retry_limit: number;
+}
+
+export type JobHandler<T> = (data: T, job: JobAttempt) => Promise<void>;
 export type JobSendOptions = Omit<SendOptions, 'db'>;
 
 export const PGBOSS_SCHEMA = 'pgboss';
@@ -106,8 +119,16 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
 
   private async startWorker({ name, handler, options }: Registration): Promise<void> {
     if (!this.config.env.JOBS_IN_API) return;
-    await this.boss.work<never>(name, { ...options, batchSize: 1 }, async ([job]) => {
-      if (job !== undefined) await handler(job.data, { id: job.id });
-    });
+    await this.boss.work<never>(
+      name,
+      { ...options, batchSize: 1, includeMetadata: true },
+      async ([job]) => {
+        if (job !== undefined) {
+          // `includeMetadata` adds the retry limit; the spread options hide that from the overload.
+          const { id, data, retryCount, retryLimit } = job as JobWithMetadata<never>;
+          await handler(data, { id, retry_count: retryCount, retry_limit: retryLimit });
+        }
+      },
+    );
   }
 }

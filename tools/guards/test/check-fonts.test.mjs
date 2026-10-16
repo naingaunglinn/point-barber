@@ -9,11 +9,15 @@ import { afterEach, describe, expect, it } from 'vitest';
 const guard = resolve(dirname(fileURLToPath(import.meta.url)), '../check-fonts.mjs');
 const roots = [];
 
-/** A temporary repository tree with the given files under packages/ui/fonts/. */
+/** A temporary repository tree with the given files under packages/ui/fonts/ (or `folder`). */
 function fonts(...names) {
+  return fontsIn('packages/ui/fonts', ...names);
+}
+
+function fontsIn(folder, ...names) {
   const root = mkdtempSync(join(tmpdir(), 'check-fonts-'));
   roots.push(root);
-  const dir = join(root, 'packages/ui/fonts');
+  const dir = join(root, folder);
   mkdirSync(dir, { recursive: true });
   for (const name of names) writeFileSync(join(dir, name), 'x');
   return root;
@@ -64,6 +68,23 @@ describe('check-fonts (pnpm fonts:check)', () => {
     expect(output).toContain('ArchivoBlack');
     expect(output).not.toContain('Inter has no');
     expect(output.match(/ArchivoBlack has no/g)).toHaveLength(1);
+  });
+
+  // add-walkin-visit-checkout task 9.1 — the document fonts ship with their licences (ADR-013 decision 2).
+  it('checks packages/documents/fonts too, each folder on its own', () => {
+    const missing = fontsIn(
+      'packages/documents/fonts',
+      'inter-latin.woff2',
+      'pyidaungsu-bold.woff2',
+      'LICENSE-Pyidaungsu.txt',
+    );
+    const { status, output } = run(missing);
+    expect(status).toBe(1);
+    expect(output).toContain(
+      'Inter has no OFL-Inter.txt or LICENSE-Inter.txt in packages/documents/fonts',
+    );
+    const licensed = fontsIn('packages/documents/fonts', 'inter-latin.woff2', 'OFL-Inter.txt');
+    expect(run(licensed).output).toContain('check-fonts: ok — 1 families');
   });
 
   it('passes on a folder without fonts', () => {

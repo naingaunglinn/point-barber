@@ -5,9 +5,17 @@ import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import { Audit, CodeTables, PlatformModule } from '../platform/index.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CurrentCompany } from './company/current-company.js';
+import { Assignments } from './directory/assignments.js';
+import { BranchCodes } from './directory/branch-codes.js';
+import { BranchHeaders } from './directory/branch-headers.js';
+import { DisplayNames } from './directory/display-names.js';
 import { PeopleDirectory } from './directory/people-directory.js';
+import { AssignmentsRepository } from './repositories/assignments.repository.js';
+import { BranchCodesRepository } from './repositories/branch-codes.repository.js';
+import { BranchHeaderRepository } from './repositories/branch-header.repository.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
+import { DisplayNameRepository } from './repositories/display-name.repository.js';
 import { EmployeeRepository } from './repositories/employee.repository.js';
 import { PeopleRepository } from './repositories/people.repository.js';
 import { RoleRepository } from './repositories/role.repository.js';
@@ -24,11 +32,19 @@ import { BaseSeed } from './seed/base-seed.js';
   imports: [PlatformModule],
   providers: [
     PeopleRepository,
+    AssignmentsRepository,
+    BranchCodesRepository,
+    BranchHeaderRepository,
     CatalogueRepository,
     CompanyRepository,
+    DisplayNameRepository,
     EmployeeRepository,
     RoleRepository,
     PeopleDirectory,
+    DisplayNames,
+    Assignments,
+    BranchCodes,
+    BranchHeaders,
     CurrentCompany,
     CompanyAdmin,
     PermissionCatalogue,
@@ -38,6 +54,10 @@ import { BaseSeed } from './seed/base-seed.js';
   ],
   exports: [
     PeopleDirectory,
+    DisplayNames,
+    Assignments,
+    BranchCodes,
+    BranchHeaders,
     CurrentCompany,
     CompanyAdmin,
     PermissionCatalogue,
