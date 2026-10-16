@@ -299,7 +299,7 @@ describe('add-foundation-auth-access · access · Grants and read scope are work
 
     await t.prisma.employee_roles.update({
       where: { id: trainer.assignmentId },
-      data: { revoked_at: new Date('2026-10-05T07:30:00Z') },
+      data: { revoked_at: new Date('2026-10-05T14:00:00+06:30') },
     });
     expect(ids((await get('branch-notes', hnin)).body)).toStrictEqual(notesAt(B3));
     // Her Manager assignment is unchanged.

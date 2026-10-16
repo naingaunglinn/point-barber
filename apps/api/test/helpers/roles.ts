@@ -5,7 +5,10 @@ import { ScopeType } from '@point/shared';
 import type { PrismaService } from '../../src/common/database/prisma.service.js';
 
 // A role with the given codes, assigned to one employee — the "the integration test creates the role
-// … and assigns it" steps of the access scenarios. The role name is made unique per call.
+// … and assigns it" steps of the access scenarios. The role name is made unique per call. Assigned
+// from 01/Sep/2026, like the seed, so a scenario may revoke it at any later moment (a revocation
+// never precedes the assignment — employee_roles_times_chk).
+const ASSIGNED_AT = new Date('2026-09-01T00:00:00+06:30');
 
 export interface Assignment {
   readonly roleId: string;
@@ -52,7 +55,7 @@ export async function assignRole(
       employee_id: options.employeeId,
       role_id: roleId,
       scope_type: options.scope,
-      assigned_at: new Date(),
+      assigned_at: ASSIGNED_AT,
     },
   });
   if (options.scope === ScopeType.BRANCHES) {
