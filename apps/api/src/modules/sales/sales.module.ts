@@ -13,6 +13,7 @@ import { SalesFinish } from './finish/sales-finish.js';
 import { SaleLines } from './lines/sale-lines.js';
 import { Sales } from './lines/sales.js';
 import { Payments } from './payments/payments.js';
+import { ReceiptFiles } from './receipts/receipt-files.js';
 import { VisitsRegistry } from './ports/visits-registry.js';
 import { PaymentMethodsRepository } from './repositories/payment-methods.repository.js';
 import { PaymentsRepository } from './repositories/payments.repository.js';
@@ -51,6 +52,7 @@ import { SaleView } from './view/sale-view.js';
     Payments,
     ReceiptNumbers,
     SalesFinish,
+    ReceiptFiles,
   ],
   exports: [PaymentMethodSeed, VisitsRegistry, Sales, SaleLines, SaleView, Payments, SalesFinish],
 })

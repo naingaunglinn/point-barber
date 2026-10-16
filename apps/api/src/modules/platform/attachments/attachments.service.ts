@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { businessDateOf } from '@point/shared';
+
 import { Clock } from '../../../common/clock/clock.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
@@ -14,6 +16,8 @@ import {
 // read the people tables.
 
 export interface GeneratedFile {
+  /** From newGeneratedKey — the id inside the storage key. */
+  readonly id: string;
   readonly company_id: string;
   /** `sales` or `refunds` for a receipt. */
   readonly entity_type: string;
@@ -22,7 +26,7 @@ export interface GeneratedFile {
   readonly file_name: string;
   readonly mime_type: string;
   readonly size_bytes: number;
-  /** The key the object was stored under (StorageService.put). */
+  /** The key the object was stored under (StorageService.put) — from newGeneratedKey. */
   readonly storage_key: string;
   readonly uploaded_by_user_id: string;
 }
@@ -36,10 +40,20 @@ export class Attachments {
     private readonly clock: Clock,
   ) {}
 
+  /**
+   * A new attachment id and the key to store its object under before the row exists:
+   * `att/<yyyy>/<mm>/<id>/original.<ext>` (ADR-014), the month in Myanmar Time.
+   */
+  newGeneratedKey(ext: string): { id: string; storage_key: string } {
+    const now = this.clock.now();
+    const id = uuidV7(now.getTime());
+    const [year, month] = businessDateOf(now).split('-');
+    return { id, storage_key: `att/${year ?? ''}/${month ?? ''}/${id}/original.${ext}` };
+  }
+
   /** One row for an object already in storage, inside the caller's transaction. */
   storeGenerated(tx: Tx, file: GeneratedFile): Promise<AttachmentRow> {
-    const now = this.clock.now();
-    return this.repository.insert(tx, { ...file, id: uuidV7(now.getTime()), uploaded_at: now });
+    return this.repository.insert(tx, { ...file, uploaded_at: this.clock.now() });
   }
 
   /** The live rows of an entity (PDF before PNG); inside a transaction, through it. */

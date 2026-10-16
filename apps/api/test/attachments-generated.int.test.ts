@@ -33,6 +33,7 @@ beforeAll(async () => {
 afterAll(() => t.close());
 
 const file = (saleId: string, ext: 'pdf' | 'png') => ({
+  ...attachments.newGeneratedKey(ext),
   company_id: companyId,
   entity_type: 'sales' as const,
   entity_id: saleId,
@@ -40,7 +41,6 @@ const file = (saleId: string, ext: 'pdf' | 'png') => ({
   file_name: `B3-2026-OCT-00001.${ext}`,
   mime_type: ext === 'pdf' ? 'application/pdf' : 'image/png',
   size_bytes: ext === 'pdf' ? 18_204 : 9_310,
-  storage_key: `att/2026/10/${randomUUID()}/original.${ext}`,
   uploaded_by_user_id: userId,
 });
 

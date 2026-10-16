@@ -1,3 +1,4 @@
+import type { PaperWidthMm } from './paper.js';
 import type { RenderPriority } from './render-queue.js';
 
 // One server-side renderer of documents (ADR-013): an HTML string from the templates of
@@ -5,8 +6,11 @@ import type { RenderPriority } from './render-queue.js';
 // printer's width (58 mm → 384 px, 80 mm → 576 px). No render runs inside a database transaction.
 
 export interface PdfPage {
-  /** The paper width; the height follows the content. */
-  readonly widthMm: number;
+  /**
+   * The paper width: the page is this wide and shows the layout of the paper's printer
+   * (PRINTER_WIDTH_PX), scaled to fit; the height follows the content.
+   */
+  readonly widthMm: PaperWidthMm;
 }
 
 export abstract class DocumentRenderer {

@@ -5,6 +5,7 @@ import sharp from 'sharp';
 
 import { LOGGER } from '../../../common/logging/logger.js';
 import { DocumentRenderer, type PdfPage } from './document-renderer.js';
+import { PRINTER_WIDTH_PX } from './paper.js';
 import { type RenderPriority, RenderQueue } from './render-queue.js';
 
 // The DocumentRenderer on headless Chromium (ADR-013 decisions 1, 7 · add-walkin-visit-checkout design
@@ -34,14 +35,18 @@ export class ChromiumDocumentRenderer extends DocumentRenderer implements OnAppl
     page: PdfPage,
     priority: RenderPriority = 'background',
   ): Promise<Buffer> {
-    const widthPx = Math.round(page.widthMm * CSS_PX_PER_MM);
-    return this.render(priority, widthPx, async (tab) => {
+    // Laid out at the printer's dots like the PNG, then scaled to the paper width (Chromium lays a
+    // page out at its width divided by the scale).
+    const layoutPx = PRINTER_WIDTH_PX[page.widthMm];
+    const scale = (page.widthMm * CSS_PX_PER_MM) / layoutPx;
+    return this.render(priority, layoutPx, async (tab) => {
       await this.load(tab, html);
       // A string expression: the API is compiled without the DOM library.
       const heightPx = Number(await tab.evaluate('document.documentElement.scrollHeight'));
       return tab.pdf({
         width: `${page.widthMm}mm`,
-        height: `${heightPx}px`,
+        height: `${Math.ceil(heightPx * scale)}px`,
+        scale,
         printBackground: true,
         margin: { top: '0', right: '0', bottom: '0', left: '0' },
         pageRanges: '1',

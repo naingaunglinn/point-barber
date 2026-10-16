@@ -58,6 +58,28 @@ describe('ChromiumDocumentRenderer (ADR-013)', () => {
     expect(Math.abs((widthPt * 25.4) / 72 - 58)).toBeLessThan(0.5);
   }, 30_000);
 
+  it('the PDF shows the layout of the 384 px print: a line that fits 384 px stays one line', async () => {
+    // At 22 px this line is about 330 px wide: one line at 384 px, two at the 219 px of 58 mm.
+    const line = 'Haircut 1 x 10,000 = 10,000';
+    const pdf = await renderer.renderPdf(page(`<p style="margin:0">${line}</p>`), { widthMm: 58 });
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(pdf) }).promise;
+    const items = (await (await doc.getPage(1)).getTextContent()).items.filter(
+      (item) => 'str' in item && item.str.trim() !== '',
+    );
+    const rows = new Set(items.map((item) => ('transform' in item ? item.transform[5] : null)));
+    expect(rows.size).toBe(1);
+  }, 30_000);
+
+  it('a long receipt stays on one page', async () => {
+    const lines = Array.from({ length: 80 }, (_, i) => `<p>Line ${i + 1}</p>`).join('');
+    const pdf = await renderer.renderPdf(page(lines), { widthMm: 58 });
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(pdf) }).promise;
+    expect(doc.numPages).toBe(1);
+    expect((await pdfText(pdf)).text).toContain('Line 80');
+  }, 30_000);
+
   it('an 80 mm PDF for the wide printer', async () => {
     const pdf = await renderer.renderPdf(page('<p>Receipt</p>'), { widthMm: 80 });
     const { widthPt } = await pdfText(pdf);

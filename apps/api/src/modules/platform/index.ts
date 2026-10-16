@@ -11,6 +11,7 @@ export { Audited, type AuditedOptions } from './audit/audited.js';
 export { CodeTables, SYNC_CODE_TABLES } from './code-tables/code-tables.js';
 export { DocumentRenderer, type PdfPage } from './documents/document-renderer.js';
 export { InMemoryDocumentRenderer } from './documents/in-memory-renderer.js';
+export { type PaperWidthMm, PRINTER_WIDTH_PX } from './documents/paper.js';
 export type { RenderPriority } from './documents/render-queue.js';
 export { Idempotency, type IdempotentSpec } from './idempotency/idempotency.service.js';
 export { Idempotent, IdempotencyKey } from './idempotency/idempotent.js';

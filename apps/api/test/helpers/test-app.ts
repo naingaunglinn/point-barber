@@ -69,6 +69,8 @@ export interface TestAppOptions {
   readonly databaseUrl?: string;
   /** JOBS_IN_API for this application: run the job workers (off by default in test:int). */
   readonly jobs?: boolean;
+  /** Providers replaced by a value — a fake of a port (CG-ARCH-08), e.g. storage or the renderer. */
+  readonly overrides?: readonly { readonly provide: unknown; readonly useValue: unknown }[];
 }
 
 /** The real application (guards, pipes, filter, middleware) with the fixture endpoints added. */
@@ -93,6 +95,8 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
     builder = builder.overrideProvider(Clock).useValue(new FixedClock(options.now));
   if (options.probe !== undefined)
     builder = builder.overrideProvider(DatabaseProbe).useValue(options.probe);
+  for (const { provide, useValue } of options.overrides ?? [])
+    builder = builder.overrideProvider(provide).useValue(useValue);
   if (options.databaseUrl !== undefined || options.jobs !== undefined) {
     const { env } = loadAppConfig();
     const config: AppConfig = {
