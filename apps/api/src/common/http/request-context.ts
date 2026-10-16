@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
+import type { GrantSet, Scope } from '../access/grant-set.js';
+
 // The request context (design D6 · CG-OBS-02 · add-foundation-auth-access D1): the request id from
 // the start; the caller (user, session, employee) once the session guard has resolved it; the one
 // branch the access guard resolved; the client facts the audit and session rows record; the audit
@@ -27,6 +29,10 @@ export interface RequestContextData {
   audit?: AuditIntent;
   /** Set by Idempotency.run on a replay: the response is 200 with Idempotent-Replayed (D14). */
   idempotent_replayed?: boolean;
+  /** The caller's grants, built once per request by the access guard (D11); `/me` reuses them. */
+  grants?: GrantSet;
+  /** The scope a `@Staff()` or `@CanView(module)` list filters by (D11 · AccessContext.scope). */
+  access_scope?: Scope;
 }
 
 const storage = new AsyncLocalStorage<RequestContextData>();
