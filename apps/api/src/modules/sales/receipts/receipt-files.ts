@@ -61,6 +61,11 @@ export class ReceiptFiles {
     @Inject(LOGGER) private readonly log: Logger,
   ) {}
 
+  /** The stored set, or null before the first render. */
+  async stored(entity: ReceiptRenderData): Promise<ReceiptFileSet | null> {
+    return setOf(await this.attachments.findGenerated(entity.entity_type, entity.entity_id));
+  }
+
   /** The stored set; rendered and stored first when there is none (`document` is built only then). */
   async ensure(
     entity: ReceiptRenderData,

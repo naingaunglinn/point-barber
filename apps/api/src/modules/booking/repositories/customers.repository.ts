@@ -78,6 +78,16 @@ export class CustomersRepository {
     });
   }
 
+  async nameAndPhone(
+    db: Tx,
+    id: string,
+  ): Promise<{ name: string; phone_normalized: string } | null> {
+    return db.customers.findUnique({
+      where: { id },
+      select: { name: true, phone_normalized: true },
+    });
+  }
+
   async reactivate(tx: Tx, id: string, at: Date): Promise<void> {
     await tx.customers.update({
       where: { id },

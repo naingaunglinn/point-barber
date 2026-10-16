@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import {
   type CustomerLookupDto,
   CustomerStatus,
+  type E164,
   ErrorCode,
+  maskPhone,
   normalizeDigits,
   normalizePhone,
   toMmtIso,
@@ -150,6 +152,17 @@ export class Customers {
   ): Promise<ReadonlyMap<string, { id: string; name: string; phone: string }>> {
     const rows = await this.repository.summaries(db, [...new Set(ids)]);
     return new Map(rows.map((row) => [row.id, row]));
+  }
+
+  /** The customer as a receipt prints them (AD-RCPT-01 item 4): the name and the masked phone only. */
+  async forReceipt(
+    db: Tx,
+    id: string,
+  ): Promise<{ name: string; phone_masked: string | null } | null> {
+    const row = await this.repository.nameAndPhone(db, id);
+    return row === null
+      ? null
+      : { name: row.name, phone_masked: maskPhone(row.phone_normalized as E164) };
   }
 
   /**

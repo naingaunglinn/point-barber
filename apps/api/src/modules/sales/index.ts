@@ -17,3 +17,4 @@ export {
   ReceiptFiles,
   type ReceiptFileSet,
 } from './receipts/receipt-files.js';
+export { type ReceiptSource, ReceiptViews } from './receipts/receipt-views.js';

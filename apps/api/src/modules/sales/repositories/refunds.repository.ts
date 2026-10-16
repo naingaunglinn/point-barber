@@ -13,6 +13,15 @@ export interface RefundRow {
   readonly refunded_at: Date;
 }
 
+/** A refund as its receipt prints it (P4.RCP.02). */
+export interface RefundDetail extends RefundRow {
+  readonly sale_id: string;
+  readonly branch_id: string;
+  readonly external_reference: string | null;
+  readonly refunded_by_user_id: string;
+  readonly method: { readonly name_mm: string; readonly name_en: string | null };
+}
+
 @Injectable()
 export class RefundsRepository {
   async insert(
@@ -66,5 +75,26 @@ export class RefundsRepository {
         refunded_at: true,
       },
     });
+  }
+
+  async find(db: Tx, id: string): Promise<RefundDetail | null> {
+    const row = await db.refunds.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        kind: true,
+        amount: true,
+        refund_receipt_number: true,
+        refunded_at: true,
+        sale_id: true,
+        branch_id: true,
+        external_reference: true,
+        refunded_by_user_id: true,
+        payment_methods: { select: { name_mm: true, name_en: true } },
+      },
+    });
+    if (row === null) return null;
+    const { payment_methods: method, ...refund } = row;
+    return { ...refund, method };
   }
 }
