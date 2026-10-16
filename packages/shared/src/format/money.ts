@@ -19,6 +19,12 @@ export function groupDigits(amount: Mmk): string {
   return amount < 0n ? `-${grouped}` : grouped;
 }
 
+/** The unit word of a language and profile: `ကျပ်` in the Myanmar staff app, `Ks` everywhere else. */
+export function moneyUnit(locale: Locale, profile: MoneyProfile): string {
+  const words = FORMAT_WORDS[locale].unit;
+  return (profile === 'app' ? words.kyat : null) ?? words.ks;
+}
+
 /** `7000` in `my` / `app` → `7,000 ကျပ်`. Every component shows money only through this function. */
 export function formatMoney(
   amount: Mmk,
@@ -26,6 +32,5 @@ export function formatMoney(
 ): string {
   const number = groupDigits(amount);
   if (!unit) return number;
-  const words = FORMAT_WORDS[locale].unit;
-  return `${number} ${(profile === 'app' ? words.kyat : null) ?? words.ks}`;
+  return `${number} ${moneyUnit(locale, profile)}`;
 }

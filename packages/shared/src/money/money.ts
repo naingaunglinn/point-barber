@@ -63,3 +63,8 @@ export function multiplyMoney(amount: Mmk, quantity: number): Mmk {
 export function maxMoney(a: Mmk, b: Mmk): Mmk {
   return a >= b ? a : b;
 }
+
+/** The amount with the opposite sign — a deduction shown as `-1,000 Ks` (a receipt's discount line). */
+export function negateMoney(amount: Mmk): Mmk {
+  return -amount as Mmk;
+}

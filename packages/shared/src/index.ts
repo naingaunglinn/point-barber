@@ -3,6 +3,7 @@ export * from './constants/status.js';
 export * from './constants/time.js';
 export * from './errors/message-key.js';
 export * from './format/date-time.js';
+export * from './format/initials.js';
 export * from './format/money.js';
 export * from './format/percent-relative.js';
 export * from './format/quantity.js';

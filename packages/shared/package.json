@@ -23,7 +23,7 @@
     "build": "tsc -p tsconfig.build.json",
     "permissions:generate": "node scripts/generate-permissions.mjs",
     "typecheck": "tsc --noEmit",
-    "test:zones": "node scripts/test-zones.mjs"
+    "test:zones": "node ../../tools/test-zones.mjs packages/shared/src/time packages/shared/src/format"
   },
   "dependencies": {
     "@date-fns/tz": "1.5.0",

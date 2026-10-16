@@ -7,6 +7,7 @@ import {
   moneyFromWire,
   moneyToWire,
   multiplyMoney,
+  negateMoney,
   parseMoneyInput,
   subtractMoney,
   sumMoney,
@@ -122,5 +123,13 @@ describe('subtractMoney, multiplyMoney, maxMoney', () => {
     expectTypeOf(subtractMoney(ks(2), ks(1))).toEqualTypeOf<Mmk>();
     expectTypeOf(multiplyMoney(ks(2), 2)).toEqualTypeOf<Mmk>();
     expectTypeOf(maxMoney(ks(2), ks(1))).toEqualTypeOf<Mmk>();
+  });
+});
+
+describe('negateMoney', () => {
+  it('turns the 1,000 discount into -1,000 Ks and back', () => {
+    const discount = moneyFromWire(1000);
+    expect(formatMoney(negateMoney(discount), { locale: 'en', profile: 'app' })).toBe('-1,000 Ks');
+    expect(negateMoney(negateMoney(discount))).toBe(1000n);
   });
 });

@@ -5,9 +5,13 @@ import type { BusinessDate, Instant } from './time/instant.js';
 // wires each one has a drop-in type (add-shared-ui-components design: "Tables, endpoints").
 // Money members are Mmk: the API client converts each `_amount` integer with moneyFromWire.
 
-/** One receipt line (P4.RCP.01 `format=json` — `ReceiptLine`). */
+/**
+ * One receipt line (P4.RCP.01 `format=json` — `ReceiptLine`, API Part 4 v1.2): the line snapshot in
+ * both languages; the receipt shows the English one and falls back to the Myanmar one (AD-RCPT-01).
+ */
 export interface ReceiptLine {
-  readonly description: string;
+  readonly description_en: string | null;
+  readonly description_mm: string;
   readonly option?: string | null;
   readonly performer?: string | null;
   readonly quantity: number;
