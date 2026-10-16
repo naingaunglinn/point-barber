@@ -196,14 +196,16 @@ describe('task 4.14 — the group 4 scenarios on the real endpoints', () => {
   it('PATCH /v1/me: the CSRF scenarios', async () => {
     const aung = await t.signIn('E004');
     const patch = () => t.raw.patch(ME).set('Cookie', aung.cookie);
+    // Each request is built when it is sent: supertest closes its server after each one.
     const refused = [
-      patch().set('Origin', 'https://app.point.test'),
-      patch().set('X-Requested-With', 'XMLHttpRequest').set('Origin', 'https://app.point.test'),
-      patch().set('X-Requested-With', 'point-app').set('Origin', 'https://point.test'),
-      patch().set('X-Requested-With', 'point-app'),
+      () => patch().set('Origin', 'https://app.point.test'),
+      () =>
+        patch().set('X-Requested-With', 'XMLHttpRequest').set('Origin', 'https://app.point.test'),
+      () => patch().set('X-Requested-With', 'point-app').set('Origin', 'https://point.test'),
+      () => patch().set('X-Requested-With', 'point-app'),
     ];
     for (const request of refused) {
-      const res = await request.send({ ui_language: 2 });
+      const res = await request().send({ ui_language: 2 });
       expect(res.status).toBe(403);
       expect(res.body).toMatchObject({ code: 'csrf' });
     }

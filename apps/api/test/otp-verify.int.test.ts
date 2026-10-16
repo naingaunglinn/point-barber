@@ -199,7 +199,7 @@ describe('add-foundation-auth-access · auth · Five wrong codes in a row lock c
     expect(last?.body).toMatchObject({ code: 'otp_invalid' });
   });
 
-  it('10 parallel wrong codes: 5 invalid, 5 locked, one login.locked row, count 5 (task 5.5)', async () => {
+  it('10 parallel wrong codes: 5 wrong_code, 5 locked, one login.locked row, count 5 (task 5.5)', async () => {
     const code = await codeFor('htet@point.test', '2026-10-12T09:00:00');
     const locksBefore = (await rowsOf('login.locked', U.E006)).length;
     const failedBefore = (await rowsOf('login.failed', U.E006)).length;
@@ -207,13 +207,21 @@ describe('add-foundation-auth-access · auth · Five wrong codes in a row lock c
       Array.from({ length: 10 }, () => verify(t, 'htet@point.test', wrong(code))),
     );
     const codes = answers.map((res) => (res.body as { code: string }).code).sort();
+    // Four wrong codes answer otp_invalid; the fifth sets the lock and answers login_locked, like the
+    // five that meet the running lock.
     expect(codes).toStrictEqual([
-      ...Array(5).fill('login_locked'),
-      ...Array(5).fill('otp_invalid'),
+      ...Array(6).fill('login_locked'),
+      ...Array(4).fill('otp_invalid'),
     ]);
     expect((await userRow(U.E006)).failed_login_count).toBe(5);
     expect(await rowsOf('login.locked', U.E006)).toHaveLength(locksBefore + 1);
-    expect(await rowsOf('login.failed', U.E006)).toHaveLength(failedBefore + 10);
+    const failed = await rowsOf('login.failed', U.E006);
+    expect(failed).toHaveLength(failedBefore + 10);
+    const causes = failed
+      .slice(failedBefore)
+      .map((row) => (row.after_data as { cause: string }).cause)
+      .sort();
+    expect(causes).toStrictEqual([...Array(5).fill('locked'), ...Array(5).fill('wrong_code')]);
   });
 });
 
