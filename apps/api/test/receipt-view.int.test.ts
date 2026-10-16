@@ -118,7 +118,8 @@ describe('ReceiptView of a sale (task 9.9)', () => {
       ['Haircut', 1, 8000, 8000],
       ['Shave', 1, 3000, 3000],
     ]);
-    expect(view.payments).toStrictEqual([
+    // Both payments were recorded at the fixed clock's one instant, so their order is the ids'.
+    expect([...view.payments].sort((a, b) => a.amount - b.amount)).toStrictEqual([
       { method: 'Cash', amount: 5000, reference: null },
       { method: 'KBZPay', amount: 6000, reference: 'KBZ0001234567' },
     ]);
