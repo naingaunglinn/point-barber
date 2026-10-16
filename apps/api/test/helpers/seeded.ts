@@ -20,7 +20,7 @@ export interface SeededApp extends TestApp {
 
 export async function seededApp(
   now: Date | Clock,
-  options: Pick<TestAppOptions, 'overrides'> = {},
+  options: Pick<TestAppOptions, 'overrides' | 'jobs'> = {},
 ): Promise<SeededApp> {
   const db = await freshDatabase();
   const t = await startTestApp(

@@ -15,7 +15,7 @@ export { type PaperWidthMm, PRINTER_WIDTH_PX } from './documents/paper.js';
 export type { RenderPriority } from './documents/render-queue.js';
 export { Idempotency, type IdempotentSpec } from './idempotency/idempotency.service.js';
 export { Idempotent, IdempotencyKey } from './idempotency/idempotent.js';
-export { type JobHandler, Jobs } from './jobs/jobs.service.js';
+export { type JobAttempt, type JobHandler, Jobs } from './jobs/jobs.service.js';
 export { Mail } from './mail/mail.service.js';
 export { PlatformModule } from './platform.module.js';
 export { RateLimiter, type RateLimitResult } from './rate-limit/rate-limiter.js';

@@ -6,7 +6,7 @@ import { CashClosingModule } from '../cash-closing/index.js';
 import { CatalogModule } from '../catalog/index.js';
 import { PayrollModule } from '../payroll/index.js';
 import { PeopleModule } from '../people/index.js';
-import { CodeTables, PlatformModule } from '../platform/index.js';
+import { CodeTables, Jobs, PlatformModule } from '../platform/index.js';
 import { SalesCustomerActivity } from './customer-activity/sales-customer-activity.js';
 import { ReceiptNumbers } from './finish/receipt-numbers.js';
 import { SalesFinish } from './finish/sales-finish.js';
@@ -14,6 +14,8 @@ import { SaleLines } from './lines/sale-lines.js';
 import { Sales } from './lines/sales.js';
 import { Payments } from './payments/payments.js';
 import { ReceiptFiles } from './receipts/receipt-files.js';
+import { ReceiptRenderHandler } from './receipts/receipt-render.handler.js';
+import { RECEIPT_RENDER, type ReceiptRenderData } from './receipts/receipt-render.job.js';
 import { ReceiptViews } from './receipts/receipt-views.js';
 import { VisitsRegistry } from './ports/visits-registry.js';
 import { PaymentMethodsRepository } from './repositories/payment-methods.repository.js';
@@ -55,6 +57,7 @@ import { SaleView } from './view/sale-view.js';
     SalesFinish,
     ReceiptFiles,
     ReceiptViews,
+    ReceiptRenderHandler,
   ],
   exports: [PaymentMethodSeed, VisitsRegistry, Sales, SaleLines, SaleView, Payments, SalesFinish],
 })
@@ -65,6 +68,8 @@ export class SalesModule implements OnModuleInit {
     private readonly paymentMethods: PaymentMethodSeed,
     private readonly customers: Customers,
     private readonly customerActivity: SalesCustomerActivity,
+    private readonly jobs: Jobs,
+    private readonly receiptRender: ReceiptRenderHandler,
   ) {}
 
   onModuleInit(): void {
@@ -73,6 +78,12 @@ export class SalesModule implements OnModuleInit {
     // After people's 'base seed' (20), which creates the company row.
     this.codeTables.contribute('payment methods', 30, () =>
       this.runner.run((tx) => this.paymentMethods.ensure(tx)),
+    );
+    // One receipt at a time: the renderer draws one page at a time anyway (ADR-013 decision 7).
+    this.jobs.register<ReceiptRenderData>(
+      RECEIPT_RENDER,
+      (data, attempt) => this.receiptRender.handle(data, attempt),
+      { localConcurrency: 1 },
     );
   }
 }
