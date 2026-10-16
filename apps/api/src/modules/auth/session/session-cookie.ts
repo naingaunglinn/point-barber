@@ -29,3 +29,15 @@ export function readCookie(header: string | undefined, name: string): string | u
   }
   return undefined;
 }
+
+/** Sign-out clears the cookie: an empty value with `Max-Age=0` (P1.AUTH.05). */
+export function clearedSessionCookie(secure: boolean): string {
+  return [
+    `${SESSION_COOKIE}=`,
+    'Max-Age=0',
+    'Path=/',
+    'HttpOnly',
+    ...(secure ? ['Secure'] : []),
+    'SameSite=Lax',
+  ].join('; ');
+}

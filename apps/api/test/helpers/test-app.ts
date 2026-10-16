@@ -77,6 +77,8 @@ export interface TestAppOptions {
   readonly databaseUrl?: string;
   /** JOBS_IN_API for this application: run the job workers (off by default in test:int). */
   readonly jobs?: boolean;
+  /** Environment values replaced for this application, e.g. GOOGLE_ISSUER of the stub issuer. */
+  readonly env?: Partial<AppConfig['env']>;
   /** Providers replaced for this application, e.g. a closed MaintenanceGate. */
   readonly overrides?: readonly { readonly provide: unknown; readonly useValue: unknown }[];
 }
@@ -104,13 +106,18 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   for (const override of options.overrides ?? []) {
     builder = builder.overrideProvider(override.provide).useValue(override.useValue);
   }
-  if (options.databaseUrl !== undefined || options.jobs !== undefined) {
+  if (
+    options.databaseUrl !== undefined ||
+    options.jobs !== undefined ||
+    options.env !== undefined
+  ) {
     const { env } = loadAppConfig();
     const config: AppConfig = {
       env: {
         ...env,
         DATABASE_URL: options.databaseUrl ?? env.DATABASE_URL,
         JOBS_IN_API: options.jobs ?? env.JOBS_IN_API,
+        ...options.env,
       },
     };
     builder = builder.overrideProvider(AppConfig).useValue(config);

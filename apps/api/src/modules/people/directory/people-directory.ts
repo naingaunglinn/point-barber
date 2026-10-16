@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { todayMmt } from '@point/shared';
+import { type BranchSummary, todayMmt } from '@point/shared';
 
 import type { LoadedTarget } from '../../../common/access/resolvers.js';
 import { Clock } from '../../../common/clock/clock.js';
@@ -26,6 +26,21 @@ export class PeopleDirectory {
    */
   primaryBranchId(employeeId: string): Promise<string | null> {
     return this.repository.primaryBranchId(employeeId, todayMmt(this.clock.now()));
+  }
+
+  /** The employee of a user with the members `/me` shows; null when none exists. */
+  employeeProfile(userId: string) {
+    return this.repository.employeeProfile(userId);
+  }
+
+  /** Branches as `BranchSummary`, ordered by code; every branch when `ids` is undefined. */
+  branchSummaries(ids?: readonly string[]): Promise<BranchSummary[]> {
+    return this.repository.branchSummaries(ids);
+  }
+
+  /** `/me.assigned_branch_ids`: active today, ordered by effective_from, created_at, id. */
+  assignedBranchIds(employeeId: string): Promise<string[]> {
+    return this.repository.assignedBranchIds(employeeId, todayMmt(this.clock.now()));
   }
 
   /** The employee of a user (every staff user has one); null when none exists. */

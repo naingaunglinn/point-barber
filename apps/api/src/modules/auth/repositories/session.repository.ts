@@ -92,6 +92,14 @@ export class SessionRepository {
     };
   }
 
+  /** The members of `/me.session`. */
+  byId(id: string) {
+    return this.db.user_sessions.findUnique({
+      where: { id },
+      select: { id: true, device_label: true, created_at: true },
+    });
+  }
+
   /** The user's sessions that are not revoked. */
   async activeIdsOfUser(tx: Tx, userId: string): Promise<string[]> {
     const rows = await tx.user_sessions.findMany({
