@@ -16,14 +16,16 @@ import {
 import { type ReceiptFile, ReceiptReads } from '../src/modules/sales/index.js';
 import { checkout } from './helpers/checkout.js';
 import { type SeededApp, seededApp } from './helpers/seeded.js';
-import { KO_AUNG, KO_MIN } from './helpers/walkin.js';
+import { KO_AUNG, KO_HTET, KO_MIN } from './helpers/walkin.js';
 
 // add-walkin-visit-checkout tasks 9.13 / 9.14, the service behind the endpoints (P4.RCP.01 / .02 ·
 // D-PAY-06 · P4-RULE-18 · sales-checkout spec "The receipt is rendered once, stored, and identical on
 // every reopen"): the stored file streamed byte for byte, rendered and stored on the first read when the
 // job has not run, another width rendered and not stored, `format=json` built now, 409 for an OPEN sale,
-// 404 for no row. The endpoints, their access decorator and the read-scope 404 come with Dev 2's PR 2.
+// 404 for no row or a branch outside the caller's read scope (design D2: the endpoints are `@Staff()`). The
+// endpoints and their decorator come with Dev 2's PR 2.
 const { services, branches } = FIXTURE_IDS;
+const B3_SCOPE = KO_AUNG.scope;
 
 const storage = new InMemoryStorageService();
 const renderer = new InMemoryDocumentRenderer();
@@ -81,7 +83,7 @@ const rowsOf = (entityType: string, entityId: string) =>
 
 describe('Sale receipt (task 9.13)', () => {
   it('Scenario: Opened before the job ran — rendered, stored, and the PDF returned', async () => {
-    const pdf = await file(reads.ofSale(saleId, 'pdf'));
+    const pdf = await file(reads.ofSale(B3_SCOPE, saleId, 'pdf'));
     expect([pdf.mime_type, pdf.file_name, pdf.size_bytes]).toStrictEqual([
       'application/pdf',
       'B3-2026-OCT-00001.pdf',
@@ -92,39 +94,39 @@ describe('Sale receipt (task 9.13)', () => {
   });
 
   it('Scenario: Identical on reopen — the same bytes, nothing rendered again', async () => {
-    const first = await file(reads.ofSale(saleId, 'pdf'));
+    const first = await file(reads.ofSale(B3_SCOPE, saleId, 'pdf'));
     const calls = renderer.calls.length;
-    const again = await file(reads.ofSale(saleId, 'pdf'));
+    const again = await file(reads.ofSale(B3_SCOPE, saleId, 'pdf'));
     expect([sha(again.bytes), renderer.calls.length]).toStrictEqual([sha(first.bytes), calls]);
   });
 
   it('Scenario: PNG for the 58 mm printer — the stored image/png', async () => {
-    const png = await file(reads.ofSale(saleId, 'png', 58));
+    const png = await file(reads.ofSale(B3_SCOPE, saleId, 'png', 58));
     expect([png.mime_type, png.file_name]).toStrictEqual(['image/png', 'B3-2026-OCT-00001.png']);
     expect(png.bytes.toString()).toContain('384px');
   });
 
   it('another width: rendered now at 576 px, not stored', async () => {
-    const png = await file(reads.ofSale(saleId, 'png', 80));
+    const png = await file(reads.ofSale(B3_SCOPE, saleId, 'png', 80));
     expect(png.bytes.toString()).toContain('576px');
     expect(await rowsOf('sales', saleId)).toBe(2);
   });
 
   it('Scenario: Identical after the branch address changes — the stored file; json shows the new address', async () => {
-    const before = await file(reads.ofSale(saleId, 'pdf'));
+    const before = await file(reads.ofSale(B3_SCOPE, saleId, 'pdf'));
     await prisma.branches.update({
       where: { id: branches.B3 },
       data: { address_en: 'No. 9, Changed Road' },
     });
-    const after = await file(reads.ofSale(saleId, 'pdf'));
+    const after = await file(reads.ofSale(B3_SCOPE, saleId, 'pdf'));
     expect(sha(after.bytes)).toBe(sha(before.bytes));
-    const view = (await reads.ofSale(saleId, 'json')) as ReceiptViewDto;
+    const view = (await reads.ofSale(B3_SCOPE, saleId, 'json')) as ReceiptViewDto;
     expect(view.branch.address).toBe('No. 9, Changed Road');
     expect(view.pdf_attachment_id).not.toBeNull();
   });
 
   it('Scenario: Receipt of an open sale — 409 invalid_transition', async () => {
-    const error = await reads.ofSale(openId, 'pdf').catch((e: unknown) => e);
+    const error = await reads.ofSale(B3_SCOPE, openId, 'pdf').catch((e: unknown) => e);
     expect([(error as ProblemException).code, (error as ProblemException).status]).toStrictEqual([
       ErrorCode.INVALID_TRANSITION,
       409,
@@ -132,7 +134,7 @@ describe('Sale receipt (task 9.13)', () => {
   });
 
   it('no sale → 404 not_found', async () => {
-    const error = await reads.ofSale(randomUUID(), 'json').catch((e: unknown) => e);
+    const error = await reads.ofSale(B3_SCOPE, randomUUID(), 'json').catch((e: unknown) => e);
     expect([(error as ProblemException).code, (error as ProblemException).status]).toStrictEqual([
       ErrorCode.NOT_FOUND,
       404,
@@ -142,10 +144,10 @@ describe('Sale receipt (task 9.13)', () => {
 
 describe('Refund receipt (task 9.14)', () => {
   it('PDF stored under the refund; JSON of the change return', async () => {
-    const pdf = await file(reads.ofRefund(refundId, 'pdf'));
+    const pdf = await file(reads.ofRefund(B3_SCOPE, refundId, 'pdf'));
     expect(pdf.file_name).toBe('B3-RF-2026-OCT-00001.pdf');
     expect(await rowsOf('refunds', refundId)).toBe(2);
-    const view = (await reads.ofRefund(refundId, 'json')) as ReceiptViewDto;
+    const view = (await reads.ofRefund(B3_SCOPE, refundId, 'json')) as ReceiptViewDto;
     expect([view.kind, view.number, view.original_number, view.lines]).toStrictEqual([
       'refund',
       'B3-RF-2026-OCT-00001',
@@ -155,7 +157,35 @@ describe('Refund receipt (task 9.14)', () => {
   });
 
   it('no refund → 404 not_found', async () => {
-    const error = await reads.ofRefund(randomUUID(), 'pdf').catch((e: unknown) => e);
+    const error = await reads.ofRefund(B3_SCOPE, randomUUID(), 'pdf').catch((e: unknown) => e);
     expect((error as ProblemException).status).toBe(404);
+  });
+});
+
+describe('Read scope (design D2 — `@Staff()`, branch in read scope, else 404)', () => {
+  const notFound = async (pending: Promise<unknown>) => {
+    const error = await pending.catch((e: unknown) => e);
+    return [(error as ProblemException).code, (error as ProblemException).status];
+  };
+
+  it('Ko Htet (B1) → 404 for a B3 sale, a B3 refund, and a B3 sale that is still OPEN', async () => {
+    expect(await notFound(reads.ofSale(KO_HTET.scope, saleId, 'pdf'))).toStrictEqual([
+      ErrorCode.NOT_FOUND,
+      404,
+    ]);
+    expect(await notFound(reads.ofRefund(KO_HTET.scope, refundId, 'json'))).toStrictEqual([
+      ErrorCode.NOT_FOUND,
+      404,
+    ]);
+    // Not 409: another branch's sale is not found, whatever its state.
+    expect(await notFound(reads.ofSale(KO_HTET.scope, openId, 'json'))).toStrictEqual([
+      ErrorCode.NOT_FOUND,
+      404,
+    ]);
+  });
+
+  it('a company-scope caller reads every branch', async () => {
+    const view = (await reads.ofSale('all', saleId, 'json')) as ReceiptViewDto;
+    expect(view.number).toBe('B3-2026-OCT-00001');
   });
 });
