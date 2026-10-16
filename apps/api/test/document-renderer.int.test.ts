@@ -1,5 +1,8 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { type Server, createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
+
+import { type PaperWidthMm, PRINTER_WIDTH_PX, receiptBaseCss } from '@point/documents';
 
 import type { Browser } from 'playwright-core';
 import sharp from 'sharp';
@@ -130,4 +133,47 @@ describe('ChromiumDocumentRenderer (ADR-013)', () => {
     const png = await renderer.renderPng(page('<p>two</p>'), 384);
     expect((await sharp(png).metadata()).width).toBe(384);
   }, 30_000);
+});
+
+// Task 9.8 — golden images of Myanmar text (AD-RCPT-02 · ADR-013 decision 2): an item name with a kinzi
+// (အင်္ဂလိပ်) and a stacked consonant (မန္တလေး), shaped with the package fonts at both printer widths.
+// A wrong or missing font, or text drawn without shaping, changes far more than the tolerance allows
+// (a few edge pixels, for a different Linux font configuration). `UPDATE_GOLDEN=1` writes new images —
+// look at them before committing.
+const GOLDEN = new URL('./golden/', import.meta.url);
+const myanmar = (paper: PaperWidthMm) =>
+  `<!doctype html><html><head><meta charset="utf-8"><style>${receiptBaseCss(paper)}</style></head><body>` +
+  '<p>B3-2026-OCT-00002</p><p>အင်္ဂလိပ် ဆံပင်ညှပ် (မန္တလေး)</p><p>1 × 8,000 = 8,000</p>' +
+  '<p>မုတ်ဆိတ်ရိတ် ၁ × ၃,၀၀၀</p></body></html>';
+
+async function grey(png: Buffer) {
+  return sharp(png).greyscale().raw().toBuffer({ resolveWithObject: true });
+}
+
+describe('Golden images — Myanmar shaping (task 9.8)', () => {
+  it.each([58, 80] as const)(
+    '%i mm',
+    async (paper) => {
+      const png = await renderer.renderPng(myanmar(paper), PRINTER_WIDTH_PX[paper]);
+      const file = new URL(`myanmar-${paper}mm.png`, GOLDEN);
+      if (process.env.UPDATE_GOLDEN === '1' || !existsSync(file)) {
+        if (process.env.CI !== undefined)
+          throw new Error(`golden image ${file.pathname} is missing`);
+        mkdirSync(GOLDEN, { recursive: true });
+        writeFileSync(file, png);
+      }
+      const actual = await grey(png);
+      const expected = await grey(readFileSync(file));
+      expect([actual.info.width, actual.info.height]).toStrictEqual([
+        expected.info.width,
+        expected.info.height,
+      ]);
+      let differing = 0;
+      for (let i = 0; i < actual.data.length; i += 1) {
+        if (actual.data[i] !== expected.data[i]) differing += 1;
+      }
+      expect(differing / actual.data.length).toBeLessThanOrEqual(0.005);
+    },
+    30_000,
+  );
 });

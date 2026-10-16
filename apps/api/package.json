@@ -19,6 +19,7 @@
     "@nestjs/common": "12.1.2",
     "@nestjs/core": "12.1.2",
     "@nestjs/platform-express": "12.1.2",
+    "@point/documents": "workspace:*",
     "@point/i18n": "workspace:*",
     "@point/shared": "workspace:*",
     "@prisma/adapter-pg": "7.10.0",
