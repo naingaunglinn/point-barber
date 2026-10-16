@@ -31,6 +31,7 @@ const row = (
   revoked_at: null,
   permission_archived_at: null,
   role_archived_at: null,
+  role_status: 1,
   branch_ids: branchIds,
   ...extra,
 });
@@ -121,7 +122,7 @@ describe('GrantSet (task 4.5)', () => {
     expect(ids(grants.readScope)).toStrictEqual([B3]);
   });
 
-  it('an archived permission or an archived role contributes nothing', () => {
+  it('an archived permission, an archived role or an inactive role contributes nothing', () => {
     const grants = GrantSet.build(
       {
         assignments: [
@@ -131,6 +132,7 @@ describe('GrantSet (task 4.5)', () => {
           row('role.view', ScopeType.COMPANY, [], {
             role_archived_at: new Date('2026-10-01T00:00:00Z'),
           }),
+          row('role.assign', ScopeType.COMPANY, [], { role_status: 0 }),
         ],
         branches: [assigned(B3)],
       },
@@ -138,6 +140,7 @@ describe('GrantSet (task 4.5)', () => {
     );
     expect(grants.has('role.update')).toBe(false);
     expect(grants.has('role.view')).toBe(false);
+    expect(grants.has('role.assign')).toBe(false);
     expect(grants.readScope.all).toBe(false);
   });
 

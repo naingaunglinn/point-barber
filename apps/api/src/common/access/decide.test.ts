@@ -19,6 +19,7 @@ const row = (code: string, scope: number, branchIds: string[] = []): AssignmentR
   revoked_at: null,
   permission_archived_at: null,
   role_archived_at: null,
+  role_status: 1,
   branch_ids: branchIds,
 });
 const grantsOf = (...rows: AssignmentRow[]) =>

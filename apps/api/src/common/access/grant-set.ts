@@ -1,4 +1,4 @@
-import { ScopeType } from '@point/shared';
+import { RoleStatus, ScopeType } from '@point/shared';
 
 // The caller's grants and read scope (P1-RULE-05 · D-ROLE-03 / 04 / 05 · design D11), built on every
 // request from the rows the people module returns — nothing is cached between requests, so a changed
@@ -13,8 +13,13 @@ export interface AssignmentRow {
   readonly revoked_at: Date | null;
   /** permissions.archived_at — an archived permission contributes nothing. */
   readonly permission_archived_at: Date | null;
-  /** roles.archived_at — an archived role contributes nothing. */
+  /**
+   * roles.archived_at / roles.status — an archived or inactive role contributes nothing: P1-RULE-09
+   * refuses to archive a role in use, so such a row comes only from a race or a direct write, and
+   * archived means retired (D-DAT-05). Recorded as a reading in design D11.
+   */
   readonly role_archived_at: Date | null;
+  readonly role_status: number;
   /** employee_role_branches of the assignment (empty at company scope). */
   readonly branch_ids: readonly string[];
 }
@@ -72,7 +77,7 @@ export class GrantSet {
     const byCode = new Map<string, CodeGrant>();
     for (const row of rows.assignments) {
       if (row.revoked_at !== null || row.permission_archived_at !== null) continue;
-      if (row.role_archived_at !== null) continue;
+      if (row.role_archived_at !== null || row.role_status !== RoleStatus.ACTIVE) continue;
       const grant = byCode.get(row.code) ?? {
         module: row.module,
         company: false,

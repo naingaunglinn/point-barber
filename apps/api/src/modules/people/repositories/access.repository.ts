@@ -6,8 +6,8 @@ import { TransactionScope } from '../../../common/database/transaction-scope.js'
 
 // The rows the access guard builds a caller's grants from (P1-RULE-05 · design D11): one query over
 // employee_roles × role_permissions × employee_role_branches, and the employee's branch assignments.
-// Nothing is filtered here that GrantSet.build filters — a revoked assignment, an archived role or
-// permission, a branch assignment outside its dates — so the rule is in one place and unit-tested.
+// Nothing is filtered here that GrantSet.build filters — a revoked assignment, an archived or inactive
+// role, an archived permission, a branch assignment outside its dates — so the rule is in one place and unit-tested.
 
 interface AssignmentDbRow {
   readonly code: string;
@@ -16,6 +16,7 @@ interface AssignmentDbRow {
   readonly revoked_at: Date | null;
   readonly permission_archived_at: Date | null;
   readonly role_archived_at: Date | null;
+  readonly role_status: number;
   readonly branch_ids: string[] | null;
 }
 
@@ -37,6 +38,7 @@ export class AccessRepository {
     const rows = await this.db.$queryRaw<AssignmentDbRow[]>`
       SELECT p.code, p.module, er.scope_type, er.revoked_at,
              p.archived_at AS permission_archived_at, r.archived_at AS role_archived_at,
+             r.status AS role_status,
              (SELECT array_agg(erb.branch_id::text ORDER BY erb.branch_id)
                 FROM employee_role_branches erb
                WHERE erb.employee_role_id = er.id) AS branch_ids
