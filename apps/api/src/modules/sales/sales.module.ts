@@ -14,6 +14,7 @@ import { SaleLines } from './lines/sale-lines.js';
 import { Sales } from './lines/sales.js';
 import { Payments } from './payments/payments.js';
 import { ReceiptFiles } from './receipts/receipt-files.js';
+import { ReceiptReads } from './receipts/receipt-reads.js';
 import { ReceiptRenderHandler } from './receipts/receipt-render.handler.js';
 import { RECEIPT_RENDER, type ReceiptRenderData } from './receipts/receipt-render.job.js';
 import { ReceiptViews } from './receipts/receipt-views.js';
@@ -58,6 +59,7 @@ import { SaleView } from './view/sale-view.js';
     ReceiptFiles,
     ReceiptViews,
     ReceiptRenderHandler,
+    ReceiptReads,
   ],
   exports: [PaymentMethodSeed, VisitsRegistry, Sales, SaleLines, SaleView, Payments, SalesFinish],
 })

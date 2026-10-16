@@ -18,3 +18,4 @@ export {
   type ReceiptFileSet,
 } from './receipts/receipt-files.js';
 export { type ReceiptSource, ReceiptViews } from './receipts/receipt-views.js';
+export { type ReceiptFile, type ReceiptFormat, ReceiptReads } from './receipts/receipt-reads.js';
