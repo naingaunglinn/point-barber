@@ -120,12 +120,15 @@ export class ChromiumDocumentRenderer extends DocumentRenderer implements OnAppl
   }
 
   private launch(): Promise<Browser> {
-    this.browser ??= chromium.launch({ headless: true }).then((browser) => {
-      browser.on('disconnected', () => {
-        this.browser = undefined;
+    // A container's /dev/shm is 64 MB by default: Chromium keeps its shared memory in /tmp instead.
+    this.browser ??= chromium
+      .launch({ headless: true, args: ['--disable-dev-shm-usage'] })
+      .then((browser) => {
+        browser.on('disconnected', () => {
+          this.browser = undefined;
+        });
+        return browser;
       });
-      return browser;
-    });
     return this.browser;
   }
 
