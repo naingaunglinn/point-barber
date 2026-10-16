@@ -1,6 +1,24 @@
+// Only this test reads files (db/source), so only it sees Node; the package itself does no I/O
+// (CG-ARCH-07).
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
-import { STATUS_BY_TABLE } from './status.js';
+import {
+  AuditSource,
+  BranchStatus,
+  EmployeeStatus,
+  LoginMethod,
+  RevokeReason,
+  RoleStatus,
+  STATUS_BY_TABLE,
+  ScopeType,
+  UiLanguage,
+  UserStatus,
+} from './status.js';
 
 // D-DB-03 · API-DATA-04 · AD-IMPL-04: every status code of the 19 tables of AD-CMP-05 has a named
 // constant. The values are the DBML notes of point-sdd/docs/db (parts 1–8); this test pins each one.
@@ -37,5 +55,44 @@ describe('status constants', () => {
       const values = Object.values(codes);
       expect(new Set(values).size).toBe(values.length);
     }
+  });
+});
+
+// The sets of add-foundation-auth-access equal the CHECK lists of their columns in the locked
+// constraint files (D-DB-03 · AD-IMPL-04) — task 1.2.
+const source = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../db/source');
+const files = [
+  'part1-foundation-v3-constraints.sql',
+  'part1b-login-v1-constraints.sql',
+  'part8-system-website-v1-constraints.sql',
+].map((name) => readFileSync(join(source, name), 'utf8'));
+
+/** The values of `CHECK (<column> IN (…))` (or `<column> IS NULL OR <column> IN (…)`). */
+function checkList(table: string, column: string): number[] {
+  const pattern = new RegExp(
+    `ALTER TABLE ${table}\\s+ADD CONSTRAINT \\w+\\s+CHECK \\((?:${column} IS NULL OR )?${column} IN \\(([0-9, ]+)\\)\\)`,
+  );
+  for (const sql of files) {
+    const match = pattern.exec(sql);
+    if (match?.[1] !== undefined) return match[1].split(',').map((value) => Number(value.trim()));
+  }
+  throw new Error(`no CHECK list for ${table}.${column}`);
+}
+
+const sorted = (set: Record<string, number>) => Object.values(set).sort((a, b) => a - b);
+
+describe('status constants = the CHECK lists of db/source', () => {
+  it.each([
+    ['UserStatus', UserStatus, 'users', 'status'],
+    ['EmployeeStatus', EmployeeStatus, 'employees', 'status'],
+    ['RoleStatus', RoleStatus, 'roles', 'status'],
+    ['BranchStatus', BranchStatus, 'branches', 'status'],
+    ['ScopeType', ScopeType, 'employee_roles', 'scope_type'],
+    ['LoginMethod', LoginMethod, 'user_sessions', 'login_method'],
+    ['RevokeReason', RevokeReason, 'user_sessions', 'revoke_reason'],
+    ['AuditSource', AuditSource, 'audit_events', 'source'],
+    ['UiLanguage', UiLanguage, 'users', 'ui_language'],
+  ] as const)('%s = %s.%s', (_, set, table, column) => {
+    expect(sorted(set)).toStrictEqual(checkList(table, column));
   });
 });

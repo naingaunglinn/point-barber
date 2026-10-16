@@ -3,11 +3,13 @@ import type { Logger } from 'pino';
 
 import { Clock, SystemClock } from './clock/clock.js';
 import { AppConfig, loadAppConfig } from './config/config.js';
+import { DomainEvents } from './events/domain-events.js';
+import { BackgroundTasks } from './http/background-tasks.js';
 import { ProblemFilter } from './http/problem.filter.js';
 import { LOGGER, createLogger } from './logging/logger.js';
 
 // Cross-cutting providers every module may use (design D1 `src/common`): configuration, clock,
-// logger and the problem filter.
+// logger, the problem filter, background tasks and in-process events.
 @Global()
 @Module({
   providers: [
@@ -19,7 +21,9 @@ import { LOGGER, createLogger } from './logging/logger.js';
       useFactory: (config: AppConfig): Logger => createLogger(config.env.LOG_LEVEL),
     },
     ProblemFilter,
+    BackgroundTasks,
+    DomainEvents,
   ],
-  exports: [AppConfig, Clock, LOGGER, ProblemFilter],
+  exports: [AppConfig, Clock, LOGGER, ProblemFilter, BackgroundTasks, DomainEvents],
 })
 export class CoreModule {}

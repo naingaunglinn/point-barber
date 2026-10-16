@@ -13,5 +13,18 @@
   "forbidden": "You don't have access to this page. Ask an admin if you need it.",
   "not_found": "This item doesn't exist or was archived.",
   "internal_error": "Something went wrong on the server. Try again; if it happens again, give the error ID to an admin.",
-  "unknown": "Something went wrong. Try again."
+  "unknown": "Something went wrong. Try again.",
+  "unauthenticated": "Please sign in.",
+  "session_revoked": "You have been signed out.",
+  "otp_invalid": "That code is not right or has expired.",
+  "login_locked": "Too many attempts. Try again at {time}.",
+  "out_of_scope": "This is outside your branches.",
+  "company_scope_required": "Only someone with company-wide access can change this.",
+  "csrf": "The request was blocked. Reload the page and try again.",
+  "rate_limited": "Please wait {retry_after} seconds and try again.",
+  "idempotency_key_required": "Something went wrong. Try again.",
+  "idempotency_in_progress": "Still saving. Please wait.",
+  "idempotency_mismatch": "This was already saved with different details. Reload and check.",
+  "email_invalid": "Enter a valid email address.",
+  "otp_format": "Enter the 8-digit code."
 }

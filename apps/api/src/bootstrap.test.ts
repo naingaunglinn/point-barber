@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { configureApp } from './bootstrap.js';
 import { Clock, SystemClock } from './common/clock/clock.js';
+import { AppConfig } from './common/config/config.js';
 import { ProblemFilter } from './common/http/problem.filter.js';
 import { LOGGER, createLogger } from './common/logging/logger.js';
 
@@ -25,6 +26,7 @@ function fakeApp(): { app: NestExpressApplication; recorded: Recorded } {
     [LOGGER, createLogger('silent')],
     [Clock, new SystemClock()],
     [ProblemFilter, {}],
+    [AppConfig, { env: { TRUSTED_PROXY_HOPS: 1 } }],
   ]);
   const app = new Proxy(
     {},

@@ -4,6 +4,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import type { Logger } from 'pino';
 
 import { Clock } from './common/clock/clock.js';
+import { AppConfig } from './common/config/config.js';
 import { ProblemException } from './common/http/problem.exception.js';
 import { ProblemFilter } from './common/http/problem.filter.js';
 import { requestIdMiddleware } from './common/http/request-id.middleware.js';
@@ -18,10 +19,12 @@ export function configureApp(app: NestExpressApplication): void {
   const log = app.get<Logger>(LOGGER);
   app.useLogger(new PinoNestLogger(log));
   app.disable('x-powered-by');
-  // The client address the API uses is the one Caddy saw — exactly one proxy hop (design D5 / D12).
-  app.set('trust proxy', 1);
+  // The client address the API uses is the one Caddy saw — TRUSTED_PROXY_HOPS proxy hops, 1 for
+  // Caddy (design D5 / D12 · add-foundation-auth-access D5). Express and clientIp() use the same count.
+  const trustedProxyHops = app.get(AppConfig).env.TRUSTED_PROXY_HOPS;
+  app.set('trust proxy', trustedProxyHops);
 
-  app.use(requestIdMiddleware(app.get(Clock)));
+  app.use(requestIdMiddleware(app.get(Clock), trustedProxyHops));
   app.use(requestLogMiddleware(log));
   app.use(express.json({ limit: JSON_BODY_LIMIT, type: 'application/json' }));
   // No CORS and no endpoint defines OPTIONS: every preflight is an unknown route (design D5). No

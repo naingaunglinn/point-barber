@@ -27,6 +27,8 @@ After a release is tagged on `main`, and CI was green for the merged commit.
 4. `docker compose run --rm migrate`. Migrations run before the new code, and they are additive, so
    the running release keeps working on the new schema.
 5. `docker compose up -d`. Compose recreates only the services whose image or settings changed.
+6. Only on an environment that has no company admin yet (the first release with sign-in): create it
+   once with `admin-create`, as `install.md` step 6 describes.
 
 ## Check
 

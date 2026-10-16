@@ -12,6 +12,24 @@ export const ErrorCode = {
   REASON_REQUIRED: 'reason_required',
   FILE_TOO_LARGE: 'file_too_large',
   FILE_TYPE_NOT_ALLOWED: 'file_type_not_allowed',
+  // add-foundation-auth-access — API-ERR-02 · Part 1 §11b · D4 · D11 (task 1.3).
+  UNAUTHENTICATED: 'unauthenticated',
+  SESSION_REVOKED: 'session_revoked',
+  OTP_INVALID: 'otp_invalid',
+  LOGIN_LOCKED: 'login_locked',
+  // Declared for the parts whose endpoint text names it (API-PERM-03 v1.6); no endpoint of
+  // add-foundation-auth-access returns it.
+  OUT_OF_SCOPE: 'out_of_scope',
+  COMPANY_SCOPE_REQUIRED: 'company_scope_required',
+  CSRF: 'csrf',
+  RATE_LIMITED: 'rate_limited',
+  IDEMPOTENCY_KEY_REQUIRED: 'idempotency_key_required',
+  IDEMPOTENCY_IN_PROGRESS: 'idempotency_in_progress',
+  IDEMPOTENCY_MISMATCH: 'idempotency_mismatch',
+  // Catalogue field codes inside `errors[]`, named by a schema with catalogueCode() (API-ERR-03 v1.6
+  // · Part 1 v1.6 §11b · D4).
+  EMAIL_INVALID: 'email_invalid',
+  OTP_FORMAT: 'otp_format',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

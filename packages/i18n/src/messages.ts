@@ -1,10 +1,12 @@
 import type { Locale } from './config';
+import authEn from '../messages/en/auth.json';
 import commonEn from '../messages/en/common.json';
 import devuiEn from '../messages/en/devui.json';
 import errorEn from '../messages/en/error.json';
 import reasonEn from '../messages/en/reason.json';
 import receiptEn from '../messages/en/receipt.json';
 import statusEn from '../messages/en/status.json';
+import authMy from '../messages/my/auth.json';
 import commonMy from '../messages/my/common.json';
 import devuiMy from '../messages/my/devui.json';
 import errorMy from '../messages/my/error.json';
@@ -22,6 +24,7 @@ const MESSAGES = {
     reason: reasonEn,
     receipt: receiptEn,
     devui: devuiEn,
+    auth: authEn,
   },
   my: {
     common: commonMy,
@@ -30,6 +33,7 @@ const MESSAGES = {
     reason: reasonMy,
     receipt: receiptMy,
     devui: devuiMy,
+    auth: authMy,
   },
 } as const;
 

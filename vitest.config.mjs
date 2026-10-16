@@ -18,7 +18,7 @@ export default defineConfig({
       {
         test: {
           name: 'tooling',
-          include: ['tools/**/*.test.mjs', 'db/scripts/**/*.test.mjs'],
+          include: ['tools/**/*.test.mjs', 'db/scripts/**/*.test.mjs', 'db/seed/**/*.test.mjs'],
           // A folder under tools/ with its own package.json is its own project below.
           exclude: [
             '**/node_modules/**',
