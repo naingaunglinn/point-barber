@@ -119,4 +119,22 @@ describe('ServicePicker (task 11.4)', () => {
     picker({ quote: undefined });
     expect(screen.getByTestId(`pick-${SERVICES[0]?.id}`).textContent).toBe('Haircut30 min');
   });
+
+  it('after COMPLETE: "Why was this added?" first, then the pick carries added_reason', async () => {
+    const onPick = picker({ askReason: true });
+    fireEvent.click(screen.getByTestId(`pick-${SERVICES[1]?.id}`));
+    expect(onPick).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog.textContent).toContain('Why was this added?');
+    fireEvent.change(within(dialog).getByRole('textbox'), {
+      target: { value: 'Customer asked for a shave at the counter' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+    await vi.waitFor(() =>
+      expect(onPick).toHaveBeenCalledWith(
+        SERVICES[1]?.id,
+        'Customer asked for a shave at the counter',
+      ),
+    );
+  });
 });

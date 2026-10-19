@@ -1,6 +1,7 @@
 {
   "arrival": {
-    "walkIn": "ကြိုမမှာဘဲ လာသူ"
+    "walkIn": "ကြိုမမှာဘဲ လာသူ",
+    "title": "ဧည့်သည်အသစ်"
   },
   "start": {
     "title": "ဝန်ဆောင်မှု စမယ်",
@@ -74,17 +75,42 @@
     "notSaved": "မသိမ်းရသေးပါ။ ထပ်ကြိုးစားပါ။"
   },
   "visit": {
-    "started": "စတဲ့အချိန် {time} · {elapsed}"
+    "started": "စတဲ့အချိန် {time} · {elapsed}",
+    "done": "ဝန်ဆောင်မှု ပြီးပြီ · ငွေရှင်းမယ်",
+    "incomplete": {
+      "title": "မပြီးဆုံးဟု မှတ်မယ်",
+      "consequence": "Sale ကို ပယ်ဖျက်မယ် — ဝင်ငွေ မရှိ၊ commission မရှိပါ။",
+      "confirm": "မပြီးဆုံးဟု မှတ်မယ်"
+    }
   },
   "lines": {
     "remove": "ဖယ်မယ်",
     "removeTitle": "ဝန်ဆောင်မှု ဖယ်မယ်",
-    "removeConsequence": "{service} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေ မတောင်းတော့ပါ။"
+    "removeConsequence": "{service} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေ မတောင်းတော့ပါ။",
+    "addedTitle": "ဘာကြောင့် ထပ်ထည့်တာလဲ?",
+    "addedConsequence": "ဝန်ဆောင်မှု ပြီးမှ {service} ကို ထပ်ထည့်တာပါ။",
+    "addedConfirm": "ထည့်မယ်"
   },
   "picker": {
     "title": "ဝန်ဆောင်မှု ထည့်မယ်",
     "search": "ဝန်ဆောင်မှု ရှာမယ်",
     "empty": "ဝန်ဆောင်မှု မတွေ့ပါ",
     "detail": "{duration} · {price}"
+  },
+  "help": {
+    "offline": {
+      "title": "အင်တာနက် မရှိပါ",
+      "body": "ဝန်ဆောင်မှုကို စာရွက်ပေါ်မှာ ရေးထားပါ — အချိန်၊ ဝန်ဆောင်မှု နဲ့ ငွေပေးချေမှု။ အင်တာနက် ပြန်ရလာရင် Late entry နဲ့ ထည့်ပါ။"
+    }
+  },
+  "warning": {
+    "notEligible": "မှတ်ပြီးပါပြီ — ဒီဆံပင်ညှပ်သူကို ဒီဆိုင်ခွဲမှာ ဒီဝန်ဆောင်မှုအတွက် သတ်မှတ်မထားပါ။"
+  },
+  "finished": {
+    "locked": "{datetime} မှာ {name} က ပြီးဆုံးခဲ့",
+    "correction": "Refund / Adjustment သုံးပါ"
+  },
+  "cancelled": {
+    "locked": "{datetime} မှာ {name} က မပြီးဆုံးဟု မှတ်ခဲ့: {reason}"
   }
 }

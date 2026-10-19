@@ -10,7 +10,7 @@ import {
   localized,
   moneyFromWire,
 } from '@point/shared';
-import { Button, SearchInput, Sheet, useFormat } from '@point/ui';
+import { Button, ReasonDialog, SearchInput, Sheet, useFormat } from '@point/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -19,7 +19,8 @@ import { useState } from 'react';
 // categories in their order — no "Frequent here" section (no usage ranking in V1). Only services sold at
 // the branch appear; each row shows the name, the duration and the price the line will record, from the
 // quote for this performer on the visit's business date (P4-RULE-05). Only simple services are offered in
-// this change: a line takes no variant yet (the option picker comes with variants).
+// this change: a line takes no variant yet (the option picker comes with variants). A service added after
+// COMPLETE asks "Why was this added?" first and sends it as `added_reason` (task 11.5).
 
 export interface ServicePickerProps {
   readonly open: boolean;
@@ -32,7 +33,9 @@ export interface ServicePickerProps {
   readonly quote: readonly QuoteItemDto[] | undefined;
   /** True while the add request runs. */
   readonly pending: boolean;
-  readonly onPick: (serviceId: string) => void | Promise<unknown>;
+  /** The visit is COMPLETED: an added service needs `added_reason` (P4.SAL.04). */
+  readonly askReason?: boolean;
+  readonly onPick: (serviceId: string, addedReason?: string) => void | Promise<unknown>;
 }
 
 const matches = (service: ServiceListItemDto, text: string) => {
@@ -51,12 +54,15 @@ export function ServicePicker({
   categories,
   quote,
   pending,
+  askReason = false,
   onPick,
 }: ServicePickerProps) {
   const t = useTranslations('pos.picker');
+  const tLines = useTranslations('pos.lines');
   const locale = useLocale() as 'my' | 'en';
   const format = useFormat('ServicePicker');
   const [search, setSearch] = useState('');
+  const [asking, setAsking] = useState<ServiceListItemDto | null>(null);
   const simple = (services ?? []).filter(
     (service) => service.pricing_mode === ServicePricingMode.SIMPLE && matches(service, search),
   );
@@ -92,7 +98,7 @@ export function ServicePicker({
                   key={service.id}
                   fullWidth
                   loading={pending}
-                  onClick={() => onPick(service.id)}
+                  onClick={() => (askReason ? setAsking(service) : onPick(service.id))}
                   data-testid={`pick-${service.id}`}
                 >
                   <span className="flex w-full items-center justify-between gap-2">
@@ -112,6 +118,20 @@ export function ServicePicker({
           </section>
         ))}
       </div>
+      {asking !== null && (
+        <ReasonDialog
+          open
+          title={tLines('addedTitle')}
+          consequence={tLines('addedConsequence', { service: localized(asking, 'name', locale) })}
+          source={{ type: 'free' }}
+          confirmLabel={tLines('addedConfirm')}
+          onCancel={() => setAsking(null)}
+          onConfirm={async (result) => {
+            await onPick(asking.id, result.note ?? '');
+            setAsking(null);
+          }}
+        />
+      )}
     </Sheet>
   );
 }

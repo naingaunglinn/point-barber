@@ -1,6 +1,7 @@
 {
   "arrival": {
-    "walkIn": "Walk-in"
+    "walkIn": "Walk-in",
+    "title": "New customer"
   },
   "start": {
     "title": "Start a visit",
@@ -74,17 +75,42 @@
     "notSaved": "It wasn't saved. Try again."
   },
   "visit": {
-    "started": "Started {time} · {elapsed}"
+    "started": "Started {time} · {elapsed}",
+    "done": "Service done · Take payment",
+    "incomplete": {
+      "title": "Mark incomplete",
+      "consequence": "The sale is cancelled: no revenue and no commission.",
+      "confirm": "Mark incomplete"
+    }
   },
   "lines": {
     "remove": "Remove",
     "removeTitle": "Remove service",
-    "removeConsequence": "{service} stays on the sale, struck through, and is no longer charged."
+    "removeConsequence": "{service} stays on the sale, struck through, and is no longer charged.",
+    "addedTitle": "Why was this added?",
+    "addedConsequence": "{service} is added after the service was done.",
+    "addedConfirm": "Add"
   },
   "picker": {
     "title": "Add service",
     "search": "Search services",
     "empty": "No service found",
     "detail": "{duration} · {price}"
+  },
+  "help": {
+    "offline": {
+      "title": "No connection",
+      "body": "Write the service on paper: the time, the services and the payment. When the connection is back, enter it with Late entry."
+    }
+  },
+  "warning": {
+    "notEligible": "Recorded — this barber is not set up for this service at this branch."
+  },
+  "finished": {
+    "locked": "Finished {datetime} by {name}",
+    "correction": "Use Refund / Adjustment"
+  },
+  "cancelled": {
+    "locked": "Marked incomplete {datetime} by {name}: {reason}"
   }
 }
