@@ -29,12 +29,17 @@
     "blocked": {
       "remaining": "Take the remaining {amount} before you finish.",
       "cashExcess": "Cash is more than the total. Void the cash payment and take it again."
-    }
+    },
+    "phone": "Customer phone (optional)",
+    "skip": "Skip",
+    "existing": "Existing customer: {name}",
+    "lastVisit": "Existing customer: {name} · last visit {date}",
+    "new": "New customer",
+    "name": "Name"
   },
   "success": {
     "title": "Sale finished",
     "receipt": "Receipt",
-    "changeReturned": "Change returned",
     "share": "View / share PDF",
     "next": "Next customer"
   },
