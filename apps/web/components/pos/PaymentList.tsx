@@ -19,7 +19,7 @@ import { isCashPayment } from './checkout-money';
 // 12.5): method, amount, KBZPay reference and the collector's chip on every line; a voided payment stays,
 // struck through (D-DAT-05). While the sale is open a payment is voided through the reason dialog — the
 // screen sends `reason` (design D12). On a cash line the optional "Customer gave" helper shows the change
-// to hand back; it is never sent or stored.
+// to hand back; it is never sent or stored. A voided line is struck through in the muted tone.
 
 export interface PaymentListProps {
   readonly payments: readonly PaymentDto[];
@@ -67,7 +67,11 @@ export function PaymentList({ payments, methods, canVoid, onVoid }: PaymentListP
               data-voided={voided}
             >
               <div
-                className={voided ? 'flex justify-between line-through' : 'flex justify-between'}
+                className={
+                  voided
+                    ? 'flex justify-between text-muted-foreground line-through'
+                    : 'flex justify-between'
+                }
               >
                 <span>{localized(payment.payment_method, 'name', locale)}</span>
                 <MoneyText amount={amount} />
