@@ -3,16 +3,27 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getEnv } from './env';
 import { resolveRoute, type RouteHosts } from './resolve-route';
 
+/** The session cookie the API sets (API-AUTH-01); only its presence is read here. */
+const SESSION_COOKIE = 'point_session';
+
 // A path no route can match (a leading `_` marks a private folder, never a route), so the
 // request renders the app's not-found page with status 404.
 const NOT_FOUND_PATHNAME = '/_not-routed';
 
-// Next.js 16 proxy (formerly middleware.ts): applies the host rewrite of resolve-route.ts to every
-// request the matcher lets through (ADR-001 · design D11).
+// Next.js 16 proxy (formerly middleware.ts): applies the host rewrite and the signed-out redirect of
+// resolve-route.ts to every request the matcher lets through (ADR-001 · design D11 · D17).
 export function proxy(request: NextRequest): NextResponse {
   const { SITE_ORIGIN, APP_ORIGIN } = getEnv();
   const hosts: RouteHosts = { site: new URL(SITE_ORIGIN).host, staff: new URL(APP_ORIGIN).host };
-  const decision = resolveRoute(request.headers.get('host') ?? '', request.nextUrl.pathname, hosts);
+  const decision = resolveRoute(
+    request.headers.get('host') ?? '',
+    request.nextUrl.pathname,
+    hosts,
+    {
+      search: request.nextUrl.search,
+      hasSession: (request.cookies.get(SESSION_COOKIE)?.value ?? '') !== '',
+    },
+  );
 
   const url = request.nextUrl.clone(); // keeps the query string
   switch (decision.kind) {
@@ -21,6 +32,9 @@ export function proxy(request: NextRequest): NextResponse {
     case 'rewrite':
       url.pathname = decision.pathname;
       return NextResponse.rewrite(url);
+    case 'redirect':
+      // 307: a relative Location on the host the browser asked (design D17).
+      return new NextResponse(null, { status: 307, headers: { Location: decision.location } });
     case 'not-found':
       url.pathname = NOT_FOUND_PATHNAME;
       return NextResponse.rewrite(url);

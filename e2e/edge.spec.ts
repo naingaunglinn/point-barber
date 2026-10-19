@@ -51,8 +51,18 @@ test.describe("add-repo-scaffold · platform-runtime · API is served under /api
     expect(res.headers()).toHaveProperty('x-request-id');
   });
 
+  // As add-foundation-auth-access modifies it (task 7.2): without a session the web app sends the
+  // browser to the login screen; with one it answers its not-found page. Neither reaches NestJS.
   test('Scenario: A path without the /api prefix is not the API', async ({ app }) => {
-    const res = await app.get('/v1/health');
+    const res = await app.get('/v1/health', { maxRedirects: 0 });
+    expect(res.status()).toBe(307);
+    expect(res.headers()['location']).toBe('/login?return_to=%2Fv1%2Fhealth');
+    expect(res.headers()).not.toHaveProperty('x-request-id');
+  });
+
+  test('Scenario: A path without the /api prefix is not the API — signed in', async ({ app }) => {
+    // The web app tests only that the cookie is there; the API is never asked.
+    const res = await app.get('/v1/health', { headers: { cookie: 'point_session=present' } });
     expect(res.status()).toBe(404);
     expect(res.headers()).not.toHaveProperty('x-request-id');
     expect(res.headers()['content-type']).toMatch(/^text\/html/);
@@ -217,7 +227,8 @@ test.describe('add-repo-scaffold · platform-runtime · The Host header selects 
   test('Scenario: The staff tree cannot be opened through the public host', async ({ page }) => {
     const res = await page.goto(`${SITE_ORIGIN}/staff`);
     expect(res?.status()).toBe(404);
-    await expect(page.locator('[data-testid="staff-placeholder"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="login-email"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="landing-name"]')).toHaveCount(0);
   });
 
   test('Scenario: The site tree cannot be opened through the staff host', async ({ page }) => {

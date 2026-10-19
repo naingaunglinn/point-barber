@@ -55,3 +55,9 @@ export function getEnv(): WebEnv {
   });
   return cached;
 }
+
+/**
+ * The API base the browser calls: same origin, `/api/v1` (ADR-009 action item 3). Next.js inlines
+ * NEXT_PUBLIC_API_BASE into browser code; unset (tests, a fresh checkout) it is `/api/v1`.
+ */
+export const PUBLIC_API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '/api/v1';
