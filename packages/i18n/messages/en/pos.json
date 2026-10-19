@@ -46,5 +46,13 @@
   "saved": {
     "checking": "Checking whether it was saved…",
     "notSaved": "It wasn't saved. Try again."
+  },
+  "visit": {
+    "started": "Started {time} · {elapsed}"
+  },
+  "lines": {
+    "remove": "Remove",
+    "removeTitle": "Remove service",
+    "removeConsequence": "{service} stays on the sale, struck through, and is no longer charged."
   }
 }

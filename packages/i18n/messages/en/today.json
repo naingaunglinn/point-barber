@@ -2,7 +2,6 @@
   "title": "Today",
   "inProgress": "In progress",
   "walkIn": "Walk-in",
-  "elapsed": "{minutes} min",
   "next": {
     "serviceDone": "Service done",
     "takePayment": "Take payment"

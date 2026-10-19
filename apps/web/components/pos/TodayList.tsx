@@ -1,6 +1,6 @@
 'use client';
 
-import { type VisitDto, VisitStatus, localized } from '@point/shared';
+import { type VisitDto, VisitStatus, formatDuration, localized } from '@point/shared';
 import {
   CardList,
   EmptyState,
@@ -10,6 +10,8 @@ import {
   useNow,
 } from '@point/ui';
 import { useLocale, useTranslations } from 'next-intl';
+
+import { minutesSince } from './minutes';
 
 // "In progress" on Today (AD-TODAY-01 · AD-TODAY-02 · AD-CMP-05 · AD-STATE-01..03 · add-walkin-visit-checkout
 // tasks 10.3 / 10.4): my open visits, oldest first, each a card — the customer or "Walk-in", the services,
@@ -25,9 +27,6 @@ export interface TodayListProps {
   readonly onOpen: (visit: VisitDto) => void;
   readonly onStart: () => void;
 }
-
-const minutesBetween = (from: string, to: Date) =>
-  Math.max(0, Math.floor((to.getTime() - new Date(from).getTime()) / 60_000));
 
 export function TodayList({ visits, error, onRetry, onOpen, onStart }: TodayListProps) {
   const t = useTranslations('today');
@@ -69,7 +68,7 @@ export function TodayList({ visits, error, onRetry, onOpen, onStart }: TodayList
               .join(', '),
             <span key="status" className="flex items-center gap-2">
               <StatusBadge table="visits" code={visit.status} />
-              <span>{t('elapsed', { minutes: minutesBetween(visit.started_at, now) })}</span>
+              <span>{formatDuration(minutesSince(visit.started_at, now), { locale })}</span>
             </span>,
           ],
           action: {

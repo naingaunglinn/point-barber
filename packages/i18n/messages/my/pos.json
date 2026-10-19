@@ -46,5 +46,13 @@
   "saved": {
     "checking": "သိမ်းပြီးလား စစ်နေပါတယ်…",
     "notSaved": "မသိမ်းရသေးပါ။ ထပ်ကြိုးစားပါ။"
+  },
+  "visit": {
+    "started": "စတဲ့အချိန် {time} · {elapsed}"
+  },
+  "lines": {
+    "remove": "ဖယ်မယ်",
+    "removeTitle": "ဝန်ဆောင်မှု ဖယ်မယ်",
+    "removeConsequence": "{service} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေ မတောင်းတော့ပါ။"
   }
 }
