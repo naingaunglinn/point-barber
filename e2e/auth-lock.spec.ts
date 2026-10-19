@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures.js';
 import { mailpit } from './helpers/mailpit.js';
 import { APP_HEADERS } from './helpers/sign-in.js';
-import { restartApi } from './helpers/stack.js';
+import { restartApi, sql } from './helpers/stack.js';
 
 // add-foundation-auth-access task 8.6 — five wrong codes lock code sign-in for 20 minutes, and the
 // resend countdown (AD-LOGIN-02 · P1-RULE-03 · API-LIM-02). Code requests in this file: 2; verifies:
@@ -9,6 +9,13 @@ import { restartApi } from './helpers/stack.js';
 
 test.beforeAll(async ({ playwright }) => {
   await restartApi(playwright);
+});
+
+// The 20-minute lock outlives this file: the next spec that signs Ko Min in must not meet it.
+test.afterAll(() => {
+  sql(
+    "UPDATE users SET failed_login_count = 0, login_locked_until = NULL WHERE email = 'min@point.test';",
+  );
 });
 
 test('five wrong codes for Ko Min lock the screen with the lock end; resend waits 60 seconds', async ({

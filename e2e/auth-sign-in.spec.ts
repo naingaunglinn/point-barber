@@ -35,6 +35,8 @@ async function signInOnScreen(page: Page, email: string): Promise<void> {
 
 test.describe('add-foundation-auth-access · auth · signing in with an e-mail code (task 8.4)', () => {
   test('Ko Aung signs in at 360 × 800 in Myanmar', async ({ browser }) => {
+    // Each spec sets the account state it relies on: no language of his own → the system default.
+    sql("UPDATE users SET ui_language = NULL WHERE email = 'aung@point.test';");
     const context = await browser.newContext({
       baseURL: APP_ORIGIN,
       ignoreHTTPSErrors: true,
