@@ -6,8 +6,7 @@ import { isLocale } from '@point/i18n';
 import { localized } from '@point/shared';
 import { Button, LanguageSwitch } from '@point/ui';
 
-import { api } from '../../../lib/api/client';
-import { signOut } from '../../../lib/session/session-layer';
+import { signOut, useSetLanguage } from '../../../lib/session/session-layer';
 import { useGrantsMe } from '../../../lib/session/grants';
 import { useMe } from '../../../lib/session/use-me';
 
@@ -20,10 +19,8 @@ export function LandingPage() {
   const locale = isLocale(raw) ? raw : 'my';
   const me = useMe().data;
   const grants = useGrantsMe();
+  const setLanguage = useSetLanguage();
   if (me === undefined) return null;
-  const setLanguage = (next: 'my' | 'en') => {
-    void api('/me', { method: 'PATCH', body: { ui_language: next === 'en' ? 2 : 1 } });
-  };
   return (
     <main className="flex max-w-xl flex-col gap-6 p-4">
       <section className="flex flex-col gap-1">

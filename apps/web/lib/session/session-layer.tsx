@@ -46,6 +46,24 @@ export function localeOf(me: MeResponse): Locale {
   });
 }
 
+/**
+ * The language switch of the signed-in area (P1.ME.02 · AD-L10N-06): the cached `/me` takes the new
+ * value at once — so the layer's cookie sync agrees with the switch's cookie — then `PATCH /v1/me`
+ * saves it on the account and `/me` is loaded again.
+ */
+export function useSetLanguage(): (locale: Locale) => void {
+  const client = useQueryClient();
+  return (locale) => {
+    const uiLanguage = locale === 'en' ? 2 : 1;
+    client.setQueryData<MeResponse>(ME_QUERY_KEY, (me) =>
+      me === undefined ? me : { ...me, user: { ...me.user, ui_language: uiLanguage } },
+    );
+    void api('/me', { method: 'PATCH', body: { ui_language: uiLanguage } }).finally(() =>
+      client.invalidateQueries({ queryKey: ME_QUERY_KEY }),
+    );
+  };
+}
+
 /** `POST /v1/auth/logout` → the login screen with "You signed out". */
 export async function signOut(): Promise<void> {
   await api('/auth/logout', { method: 'POST', signIn: true }).catch(() => undefined);
@@ -120,12 +138,7 @@ function StaffShell({
   const [branch, setBranch] = useState<string>(
     company ? ALL_BRANCHES : (me.branches_in_scope[0]?.id ?? ALL_BRANCHES),
   );
-  const client = useQueryClient();
-  const setLanguage = (next: Locale) => {
-    void api('/me', { method: 'PATCH', body: { ui_language: next === 'en' ? 2 : 1 } }).then(() =>
-      client.invalidateQueries({ queryKey: ME_QUERY_KEY }),
-    );
-  };
+  const setLanguage = useSetLanguage();
   return (
     <AppShell
       nav={[]}
