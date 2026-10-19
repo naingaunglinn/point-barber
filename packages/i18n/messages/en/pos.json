@@ -16,7 +16,13 @@
     "voidPayment": "Void payment",
     "customerGave": "Customer gave",
     "cashChange": "Change: {amount}",
-    "referenceInUse": "This reference is already recorded. Check the transfer."
+    "referenceInUse": "This reference is already recorded. Check the transfer.",
+    "void": {
+      "title": "Void payment",
+      "consequence": "{method} {amount} stays on the sale, struck through, and no longer counts.",
+      "confirm": "Void payment"
+    },
+    "collectedBy": "Collected by"
   },
   "finish": {
     "submit": "Finish · {total}",

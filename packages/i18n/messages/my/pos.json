@@ -16,7 +16,13 @@
     "voidPayment": "ငွေပေးချေမှု ပယ်ဖျက်",
     "customerGave": "ဧည့်သည် ပေးငွေ",
     "cashChange": "ပြန်အမ်း: {amount}",
-    "referenceInUse": "ဒီ reference ကို မှတ်ပြီးသားပါ။ ငွေလွှဲကို ပြန်စစ်ပါ။"
+    "referenceInUse": "ဒီ reference ကို မှတ်ပြီးသားပါ။ ငွေလွှဲကို ပြန်စစ်ပါ။",
+    "void": {
+      "title": "ငွေပေးချေမှု ပယ်ဖျက်",
+      "consequence": "{method} {amount} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေထဲ မတွက်တော့ပါ။",
+      "confirm": "ပယ်ဖျက်မယ်"
+    },
+    "collectedBy": "ငွေလက်ခံသူ"
   },
   "finish": {
     "submit": "ပြီးပြီ · {total}",

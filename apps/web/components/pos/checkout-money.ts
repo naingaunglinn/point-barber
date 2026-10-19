@@ -26,20 +26,23 @@ export interface CheckoutMoney {
 }
 
 type SaleMoney = Pick<SaleDto, 'remaining_amount' | 'change_due_amount' | 'payments'>;
+type MethodCash = Pick<PaymentMethodDto, 'id' | 'is_cash'>;
 
-export function checkoutMoney(
-  sale: SaleMoney,
-  methods: readonly Pick<PaymentMethodDto, 'id' | 'is_cash'>[],
-): CheckoutMoney {
-  const cashIds = new Set(methods.filter((m) => m.is_cash).map((m) => m.id));
-  const known = new Set(methods.map((m) => m.id));
-  const isCash = (payment: SaleDto['payments'][number]) =>
-    known.has(payment.payment_method.id)
-      ? cashIds.has(payment.payment_method.id)
-      : payment.payment_method.kind === PaymentMethodKind.CASH;
+/** Cash by the active methods' `is_cash`; a method no longer in that list by its kind. */
+export function isCashPayment(
+  payment: SaleDto['payments'][number],
+  methods: readonly MethodCash[],
+): boolean {
+  const method = methods.find((item) => item.id === payment.payment_method.id);
+  return method !== undefined
+    ? method.is_cash
+    : payment.payment_method.kind === PaymentMethodKind.CASH;
+}
+
+export function checkoutMoney(sale: SaleMoney, methods: readonly MethodCash[]): CheckoutMoney {
   const nonCash = sumMoney(
     sale.payments
-      .filter((payment) => payment.voided_at === null && !isCash(payment))
+      .filter((payment) => payment.voided_at === null && !isCashPayment(payment, methods))
       .map((payment) => moneyFromWire(payment.amount)),
   );
   const remaining = moneyFromWire(sale.remaining_amount);
