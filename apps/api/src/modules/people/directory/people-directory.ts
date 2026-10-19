@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type BranchSummary, todayMmt } from '@point/shared';
+import { type BranchAssignment, type BranchSummary, todayMmt } from '@point/shared';
 
 import type { LoadedTarget } from '../../../common/access/resolvers.js';
 import { Clock } from '../../../common/clock/clock.js';
@@ -34,8 +34,16 @@ export class PeopleDirectory {
   }
 
   /** Branches as `BranchSummary`, ordered by code; every branch when `ids` is undefined. */
-  branchSummaries(ids?: readonly string[]): Promise<BranchSummary[]> {
-    return this.repository.branchSummaries(ids);
+  branchSummaries(
+    ids?: readonly string[],
+    filter: { readonly status?: number } = {},
+  ): Promise<BranchSummary[]> {
+    return this.repository.branchSummaries(ids, filter);
+  }
+
+  /** P1.EMP.06 — every branch assignment of the employee, ended ones included. */
+  branchAssignments(employeeId: string): Promise<BranchAssignment[]> {
+    return this.repository.branchAssignments(employeeId);
   }
 
   /** `/me.assigned_branch_ids`: active today, ordered by effective_from, created_at, id. */

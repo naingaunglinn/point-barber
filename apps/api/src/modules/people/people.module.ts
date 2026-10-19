@@ -9,6 +9,7 @@ import { PeopleGrantSource } from './access/people-grant-source.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CurrentCompany } from './company/current-company.js';
 import { PeopleDirectory } from './directory/people-directory.js';
+import { OrganizationController } from './organization/organization.controller.js';
 import { AccessRepository } from './repositories/access.repository.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
@@ -27,6 +28,7 @@ import { BaseSeed } from './seed/base-seed.js';
 // port GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design D11).
 @Module({
   imports: [PlatformModule],
+  controllers: [OrganizationController],
   providers: [
     PeopleRepository,
     AccessRepository,
