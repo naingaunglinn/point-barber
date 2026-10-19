@@ -44,7 +44,12 @@
     "existing": "Existing customer: {name}",
     "lastVisit": "Existing customer: {name} · last visit {date}",
     "new": "New customer",
-    "name": "Name"
+    "name": "Name",
+    "override": {
+      "title": "Finish this sale",
+      "consequence": "You are finishing a sale that is not yours. Your reason is kept with the sale.",
+      "confirm": "Finish"
+    }
   },
   "success": {
     "title": "Sale finished",

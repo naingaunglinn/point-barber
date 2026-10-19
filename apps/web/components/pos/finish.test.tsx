@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { type CustomerLookupDto, type SaleDto, moneyFromWire } from '@point/shared';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderStaff } from '../../test/render';
@@ -139,6 +139,56 @@ const finishedSale = (extra: Partial<SaleDto> = {}) =>
     refunds: [],
     ...extra,
   }) as unknown as SaleDto;
+
+describe('FinishStep — override and refusals (tasks 13.3 / 13.4)', () => {
+  it('Scenario: a code holder finishes — the reason dialog first, then override_reason is sent', async () => {
+    const { onFinish } = finish({ needsReason: true });
+    fireEvent.click(screen.getByTestId('finish-submit'));
+    expect(onFinish).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.change(within(dialog).getByRole('textbox'), {
+      target: { value: 'Ko Aung went home' },
+    });
+    fireEvent.click(
+      within(dialog).getAllByRole('button', { name: 'Finish' }).at(-1) as HTMLElement,
+    );
+    await vi.waitFor(() => expect(onFinish).toHaveBeenCalledWith(null, 'Ko Aung went home'));
+  });
+
+  it('total_changed: the alert above the button (the screen reloads the new total)', () => {
+    finish({
+      problem: {
+        code: 'total_changed',
+        context: { total_amount: 11000 },
+        request_id: '0199a3f2-7c1e',
+      },
+    });
+    expect(screen.getByRole('alert').textContent).toContain('The total has changed.');
+  });
+
+  it('phone_invalid on the phone field', () => {
+    finish({ problem: { code: 'phone_invalid', request_id: 'r' } });
+    expect(screen.getByText('Enter a valid phone number.')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('Scenario: New phone without a name — validation on customer.name reads "required" on the Name', () => {
+    finish({
+      lookup: { kind: 'new' },
+      problem: {
+        code: 'validation',
+        errors: [{ field: 'customer.name', code: 'invalid_type' }],
+        request_id: 'r',
+      },
+    });
+    expect(screen.getByText('This field is required.')).toBeTruthy();
+  });
+
+  it('payroll_finalized as an alert', () => {
+    finish({ problem: { code: 'payroll_finalized', request_id: 'r' } });
+    expect(screen.getByRole('alert').textContent).toContain('Payroll for this period is finalized');
+  });
+});
 
 describe('SuccessPanel (task 13.5)', () => {
   it('Scenario: Seven taps — number, "10,000 Ks", "Cash 10,000 Ks", Ko Aung, View / share PDF, Next customer', () => {
