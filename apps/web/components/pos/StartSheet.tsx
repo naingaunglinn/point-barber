@@ -1,7 +1,7 @@
 'use client';
 
 import { type ServiceListItemDto, localized } from '@point/shared';
-import { Button, EmployeeChip, Sheet } from '@point/ui';
+import { Button, EmployeeChip, FormAlert, LockBanner, Sheet } from '@point/ui';
 import { Check } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -11,7 +11,9 @@ import { startChips } from './start-chips';
 // The START sheet of a walk-in (AD-POS-03 · D-VIS-02 · add-walkin-visit-checkout task 10.7): the branch it
 // will use (AD-TODAY-03) and the performer = me as a chip; the first 6 simple services of the branch as
 // optional chips (a service is optional at START — D-VIS-02); one primary "Start" with its in-flight
-// spinner. The screen owns the request: `onStart` gets the chosen service ids in chip order.
+// spinner. The screen owns the request: `onStart` gets the chosen service ids in chip order. A refusal is
+// shown in the sheet (task 10.8): `unpaid_visit_open` with a link to that visit (the screen reads it and
+// opens its sale), `day_closed` as the lock banner, anything else (`not_assigned_to_branch` …) as an alert.
 
 export interface StartSheetProps {
   readonly open: boolean;
@@ -23,6 +25,16 @@ export interface StartSheetProps {
   /** True while the START request runs. */
   readonly pending: boolean;
   readonly onStart: (serviceIds: readonly string[]) => void | Promise<void>;
+  /** The last refusal of START, or null. */
+  readonly problem?: StartProblem | null;
+  /** `unpaid_visit_open`: open the visit that waits for payment (`context.visit_id`). */
+  readonly onOpenUnpaid?: (visitId: string) => void;
+}
+
+export interface StartProblem {
+  readonly code: string;
+  readonly context?: Readonly<Record<string, unknown>>;
+  readonly request_id: string;
 }
 
 export function StartSheet({
@@ -33,8 +45,11 @@ export function StartSheet({
   services,
   pending,
   onStart,
+  problem = null,
+  onOpenUnpaid,
 }: StartSheetProps) {
   const t = useTranslations('pos.start');
+  const tError = useTranslations('error');
   const locale = useLocale() as 'my' | 'en';
   const [chosen, setChosen] = useState<readonly string[]>([]);
   const chips = startChips(services ?? []);
@@ -61,6 +76,24 @@ export function StartSheet({
         </Button>
       }
     >
+      {problem?.code === 'day_closed' && <LockBanner message={tError('day_closed')} />}
+      {problem?.code === 'unpaid_visit_open' && (
+        <div role="alert" className="mb-4 grid gap-2" data-testid="start-unpaid">
+          <p>{tError('unpaid_visit_open')}</p>
+          {typeof problem.context?.visit_id === 'string' && (
+            <Button onClick={() => onOpenUnpaid?.(problem.context?.visit_id as string)}>
+              {t('openUnpaid')}
+            </Button>
+          )}
+        </div>
+      )}
+      {problem !== null &&
+        problem.code !== 'day_closed' &&
+        problem.code !== 'unpaid_visit_open' && (
+          <div className="mb-4">
+            <FormAlert problem={problem} />
+          </div>
+        )}
       <dl className="grid gap-4">
         <div className="grid gap-1">
           <dt className="text-sm text-muted-foreground">{t('branch')}</dt>

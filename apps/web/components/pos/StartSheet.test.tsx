@@ -106,4 +106,31 @@ describe('StartSheet (task 10.7)', () => {
     expect(screen.queryByTestId('start-chips')).toBeNull();
     expect(screen.getByTestId('start-submit')).toBeTruthy();
   });
+
+  it('Scenario: Awaiting payment blocks the next customer — the message and a link to visit B', () => {
+    const onOpenUnpaid = vi.fn();
+    sheet({
+      problem: { code: 'unpaid_visit_open', context: { visit_id: 'visit-b' }, request_id: 'r' },
+      onOpenUnpaid,
+    });
+    expect(screen.getByTestId('start-unpaid').textContent).toContain(
+      'Finish payment for your previous customer first.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open the previous customer' }));
+    expect(onOpenUnpaid).toHaveBeenCalledWith('visit-b');
+  });
+
+  it('Scenario: START on a closed day — "This day is closed — ask an admin to reopen it."', () => {
+    sheet({
+      problem: { code: 'day_closed', context: { business_date: '2026-10-05' }, request_id: 'r' },
+    });
+    expect(screen.getByText('This day is closed — ask an admin to reopen it.')).toBeTruthy();
+  });
+
+  it('not_assigned_to_branch as an alert', () => {
+    sheet({ problem: { code: 'not_assigned_to_branch', request_id: '0199a3f2-7c1e' } });
+    expect(screen.getByRole('alert').textContent).toContain(
+      'This person is not assigned to this branch on this date.',
+    );
+  });
 });

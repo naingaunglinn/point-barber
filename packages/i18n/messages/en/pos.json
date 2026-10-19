@@ -7,7 +7,8 @@
     "branch": "Branch",
     "barber": "Barber",
     "services": "Services (optional)",
-    "submit": "Start"
+    "submit": "Start",
+    "openUnpaid": "Open the previous customer"
   },
   "checkout": {
     "split": "Split",
