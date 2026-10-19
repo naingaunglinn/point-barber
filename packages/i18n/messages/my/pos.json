@@ -22,7 +22,15 @@
       "consequence": "{method} {amount} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေထဲ မတွက်တော့ပါ။",
       "confirm": "ပယ်ဖျက်မယ်"
     },
-    "collectedBy": "ငွေလက်ခံသူ"
+    "collectedBy": "ငွေလက်ခံသူ",
+    "method": "ငွေပေးနည်း",
+    "amount": "ပမာဏ",
+    "reference": "Reference နံပါတ်",
+    "submit": "ငွေယူမယ်",
+    "referenceHint": {
+      "prefixDigits": "{prefix} နောက်မှာ ဂဏန်း {count} လုံး",
+      "digits": "ဂဏန်း {count} လုံး"
+    }
   },
   "finish": {
     "submit": "ပြီးပြီ · {total}",

@@ -22,7 +22,15 @@
       "consequence": "{method} {amount} stays on the sale, struck through, and no longer counts.",
       "confirm": "Void payment"
     },
-    "collectedBy": "Collected by"
+    "collectedBy": "Collected by",
+    "method": "Method",
+    "amount": "Amount",
+    "reference": "Reference",
+    "submit": "Take payment",
+    "referenceHint": {
+      "prefixDigits": "{prefix} followed by {count} digits",
+      "digits": "{count} digits"
+    }
   },
   "finish": {
     "submit": "Finish · {total}",
