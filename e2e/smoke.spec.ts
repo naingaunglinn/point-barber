@@ -40,7 +40,7 @@ test.describe('add-foundation-auth-access · platform-runtime · The Host header
   }) => {
     const res = await app.get('/', { maxRedirects: 0 });
     expect(res.status()).toBe(307);
-    expect(res.headers()['location']).toBe('/login?return_to=%2F');
+    expect(res.headers()['location']).toBe(`${APP_ORIGIN}/login?return_to=%2F`);
     await page.goto(`${APP_ORIGIN}/`);
     await expect(page.locator(LOGIN_EMAIL)).toHaveCount(1);
     await expect(page.locator(LOGIN_GOOGLE)).toHaveCount(1);
@@ -50,7 +50,7 @@ test.describe('add-foundation-auth-access · platform-runtime · The Host header
   test('Scenario: The path and query asked for are kept', async ({ app }) => {
     const res = await app.get('/?branch=B3', { maxRedirects: 0 });
     expect(res.status()).toBe(307);
-    expect(res.headers()['location']).toBe('/login?return_to=%2F%3Fbranch%3DB3');
+    expect(res.headers()['location']).toBe(`${APP_ORIGIN}/login?return_to=%2F%3Fbranch%3DB3`);
   });
 
   test('Scenario: The login screen needs no session', async ({ page }) => {

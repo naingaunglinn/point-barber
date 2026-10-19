@@ -1,4 +1,3 @@
-import { NextIntlClientProvider } from 'next-intl';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 
@@ -15,13 +14,9 @@ export default async function StaffLayout({ children }: Readonly<{ children: Rea
   const locale = resolveLocale({ cookie: (await cookies()).get(LOCALE_COOKIE)?.value });
   return (
     <RootLayout tree="staff" locale={locale}>
-      <NextIntlClientProvider
-        locale={locale}
-        messages={loadMessages(locale)}
-        timeZone="Asia/Yangon"
-      >
-        <StaffProviders locale={locale}>{children}</StaffProviders>
-      </NextIntlClientProvider>
+      <StaffProviders locale={locale} messages={loadMessages(locale)}>
+        {children}
+      </StaffProviders>
     </RootLayout>
   );
 }

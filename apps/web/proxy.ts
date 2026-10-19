@@ -33,8 +33,9 @@ export function proxy(request: NextRequest): NextResponse {
       url.pathname = decision.pathname;
       return NextResponse.rewrite(url);
     case 'redirect':
-      // 307: a relative Location on the host the browser asked (design D17).
-      return new NextResponse(null, { status: 307, headers: { Location: decision.location } });
+      // 307 to the login screen of the staff host (design D17). Next.js accepts only an absolute
+      // Location here, so the path is resolved on APP_ORIGIN — the host the browser asked.
+      return NextResponse.redirect(new URL(decision.location, APP_ORIGIN), 307);
     case 'not-found':
       url.pathname = NOT_FOUND_PATHNAME;
       return NextResponse.rewrite(url);

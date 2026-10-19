@@ -56,7 +56,7 @@ test.describe("add-repo-scaffold · platform-runtime · API is served under /api
   test('Scenario: A path without the /api prefix is not the API', async ({ app }) => {
     const res = await app.get('/v1/health', { maxRedirects: 0 });
     expect(res.status()).toBe(307);
-    expect(res.headers()['location']).toBe('/login?return_to=%2Fv1%2Fhealth');
+    expect(res.headers()['location']).toBe(`${APP_ORIGIN}/login?return_to=%2Fv1%2Fhealth`);
     expect(res.headers()).not.toHaveProperty('x-request-id');
   });
 

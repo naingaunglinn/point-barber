@@ -28,7 +28,9 @@ describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
   it('redirects a staff path without the session cookie to the login screen (task 7.2)', () => {
     const response = proxy(requestTo('app.point.test', '/?branch=B3'));
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('/login?return_to=%2F%3Fbranch%3DB3');
+    expect(response.headers.get('location')).toBe(
+      'https://app.point.test/login?return_to=%2F%3Fbranch%3DB3',
+    );
   });
 
   it('rewrites a staff path with the session cookie into the staff tree', () => {
