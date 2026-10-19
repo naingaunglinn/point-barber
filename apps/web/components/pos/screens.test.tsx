@@ -46,7 +46,7 @@ describe('WarningNotes (task 11.5)', () => {
 });
 
 describe('VisitActions (task 11.6)', () => {
-  it('"Service done · Take payment" completes; Mark incomplete asks the reason', async () => {
+  it('"Service done · Take payment" completes; Mark incomplete sits behind the kebab and asks the reason', async () => {
     const onComplete = vi.fn();
     const onIncomplete = vi.fn();
     renderStaff(
@@ -60,7 +60,11 @@ describe('VisitActions (task 11.6)', () => {
     );
     fireEvent.click(screen.getByTestId('visit-done'));
     expect(onComplete).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'Mark incomplete' }));
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), {
+      button: 0,
+      pointerType: 'mouse',
+    });
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Mark incomplete' }));
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog.textContent).toContain('no revenue and no commission');
     fireEvent.change(within(dialog).getByRole('textbox'), {
@@ -85,7 +89,7 @@ describe('VisitActions (task 11.6)', () => {
     );
     expect(screen.getByRole('alert').textContent).toContain('Add at least one service first.');
     expect(screen.queryByTestId('visit-done')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Mark incomplete' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 });
 
