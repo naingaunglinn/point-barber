@@ -62,5 +62,11 @@
     "remove": "Remove",
     "removeTitle": "Remove service",
     "removeConsequence": "{service} stays on the sale, struck through, and is no longer charged."
+  },
+  "picker": {
+    "title": "Add service",
+    "search": "Search services",
+    "empty": "No service found",
+    "detail": "{duration} · {price}"
   }
 }
