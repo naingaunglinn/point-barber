@@ -13,6 +13,8 @@ export const NAMESPACES = [
   'receipt',
   'devui',
   'auth',
+  'today',
+  'pos',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
