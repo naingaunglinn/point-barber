@@ -31,7 +31,19 @@
     "referenceHint": {
       "prefixDigits": "{prefix} followed by {count} digits",
       "digits": "{count} digits"
-    }
+    },
+    "progress": {
+      "services": "Services",
+      "payment": "Payment",
+      "finish": "Finish"
+    },
+    "items": "Items",
+    "total": "Total",
+    "howCalculated": "How is this calculated?",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "serviceCharge": "Service charge",
+    "tax": "Tax"
   },
   "finish": {
     "submit": "Finish · {total}",

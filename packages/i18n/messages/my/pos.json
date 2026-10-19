@@ -31,7 +31,19 @@
     "referenceHint": {
       "prefixDigits": "{prefix} နောက်မှာ ဂဏန်း {count} လုံး",
       "digits": "ဂဏန်း {count} လုံး"
-    }
+    },
+    "progress": {
+      "services": "ဝန်ဆောင်မှု",
+      "payment": "ငွေပေးချေ",
+      "finish": "ပြီးဆုံး"
+    },
+    "items": "ဝန်ဆောင်မှုများ",
+    "total": "စုစုပေါင်း",
+    "howCalculated": "ဘယ်လို တွက်ထားလဲ?",
+    "subtotal": "စုစုပေါင်း (လျှော့ခြင်း မတိုင်ခင်)",
+    "discount": "လျှော့ငွေ",
+    "serviceCharge": "ဝန်ဆောင်ခ",
+    "tax": "အခွန်"
   },
   "finish": {
     "submit": "ပြီးပြီ · {total}",
