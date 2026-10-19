@@ -1,0 +1,39 @@
+{
+  "arrival": {
+    "walkIn": "ကြိုမမှာဘဲ လာသူ"
+  },
+  "start": {
+    "title": "ဝန်ဆောင်မှု စမယ်",
+    "branch": "ဆိုင်ခွဲ",
+    "barber": "ဆံပင်ညှပ်သူ",
+    "services": "ဝန်ဆောင်မှု (မထည့်လည်း ရ)",
+    "submit": "စမယ်"
+  },
+  "checkout": {
+    "split": "ခွဲပေး",
+    "remaining": "ပေးရန် ကျန်: {amount}",
+    "changeToReturn": "ပြန်အမ်းရန်: {amount}",
+    "voidPayment": "ငွေပေးချေမှု ပယ်ဖျက်",
+    "customerGave": "ဧည့်သည် ပေးငွေ",
+    "cashChange": "ပြန်အမ်း: {amount}",
+    "referenceInUse": "ဒီ reference ကို မှတ်ပြီးသားပါ။ ငွေလွှဲကို ပြန်စစ်ပါ။"
+  },
+  "finish": {
+    "submit": "ပြီးပြီ · {total}",
+    "blocked": {
+      "remaining": "မပြီးခင် ကျန်ငွေ {amount} ကို ယူပါ။",
+      "cashExcess": "ငွေသားက စုစုပေါင်းထက် များနေတယ်။ ငွေသား ပေးချေမှုကို ပယ်ဖျက်ပြီး ပြန်ယူပါ။"
+    }
+  },
+  "success": {
+    "title": "ငွေရှင်းပြီးပါပြီ",
+    "receipt": "ဘောက်ချာ",
+    "changeReturned": "ပြန်အမ်းပြီး",
+    "share": "PDF ကြည့် / ပို့",
+    "next": "နောက်ဧည့်သည်"
+  },
+  "saved": {
+    "checking": "သိမ်းပြီးလား စစ်နေပါတယ်…",
+    "notSaved": "မသိမ်းရသေးပါ။ ထပ်ကြိုးစားပါ။"
+  }
+}

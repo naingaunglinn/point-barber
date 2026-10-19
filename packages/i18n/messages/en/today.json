@@ -1,0 +1,15 @@
+{
+  "title": "Today",
+  "inProgress": "In progress",
+  "walkIn": "Walk-in",
+  "awaitingPayment": "Awaiting payment",
+  "elapsed": "{minutes} min",
+  "next": {
+    "serviceDone": "Service done",
+    "takePayment": "Take payment"
+  },
+  "empty": {
+    "title": "No customer in progress",
+    "body": "When a customer arrives, tap ＋ Start."
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "arrival": {
+    "walkIn": "Walk-in"
+  },
+  "start": {
+    "title": "Start a visit",
+    "branch": "Branch",
+    "barber": "Barber",
+    "services": "Services (optional)",
+    "submit": "Start"
+  },
+  "checkout": {
+    "split": "Split",
+    "remaining": "Remaining to pay: {amount}",
+    "changeToReturn": "Change to return: {amount}",
+    "voidPayment": "Void payment",
+    "customerGave": "Customer gave",
+    "cashChange": "Change: {amount}",
+    "referenceInUse": "This reference is already recorded. Check the transfer."
+  },
+  "finish": {
+    "submit": "Finish · {total}",
+    "blocked": {
+      "remaining": "Take the remaining {amount} before you finish.",
+      "cashExcess": "Cash is more than the total. Void the cash payment and take it again."
+    }
+  },
+  "success": {
+    "title": "Sale finished",
+    "receipt": "Receipt",
+    "changeReturned": "Change returned",
+    "share": "View / share PDF",
+    "next": "Next customer"
+  },
+  "saved": {
+    "checking": "Checking whether it was saved…",
+    "notSaved": "It wasn't saved. Try again."
+  }
+}
