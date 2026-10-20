@@ -39,8 +39,7 @@ const CATALOGUE = { staleTime: 5 * 60_000, refetchOnWindowFocus: true } as const
 export function useOpenVisits() {
   return useQuery({
     queryKey: OPEN_VISITS_KEY,
-    queryFn: async () =>
-      (await api<{ items: VisitDto[] }>('/me/visits?status=1&status=2')).items,
+    queryFn: async () => (await api<{ items: VisitDto[] }>('/me/visits?status=1&status=2')).items,
     ...LIVE,
   });
 }

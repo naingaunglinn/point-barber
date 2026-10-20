@@ -4,7 +4,7 @@ import { type ServiceListItemDto, localized } from '@point/shared';
 import { Button, EmployeeChip, FormAlert, LockBanner, Sheet } from '@point/ui';
 import { Check } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { startChips } from './start-chips';
 
@@ -29,6 +29,8 @@ export interface StartSheetProps {
   readonly problem?: StartProblem | null;
   /** `unpaid_visit_open`: open the visit that waits for payment (`context.visit_id`). */
   readonly onOpenUnpaid?: (visitId: string) => void;
+  /** The saved check of a START without an answer (`SavedCheck`), shown inside the sheet. */
+  readonly saved?: ReactNode;
 }
 
 export interface StartProblem {
@@ -47,6 +49,7 @@ export function StartSheet({
   onStart,
   problem = null,
   onOpenUnpaid,
+  saved,
 }: StartSheetProps) {
   const t = useTranslations('pos.start');
   const tError = useTranslations('error');
@@ -76,6 +79,7 @@ export function StartSheet({
         </Button>
       }
     >
+      {saved !== undefined && <div className="mb-4">{saved}</div>}
       {problem?.code === 'day_closed' && <LockBanner message={tError('day_closed')} />}
       {problem?.code === 'unpaid_visit_open' && (
         <div role="alert" className="mb-4 grid gap-2" data-testid="start-unpaid">

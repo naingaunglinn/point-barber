@@ -15,10 +15,15 @@ export function renderStaff(
   {
     locale = 'en',
     now = FIXTURE_NOW,
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
     ...options
-  }: RenderOptions & { readonly locale?: Locale; readonly now?: string } = {},
+  }: RenderOptions & {
+    readonly locale?: Locale;
+    readonly now?: string;
+    /** A query cache the test filled first (e.g. `/me`). */
+    readonly client?: QueryClient;
+  } = {},
 ): RenderResult & { readonly client: QueryClient } {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const result = render(ui, {
     wrapper: ({ children }) => (
       <NextIntlClientProvider
