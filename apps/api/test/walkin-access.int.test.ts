@@ -11,7 +11,7 @@ import { type WalkinHttp, walkinHttp } from './helpers/walkin-http.js';
 // add-walkin-visit-checkout tasks 6.8 / 6.9 — visits spec "Own visits need no code; acting on another
 // barber's visit needs the visit codes" and sales-checkout spec "Own sale needs no code; … needs the
 // sale codes" (P4-RULE-03 · API-PERM-02 / 03 · design D2), through the real guards: every route each
-// actor-set resolver serves, for the performer Ko Aung, his colleague Ko Min, Ko Htet (Barber · B1),
+// actor-set resolver serves, for the performer Ko Aung, the colleague Ko Min, Ko Htet (Barber · B1),
 // Ko Zaw (Manager · B1) and Ma Hnin (Manager · B3). Ko Aung's own Haircut is 10,000.
 const { services } = FIXTURE_IDS;
 const AUNG = 'E004';
@@ -49,7 +49,7 @@ beforeAll(async () => {
 afterAll(() => s.close());
 
 describe('reading a visit — sale.readers (a visit id) or visit.view⁺', () => {
-  it('the performer reads his own visit without a code', async () => {
+  it('the performer reads their own visit without a code', async () => {
     const res = await api.get(AUNG, `/visits/${v1.visit}`);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: v1.visit, sale: { id: v1.sale } });
@@ -61,11 +61,13 @@ describe('reading a visit — sale.readers (a visit id) or visit.view⁺', () =>
     expect(res.body).toMatchObject(forbidden('visit.view'));
   });
 
-  // Waits for the owner (question of 20/Oct/2026): the foundation access spec answers a caller with no
-  // code of the module 403 on a single read too; this scenario says 404.
-  it.todo('Scenario: A barber of another branch reads → 404');
+  it('Scenario: A barber of another branch reads (no visit code) → 403 with context.required = visit.view', async () => {
+    const res = await api.get(HTET, `/visits/${v1.visit}`);
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject(forbidden('visit.view'));
+  });
 
-  it('a manager of another branch reads → 404 (a read outside the scope)', async () => {
+  it('Scenario: A manager of another branch reads → 404', async () => {
     expect((await api.get(ZAW, `/visits/${v1.visit}`)).status).toBe(404);
   });
 
@@ -76,25 +78,34 @@ describe('reading a visit — sale.readers (a visit id) or visit.view⁺', () =>
   });
 });
 
-describe('reading a sale — sale.readers (a sale id) or sale.view⁺', () => {
-  it('the performer reads his own sale; the branch manager reads it', async () => {
+describe('reading a sale — sale.readers (a sale id) or sale.view itself (Part 4 v1.3)', () => {
+  it('the performer reads their own sale; the branch manager reads it', async () => {
     expect((await api.get(AUNG, `/sales/${v1.sale}`)).status).toBe(200);
     expect((await api.get(HNIN, `/sales/${v1.sale}`)).status).toBe(200);
   });
 
-  // Waits for the owner (question of 20/Oct/2026): the seed Barber role holds sale.create and
-  // sale.late_entry, so under sale.view⁺ every barber of B3 passes this read.
-  it.todo('Scenario: A colleague of the same branch reads amounts → 403 sale.view');
+  it('Scenario: A colleague of the same branch reads amounts → 403 with context.required = sale.view', async () => {
+    // Ko Min holds sale.create and sale.late_entry at B3; they open no one else's sale (Part 4 v1.3).
+    const res = await api.get(MIN, `/sales/${v1.sale}`);
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject(forbidden('sale.view'));
+  });
 
-  it('Scenario: A barber of another branch reads a B3 sale → 404', async () => {
+  it('Scenario: A barber of another branch reads a B3 sale → 403 with context.required = sale.view', async () => {
     const res = await api.get(HTET, `/sales/${v1.sale}`);
+    expect(res.status).toBe(403);
+    expect(res.body).toMatchObject(forbidden('sale.view'));
+  });
+
+  it('Scenario: A manager of another branch reads a B3 sale → 404', async () => {
+    const res = await api.get(ZAW, `/sales/${v1.sale}`);
     expect(res.status).toBe(404);
     expect(res.body.code).toBe(ErrorCode.NOT_FOUND);
   });
 });
 
 describe('lines — visit.lineActors (a sale id) or visit.update', () => {
-  it('the performer adds a line to his own sale', async () => {
+  it('the performer adds a line to their own sale', async () => {
     const res = await api.post(AUNG, `/sales/${v1.sale}/items`, {
       line_type: 1,
       service_id: services.SHAVE,

@@ -18,7 +18,7 @@ import {
 import type { Response } from 'express';
 
 import { AccessContext } from '../../common/access/access-context.js';
-import { Can, CanView, Staff } from '../../common/access/declarations.js';
+import { Can, Staff } from '../../common/access/declarations.js';
 import { toReadScope } from '../../common/access/read-scope.js';
 import { PrismaService } from '../../common/database/prisma.service.js';
 import { ProblemException } from '../../common/http/problem.exception.js';
@@ -51,9 +51,12 @@ export class SalesController {
     private readonly receipts: ReceiptReads,
   ) {}
 
-  /** P4.SAL.02 — a reader of the sale (P4-RULE-03), or `sale.view⁺` at its branch. */
+  /**
+   * P4.SAL.02 — a reader of the sale (P4-RULE-03), or `sale.view` itself at its branch: the seed
+   * Barber codes `sale.create` / `sale.late_entry` open no one else's sale (API Part 4 v1.3 — WA1).
+   */
   @Get('sales/:id')
-  @CanView('sale', { branch: SALE_BRANCH, orSelf: 'sale.readers' })
+  @Can('sale.view', { branch: SALE_BRANCH, orSelf: 'sale.readers' })
   async read(@Param('id') id: string): Promise<SaleDto> {
     return this.sale(await this.viewers.current(), id);
   }
