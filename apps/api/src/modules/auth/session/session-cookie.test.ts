@@ -42,6 +42,14 @@ describe('session token and cookie (task 4.1)', () => {
     expect(readCookie('point_session_x=1', 'point_session')).toBeUndefined();
     expect(readCookie('point_session=', 'point_session')).toBeUndefined();
     expect(readCookie(undefined, 'point_session')).toBeUndefined();
+    expect(readCookie('flag; point_session=tok', 'point_session')).toBe('tok');
+  });
+
+  it('reads no session from two point_session values — one was planted (PR #21 review item 6)', () => {
+    expect(
+      readCookie('point_session=attacker; point_session=victim', 'point_session'),
+    ).toBeUndefined();
+    expect(readCookie('point_session=tok; point_session=tok', 'point_session')).toBeUndefined();
   });
 });
 

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as oidc from 'openid-client';
+import { UserStatus } from '@point/shared';
 import type { Logger } from 'pino';
 
 import { Clock } from '../../../common/clock/clock.js';
@@ -46,7 +47,12 @@ export class GoogleSignIn {
     return `${this.config.env.APP_ORIGIN}/api/v1/auth/google/callback`;
   }
 
-  /** The issuer's metadata, discovered once. The test issuer is plain HTTP, allowed in test only. */
+  /**
+   * The issuer's metadata, discovered once. The ID token's signature is checked against the issuer's
+   * keys (`enableNonRepudiationChecks` — openid-client skips it by default for a token taken straight
+   * from the token endpoint; design D7 · PR #21 review item 4). The test issuer is plain HTTP, allowed
+   * in test only.
+   */
   private oidcConfig(): Promise<oidc.Configuration> {
     this.configuration ??= (async () => {
       const { GOOGLE_ISSUER, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, APP_ENV } = this.config.env;
@@ -56,7 +62,12 @@ export class GoogleSignIn {
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
         undefined,
-        insecure ? { execute: [oidc.allowInsecureRequests] } : undefined,
+        {
+          execute: [
+            oidc.enableNonRepudiationChecks,
+            ...(insecure ? [oidc.allowInsecureRequests] : []),
+          ],
+        },
       );
     })().catch((err: unknown) => {
       this.configuration = undefined;
@@ -134,20 +145,29 @@ export class GoogleSignIn {
       return this.refuse(identity.cause, identity.userId, email, meta);
 
     const { user, link } = identity;
-    const session = await this.runner.run(async (tx) => {
-      const locked = await this.logins.lockUser(tx, user.id);
-      if (locked === null) return null;
-      return this.signIn.succeed(
-        tx,
-        locked,
-        'google',
-        this.clock.now(),
-        meta,
-        link ? { googleSubject: subject } : {},
-      );
-    });
-    if (session === null) return this.refuse('no_match', null, email, meta);
-    return { ok: true, location: pending.returnTo ?? '/', token: session.token };
+    // The identity is decided again under the row lock (PR #21 review items 3 and 5): two first
+    // sign-ins on one address cannot both link, and a user disabled meanwhile gets no session.
+    const outcome = await this.runner.run(
+      async (tx): Promise<{ token: string } | { refused: string }> => {
+        const locked = await this.logins.lockUser(tx, user.id);
+        if (locked === null) return { refused: 'no_match' };
+        if (locked.status !== UserStatus.ACTIVE && locked.status !== UserStatus.INVITED) {
+          return { refused: 'ineligible' };
+        }
+        const linkedTo = locked.google_subject;
+        if (linkedTo !== null && linkedTo !== subject) return { refused: 'subject_mismatch' };
+        return this.signIn.succeed(
+          tx,
+          locked,
+          'google',
+          this.clock.now(),
+          meta,
+          link && linkedTo === null ? { googleSubject: subject } : {},
+        );
+      },
+    );
+    if ('refused' in outcome) return this.refuse(outcome.refused, user.id, email, meta);
+    return { ok: true, location: pending.returnTo ?? '/', token: outcome.token };
   }
 
   /** D-AUTH-08: by `sub`; at the first Google sign-in by the verified address of an unlinked user. */

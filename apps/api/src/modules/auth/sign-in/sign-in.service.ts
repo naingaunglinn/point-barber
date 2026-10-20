@@ -82,6 +82,7 @@ export class SignInService {
   ): Promise<{ readonly sessionId: string; readonly token: string }> {
     await this.logins.recordSuccess(tx, user.id, at, {
       activate: user.status === UserStatus.INVITED,
+      resetFailures: method === 'otp',
       ...options,
     });
     const label = deviceLabel(

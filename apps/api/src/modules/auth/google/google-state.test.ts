@@ -13,6 +13,11 @@ describe('return_to (task 5.13)', () => {
     expect(safeReturnTo(path, APP)).toBe(path);
   });
 
+  it('drops a return path longer than 2048 characters', () => {
+    expect(safeReturnTo(`/${'a'.repeat(2047)}`, APP)).toBe(`/${'a'.repeat(2047)}`);
+    expect(safeReturnTo(`/${'a'.repeat(2048)}`, APP)).toBeUndefined();
+  });
+
   it.each([
     'https://evil.test/x',
     '//evil.test/x',

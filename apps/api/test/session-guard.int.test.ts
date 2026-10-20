@@ -40,6 +40,15 @@ describe('add-foundation-auth-access · auth · Every staff request re-checks th
     expect(res.body).toMatchObject({ code: 'unauthenticated' });
   });
 
+  it('two point_session cookies mean no session (PR #21 review item 6)', async () => {
+    const aung = await t.signIn('E004');
+    const res = await t.http
+      .get(STAFF)
+      .set('Cookie', `point_session=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA; ${aung.cookie}`);
+    expect(res.status).toBe(401);
+    expect(res.body).toMatchObject({ code: 'unauthenticated' });
+  });
+
   it.each([1, 2, 3, 4])('Scenario: Session revoked with reason %i', async (reason) => {
     const min = await t.signIn('E005');
     await t.prisma.user_sessions.update({

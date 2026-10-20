@@ -13,6 +13,8 @@ export interface StubIdentity {
   readonly email_verified: boolean;
   /** The nonce the authorisation request carried; a wrong one must be refused by the client. */
   readonly nonce: string;
+  /** A token the client must refuse (PR #21 review item 4). */
+  readonly tamper?: 'signature' | 'audience' | 'issuer' | 'expired';
 }
 
 const base64url = (value: Buffer | string) => Buffer.from(value).toString('base64url');
@@ -21,6 +23,8 @@ export class OidcStub {
   private server: Server | undefined;
   private readonly codes = new Map<string, StubIdentity>();
   private readonly keys = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  /** A key the JWKS does not publish — a token signed with it has a wrong signature. */
+  private readonly strangerKey = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey;
   private readonly kid = randomBytes(8).toString('hex');
   issuer = '';
 
@@ -106,21 +110,22 @@ export class OidcStub {
   private idToken(identity: StubIdentity): string {
     const now = Math.floor(Date.now() / 1000);
     const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: this.kid }));
+    const { tamper } = identity;
     const payload = base64url(
       JSON.stringify({
-        iss: this.issuer,
-        aud: this.clientId,
+        iss: tamper === 'issuer' ? 'http://issuer.invalid' : this.issuer,
+        aud: tamper === 'audience' ? 'another-client' : this.clientId,
         sub: identity.sub,
         email: identity.email,
         email_verified: identity.email_verified,
         nonce: identity.nonce,
-        iat: now,
-        exp: now + 600,
+        iat: tamper === 'expired' ? now - 7200 : now,
+        exp: tamper === 'expired' ? now - 3600 : now + 600,
       }),
     );
     const signature = createSign('RSA-SHA256')
       .update(`${header}.${payload}`)
-      .sign(this.keys.privateKey);
+      .sign(tamper === 'signature' ? this.strangerKey : this.keys.privateKey);
     return `${header}.${payload}.${base64url(signature)}`;
   }
 }

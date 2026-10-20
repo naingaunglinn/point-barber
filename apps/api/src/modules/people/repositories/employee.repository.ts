@@ -6,8 +6,11 @@ import type { Tx } from '../../../common/database/transaction-runner.js';
 // Users and employees as the first-admin command creates them (P1-RULE-14 · design D10).
 @Injectable()
 export class EmployeeRepository {
+  /** Exactly that address in lower case — not an insensitive `equals`, whose ILIKE reads `_` / `%`. */
   async emailExists(tx: Tx, email: string): Promise<boolean> {
-    return (await tx.users.count({ where: { email: { equals: email, mode: 'insensitive' } } })) > 0;
+    const rows = await tx.$queryRaw<{ n: bigint }[]>`
+      SELECT count(*) AS n FROM users WHERE lower(email) = lower(${email})`;
+    return Number(rows[0]?.n ?? 0) > 0;
   }
 
   async codeExists(tx: Tx, companyId: string, code: string): Promise<boolean> {
