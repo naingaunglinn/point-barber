@@ -9,5 +9,8 @@
   "empty": {
     "title": "No customer in progress",
     "body": "When a customer arrives, tap ＋ Start."
+  },
+  "nav": {
+    "start": "Start"
   }
 }
