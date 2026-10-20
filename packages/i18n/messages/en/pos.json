@@ -72,7 +72,8 @@
   },
   "saved": {
     "checking": "Checking whether it was saved…",
-    "notSaved": "It wasn't saved. Try again."
+    "notSaved": "It wasn't saved. Try again.",
+    "already": "Already saved"
   },
   "visit": {
     "started": "Started {time} · {elapsed}",

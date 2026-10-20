@@ -2,10 +2,13 @@ import {
   type MeResponse,
   type PaymentDto,
   type PaymentMethodDto,
+  type ReceiptViewDto,
   type SaleDto,
   type SaleItemDto,
+  type ServiceCategoryDto,
   type ServiceListItemDto,
   type VisitDto,
+  receiptViewSchema,
   saleSchema,
   serviceListItemSchema,
   visitSchema,
@@ -216,7 +219,7 @@ export function visitOf(overrides: Partial<VisitDto> = {}): VisitDto {
 export function serviceOf(id: string, nameEn: string, sortOrder: number): ServiceListItemDto {
   return serviceListItemSchema.parse({
     id,
-    category_id: '0199a3f2-0000-7000-800b-000000000001',
+    category_id: CATEGORY,
     name_mm: nameEn,
     name_en: nameEn,
     pricing_mode: 1,
@@ -249,4 +252,55 @@ export function methodOf(code: 'CASH' | 'KBZPAY'): PaymentMethodDto {
     archived_at: null,
     updated_at: AT,
   };
+}
+
+export const CATEGORY = '0199a3f2-0000-7000-800b-000000000001';
+
+export function categoryOf(): ServiceCategoryDto {
+  return {
+    id: CATEGORY,
+    name_mm: 'ဝန်ဆောင်မှု',
+    name_en: 'Services',
+    sort_order: 1,
+    status: 1,
+    archived_at: null,
+    updated_at: AT,
+  };
+}
+
+export function receiptOf(overrides: Partial<ReceiptViewDto> = {}): ReceiptViewDto {
+  return receiptViewSchema.parse({
+    kind: 'sale',
+    number: 'B3-2026-OCT-00001',
+    original_number: null,
+    issued_at: '2026-10-05T10:42:00+06:30',
+    branch: { name: 'Point 3.0', address: null, phone: null, logo_url: null },
+    barbers: ['Ko Aung'],
+    customer_name: null,
+    customer_phone_masked: null,
+    lines: [
+      {
+        description_en: 'Haircut',
+        description_mm: 'ဆံပင်ညှပ်',
+        option: null,
+        performer: 'Ko Aung',
+        quantity: 1,
+        unit_price_amount: 10_000,
+        amount: 10_000,
+      },
+    ],
+    subtotal_amount: 10_000,
+    discount_label: null,
+    discount_amount: 0,
+    service_charge_amount: null,
+    tax_amount: null,
+    total_amount: 10_000,
+    payments: [{ method: 'Cash', amount: 10_000, reference: null }],
+    change_returned: null,
+    footer: { opening_hours: null, thank_you: null },
+    pdf_attachment_id: null,
+    png_attachment_id: null,
+    rendered_at: null,
+    ...overrides,
+  });
 }
