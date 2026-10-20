@@ -33,7 +33,10 @@ const person = (
   rights: ActionRights,
   scope: 'all' | readonly string[],
 ): FixturePerson => ({
-  viewer: { actor: { user_id: users[code], employee_id: employees[code] }, rights },
+  viewer: {
+    actor: { user_id: users[code], employee_id: employees[code] },
+    rightsAt: (branchId) => (scope === 'all' || scope.includes(branchId) ? rights : NONE),
+  },
   scope,
 });
 

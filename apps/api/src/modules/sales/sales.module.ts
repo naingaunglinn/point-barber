@@ -1,5 +1,6 @@
 import { Module, type OnModuleInit } from '@nestjs/common';
 
+import { OrSelfResolvers, TargetResolvers } from '../../common/access/resolvers.js';
 import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import { BookingModule, Customers } from '../booking/index.js';
 import { CashClosingModule } from '../cash-closing/index.js';
@@ -7,6 +8,7 @@ import { CatalogModule } from '../catalog/index.js';
 import { PayrollModule } from '../payroll/index.js';
 import { PeopleModule } from '../people/index.js';
 import { CodeTables, Jobs, PlatformModule } from '../platform/index.js';
+import { SaleAccess } from './access/sale-access.js';
 import { SalesCustomerActivity } from './customer-activity/sales-customer-activity.js';
 import { ReceiptNumbers } from './finish/receipt-numbers.js';
 import { SalesFinish } from './finish/sales-finish.js';
@@ -24,14 +26,17 @@ import { PaymentsRepository } from './repositories/payments.repository.js';
 import { RefundsRepository } from './repositories/refunds.repository.js';
 import { SaleItemsRepository } from './repositories/sale-items.repository.js';
 import { SalesRepository } from './repositories/sales.repository.js';
+import { SalesController } from './sales.controller.js';
 import { PaymentMethodSeed } from './seed/payment-method-seed.js';
 import { SaleView } from './view/sale-view.js';
+import { SaleViewers } from './view/sale-viewers.js';
 
 // Bounded context `sales` (ADR-001 · docs/engineering/module-map.md): sales, sale items, receipt
 // counters, payment methods, payments, refunds. It builds on people (the company), platform and
 // booking (the customer of a FINISH, and booking's port of last_visit_at); its
 // part of the base seed — the system payment methods — joins sync.code_tables right after people's
-// base seed, the way people registers its steps.
+// base seed, the way people registers its steps. Its entity loaders and actor sets join the access
+// registries at start-up (design D2).
 @Module({
   imports: [
     PlatformModule,
@@ -41,6 +46,7 @@ import { SaleView } from './view/sale-view.js';
     CashClosingModule,
     PayrollModule,
   ],
+  controllers: [SalesController],
   providers: [
     PaymentMethodsRepository,
     SalesRepository,
@@ -60,8 +66,19 @@ import { SaleView } from './view/sale-view.js';
     ReceiptViews,
     ReceiptRenderHandler,
     ReceiptReads,
+    SaleViewers,
+    SaleAccess,
   ],
-  exports: [PaymentMethodSeed, VisitsRegistry, Sales, SaleLines, SaleView, Payments, SalesFinish],
+  exports: [
+    PaymentMethodSeed,
+    VisitsRegistry,
+    Sales,
+    SaleLines,
+    SaleView,
+    SaleViewers,
+    Payments,
+    SalesFinish,
+  ],
 })
 export class SalesModule implements OnModuleInit {
   constructor(
@@ -72,6 +89,9 @@ export class SalesModule implements OnModuleInit {
     private readonly customerActivity: SalesCustomerActivity,
     private readonly jobs: Jobs,
     private readonly receiptRender: ReceiptRenderHandler,
+    private readonly access: SaleAccess,
+    private readonly targets: TargetResolvers,
+    private readonly orSelf: OrSelfResolvers,
   ) {}
 
   onModuleInit(): void {
@@ -87,5 +107,6 @@ export class SalesModule implements OnModuleInit {
       (data, attempt) => this.receiptRender.handle(data, attempt),
       { localConcurrency: 1 },
     );
+    this.access.register(this.targets, this.orSelf);
   }
 }

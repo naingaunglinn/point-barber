@@ -368,6 +368,28 @@ export const finishRequestSchema = z.object({
   override_reason: reasonText.nullish(),
 });
 
+/** A repeatable query member (`status=1&status=2`): one value arrives as a string, several as a list. */
+const repeated = <T extends z.ZodType>(item: T) =>
+  z.preprocess((value) => (Array.isArray(value) ? value : [value]), z.array(item));
+
+/**
+ * P4.VIS.02 query: `status` repeatable, `date` a business date. With neither, the service answers the
+ * default — the open visits (1, 2) of any date plus today's FINISHED and INCOMPLETE ones.
+ */
+export const myVisitsQuerySchema = z.object({
+  status: repeated(z.coerce.number().pipe(codeOf(VisitStatus))).optional(),
+  date: wireDate.optional(),
+});
+
+/** P4.RCP.01 / .02 query: `format` default `json`; `width` default = the branch setting. */
+export const receiptQuerySchema = z.object({
+  format: z.enum(['json', 'pdf', 'png']).default('json'),
+  width: z.coerce
+    .number()
+    .pipe(z.literal([58, 80]))
+    .optional(),
+});
+
 export type SaleItemDto = z.infer<typeof saleItemSchema>;
 export type PaymentDto = z.infer<typeof paymentSchema>;
 export type PaymentMethodDto = z.infer<typeof paymentMethodSchema>;
@@ -384,3 +406,5 @@ export type SaleItemCreate = z.infer<typeof saleItemCreateSchema>;
 export type ReasonBody = z.infer<typeof reasonBodySchema>;
 export type PaymentCreate = z.infer<typeof paymentCreateSchema>;
 export type FinishRequest = z.infer<typeof finishRequestSchema>;
+export type MyVisitsQuery = z.infer<typeof myVisitsQuerySchema>;
+export type ReceiptQuery = z.infer<typeof receiptQuerySchema>;
