@@ -1,0 +1,116 @@
+{
+  "arrival": {
+    "walkIn": "ကြိုမမှာဘဲ လာသူ",
+    "title": "ဧည့်သည်အသစ်"
+  },
+  "start": {
+    "title": "ဝန်ဆောင်မှု စမယ်",
+    "branch": "ဆိုင်ခွဲ",
+    "barber": "ဆံပင်ညှပ်သူ",
+    "services": "ဝန်ဆောင်မှု (မထည့်လည်း ရ)",
+    "submit": "စမယ်",
+    "openUnpaid": "အရင် ဧည့်သည်ကို ဖွင့်မယ်"
+  },
+  "checkout": {
+    "split": "ခွဲပေး",
+    "remaining": "ပေးရန် ကျန်: {amount}",
+    "changeToReturn": "ပြန်အမ်းရန်: {amount}",
+    "voidPayment": "ငွေပေးချေမှု ပယ်ဖျက်",
+    "customerGave": "ဧည့်သည် ပေးငွေ",
+    "cashChange": "ပြန်အမ်း: {amount}",
+    "referenceInUse": "ဒီ reference ကို မှတ်ပြီးသားပါ။ ငွေလွှဲကို ပြန်စစ်ပါ။",
+    "void": {
+      "title": "ငွေပေးချေမှု ပယ်ဖျက်",
+      "consequence": "{method} {amount} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေထဲ မတွက်တော့ပါ။",
+      "confirm": "ပယ်ဖျက်မယ်"
+    },
+    "collectedBy": "ငွေလက်ခံသူ",
+    "method": "ငွေပေးနည်း",
+    "amount": "ပမာဏ",
+    "reference": "Reference နံပါတ်",
+    "submit": "ငွေယူမယ်",
+    "referenceHint": {
+      "prefixDigits": "{prefix} နောက်မှာ ဂဏန်း {count} လုံး",
+      "digits": "ဂဏန်း {count} လုံး"
+    },
+    "progress": {
+      "services": "ဝန်ဆောင်မှု",
+      "payment": "ငွေပေးချေ",
+      "finish": "ပြီးဆုံး"
+    },
+    "items": "ဝန်ဆောင်မှုများ",
+    "total": "စုစုပေါင်း",
+    "howCalculated": "ဘယ်လို တွက်ထားလဲ?",
+    "subtotal": "စုစုပေါင်း (လျှော့ခြင်း မတိုင်ခင်)",
+    "discount": "လျှော့ငွေ",
+    "serviceCharge": "ဝန်ဆောင်ခ",
+    "tax": "အခွန်"
+  },
+  "finish": {
+    "submit": "ပြီးပြီ · {total}",
+    "blocked": {
+      "remaining": "မပြီးခင် ကျန်ငွေ {amount} ကို ယူပါ။",
+      "cashExcess": "ငွေသားက စုစုပေါင်းထက် များနေတယ်။ ငွေသား ပေးချေမှုကို ပယ်ဖျက်ပြီး ပြန်ယူပါ။"
+    },
+    "phone": "ဧည့်သည် ဖုန်းနံပါတ် (မထည့်လည်း ရ)",
+    "skip": "ကျော်မယ်",
+    "existing": "ဧည့်သည်ဟောင်း: {name}",
+    "lastVisit": "ဧည့်သည်ဟောင်း: {name} · နောက်ဆုံးလာခဲ့ {date}",
+    "new": "ဧည့်သည်အသစ်",
+    "name": "နာမည်",
+    "override": {
+      "title": "ဒီ sale ကို ပြီးအောင်လုပ်မယ်",
+      "consequence": "ကိုယ်ပိုင် မဟုတ်တဲ့ sale ကို ပြီးအောင် လုပ်နေတာပါ။ အကြောင်းပြချက်ကို sale နဲ့အတူ သိမ်းထားမယ်။",
+      "confirm": "ပြီးပြီ"
+    }
+  },
+  "success": {
+    "title": "ငွေရှင်းပြီးပါပြီ",
+    "receipt": "ဘောက်ချာ",
+    "share": "PDF ကြည့် / ပို့",
+    "next": "နောက်ဧည့်သည်"
+  },
+  "saved": {
+    "checking": "သိမ်းပြီးလား စစ်နေပါတယ်…",
+    "notSaved": "မသိမ်းရသေးပါ။ ထပ်ကြိုးစားပါ။"
+  },
+  "visit": {
+    "started": "စတဲ့အချိန် {time} · {elapsed}",
+    "done": "ဝန်ဆောင်မှု ပြီးပြီ · ငွေရှင်းမယ်",
+    "incomplete": {
+      "title": "မပြီးဆုံးဟု မှတ်မယ်",
+      "consequence": "Sale ကို ပယ်ဖျက်မယ် — ဝင်ငွေ မရှိ၊ commission မရှိပါ။",
+      "confirm": "မပြီးဆုံးဟု မှတ်မယ်"
+    }
+  },
+  "lines": {
+    "remove": "ဖယ်မယ်",
+    "removeTitle": "ဝန်ဆောင်မှု ဖယ်မယ်",
+    "removeConsequence": "{service} ကို sale ပေါ်မှာ မျဉ်းဖြတ်ပြီး ပြထားမယ်၊ ငွေ မတောင်းတော့ပါ။",
+    "addedTitle": "ဘာကြောင့် ထပ်ထည့်တာလဲ?",
+    "addedConsequence": "ဝန်ဆောင်မှု ပြီးမှ {service} ကို ထပ်ထည့်တာပါ။",
+    "addedConfirm": "ထည့်မယ်"
+  },
+  "picker": {
+    "title": "ဝန်ဆောင်မှု ထည့်မယ်",
+    "search": "ဝန်ဆောင်မှု ရှာမယ်",
+    "empty": "ဝန်ဆောင်မှု မတွေ့ပါ",
+    "detail": "{duration} · {price}"
+  },
+  "help": {
+    "offline": {
+      "title": "အင်တာနက် မရှိပါ",
+      "body": "ဝန်ဆောင်မှုကို စာရွက်ပေါ်မှာ ရေးထားပါ — အချိန်၊ ဝန်ဆောင်မှု နဲ့ ငွေပေးချေမှု။ အင်တာနက် ပြန်ရလာရင် Late entry နဲ့ ထည့်ပါ။"
+    }
+  },
+  "warning": {
+    "notEligible": "မှတ်ပြီးပါပြီ — ဒီဆံပင်ညှပ်သူကို ဒီဆိုင်ခွဲမှာ ဒီဝန်ဆောင်မှုအတွက် သတ်မှတ်မထားပါ။"
+  },
+  "finished": {
+    "locked": "{datetime} မှာ {name} က ပြီးဆုံးခဲ့",
+    "correction": "Refund / Adjustment သုံးပါ"
+  },
+  "cancelled": {
+    "locked": "{datetime} မှာ {name} က မပြီးဆုံးဟု မှတ်ခဲ့: {reason}"
+  }
+}

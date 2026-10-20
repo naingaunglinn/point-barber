@@ -1,27 +1,40 @@
+import { type Locale, loadMessages } from '@point/i18n';
+import { ClockProvider, FormatProvider } from '@point/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, type RenderResult } from '@testing-library/react';
+import { type RenderOptions, type RenderResult, render } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactElement } from 'react';
 
-import { loadMessages, type Locale } from '@point/i18n';
-import { FormatProvider } from '@point/ui';
-
 // Renders a staff screen inside the providers of the staff layout (design D17): the language, a fresh
-// query cache and the formatting profile. Component tests only (jsdom).
+// query cache, the money / date formats of that language and a fixed clock (05/Oct/2026 10:42 AM in
+// Yangon, the fixture day of the walk-in specs). Component tests only (jsdom).
+export const FIXTURE_NOW = '2026-10-05T10:42:00+06:30';
+
 export function renderStaff(
   ui: ReactElement,
-  { locale = 'en' }: { readonly locale?: Locale } = {},
+  {
+    locale = 'en',
+    now = FIXTURE_NOW,
+    ...options
+  }: RenderOptions & { readonly locale?: Locale; readonly now?: string } = {},
 ): RenderResult & { readonly client: QueryClient } {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const result = render(
-    <NextIntlClientProvider locale={locale} messages={loadMessages(locale)} timeZone="Asia/Yangon">
-      <QueryClientProvider client={client}>
-        <FormatProvider locale={locale} profile="app">
-          {ui}
-        </FormatProvider>
-      </QueryClientProvider>
-    </NextIntlClientProvider>,
-  );
+  const result = render(ui, {
+    wrapper: ({ children }) => (
+      <NextIntlClientProvider
+        locale={locale}
+        messages={loadMessages(locale)}
+        timeZone="Asia/Yangon"
+      >
+        <QueryClientProvider client={client}>
+          <FormatProvider locale={locale} profile="app">
+            <ClockProvider now={now as never}>{children}</ClockProvider>
+          </FormatProvider>
+        </QueryClientProvider>
+      </NextIntlClientProvider>
+    ),
+    ...options,
+  });
   return { ...result, client };
 }
 
