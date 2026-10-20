@@ -47,6 +47,7 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly boss: PgBoss;
   private readonly registrations: Registration[] = [];
   private readonly atStart: { name: string; data: object; options: JobSendOptions }[] = [];
+  private readonly schedules: { name: string; cron: string }[] = [];
   private started = false;
 
   constructor(
@@ -78,6 +79,12 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
     this.started = true;
     for (const registration of this.registrations) await this.startWorker(registration);
     for (const { name, data, options } of this.atStart) await this.boss.send(name, data, options);
+    // Cron runs where the workers run (ADR-002); Myanmar Time.
+    if (this.config.env.JOBS_IN_API) {
+      for (const { name, cron } of this.schedules) {
+        await this.boss.schedule(name, cron, {}, { tz: 'Asia/Yangon' });
+      }
+    }
   }
 
   async onApplicationShutdown(): Promise<void> {
@@ -100,6 +107,11 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
    */
   sendAtStart<T extends object>(name: string, data: T, options: JobSendOptions = {}): void {
     this.atStart.push({ name, data, options });
+  }
+
+  /** A recurring job on a cron pattern (`auth.cleanup` hourly — ADR-002); set at start-up. */
+  schedule(name: string, cron: string): void {
+    this.schedules.push({ name, cron });
   }
 
   /** Handles a queue in this process when JOBS_IN_API=true; each job's data reaches `handler`. */

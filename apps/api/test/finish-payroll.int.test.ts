@@ -8,7 +8,7 @@ import { PrismaService } from '../src/common/database/prisma.service.js';
 import { ProblemException } from '../src/common/http/problem.exception.js';
 import { checkout } from './helpers/checkout.js';
 import { type SeededApp, seededApp } from './helpers/seeded.js';
-import { MovableClock } from './helpers/test-app.js';
+import { FixedClock } from './helpers/test-app.js';
 import { type FixturePerson, KO_AUNG, KO_MIN } from './helpers/walkin.js';
 
 // add-walkin-visit-checkout task 8.13 — sales-checkout spec "The day lock and the payroll lock gate
@@ -16,7 +16,7 @@ import { type FixturePerson, KO_AUNG, KO_MIN } from './helpers/walkin.js';
 // payroll period is 423 payroll_finalized (P5-RULE-10 · owner B9); the day after passes; a CALCULATED
 // run does not lock. Its own database: the October run would refuse every other test's FINISH.
 const { services, users, employees } = FIXTURE_IDS;
-const clock = new MovableClock(new Date('2026-10-05T10:00:00+06:30'));
+const clock = new FixedClock(new Date('2026-10-05T10:00:00+06:30'));
 
 let s: SeededApp;
 let prisma: PrismaService;

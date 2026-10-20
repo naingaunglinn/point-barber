@@ -8,14 +8,14 @@ import { PrismaService } from '../src/common/database/prisma.service.js';
 import { ProblemException } from '../src/common/http/problem.exception.js';
 import { checkout } from './helpers/checkout.js';
 import { type SeededApp, seededApp } from './helpers/seeded.js';
-import { MovableClock } from './helpers/test-app.js';
+import { FixedClock } from './helpers/test-app.js';
 import { KO_AUNG, KO_MIN } from './helpers/walkin.js';
 
 // add-walkin-visit-checkout task 8.2 — sales-checkout spec "Business dates and the receipt month follow
 // Myanmar time" (D-PLT-15 · D-PAY-06 · CG-TIME-03) with the injected clock: the last minute of October,
 // midnight starting November, and a visit that crosses midnight.
 const { branches, services, users } = FIXTURE_IDS;
-const clock = new MovableClock(new Date('2026-10-05T23:58:00+06:30'));
+const clock = new FixedClock(new Date('2026-10-05T23:58:00+06:30'));
 
 let s: SeededApp;
 let prisma: PrismaService;
