@@ -5,9 +5,10 @@ import { useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { SaleStatus, VisitStatus, localized } from '@point/shared';
-import { OfflineBanner, Skeleton } from '@point/ui';
+import { ErrorState, OfflineBanner, Skeleton } from '@point/ui';
 
 import { VisitHeader } from '../../../../../components/pos/VisitHeader';
+import { screenProblem } from '../../../../../lib/pos/problem';
 import { useSale, useVisit } from '../../../../../lib/pos/queries';
 import { MainQueryState } from '../../../../../lib/session/main-query-state';
 import { useMe } from '../../../../../lib/session/use-me';
@@ -26,7 +27,17 @@ export function SaleScreen({ id }: { readonly id: string }) {
   const visit = useVisit(sale.data?.visit_id);
   const [justFinished, setJustFinished] = useState(false);
 
-  if (sale.isError) return <MainQueryState error={sale.error}>{null}</MainQueryState>;
+  // A refused read (403 / 404) is the page state; any other failure is the error state with Retry.
+  const failed = sale.isError ? sale : visit.isError ? visit : null;
+  if (failed !== null) {
+    return (
+      <MainQueryState error={failed.error}>
+        <main className="p-4">
+          <ErrorState problem={screenProblem(failed.error)} onRetry={() => failed.refetch()} />
+        </main>
+      </MainQueryState>
+    );
+  }
   if (sale.data === undefined || (sale.data.visit_id !== null && visit.data === undefined)) {
     return (
       <main className="p-4" aria-busy="true">

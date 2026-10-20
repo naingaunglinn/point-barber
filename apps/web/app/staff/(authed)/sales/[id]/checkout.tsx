@@ -59,7 +59,10 @@ export function Checkout({
   const t = useTranslations('pos.saved');
   const store = useStore();
   const methods = usePaymentMethods();
+  // Void and incomplete share one action and the alert at the top; FINISH has its own, shown by the
+  // Finish step on its fields or above its button — never twice.
   const action = useAction(() => store.reloadSale(sale.id));
+  const finishing = useAction(() => store.reloadSale(sale.id));
   const [sheet, setSheet] = useState<{ readonly method?: PaymentMethodDto } | null>(null);
   const [payProblem, setPayProblem] = useState<ScreenProblem | null>(null);
   const [lookup, setLookup] = useState<CustomerLookupState>({ kind: 'none' });
@@ -183,11 +186,11 @@ export function Checkout({
           money={money}
           lookup={lookup}
           onPhone={onPhone}
-          pending={action.pending}
+          pending={finishing.pending}
           needsReason={sale.actions.finish_needs_reason}
-          problem={action.problem}
+          problem={finishing.problem}
           onFinish={(customer, overrideReason) =>
-            action.run(
+            finishing.run(
               () =>
                 api<SaleDto>(`/sales/${sale.id}/finish`, {
                   method: 'POST',

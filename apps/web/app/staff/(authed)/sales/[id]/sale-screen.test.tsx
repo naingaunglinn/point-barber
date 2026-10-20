@@ -98,6 +98,31 @@ describe('the state router (task 11.1)', () => {
     ).toBeTruthy();
   });
 
+  it('a failed visit read (404) → the page state, not an endless skeleton', async () => {
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: json(200, saleOf()),
+      [VISIT]: json(404, problem(404, 'not_found')),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    expect(await screen.findByText("This item doesn't exist or was archived.")).toBeTruthy();
+  });
+
+  it('a read without an answer (500) → the error state with Retry', async () => {
+    let calls = 0;
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: () => {
+        calls += 1;
+        return calls === 1 ? json(500, problem(500, 'internal_error')) : json(200, saleOf());
+      },
+      [VISIT]: json(200, visitOf()),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+    expect(await screen.findByTestId('visit-in-progress')).toBeTruthy();
+  });
+
   it('a CANCELLED sale → read-only with who marked it incomplete and why', async () => {
     const cancelled = visitOf({
       status: 0,
@@ -293,6 +318,18 @@ describe('FINISH and after (group 13)', () => {
     });
     fireEvent.click(screen.getByTestId('success-next'));
     expect(push).toHaveBeenCalledWith('/today');
+  });
+
+  it('a FINISH refusal shows once (amount_mismatch)', async () => {
+    routeFetch(
+      fetchMock,
+      paidRoutes({
+        [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(422, problem(422, 'amount_mismatch')),
+      }),
+    );
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('finish-submit'));
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
   });
 
   it('total_changed → the sale is loaded again', async () => {
