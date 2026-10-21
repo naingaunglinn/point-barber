@@ -168,6 +168,8 @@ describe('FLAGS', () => {
 });
 
 describe('the language check reads this map', () => {
+  // A child Node process (about 1 s alone): 30 s instead of vitest's default 5 s, for the full
+  // pre-push run on a loaded machine. The assertions are unchanged.
   it('pnpm i18n:check finds every derived state and flag label', () => {
     const repo = join(dirname(fileURLToPath(import.meta.url)), '../../../..');
     const result = spawnSync(process.execPath, [join(repo, 'tools/guards/check-i18n.mjs')], {
@@ -175,5 +177,5 @@ describe('the language check reads this map', () => {
     });
     expect(result.stdout).toMatch(/check-i18n: ok/);
     expect(result.status).toBe(0);
-  });
+  }, 30_000);
 });

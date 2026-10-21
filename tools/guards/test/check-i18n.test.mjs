@@ -52,7 +52,10 @@ afterEach(() => {
 
 // add-shared-ui-components · ui-foundation "Every visible string comes from the my and en language
 // files with checked keys" (D-PLT-03 · AD-L10N-01 · AD-L10N-02 · AD-IMPL-05 · design D6).
-describe('check-i18n (pnpm i18n:check)', () => {
+// Every test runs the guard in a child Node process (about 1 s alone). Under the full pre-push run on a
+// loaded machine the start-up alone can pass vitest's default 5 s, so the budget is 30 s; the
+// assertions are unchanged.
+describe('check-i18n (pnpm i18n:check)', { timeout: 30_000 }, () => {
   it('Scenario: Complete files pass — the language files of this repository', () => {
     const { status, output } = run();
     expect(status).toBe(0);
