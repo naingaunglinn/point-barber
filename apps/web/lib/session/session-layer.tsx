@@ -17,7 +17,7 @@ import {
   Skeleton,
 } from '@point/ui';
 
-import { StaffBottomNav } from '../../components/pos/StaffBottomNav';
+import { StaffBottomNav, useStaffRail } from '../../components/pos/StaffBottomNav';
 import { api, setApiHandlers } from '../api/client';
 import { BranchProvider, initialBranchId, startBranchOf } from './branch';
 import { GrantsProvider } from './grants';
@@ -142,12 +142,14 @@ function StaffShell({
   const company = me.grants.some((grant) => grant.scope_type === ScopeType.COMPANY);
   const [branch, setBranch] = useState<string>(() => initialBranchId(me));
   const setLanguage = useSetLanguage();
+  const rail = useStaffRail();
   return (
     <BranchProvider
       value={{ branchId: branch, setBranchId: setBranch, startBranch: startBranchOf(me, branch) }}
     >
       <AppShell
-        nav={[]}
+        nav={rail.nav}
+        {...(rail.activeKey === undefined ? {} : { activeKey: rail.activeKey })}
         bottomNav={<StaffBottomNav />}
         branchSwitcher={
           me.branches_in_scope.length > 0 ? (

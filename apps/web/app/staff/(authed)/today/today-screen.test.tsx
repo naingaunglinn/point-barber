@@ -54,8 +54,11 @@ describe('Today (P4.VIS.02)', () => {
     routeFetch(fetchMock, { [OPEN]: json(200, { items: [] }) });
     renderPos(<TodayScreen />);
     expect(await screen.findByText('No customer in progress')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    expect(push).toHaveBeenCalledWith('/visits/new');
+    // The empty state's ＋ Start and the page header's primary action both open the arrival step.
+    const starts = screen.getAllByRole('button', { name: 'Start' });
+    expect(starts).toHaveLength(2);
+    for (const start of starts) fireEvent.click(start);
+    expect(push.mock.calls).toStrictEqual([['/visits/new'], ['/visits/new']]);
   });
 
   it('Scenario: The list fails to load — the error state with the error ID; Retry loads again', async () => {
