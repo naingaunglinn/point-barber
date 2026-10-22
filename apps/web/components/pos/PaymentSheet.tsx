@@ -203,7 +203,7 @@ function PaymentForm({
         </FormField>
       </div>
       {chosen?.requires_reference === true && (
-        <div className="grid gap-1">
+        <div className="grid gap-1" data-testid="payment-reference-field">
           <FormField label={t('reference')} required helper={helper} error={referenceError}>
             {(field) => (
               <TextInput
