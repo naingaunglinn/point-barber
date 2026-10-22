@@ -190,15 +190,18 @@ function PaymentForm({
                 value={item.id}
                 checked={methodId === item.id}
                 onChange={() => setMethodId(item.id)}
+                data-testid={`payment-method-${item.code}`}
               />
               {localized(item, 'name', locale)}
             </label>
           ))}
         </fieldset>
       )}
-      <FormField label={t('amount')} required error={amountError}>
-        {(field) => <MoneyInput {...field} value={amount} onChange={setAmount} />}
-      </FormField>
+      <div data-testid="payment-amount">
+        <FormField label={t('amount')} required error={amountError}>
+          {(field) => <MoneyInput {...field} value={amount} onChange={setAmount} />}
+        </FormField>
+      </div>
       {chosen?.requires_reference === true && (
         <div className="grid gap-1">
           <FormField label={t('reference')} required helper={helper} error={referenceError}>
