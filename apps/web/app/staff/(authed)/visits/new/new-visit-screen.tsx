@@ -55,7 +55,7 @@ export function NewVisitScreen() {
 
   if (me === undefined) return null;
   return (
-    <main className="mx-auto grid w-full max-w-3xl gap-4 p-4" data-testid="new-visit">
+    <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="new-visit">
       <OfflineBanner helpHref="/help/offline" />
       <ArrivalStep
         onWalkIn={() => {
@@ -84,6 +84,6 @@ export function NewVisitScreen() {
           saved={<SavedCheck state={start.state} onRetry={start.retry} />}
         />
       )}
-    </main>
+    </div>
   );
 }

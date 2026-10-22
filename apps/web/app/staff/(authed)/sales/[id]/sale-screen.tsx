@@ -32,17 +32,17 @@ export function SaleScreen({ id }: { readonly id: string }) {
   if (failed !== null) {
     return (
       <MainQueryState error={failed.error}>
-        <main className="p-4">
+        <div>
           <ErrorState problem={screenProblem(failed.error)} onRetry={() => failed.refetch()} />
-        </main>
+        </div>
       </MainQueryState>
     );
   }
   if (sale.data === undefined || (sale.data.visit_id !== null && visit.data === undefined)) {
     return (
-      <main className="p-4" aria-busy="true">
+      <div aria-busy="true">
         <Skeleton shape="text" />
-      </main>
+      </div>
     );
   }
   const current = sale.data;
@@ -50,7 +50,7 @@ export function SaleScreen({ id }: { readonly id: string }) {
   const branchName = branch === undefined ? '' : localized(branch, 'name', locale);
 
   return (
-    <main className="mx-auto grid w-full max-w-3xl gap-4 p-4" data-testid="sale-screen">
+    <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="sale-screen">
       <OfflineBanner helpHref="/help/offline" />
       {visit.data !== undefined && <VisitHeader visit={visit.data} branchName={branchName} />}
       {current.status === SaleStatus.CANCELLED ? (
@@ -62,6 +62,6 @@ export function SaleScreen({ id }: { readonly id: string }) {
       ) : visit.data !== undefined ? (
         <InProgress sale={current} visit={visit.data} />
       ) : null}
-    </main>
+    </div>
   );
 }

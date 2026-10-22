@@ -20,7 +20,7 @@ export function TodayScreen() {
   const now = useNow();
   const visits = useOpenVisits();
   return (
-    <main className="mx-auto grid w-full max-w-3xl gap-4 p-4" data-testid="today">
+    <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="today">
       <OfflineBanner helpHref="/help/offline" />
       <div data-testid="today-header">
         <PageHeader
@@ -36,6 +36,6 @@ export function TodayScreen() {
         onOpen={(visit) => router.push(`/sales/${visit.sale.id}`)}
         onStart={() => router.push('/visits/new')}
       />
-    </main>
+    </div>
   );
 }

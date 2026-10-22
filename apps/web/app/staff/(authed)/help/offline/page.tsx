@@ -4,8 +4,8 @@ import { OfflineHelp } from '../../../../../components/pos/OfflineHelp';
 // paper; it is entered later with Late entry. No form and no record button.
 export default function OfflineHelpPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl p-4">
+    <div className="mx-auto w-full max-w-3xl">
       <OfflineHelp />
-    </main>
+    </div>
   );
 }

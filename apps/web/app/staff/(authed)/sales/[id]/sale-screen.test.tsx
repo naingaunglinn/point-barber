@@ -332,6 +332,46 @@ describe('FINISH and after (group 13)', () => {
     await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
   });
 
+  it('Scenario: KBZPay 10,000 for a haircut of 8,000 — "Change to return: 2,000 Ks" next to Finish', async () => {
+    const kbz = paymentOf({
+      amount: 10_000,
+      external_reference: 'KBZ0001234591',
+      payment_method: {
+        id: IDS.KBZPAY,
+        code: 'KBZPAY',
+        name_mm: 'KBZPay',
+        name_en: 'KBZPay',
+        kind: 2,
+      },
+      effective_payment_method: {
+        id: IDS.KBZPAY,
+        code: 'KBZPAY',
+        name_mm: 'KBZPay',
+        name_en: 'KBZPay',
+        kind: 2,
+      },
+    });
+    const over = saleOf({
+      ...PAID,
+      items: [
+        lineOf({ unit_price_amount: 8_000, list_price_amount: 8_000, line_total_amount: 8_000 }),
+      ],
+      subtotal_amount: 8_000,
+      total_amount: 8_000,
+      paid_amount: 10_000,
+      change_due_amount: 2_000,
+      payments: [kbz],
+    });
+    routeFetch(fetchMock, {
+      ...paidRoutes(),
+      [SALE]: json(200, over),
+      [VISIT]: json(200, visitOf({ ...COMPLETED, sale: over })),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    expect((await screen.findByTestId('money-change')).textContent).toContain('2,000');
+    expect(screen.getByTestId('finish-submit')).toBeTruthy();
+  });
+
   it('total_changed → the sale is loaded again', async () => {
     routeFetch(
       fetchMock,

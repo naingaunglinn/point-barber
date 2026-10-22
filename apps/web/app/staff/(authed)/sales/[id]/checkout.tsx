@@ -142,9 +142,11 @@ export function Checkout({
           )
         }
       />
+      {/* Always mounted while the sale is open: "Remaining to pay" while money is missing, "Change to
+          return" after a non-cash over-transfer (task 12.6), announced as it changes (aria-live). */}
+      <MoneyStatus money={money} />
       {sale.remaining_amount > 0 && sale.actions.take_payment && (
         <section className="grid gap-3">
-          <MoneyStatus money={money} />
           {payProblem !== null && sheet === null && <FormAlert problem={payProblem} />}
           {sheet === null && <SavedCheck state={pay.state} onRetry={pay.retry} />}
           <PaymentButtons
