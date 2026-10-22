@@ -17,7 +17,10 @@ import {
   Skeleton,
 } from '@point/ui';
 
+import { WithOfflineHelp } from '../../components/pos/OfflineHelp';
+import { StaffBottomNav, useStaffRail } from '../../components/pos/StaffBottomNav';
 import { api, setApiHandlers } from '../api/client';
+import { BranchProvider, initialBranchId, startBranchOf } from './branch';
 import { GrantsProvider } from './grants';
 import { navigation } from './navigate';
 import { loginUrl } from './return-to';
@@ -127,7 +130,10 @@ export function SessionLayer({
   );
 }
 
-/** The AppShell of the signed-in area: the branch switcher, the language and the user menu. */
+/**
+ * The AppShell of the signed-in area: the branch switcher, the language, the user menu and — from
+ * add-walkin-visit-checkout — the bottom navigation and the branch context (AD-NAV-04 default).
+ */
 function StaffShell({
   me,
   locale,
@@ -135,36 +141,41 @@ function StaffShell({
 }: Readonly<{ me: MeResponse; locale: Locale; children: ReactNode }>) {
   const t = useTranslations('auth.landing');
   const company = me.grants.some((grant) => grant.scope_type === ScopeType.COMPANY);
-  const [branch, setBranch] = useState<string>(
-    company ? ALL_BRANCHES : (me.branches_in_scope[0]?.id ?? ALL_BRANCHES),
-  );
+  const [branch, setBranch] = useState<string>(() => initialBranchId(me));
   const setLanguage = useSetLanguage();
+  const rail = useStaffRail();
   return (
-    <AppShell
-      nav={[]}
-      branchSwitcher={
-        me.branches_in_scope.length > 0 ? (
-          <BranchSwitcher
-            branches={me.branches_in_scope}
-            value={branch}
-            userId={me.user.id}
-            allowAll={company}
-            onChange={setBranch}
-          />
-        ) : undefined
-      }
-      language={<LanguageSwitch value={locale} onChange={setLanguage} />}
-      userMenu={
-        <div className="flex items-center gap-2">
-          {/* No profile page exists yet (AD-NAV-07 v1.8): the name is text until one does. */}
-          <span className="text-sm font-semibold">{localized(me.employee, 'name', locale)}</span>
-          <Button variant="ghost" onClick={() => void signOut()}>
-            {t('signOut')}
-          </Button>
-        </div>
-      }
+    <BranchProvider
+      value={{ branchId: branch, setBranchId: setBranch, startBranch: startBranchOf(me, branch) }}
     >
-      {children}
-    </AppShell>
+      <AppShell
+        nav={rail.nav}
+        {...(rail.activeKey === undefined ? {} : { activeKey: rail.activeKey })}
+        bottomNav={<StaffBottomNav />}
+        branchSwitcher={
+          me.branches_in_scope.length > 0 ? (
+            <BranchSwitcher
+              branches={me.branches_in_scope}
+              value={branch}
+              userId={me.user.id}
+              allowAll={company}
+              onChange={setBranch}
+            />
+          ) : undefined
+        }
+        language={<LanguageSwitch value={locale} onChange={setLanguage} />}
+        userMenu={
+          <div className="flex items-center gap-2">
+            {/* No profile page exists yet (AD-NAV-07 v1.8): the name is text until one does. */}
+            <span className="text-sm font-semibold">{localized(me.employee, 'name', locale)}</span>
+            <Button variant="ghost" onClick={() => void signOut()}>
+              {t('signOut')}
+            </Button>
+          </div>
+        }
+      >
+        <WithOfflineHelp>{children}</WithOfflineHelp>
+      </AppShell>
+    </BranchProvider>
   );
 }

@@ -32,14 +32,29 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(res.status).toBe(200);
     expect(res.headers['cache-control']).toBe('no-store');
     expect(meResponseSchema.parse(res.body)).toBeDefined();
+    // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
+    // (add-walkin-visit-checkout design D3 · API Part 4 §9): 19 entries.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
+        'discount.approve',
+        'discount.view',
         'employee.rating_update',
         'employee.view',
+        'payment.verify',
+        'payment.view',
         'role.assign',
+        'sale.create',
+        'sale.delete',
+        'sale.finish_override',
+        'sale.late_entry',
+        'sale.override_price',
+        'sale.view',
         'settings.update',
         'settings.view',
+        'visit.delete',
+        'visit.update',
+        'visit.view',
       ].map((code) => ({ code, scope_type: 2, branch_ids: [B3] })),
     );
     expect(res.body.branches_in_scope).toMatchObject([{ code: 'B3', name_en: 'Point 3.0' }]);
@@ -49,11 +64,13 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
 
   it('Scenario: The company admin', async () => {
     const res = await me((await t.signIn('E001')).cookie);
-    const part1 = (res.body.grants as { code: string }[]).filter(
+    const catalogue = (res.body.grants as { code: string }[]).filter(
       (g) => !g.code.startsWith('fixture.'),
     );
-    expect(part1).toHaveLength(21);
-    for (const grant of part1) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
+    // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
+    // (add-walkin-visit-checkout design D3): 43 entries.
+    expect(catalogue).toHaveLength(43);
+    for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
       B2,
@@ -69,7 +86,11 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     const again = await me(`point_session=${sessionCookieOf(res) ?? ''}`);
     for (const body of [res.body, again.body]) {
       expect(body).toMatchObject({
-        grants: [],
+        // The Part 4 codes of the seed Barber role (add-walkin-visit-checkout design D3 · API Part 4 §9).
+        grants: [
+          { code: 'sale.create', scope_type: 2, branch_ids: [B3] },
+          { code: 'sale.late_entry', scope_type: 2, branch_ids: [B3] },
+        ],
         user: { email: 'aung@point.test' },
         employee: { name_en: 'Ko Aung' },
         session: { device_label: 'Android · Chrome' },

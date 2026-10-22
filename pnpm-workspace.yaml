@@ -18,3 +18,5 @@ minimumReleaseAgeExclude:
   - '@turbo/windows-arm64@2.11.7'
   - turbo@2.11.7
   - eslint-plugin-n@18.4.1
+patchedDependencies:
+  '@prisma/adapter-pg@7.10.0': patches/@prisma__adapter-pg@7.10.0.patch

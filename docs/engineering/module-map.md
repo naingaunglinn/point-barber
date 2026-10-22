@@ -27,6 +27,41 @@ that owns its part.
 
 The API parts are in point-sdd [`docs/api/`](../../../point-sdd/docs/api/).
 
+## Table ownership
+
+A module writes only its own tables (rule 1 below). A module reads another module's table only
+through that module's `index.ts`, or in its own repository when the owning change says so. Each change
+adds rows for the tables it first writes. The list starts with `add-walkin-visit-checkout`; the tables
+written by earlier changes (`people`, `auth`, `platform`) are not listed yet — the table-ownership
+guard of `add-ci-guard-rails` completes the list before it reads it.
+
+| Module         | Writes                                                                                                                      | Added by                    |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `delivery`     | `visits`                                                                                                                    | `add-walkin-visit-checkout` |
+| `sales`        | `sales`, `sale_items`, `receipt_counters`, `payment_methods`, `payments`, `refunds`                                         | `add-walkin-visit-checkout` |
+| `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout` |
+| `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout` |
+| `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
+| `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
+| `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
+
+## Advisory lock keys
+
+Only transaction-level advisory locks, each taken through the one named helper of the module that owns
+it, on `hashtextextended(<key>, 0)` (CG-DB-08). A new key gets a row here in the change that adds it.
+
+| Key                               | Helper                              | Module         | Mode                                                                    | Added by                     |
+| --------------------------------- | ----------------------------------- | -------------- | ----------------------------------------------------------------------- | ---------------------------- |
+| `idem:<key>`                      | `Idempotency.run`                   | `platform`     | try, exclusive                                                          | `add-foundation-auth-access` |
+| `point:code_tables`               | catalogue sync (`sync.code_tables`) | `people`       | exclusive                                                               | `add-foundation-auth-access` |
+| `day:<branch_id>:<business_date>` | `DayLock.assertOpen`                | `cash-closing` | shared (P7-RULE-02); the exclusive close comes with `add-daily-closing` | `add-walkin-visit-checkout`  |
+| `payroll:<company_id>`            | `PayrollLock.assertNotFinalized`    | `payroll`      | shared (P5-RULE-10); finalize / reopen come with payroll                | `add-walkin-visit-checkout`  |
+| `payref:<method_id>:<reference>`  | `PaymentReferenceLock`              | `sales`        | exclusive                                                               | `add-walkin-visit-checkout`  |
+| `receipt:<entity_id>`             | `ReceiptFilesLock.acquire`          | `platform`     | exclusive                                                               | `add-walkin-visit-checkout`  |
+
+Locks are taken in one order per transaction; the order of each write is in its change's design (for
+walk-in checkout: design D4 and D5).
+
 ## Inside a module
 
 ```

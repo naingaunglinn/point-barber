@@ -100,11 +100,18 @@ function SettingsGate() {
 
 describe('add-foundation-auth-access · access · The app refreshes its grants on focus and after an unexpected 403', () => {
   it('Scenario: A changed role reaches the open app on focus (task 7.3)', async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        json(200, meOf({ grants: [{ code: 'settings.update', scope_type: 2, branch_ids: [B3] }] })),
-      )
-      .mockResolvedValueOnce(json(200, meOf({ grants: [] })));
+    // Answered by URL: the shell's other reads (the bottom nav's open visits) take no `/me` answer.
+    const answers = [
+      meOf({ grants: [{ code: 'settings.update', scope_type: 2, branch_ids: [B3] }] }),
+      meOf({ grants: [] }),
+    ];
+    fetchMock.mockImplementation((url) =>
+      Promise.resolve(
+        url === '/api/v1/me'
+          ? json(200, answers.length > 1 ? answers.shift() : answers[0])
+          : json(200, { items: [] }),
+      ),
+    );
     renderStaff(
       <SessionLayer locale="en">
         <SettingsGate />

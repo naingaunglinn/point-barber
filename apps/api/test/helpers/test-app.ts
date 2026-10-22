@@ -72,6 +72,8 @@ export interface TestApp {
 
 export interface TestAppOptions {
   readonly now?: Date;
+  /** A clock the test made before the application (a month boundary, a visit across midnight). */
+  readonly clock?: FixedClock;
   readonly probe?: DatabaseProbe;
   /** Another database than DATABASE_URL — a fresh copy (helpers/databases.ts). */
   readonly databaseUrl?: string;
@@ -79,7 +81,7 @@ export interface TestAppOptions {
   readonly jobs?: boolean;
   /** Environment values replaced for this application, e.g. GOOGLE_ISSUER of the stub issuer. */
   readonly env?: Partial<AppConfig['env']>;
-  /** Providers replaced for this application, e.g. a closed MaintenanceGate. */
+  /** Providers replaced for this application, e.g. a closed MaintenanceGate, storage or the renderer. */
   readonly overrides?: readonly { readonly provide: unknown; readonly useValue: unknown }[];
 }
 
@@ -99,7 +101,8 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   let builder = Test.createTestingModule({ imports: [TestAppModule] })
     .overrideProvider(LOGGER)
     .useValue(createLogger('info', stream));
-  const clock = options.now === undefined ? undefined : new FixedClock(options.now);
+  const clock =
+    options.clock ?? (options.now === undefined ? undefined : new FixedClock(options.now));
   if (clock !== undefined) builder = builder.overrideProvider(Clock).useValue(clock);
   if (options.probe !== undefined)
     builder = builder.overrideProvider(DatabaseProbe).useValue(options.probe);

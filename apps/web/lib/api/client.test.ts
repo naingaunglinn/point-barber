@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiProblem, api, setApiHandlers } from './client';
+import { ApiProblem, api, apiBlob, apiWithMeta, setApiHandlers } from './client';
 
 // add-foundation-auth-access task 7.1 — the API client (API-AUTH-02 · API-AUD-02 · AD-AUTH-01 ·
 // AD-PERM-03 · design D17), with a mocked fetch.
@@ -114,5 +114,39 @@ describe('api() (task 7.1)', () => {
       status: 502,
       problem: { code: 'internal_error' },
     });
+  });
+});
+
+describe('request headers, the replay flag and file answers (add-walkin-visit-checkout)', () => {
+  it('sends extra headers, e.g. the Idempotency-Key, next to the app headers', async () => {
+    fetchMock.mockResolvedValue(answer(201, { id: 'v1' }));
+    await api('/visits', { method: 'POST', body: {}, headers: { 'Idempotency-Key': 'k-1' } });
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(init).toMatchObject({
+      headers: { 'X-Requested-With': 'point-app', 'X-Client': 'web', 'Idempotency-Key': 'k-1' },
+    });
+  });
+
+  it('apiWithMeta reports Idempotent-Replayed', async () => {
+    fetchMock.mockResolvedValueOnce(answer(201, { id: 'v1' }));
+    expect(await apiWithMeta('/visits', { method: 'POST', body: {} })).toStrictEqual({
+      data: { id: 'v1' },
+      replayed: false,
+    });
+    fetchMock.mockResolvedValueOnce(answer(200, { id: 'v1' }, { 'Idempotent-Replayed': 'true' }));
+    expect((await apiWithMeta('/visits', { method: 'POST', body: {} })).replayed).toBe(true);
+  });
+
+  it('apiBlob returns the file; a refusal is still an ApiProblem', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(new Blob(['%PDF-1.7']), {
+        status: 200,
+        headers: { 'Content-Type': 'application/pdf' },
+      }),
+    );
+    const blob = await apiBlob('/sales/s1/receipt?format=pdf');
+    expect(await blob.text()).toBe('%PDF-1.7');
+    fetchMock.mockResolvedValueOnce(answer(409, problem(409, 'invalid_transition')));
+    await expect(apiBlob('/sales/s2/receipt?format=pdf')).rejects.toBeInstanceOf(ApiProblem);
   });
 });

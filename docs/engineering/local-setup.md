@@ -124,7 +124,7 @@ machine, `pnpm db:migrate` does the same, reading `MIGRATE_DATABASE_URL` from `.
 | `postgres` | PostgreSQL 16; the first start runs `db/bootstrap/00-roles.sh` (role `point_app`) | `127.0.0.1:5432`                                                                                 |
 | `backup`   | PostgreSQL client tools, idle                                                     | `docker compose exec backup …`                                                                   |
 | `mailpit`  | Catches all mail (the OTP inbox of the next change)                               | `http://localhost:8025`, SMTP `localhost:1025`                                                   |
-| `minio`    | S3-compatible bucket, only with `--profile storage`                               | `http://localhost:9000`, console `9001`                                                          |
+| `minio`    | S3-compatible bucket of the receipts; the API creates it                          | `http://localhost:9000`, console `9001`                                                          |
 
 Every port that `docker-compose.dev.yml` publishes binds to `127.0.0.1` only, so nobody on your
 network can reach your database, inbox or bucket. Some ports listen on all interfaces, and your

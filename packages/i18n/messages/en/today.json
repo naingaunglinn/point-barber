@@ -1,0 +1,16 @@
+{
+  "title": "Today",
+  "inProgress": "In progress",
+  "walkIn": "Walk-in",
+  "next": {
+    "serviceDone": "Service done",
+    "takePayment": "Take payment"
+  },
+  "empty": {
+    "title": "No customer in progress",
+    "body": "When a customer arrives, tap ＋ Start."
+  },
+  "nav": {
+    "start": "Start"
+  }
+}
