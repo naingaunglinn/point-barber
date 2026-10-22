@@ -30,6 +30,9 @@ export function NewVisitScreen() {
   const store = useStore();
   const [sheet, setSheet] = useState(false);
   const [problem, setProblem] = useState<ScreenProblem | null>(null);
+  // Once START is saved the sale screen is opening: Start stays busy until this screen leaves, so a
+  // second tap in that gap starts nothing (AD-NET-01 — one tap, one row).
+  const [opening, setOpening] = useState(false);
   const chosen = useRef<readonly string[]>([]);
 
   const start = useSavedSubmit<{ data: VisitDto }, RequestLookupDto>({
@@ -45,10 +48,13 @@ export function NewVisitScreen() {
     lookup: lookupRequest,
     onSent: ({ data: visit }) => {
       store.visit(visit);
+      setOpening(true);
       router.push(`/sales/${visit.sale.id}`);
     },
     onFound: (found) => {
-      if (found.sale_id !== null) router.push(`/sales/${found.sale_id}`);
+      if (found.sale_id === null) return;
+      setOpening(true);
+      router.push(`/sales/${found.sale_id}`);
     },
     onRefused: (error) => setProblem(screenProblem(error)),
   });
@@ -70,7 +76,7 @@ export function NewVisitScreen() {
           branch={{ id: startBranch.id, name: localized(startBranch, 'name', locale) }}
           performer={{ name: localized(me.employee, 'name', locale) }}
           services={services.data}
-          pending={start.state === 'sending' || start.state === 'checking'}
+          pending={opening || start.state === 'sending' || start.state === 'checking'}
           problem={problem}
           onStart={(serviceIds) => {
             chosen.current = serviceIds;

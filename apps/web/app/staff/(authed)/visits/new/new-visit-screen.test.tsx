@@ -65,6 +65,19 @@ describe('START (P4.VIS.03)', () => {
     });
   });
 
+  it('a second tap after the answer, while the sale opens, starts nothing (workbook case 8)', async () => {
+    routeFetch(fetchMock, { [SERVICES]: services, [START]: json(201, visitOf()) });
+    await openSheet();
+    fireEvent.click(screen.getByTestId('start-submit'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/sales/${IDS.SALE}`));
+    const button = screen.getByTestId('start-submit') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    fireEvent.click(button);
+    await act(async () => undefined);
+    expect(starts()).toHaveLength(1);
+  });
+
   it('Scenario: Awaiting payment blocks the next customer — the message and the link to that sale', async () => {
     const waiting = '0199a3f2-0000-7000-8005-000000000009';
     const waitingSale = '0199a3f2-0000-7000-8006-000000000009';
