@@ -320,6 +320,43 @@ describe('FINISH and after (group 13)', () => {
     expect(push).toHaveBeenCalledWith('/today');
   });
 
+  it('Scenario: Finish stays disabled while money is missing — "Remaining to pay" and the reason under the button', async () => {
+    const short = saleOf({
+      ...PAID,
+      items: [
+        lineOf({ unit_price_amount: 8_000, list_price_amount: 8_000, line_total_amount: 8_000 }),
+        lineOf({
+          id: '0199a3f2-0000-7000-8008-000000000002',
+          service_id: IDS.SHAVE,
+          description_en: 'Shave',
+          unit_price_amount: 3_000,
+          list_price_amount: 3_000,
+          line_total_amount: 3_000,
+        }),
+      ],
+      subtotal_amount: 11_000,
+      total_amount: 11_000,
+      paid_amount: 8_000,
+      remaining_amount: 3_000,
+      payments: [paymentOf({ amount: 8_000 })],
+      actions: { ...PAID.actions, take_payment: true },
+    });
+    routeFetch(fetchMock, {
+      ...paidRoutes(),
+      [SALE]: json(200, short),
+      [VISIT]: json(200, visitOf({ ...COMPLETED, sale: short })),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    expect((await screen.findByTestId('money-remaining')).textContent).toBe(
+      'Remaining to pay: 3,000 Ks',
+    );
+    const finish = screen.getByTestId('finish-submit') as HTMLButtonElement;
+    expect(finish.textContent).toBe('Finish · 11,000 Ks');
+    expect(finish.disabled).toBe(true);
+    expect(screen.getByText('Take the remaining 3,000 Ks before you finish.')).toBeTruthy();
+    expect(await screen.findByTestId('pay-CASH')).toBeTruthy();
+  });
+
   it('a FINISH refusal shows once (amount_mismatch)', async () => {
     routeFetch(
       fetchMock,

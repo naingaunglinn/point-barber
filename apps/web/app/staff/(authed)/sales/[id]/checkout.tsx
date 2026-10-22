@@ -38,7 +38,8 @@ import { SaleLinesEditor } from './in-progress';
 // The checkout of a COMPLETED visit (AD-POS-07 / 08 / 12 · D-PAY-01 / 02 / 05 · D-VIS-06 ·
 // add-walkin-visit-checkout groups 12 – 13): the total and its breakdown, the lines (a service added now
 // needs "Why was this added?"), the payments with void, then — while money remains — Cash (the whole
-// remaining amount at once), KBZPay (the reference sheet) and Split; at 0 the Finish step. A payment carries
+// remaining amount at once), KBZPay (the reference sheet) and Split; below them the Finish step, disabled
+// with its reason until the money is right. A payment carries
 // one Idempotency-Key per tap, kept across its retries; a replay reads "Already saved".
 
 interface PaymentBody {
@@ -182,7 +183,10 @@ export function Checkout({
           />
         </section>
       )}
-      {sale.remaining_amount === 0 && sale.actions.finish && (
+      {/* Shown from the start of the checkout: while money is missing (or a cash excess waits for its
+          void) the button stays disabled with the reason under it (sales-checkout spec "Finish stays
+          disabled while money is missing"). */}
+      {sale.actions.finish && (
         <FinishStep
           total={moneyFromWire(sale.total_amount)}
           money={money}
