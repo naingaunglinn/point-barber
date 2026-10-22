@@ -2,8 +2,10 @@ import { Readable } from 'node:stream';
 import { text } from 'node:stream/consumers';
 
 import {
+  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
@@ -117,5 +119,37 @@ describe('S3StorageService', () => {
     const storage = new S3StorageService(config, failing);
     await expect(storage.head(KEY)).rejects.toThrow('AccessDenied');
     await expect(storage.getStream(KEY)).rejects.toThrow('AccessDenied');
+    await expect(storage.ensureBucket()).rejects.toThrow('AccessDenied');
+  });
+
+  it('ensureBucket (development and test, task 3.5): creates a missing bucket, leaves an existing one', async () => {
+    const answers = (bucket: 'missing' | 'there'): S3Sender & { sent: object[] } => {
+      const sent: object[] = [];
+      return {
+        sent,
+        send(command: object) {
+          sent.push(command);
+          if (command instanceof HeadBucketCommand && bucket === 'missing') {
+            return Promise.reject(
+              Object.assign(new Error('NotFound'), {
+                name: 'NotFound',
+                $metadata: { httpStatusCode: 404 },
+              }),
+            );
+          }
+          return Promise.resolve({});
+        },
+      };
+    };
+    const missing = answers('missing');
+    expect(await new S3StorageService(config, missing).ensureBucket()).toBe('created');
+    expect(missing.sent.map((command) => command.constructor)).toStrictEqual([
+      HeadBucketCommand,
+      CreateBucketCommand,
+    ]);
+    expect((missing.sent[1] as CreateBucketCommand).input).toStrictEqual({ Bucket: 'point-test' });
+    const there = answers('there');
+    expect(await new S3StorageService(config, there).ensureBucket()).toBe('exists');
+    expect(there.sent).toHaveLength(1);
   });
 });

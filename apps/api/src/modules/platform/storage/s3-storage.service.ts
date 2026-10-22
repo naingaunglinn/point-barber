@@ -1,8 +1,10 @@
 import { Readable } from 'node:stream';
 
 import {
+  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -49,6 +51,21 @@ export class S3StorageService implements StorageService {
           secretAccessKey: env.S3_SECRET_ACCESS_KEY,
         },
       });
+  }
+
+  /**
+   * The local MinIO starts with no bucket: in development and test the API creates its own when it is
+   * missing (task 3.5). Staging and production use the owner's bucket and never call this (ADR-014).
+   */
+  async ensureBucket(): Promise<'exists' | 'created'> {
+    try {
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return 'exists';
+    } catch (error) {
+      if (!isMissing(error)) throw error;
+    }
+    await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
+    return 'created';
   }
 
   async put(key: string, body: Buffer, contentType: string): Promise<void> {
