@@ -5,8 +5,9 @@ import { useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { SaleStatus, VisitStatus, localized } from '@point/shared';
-import { ErrorState, OfflineBanner, Skeleton } from '@point/ui';
+import { ErrorState, Skeleton } from '@point/ui';
 
+import { StaffOfflineBanner } from '../../../../../components/pos/OfflineHelp';
 import { VisitHeader } from '../../../../../components/pos/VisitHeader';
 import { screenProblem } from '../../../../../lib/pos/problem';
 import { useSale, useVisit } from '../../../../../lib/pos/queries';
@@ -51,7 +52,7 @@ export function SaleScreen({ id }: { readonly id: string }) {
 
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="sale-screen">
-      <OfflineBanner helpHref="/help/offline" />
+      <StaffOfflineBanner />
       {visit.data !== undefined && <VisitHeader visit={visit.data} branchName={branchName} />}
       {current.status === SaleStatus.CANCELLED ? (
         <Cancelled sale={current} visit={visit.data} />

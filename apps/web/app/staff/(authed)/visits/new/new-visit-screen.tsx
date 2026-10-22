@@ -6,9 +6,9 @@ import { useRef, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { type RequestLookupDto, type VisitDto, localized } from '@point/shared';
-import { OfflineBanner } from '@point/ui';
 
 import { ArrivalStep } from '../../../../../components/pos/ArrivalStep';
+import { StaffOfflineBanner } from '../../../../../components/pos/OfflineHelp';
 import { SavedCheck } from '../../../../../components/pos/SavedCheck';
 import { StartSheet } from '../../../../../components/pos/StartSheet';
 import { useSavedSubmit } from '../../../../../components/pos/use-saved-submit';
@@ -62,7 +62,7 @@ export function NewVisitScreen() {
   if (me === undefined) return null;
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="new-visit">
-      <OfflineBanner helpHref="/help/offline" />
+      <StaffOfflineBanner />
       <ArrivalStep
         onWalkIn={() => {
           setProblem(null);

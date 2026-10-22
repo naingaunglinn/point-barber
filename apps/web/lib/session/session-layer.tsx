@@ -17,6 +17,7 @@ import {
   Skeleton,
 } from '@point/ui';
 
+import { WithOfflineHelp } from '../../components/pos/OfflineHelp';
 import { StaffBottomNav, useStaffRail } from '../../components/pos/StaffBottomNav';
 import { api, setApiHandlers } from '../api/client';
 import { BranchProvider, initialBranchId, startBranchOf } from './branch';
@@ -173,7 +174,7 @@ function StaffShell({
           </div>
         }
       >
-        {children}
+        <WithOfflineHelp>{children}</WithOfflineHelp>
       </AppShell>
     </BranchProvider>
   );

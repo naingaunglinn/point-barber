@@ -297,6 +297,26 @@ test.describe('14.8 The customer at Finish; a colleague cannot open the sale', (
   });
 });
 
+test.describe('10.10 The offline help — reachable without a connection', () => {
+  test('offline, the banner link opens /help/offline in place; Back returns to Today', async ({
+    browser,
+  }) => {
+    const { context, page } = await pageAs(browser, aung);
+    await page.goto('/today');
+    await expect(page.getByTestId('today')).toBeVisible();
+    await context.setOffline(true);
+    const banner = page.locator('[data-slot="offline-banner"]');
+    await expect(banner).toBeVisible();
+    await banner.getByRole('link').click();
+    await expect(page.getByTestId('offline-help')).toBeVisible();
+    await expect(page).toHaveURL(/\/help\/offline$/);
+    await page.goBack();
+    await expect(page.getByTestId('today')).toBeVisible();
+    await context.setOffline(false);
+    await context.close();
+  });
+});
+
 test.describe('14.9 The START sheet fits 360 × 640 without scrolling', () => {
   for (const language of ['my', 'en'] as const) {
     test(`${language === 'my' ? 'MM' : 'EN'}: branch, performer, chips and Start in view`, async ({

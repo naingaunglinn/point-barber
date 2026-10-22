@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { todayMmt } from '@point/shared';
-import { DateText, OfflineBanner, PageHeader, useNow } from '@point/ui';
+import { DateText, PageHeader, useNow } from '@point/ui';
 
+import { StaffOfflineBanner } from '../../../../components/pos/OfflineHelp';
 import { TodayList } from '../../../../components/pos/TodayList';
 import { screenProblem } from '../../../../lib/pos/problem';
 import { useOpenVisits } from '../../../../lib/pos/queries';
@@ -21,7 +22,7 @@ export function TodayScreen() {
   const visits = useOpenVisits();
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="today">
-      <OfflineBanner helpHref="/help/offline" />
+      <StaffOfflineBanner />
       <div data-testid="today-header">
         <PageHeader
           title={t('title')}
