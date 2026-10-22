@@ -24,6 +24,7 @@ import { PrismaService } from '../../common/database/prisma.service.js';
 import { ProblemException } from '../../common/http/problem.exception.js';
 import { isUuid } from '../../common/http/uuid-v7.js';
 import { ZBody, ZQuery } from '../../common/http/zod-validation.pipe.js';
+import { CUSTOMER_CREATE, CUSTOMER_REACTIVATE, CUSTOMER_RESTORE } from '../booking/index.js';
 import { Audited, IdempotencyKey, Idempotent } from '../platform/index.js';
 import { SALE_FINISH, SalesFinish } from './finish/sales-finish.js';
 import { SaleLines } from './lines/sale-lines.js';
@@ -94,7 +95,8 @@ export class SalesController {
   @Post('sales/:id/finish')
   @HttpCode(200)
   @Can('sale.finish_override', { branch: SALE_BRANCH, orSelf: 'sale.checkoutActors' })
-  @Audited({ actions: [SALE_FINISH] })
+  // FINISH may also create, restore or reactivate the customer (P3-RULE-01), each with its audit row.
+  @Audited({ actions: [SALE_FINISH, CUSTOMER_CREATE, CUSTOMER_RESTORE, CUSTOMER_REACTIVATE] })
   async finish(
     @Param('id') id: string,
     @ZBody(finishRequestSchema) body: FinishRequest,
