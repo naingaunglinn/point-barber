@@ -2,15 +2,22 @@ import { randomUUID } from 'node:crypto';
 
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 
+import { Can, Staff } from '../../src/common/access/declarations.js';
 import { Public } from '../../src/common/access/public.decorator.js';
 import { TransactionRunner } from '../../src/common/database/transaction-runner.js';
 import { Audit, Audited } from '../../src/modules/platform/index.js';
 
 // Action fixtures of the audit spec "Each action endpoint writes one application audit row with the
-// branch it acted on" (design D12 · D14). Test application only. `@Public()` until the access guard
-// exists; the fixture-actor headers stand in for what the guards resolve (test/helpers/fixture-actor).
+// branch it acted on" (design D12 · D14), shared with the access spec: branch-action, branch-items and
+// company-action carry the declarations the access scenarios name, so the guard resolves the branch
+// the audit row records. Test application only. The intent-check fixtures need no caller: @Public().
+/** How often each action handler ran: a refused request never reaches it. */
+export const actionCalls = { branch_action: 0, branch_items: 0, company_action: 0 };
+
 interface ActionBody {
   readonly branch_id?: string;
+  /** The branch of the one entity the service changed, passed with the event. */
+  readonly entity_branch_id?: string;
   readonly employee_id?: string;
   readonly reason?: string;
   readonly items?: readonly { readonly branch_id: string }[];
@@ -26,34 +33,40 @@ export class AuditFixtureController {
   /** A branch action: the guard resolves the one branch of `body.branch_id`. */
   @Post('branch-action')
   @HttpCode(200)
-  @Public()
+  @Can('employee.rating_update', { branch: 'body.branch_id' })
   @Audited({ actions: ['fixture.branch_action'] })
   branchAction(@Body() body: ActionBody): Promise<{ id: string }> {
-    return this.act('fixture.branch_action', { reason: body.reason ?? null });
+    actionCalls.branch_action += 1;
+    return this.act('fixture.branch_action', {
+      reason: body.reason ?? null,
+      branch_id: body.entity_branch_id ?? null,
+    });
   }
 
   /** One request touching several branches: no single branch. */
   @Post('branch-items')
   @HttpCode(200)
-  @Public()
+  @Can('employee.rating_update', { branch: 'body.items[].branch_id' })
   @Audited({ actions: ['fixture.branch_items'] })
   branchItems(@Body() body: ActionBody): Promise<{ id: string }> {
+    actionCalls.branch_items += 1;
     return this.act('fixture.branch_items', { after: { items: body.items ?? [] } });
   }
 
   /** A company-master action: no branch. */
   @Post('company-action')
   @HttpCode(200)
-  @Public()
+  @Can('role.update', { level: 'company' })
   @Audited({ actions: ['fixture.company_action'] })
   companyAction(): Promise<{ id: string }> {
+    actionCalls.company_action += 1;
     return this.act('fixture.company_action', {});
   }
 
   /** The guard resolved no branch; the service passes the branch of the one entity it changed. */
   @Post('entity-action')
   @HttpCode(200)
-  @Public()
+  @Staff()
   @Audited({ actions: ['fixture.entity_action'] })
   entityAction(@Body() body: ActionBody): Promise<{ id: string }> {
     return this.act('fixture.entity_action', { branch_id: body.branch_id ?? null });
@@ -62,7 +75,7 @@ export class AuditFixtureController {
   /** An employee-targeted action whose endpoint names no branch (P1-RULE-11 · P1.AUTH.05). */
   @Post('employee-action')
   @HttpCode(200)
-  @Public()
+  @Staff()
   @Audited({ actions: ['fixture.employee_action'], target: 'employee' })
   employeeAction(@Body() body: ActionBody): Promise<{ id: string }> {
     return this.act('fixture.employee_action', { employee_id: body.employee_id ?? null });
