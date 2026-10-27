@@ -45,10 +45,15 @@ async function start(returnTo?: string) {
 /** The whole browser flow for a Google identity; options bend one step. */
 async function googleSignIn(
   identity: Omit<StubIdentity, 'nonce'>,
-  options: { returnTo?: string; cookieState?: string; sessionCookie?: string } = {},
+  options: {
+    returnTo?: string;
+    cookieState?: string;
+    sessionCookie?: string;
+    nonce?: string;
+  } = {},
 ) {
   const flow = await start(options.returnTo);
-  const code = stub.issue({ ...identity, nonce: flow.nonce });
+  const code = stub.issue({ ...identity, nonce: options.nonce ?? flow.nonce });
   const cookies = [`point_oauth_state=${options.cookieState ?? flow.state}`];
   if (options.sessionCookie !== undefined) cookies.push(options.sessionCookie);
   const res = await t.http
@@ -194,5 +199,88 @@ describe('add-foundation-auth-access · auth · Signing in again in the same bro
       revoked_at: mmt('2026-10-05T09:50:00'),
       revoke_reason: 1,
     });
+  });
+});
+
+// PR #21 review (20/Oct/2026) — items 1–4 of the security pass.
+describe('Google sign-in: the review findings', () => {
+  const failedRows = (requestId: string) =>
+    t.prisma.audit_events.findMany({ where: { request_id: requestId, action: 'login.failed' } });
+
+  it('item 1: `_` and `%` in the verified address are characters, not wildcards', async () => {
+    for (const email of ['mi_@point.test', '%@point.test', 'h%@point.test']) {
+      const { location, session, res } = await googleSignIn({
+        sub: `g-wild-${email.length}`,
+        email,
+        email_verified: true,
+      });
+      expect(location).toBe(NOT_LINKED);
+      expect(session).toBeUndefined();
+      expect(await failedRows(res.headers['x-request-id'] as string)).toMatchObject([
+        { entity_id: null, after_data: { cause: 'no_match' } },
+      ]);
+    }
+    expect((await user(U.E005)).google_subject).toBeNull();
+  });
+
+  it('item 2: a Google sign-in neither resets nor reads the code-failure counter', async () => {
+    const until = new Date('2026-10-05T03:04:00Z'); // 9:34 AM MMT
+    await t.prisma.users.update({
+      where: { id: U.E003 },
+      data: { failed_login_count: 5, login_locked_until: until },
+    });
+    const { session } = await googleSignIn({
+      sub: 'g-8008',
+      email: 'zaw@point.test',
+      email_verified: true,
+    });
+    expect(session).toBeDefined();
+    expect(await user(U.E003)).toMatchObject({ failed_login_count: 5, login_locked_until: until });
+  });
+
+  it('item 3: two first sign-ins on one address at the same moment link one account only', async () => {
+    const [first, second] = await Promise.all([
+      googleSignIn({ sub: 'g-6006', email: 'htet@point.test', email_verified: true }),
+      googleSignIn({ sub: 'g-7007', email: 'htet@point.test', email_verified: true }),
+    ]);
+    const linked = (await user(U.E006)).google_subject;
+    expect(['g-6006', 'g-7007']).toContain(linked);
+    const winner = linked === 'g-6006' ? first : second;
+    const loser = linked === 'g-6006' ? second : first;
+    expect(winner.session).toBeDefined();
+    expect(loser.session).toBeUndefined();
+    expect(loser.location).toBe(NOT_LINKED);
+  });
+
+  it.each(['signature', 'audience', 'issuer', 'expired'] as const)(
+    'item 4: an ID token with a wrong %s is refused',
+    async (tamper) => {
+      const { location, session, res } = await googleSignIn({ ...aung, tamper });
+      expect(location).toBe(NOT_LINKED);
+      expect(session).toBeUndefined();
+      expect(await failedRows(res.headers['x-request-id'] as string)).toMatchObject([
+        { after_data: { cause: 'google_error' } },
+      ]);
+    },
+  );
+
+  it('item 4: an ID token with another nonce is refused', async () => {
+    const { location, session } = await googleSignIn(aung, { nonce: 'another-nonce' });
+    expect(location).toBe(NOT_LINKED);
+    expect(session).toBeUndefined();
+  });
+
+  it('item 4: a state is used once — a replayed callback is refused', async () => {
+    const flow = await start();
+    const cookie = `point_oauth_state=${flow.state}`;
+    const first = await t.http
+      .get(`${CALLBACK}?state=${flow.state}&code=${stub.issue({ ...aung, nonce: flow.nonce })}`)
+      .set('Cookie', cookie);
+    expect(first.headers.location).toBe('/');
+    const replay = await t.http
+      .get(`${CALLBACK}?state=${flow.state}&code=${stub.issue({ ...aung, nonce: flow.nonce })}`)
+      .set('Cookie', cookie);
+    expect(replay.headers.location).toBe(NOT_LINKED);
+    expect(cookiesOf(replay).some((value) => value.startsWith('point_session='))).toBe(false);
   });
 });

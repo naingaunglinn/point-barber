@@ -47,12 +47,17 @@ export class GoogleStateStore {
   }
 }
 
+/** A longer return path is dropped: the pending store keeps it for 10 minutes (PR #21 review item 8). */
+export const RETURN_TO_MAX = 2048;
+
 /**
  * `return_to` of the staff host only (design D7 · OpenAPI `^/[^/].*$`): no backslash, no control
- * character, and resolved against the app origin it stays there. Anything else is dropped.
+ * character, at most RETURN_TO_MAX characters, and resolved against the app origin it stays there.
+ * Anything else is dropped.
  */
 export function safeReturnTo(value: string | undefined, appOrigin: string): string | undefined {
-  if (value === undefined || !/^\/[^/].*$/.test(value) || value.includes('\\')) return undefined;
+  if (value === undefined || value.length > RETURN_TO_MAX) return undefined;
+  if (!/^\/[^/].*$/.test(value) || value.includes('\\')) return undefined;
   if (/[\u0000-\u001f\u007f]/.test(value)) return undefined;
   if (!URL.canParse(value, appOrigin) || new URL(value, appOrigin).origin !== appOrigin) {
     return undefined;

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UiLanguage } from '@point/shared';
+import { UiLanguage, UserStatus } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
 import { AppConfig } from '../../../common/config/config.js';
@@ -116,6 +116,12 @@ export class OtpService {
     return this.runner.run(async (tx): Promise<SignInOutcome> => {
       const locked = await this.logins.lockUser(tx, user.id);
       if (locked === null) return { kind: 'invalid' };
+      // Eligibility again under the row lock: a user disabled since the look-up gets no session
+      // (PR #21 review item 5).
+      if (locked.status !== UserStatus.ACTIVE && locked.status !== UserStatus.INVITED) {
+        await this.signIn.failed('otp', user.id, email, meta, 'ineligible');
+        return { kind: 'invalid' };
+      }
       const at = this.clock.now();
       if (locked.login_locked_until !== null && at < locked.login_locked_until) {
         await this.signIn.failed('otp', user.id, email, meta, 'locked');

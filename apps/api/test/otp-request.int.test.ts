@@ -62,6 +62,22 @@ describe('add-foundation-auth-access · auth · A code request answers the same 
     expect(await codesOf(AUNG)).toHaveLength(before + 1);
   });
 
+  it('`_` and `%` in an address are characters, not wildcards (PR #21 review item 1)', async () => {
+    at('2026-10-05T09:15:00');
+    const before = (await codesOf(AUNG)).length;
+    const jobsBefore = await codeJobs(t, 'aung@point.test');
+    for (const [email, ip] of [
+      ['a_ng@point.test', '203.0.113.21'],
+      ['____@point.test', '203.0.113.22'],
+    ] as const) {
+      expect((await requestCode(t, email, ip)).status).toBe(202);
+    }
+    // `%` is no e-mail character: the schema refuses it before any look-up.
+    expect((await requestCode(t, '%@point.test', '203.0.113.23')).status).toBe(400);
+    expect(await codesOf(AUNG)).toHaveLength(before);
+    expect(await codeJobs(t, 'aung@point.test')).toBe(jobsBefore);
+  });
+
   it('a new code uses up the earlier unused ones', async () => {
     at('2026-10-05T09:20:00');
     await requestCode(t, 'aung@point.test', '203.0.113.5');

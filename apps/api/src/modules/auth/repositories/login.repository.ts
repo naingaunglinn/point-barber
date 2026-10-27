@@ -20,6 +20,7 @@ export interface LoginUser {
 export interface LockedUser {
   readonly id: string;
   readonly status: number;
+  readonly google_subject: string | null;
   readonly failed_login_count: number;
   readonly login_locked_until: Date | null;
 }
@@ -40,12 +41,17 @@ export class LoginRepository {
     return TransactionScope.current()?.tx ?? this.prisma;
   }
 
-  /** The user of an address, compared in lower case. */
-  userByEmail(email: string): Promise<LoginUser | null> {
-    return this.db.users.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
-      select: USER_SELECT,
-    });
+  /**
+   * The user of an address: exactly that address, compared in lower case. Not Prisma's insensitive
+   * `equals`, which compiles to ILIKE — `_` and `%` in the input would be wildcards, and a Google
+   * account on `ko_aung@…` would match `ko.aung@…` (PR #21 review item 1).
+   */
+  async userByEmail(email: string): Promise<LoginUser | null> {
+    const rows = await this.db.$queryRaw<LoginUser[]>`
+      SELECT id, email, status, ui_language, google_subject FROM users
+      WHERE lower(email) = lower(${email})
+      ORDER BY id LIMIT 1`;
+    return rows[0] ?? null;
   }
 
   userByGoogleSubject(subject: string): Promise<LoginUser | null> {
@@ -62,7 +68,7 @@ export class LoginRepository {
   /** `SELECT … FOR UPDATE` on the user row — the first lock of every sign-in transaction. */
   async lockUser(tx: Tx, userId: string): Promise<LockedUser | null> {
     const rows = await tx.$queryRaw<LockedUser[]>`
-      SELECT id, status, failed_login_count, login_locked_until
+      SELECT id, status, google_subject, failed_login_count, login_locked_until
       FROM users WHERE id = ${userId}::uuid FOR UPDATE`;
     return rows[0] ?? null;
   }
@@ -114,19 +120,24 @@ export class LoginRepository {
   }
 
   /**
-   * A successful sign-in (P1-RULE-02 / 03): the counter back to 0, `last_login_at`, and for an
-   * INVITED user `status = 1` and `activated_at` — set once, never changed afterwards.
+   * A successful sign-in (P1-RULE-02 / 03): `last_login_at`, and for an INVITED user `status = 1`
+   * and `activated_at` — set once, never changed afterwards. Only a code sign-in resets the failure
+   * counter: the Google callback neither checks nor changes it (design D4 · PR #21 review item 2).
    */
   async recordSuccess(
     tx: Tx,
     userId: string,
     at: Date,
-    options: { readonly activate: boolean; readonly googleSubject?: string },
+    options: {
+      readonly activate: boolean;
+      readonly resetFailures: boolean;
+      readonly googleSubject?: string;
+    },
   ): Promise<void> {
     await tx.users.update({
       where: { id: userId },
       data: {
-        failed_login_count: 0,
+        ...(options.resetFailures ? { failed_login_count: 0 } : {}),
         last_login_at: at,
         updated_at: at,
         ...(options.activate ? { status: UserStatus.ACTIVE, activated_at: at } : {}),

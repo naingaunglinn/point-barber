@@ -169,4 +169,15 @@ describe('add-foundation-auth-access · access · The first company admin of an 
     ).toMatchObject({ status: 0 });
     expect((await prisma.users.findFirstOrThrow()).email).toBe('kyawzin@point.test');
   });
+  it('`_` and `%` in an address are characters: a look-alike is not taken (PR #21 review item 1)', async () => {
+    await fixtureDatabase();
+    await prisma.employee_roles.updateMany({
+      where: { employee_id: FIXTURE_IDS.employees.E001 },
+      data: { revoked_at: new Date() },
+    });
+    // `a_ng@point.test` would match `aung@point.test` through ILIKE.
+    expect(
+      await run('--email', 'a_ng@point.test', '--name-mm', 'စမ်းသပ်', '--code', 'E010'),
+    ).toMatchObject({ status: 0 });
+  });
 });

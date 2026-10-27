@@ -18,16 +18,22 @@ export function sessionCookie(token: string, secure: boolean): string {
   ].join('; ');
 }
 
-/** The value of one cookie of a `Cookie` header; undefined when absent or empty. */
+/**
+ * The value of one cookie of a `Cookie` header; undefined when absent, empty or sent more than once.
+ * Two `point_session` values mean one was planted (a parent-domain cookie with a longer Path comes
+ * first): which one is meant cannot be known, so neither is used — the request has no session
+ * (PR #21 review item 6).
+ */
 export function readCookie(header: string | undefined, name: string): string | undefined {
   if (header === undefined) return undefined;
+  const values: string[] = [];
   for (const pair of header.split(';')) {
     const at = pair.indexOf('=');
-    if (at === -1 || pair.slice(0, at).trim() !== name) continue;
-    const value = pair.slice(at + 1).trim();
-    return value === '' ? undefined : value;
+    if (at !== -1 && pair.slice(0, at).trim() === name) values.push(pair.slice(at + 1).trim());
   }
-  return undefined;
+  if (values.length !== 1) return undefined;
+  const [value] = values;
+  return value === undefined || value === '' ? undefined : value;
 }
 
 /** Sign-out clears the cookie: an empty value with `Max-Age=0` (P1.AUTH.05). */
