@@ -61,11 +61,21 @@ export async function createBranch(prisma: PrismaService, companyId: string): Pr
   return id;
 }
 
+/** One employee_branches row. `createdAt` and `rowId` pin the tie-breaks of an equal `from`: two
+ * rows written in the same millisecond get the same default created_at. */
+export interface BranchAssignmentRow {
+  readonly id: string;
+  readonly from: string;
+  readonly to?: string;
+  readonly createdAt?: string;
+  readonly rowId?: string;
+}
+
 /** An ACTIVE user with an ACTIVE employee and one open session. */
 export async function createPerson(
   prisma: PrismaService,
   companyId: string,
-  options: { readonly branches?: readonly { id: string; from: string; to?: string }[] } = {},
+  options: { readonly branches?: readonly BranchAssignmentRow[] } = {},
 ): Promise<TestPerson> {
   const userId = randomUUID();
   const employeeId = randomUUID();
@@ -85,11 +95,12 @@ export async function createPerson(
   for (const branch of options.branches ?? []) {
     await prisma.employee_branches.create({
       data: {
-        id: randomUUID(),
+        id: branch.rowId ?? randomUUID(),
         employee_id: employeeId,
         branch_id: branch.id,
         effective_from: new Date(`${branch.from}T00:00:00Z`),
         effective_to: branch.to === undefined ? null : new Date(`${branch.to}T00:00:00Z`),
+        ...(branch.createdAt === undefined ? {} : { created_at: new Date(branch.createdAt) }),
       },
     });
   }
