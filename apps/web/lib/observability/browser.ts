@@ -23,6 +23,8 @@ export function startBrowserReporting(options: ReportingOptions): Promise<Sdk> {
         Sentry.httpContextIntegration(),
       ],
     });
+    // The end-to-end test waits for this before it throws (add-staging-deploy task 5.3).
+    document.documentElement.dataset.errorReporting = 'ready';
     return Sentry;
   });
   return loading;

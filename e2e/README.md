@@ -17,6 +17,18 @@ documented property of D5, not a test hook. Therefore:
 - A spec that is not about the screens signs in with `signInAs()` / `signInWithCode()`
   (`helpers/sign-in.ts`): one code request and one verify per person.
 
+## The content-security policy and error reporting
+
+Caddy sends the content-security policy on every response (add-staging-deploy design D8). The suite
+expects the stack's `.env` to set `CADDY_CSP_CONNECT=https://o0.ingest.sentry.io` — the fake Sentry
+ingest origin; CI job `e2e` sets it, a local run needs the same line. `SENTRY_DSN_WEB` stays empty:
+`error-reporting.spec.ts` recreates the `web` container with a DSN for its one case and puts it back
+(`withServiceEnv`, `helpers/stack.ts`); Playwright intercepts the ingest origin, so nothing leaves
+the machine.
+
+The `page` and `context` fixtures (`fixtures.ts`) record every `securitypolicyviolation` event and
+fail the test on any. A context made with `browser.newContext()` is not covered.
+
 ## Before the suite
 
 `global-setup.ts` runs `pnpm db:seed`: the base seed and the fixture people of

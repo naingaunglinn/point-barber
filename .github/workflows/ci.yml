@@ -255,6 +255,8 @@ jobs:
           sed -i "s|^AUDIT_HASH_SECRET=.*|AUDIT_HASH_SECRET=$(openssl rand -hex 32)|" .env
           sed -i "s|^MAIL_PAYLOAD_KEY=.*|MAIL_PAYLOAD_KEY=$(openssl rand -base64 32)|" .env
           sed -i "s|^APP_VERSION=.*|APP_VERSION=${GITHUB_SHA::12}|" .env
+          # The fake ingest origin of the error-reporting tests (add-staging-deploy D8 / D10).
+          sed -i "s|^CADDY_CSP_CONNECT=.*|CADDY_CSP_CONNECT=https://o0.ingest.sentry.io|" .env
 
       - name: Build its own images (independent of job images — D15)
         run: $COMPOSE build
