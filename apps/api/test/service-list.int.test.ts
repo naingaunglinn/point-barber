@@ -78,6 +78,50 @@ describe('ServiceCatalog.listServices (P2.SVC.01)', () => {
     expect((await list({ branch_id: branches.B3, q: 'Hair_wash' })).items).toStrictEqual([]);
   });
 
+  it('`%` and `_` in a name are found as text (escaped once, not twice)', async () => {
+    await prisma.services.update({
+      where: { id: services.HAIR_WASH },
+      data: { name_en: 'Hair_wash 50%' },
+    });
+    try {
+      for (const q of ['%', '_', 'Hair_wash', '50%']) {
+        expect(
+          (await list({ branch_id: branches.B3, q })).items.map((i) => i.id),
+          q,
+        ).toStrictEqual([services.HAIR_WASH]);
+      }
+    } finally {
+      await prisma.services.update({
+        where: { id: services.HAIR_WASH },
+        data: { name_en: 'Hair wash' },
+      });
+    }
+  });
+
+  it('API-PERM-03: the branch lists keep only the read scope (Ko Min, B3)', async () => {
+    const [haircut] = (await list({ branch_id: branches.B3 }, [branches.B3])).items;
+    expect(haircut).toMatchObject({ branch_ids: [branches.B3], unpriced_branch_ids: [] });
+  });
+
+  it('with a branch_id the duration range is that branch’s', async () => {
+    await prisma.branch_services.updateMany({
+      where: { branch_id: branches.B1, service_id: services.HAIRCUT },
+      data: { duration_minutes: 45 },
+    });
+    try {
+      const at = async (query: Record<string, unknown>) =>
+        (await list(query)).items.find((item) => item.id === services.HAIRCUT)?.duration_range;
+      expect(await at({ branch_id: branches.B3 })).toStrictEqual({ min: 30, max: 30 });
+      expect(await at({ branch_id: branches.B1 })).toStrictEqual({ min: 45, max: 45 });
+      expect(await at({})).toStrictEqual({ min: 30, max: 45 });
+    } finally {
+      await prisma.branch_services.updateMany({
+        where: { branch_id: branches.B1, service_id: services.HAIRCUT },
+        data: { duration_minutes: 30 },
+      });
+    }
+  });
+
   it('pages with an opaque cursor', async () => {
     const first = await list({ branch_id: branches.B3, limit: '2' });
     expect(first.items.map((i) => i.name_en)).toStrictEqual(['Haircut', 'Shave']);
