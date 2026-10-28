@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { quoteRequestSchema } from './catalog.js';
 import { customerLookupQuerySchema } from './customers.js';
 import {
+  completeRequestSchema,
   finishRequestSchema,
   myVisitsQuerySchema,
   paymentCreateSchema,
@@ -28,7 +29,6 @@ describe('request schemas strip what this change does not build', () => {
         performed_by_employee_id: CASH,
         booking_id: CASH,
         location_type: 2,
-        late_entry: { reason: 4 },
       }),
     ).toStrictEqual({ branch_id: B3, items: [{ service_id: HAIRCUT }] });
   });
@@ -51,22 +51,16 @@ describe('request schemas strip what this change does not build', () => {
     );
   });
 
-  it('a payment drops received_at (late entry) and any unknown member', () => {
+  it('a payment drops any unknown member', () => {
     expect(
-      paymentCreateSchema.parse({
-        payment_method_id: CASH,
-        amount: 10_000,
-        received_at: '2026-10-05T10:41:00+06:30',
-        total_amount: 1,
-      }),
+      paymentCreateSchema.parse({ payment_method_id: CASH, amount: 10_000, total_amount: 1 }),
     ).toStrictEqual({ payment_method_id: CASH, amount: 10_000 });
   });
 
-  it('FINISH drops finished_at (late entry) and a client total', () => {
+  it('FINISH drops a client total and an unknown customer member', () => {
     expect(
       finishRequestSchema.parse({
         expected_total_amount: 10_000,
-        finished_at: '2026-10-05T10:42:00+06:30',
         total_amount: 1,
         customer: { phone: '09 7712 3456', name: 'Ma Su', email: 'x' },
       }),
@@ -175,5 +169,121 @@ describe('query schemas of the walk-in reads', () => {
       phone: '09 7712 3456',
     });
     expect(customerLookupQuerySchema.safeParse({}).success).toBe(false);
+  });
+});
+
+// add-late-entry task 1.4 — the late-entry members of the Part 4 OpenAPI schemas `LateEntry`,
+// `CompleteRequest`, `PaymentCreate.received_at` and `FinishRequest.finished_at` (design D1 · P4.VIS.03
+// · P4.VIS.05 · P4.PAY.02 · P4.SAL.10). Whether a time is required depends on the stored visit, so a
+// missing one passes here and the service answers 400.
+describe('late-entry members (add-late-entry)', () => {
+  const lateEntry = { reason: 1, started_at: '2026-10-04T15:00:00+06:30' };
+
+  it('START keeps late_entry with its reason, note and start time', () => {
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        late_entry: { ...lateEntry, reason: 9, note: 'Paper slip', extra: 1 },
+      }),
+    ).toStrictEqual({
+      branch_id: B3,
+      late_entry: { reason: 9, note: 'Paper slip', started_at: '2026-10-04T15:00:00+06:30' },
+    });
+    expect(startVisitRequestSchema.parse({ branch_id: B3, late_entry: null })).toStrictEqual({
+      branch_id: B3,
+      late_entry: null,
+    });
+  });
+
+  it.each([1, 2, 3, 4, 9])('reason %d is accepted', (reason) => {
+    expect(
+      startVisitRequestSchema.safeParse({ branch_id: B3, late_entry: { ...lateEntry, reason } })
+        .success,
+    ).toBe(true);
+  });
+
+  it.each([0, 5, 8, 10, '1'])('reason %s is refused', (reason) => {
+    expect(
+      startVisitRequestSchema.safeParse({ branch_id: B3, late_entry: { ...lateEntry, reason } })
+        .success,
+    ).toBe(false);
+  });
+
+  it('the note holds 1,000 characters and refuses 1,001 with too_big', () => {
+    const parse = (note: string) =>
+      startVisitRequestSchema.safeParse({ branch_id: B3, late_entry: { ...lateEntry, note } });
+    expect(parse('က'.repeat(1000)).success).toBe(true);
+    expect(parse('က'.repeat(1001)).error?.issues.map((i) => [i.path, i.code])).toStrictEqual([
+      [['late_entry', 'note'], 'too_big'],
+    ]);
+  });
+
+  it("a blank note passes the schema; OTHER without a note is the service's reason_required", () => {
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        late_entry: { ...lateEntry, reason: 9, note: '  ' },
+      }).late_entry?.note,
+    ).toBe('  ');
+  });
+
+  it('started_at is required inside late_entry, named by its path', () => {
+    const result = startVisitRequestSchema.safeParse({ branch_id: B3, late_entry: { reason: 1 } });
+    expect(result.error?.issues.map((issue) => issue.path)).toStrictEqual([
+      ['late_entry', 'started_at'],
+    ]);
+  });
+
+  it.each([
+    ['2026-10-04T08:30:00+00:00', '2026-10-04T15:00:00+06:30'],
+    ['2026-10-04T08:30:00Z', '2026-10-04T15:00:00+06:30'],
+    ['2026-10-04T17:00:00+08:00', '2026-10-04T15:30:00+06:30'],
+  ])('a time of any offset is normalised: %s → %s (API-DATA-03)', (sent, stored) => {
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        late_entry: { ...lateEntry, started_at: sent },
+      }).late_entry?.started_at,
+    ).toBe(stored);
+    expect(completeRequestSchema.parse({ completed_at: sent })).toStrictEqual({
+      completed_at: stored,
+    });
+    expect(
+      paymentCreateSchema.parse({ payment_method_id: CASH, amount: 1, received_at: sent })
+        .received_at,
+    ).toBe(stored);
+    expect(
+      finishRequestSchema.parse({ expected_total_amount: 0, finished_at: sent }).finished_at,
+    ).toBe(stored);
+  });
+
+  it.each([
+    '2026-10-04',
+    '2026-10-04T15:00:00',
+    // RFC 3339 date-time needs the seconds.
+    '2026-10-04T15:00+06:30',
+    '04/Oct/2026 3:00 PM',
+    1_728_032_400_000,
+  ])('a time without an offset, or not a time, is refused: %s', (sent) => {
+    expect(completeRequestSchema.safeParse({ completed_at: sent }).success).toBe(false);
+    expect(
+      startVisitRequestSchema.safeParse({
+        branch_id: B3,
+        late_entry: { ...lateEntry, started_at: sent },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('the three later times are optional and nullable', () => {
+    expect(completeRequestSchema.parse({})).toStrictEqual({});
+    expect(completeRequestSchema.parse({ completed_at: null })).toStrictEqual({
+      completed_at: null,
+    });
+    expect(
+      paymentCreateSchema.parse({ payment_method_id: CASH, amount: 1, received_at: null }),
+    ).toStrictEqual({ payment_method_id: CASH, amount: 1, received_at: null });
+    expect(
+      finishRequestSchema.parse({ expected_total_amount: 0, finished_at: null }),
+    ).toStrictEqual({ expected_total_amount: 0, finished_at: null });
   });
 });

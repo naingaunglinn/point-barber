@@ -35,6 +35,7 @@ export class SaleViewers {
         visit_delete: grants.covers('visit.delete', branchId),
         sale_finish_override: grants.covers('sale.finish_override', branchId),
       }),
+      can: (code, branchId) => grants.covers(code, branchId),
     };
   }
 }

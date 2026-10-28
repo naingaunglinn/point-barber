@@ -111,12 +111,12 @@ describe('No gap after a failure (D-PAY-06)', () => {
     const faulty: VisitsPort = {
       read: (db, id) => real.read(db, id),
       lockForUpdate: (tx, id) => real.lockForUpdate(tx, id),
-      markFinished: async (tx, id, at) => {
+      markFinished: async (tx, id, at, recordedAt) => {
         if (fail) {
           fail = false;
           throw new Error('fault injected after the counter step');
         }
-        return real.markFinished(tx, id, at);
+        return real.markFinished(tx, id, at, recordedAt);
       },
     };
     registry.use(faulty);

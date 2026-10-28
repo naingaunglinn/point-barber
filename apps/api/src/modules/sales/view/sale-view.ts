@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  type PermissionCode,
   type Mmk,
   type PaymentDto,
   RefundKind,
@@ -34,6 +35,8 @@ export interface SaleViewer {
   readonly actor: Actor;
   /** The codes that let the caller act on someone else's sale, at that sale's branch. */
   rightsAt(branchId: string): ActionRights;
+  /** A code the caller holds at that branch — the handler policy of a body member (API-PERM-02). */
+  can(code: PermissionCode, branchId: string): boolean;
 }
 
 const wire = (amount: bigint): number => moneyToWire(amount as Mmk);

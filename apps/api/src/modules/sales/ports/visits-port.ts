@@ -14,10 +14,15 @@ export interface VisitForSale {
   /** The Myanmar calendar date of the visit (D-PLT-15). */
   readonly business_date: string;
   readonly location_type: number;
+  /** A late entry (D-VIS-13): its writes take the entered times (add-late-entry design D4). */
+  readonly is_late_entry: boolean;
+  readonly started_at: Date;
+  readonly completed_at: Date | null;
 }
 
 export interface VisitsPort {
   read(db: Tx, visitId: string): Promise<VisitForSale | null>;
   lockForUpdate(tx: Tx, visitId: string): Promise<VisitForSale>;
-  markFinished(tx: Tx, visitId: string, finishedAt: Date): Promise<void>;
+  /** `recordedAt` = now; earlier than `finishedAt` never, later for a late entry. */
+  markFinished(tx: Tx, visitId: string, finishedAt: Date, recordedAt: Date): Promise<void>;
 }

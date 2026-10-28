@@ -21,7 +21,9 @@ import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { DayLock } from '../../cash-closing/index.js';
 import { Assignments } from '../../people/index.js';
 import { Audit, Idempotency } from '../../platform/index.js';
+import { assertLateEntryOrder, enteredTime } from '../late-entry/late-entry-times.js';
 import { Sales, assertSaleOpen } from '../lines/sales.js';
+import type { VisitForSale } from '../ports/visits-port.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
 import {
   type PaymentMethodListRow,
@@ -33,7 +35,9 @@ import { type SaleViewer, SaleView } from '../view/sale-view.js';
 // Payments on an OPEN sale (P4.PAY.02 / .03 · P4.PMT.01 · P4-RULE-09 · D-PAY-01 / 02 · design D4 / D7).
 // Add: through Idempotency.run, locks in the one order — day lock → sale → payments → the reference
 // lock — and every check after them. Void: the row is kept (D-DAT-05). Who may call them is decided by
-// the guard (sale.finish_override or the checkout actors — design D2).
+// the guard (sale.finish_override or the checkout actors — design D2). On a late-entry visit the
+// payment carries the entered `received_at`, and the day lock is taken on its date (add-late-entry
+// design D4 · recorded reading 3).
 
 /** The audit actions of the payment endpoints (their @Audited lists name the same constants). */
 export const PAYMENT_ADD = 'payment.add';
@@ -61,6 +65,16 @@ export function toPaymentMethodDto(row: PaymentMethodListRow): PaymentMethodDto 
     archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
     updated_at: toMmtIso(row.updated_at),
   };
+}
+
+/** A late entry's payment: after the completion (the start while STARTED), not later than now. */
+function paymentOrder(visit: VisitForSale, receivedAt: Date, now: Date): void {
+  assertLateEntryOrder({
+    startedAt: visit.started_at,
+    completedAt: visit.completed_at,
+    receivedAts: [receivedAt],
+    now,
+  });
 }
 
 @Injectable()
@@ -118,11 +132,17 @@ export class Payments {
   ) {
     const { actor } = viewer;
     const now = this.clock.now();
-    const today = businessDateOf(now);
-    // The branch is learnt without a lock; the day lock is the first lock (design D4).
+    // The branch and the late-entry flag are learnt without a lock; the day lock is the first lock
+    // (design D4). A late entry's received time is checked against the visit before the locks too.
     const unlocked = await this.sales.find(tx, saleId);
     if (unlocked === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
-    await this.dayLock.assertOpen(tx, unlocked.branch_id, today);
+    const visitBefore =
+      unlocked.visit_id === null ? null : await this.registry.visits.read(tx, unlocked.visit_id);
+    const late = visitBefore?.is_late_entry === true;
+    const receivedAt = late ? enteredTime(body.received_at, 'received_at') : now;
+    if (visitBefore !== null && late) paymentOrder(visitBefore, receivedAt, now);
+    const day = businessDateOf(receivedAt);
+    await this.dayLock.assertOpen(tx, unlocked.branch_id, day);
     const sale = await this.sales.lockForUpdate(tx, saleId);
     assertSaleOpen(sale, null);
     await this.payments.lockOfSale(tx, sale.id);
@@ -159,12 +179,14 @@ export class Payments {
     const visit =
       sale.visit_id === null ? null : await this.registry.visits.read(tx, sale.visit_id);
     if (visit === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
+    // Again under the sale lock: a COMPLETE that ran meanwhile set the completed time.
+    if (late) paymentOrder(visit, receivedAt, now);
     const collector = body.collected_by_employee_id ?? visit.performed_by_employee_id;
     if (body.collected_by_employee_id !== undefined && body.collected_by_employee_id !== null) {
       const assigned = await this.assignments.isActiveAndAssigned(tx, {
         employee_id: collector,
         branch_id: sale.branch_id,
-        date: today,
+        date: day,
       });
       if (!assigned) throw new ProblemException(ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422);
     }
@@ -186,7 +208,8 @@ export class Payments {
       amount,
       external_reference: reference,
       collected_by_employee_id: collector,
-      received_at: now,
+      received_at: receivedAt,
+      recorded_at: now,
       recorded_by_user_id: actor.user_id,
     });
     await this.sales.recomputeTotals(tx, sale.id);
@@ -229,7 +252,13 @@ export class Payments {
       if (payment === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
       const unlocked = await this.sales.find(tx, payment.sale_id);
       if (unlocked === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
-      await this.dayLock.assertOpen(tx, unlocked.branch_id, businessDateOf(this.clock.now()));
+      // A late entry's payment is voided on its own day (recorded reading 3), any other one today.
+      const visit =
+        unlocked.visit_id === null ? null : await this.registry.visits.read(tx, unlocked.visit_id);
+      const day = businessDateOf(
+        visit?.is_late_entry === true ? payment.received_at : this.clock.now(),
+      );
+      await this.dayLock.assertOpen(tx, unlocked.branch_id, day);
       const sale = await this.sales.lockForUpdate(tx, payment.sale_id);
       assertSaleOpen(sale, 'refund');
       await this.payments.lockOne(tx, payment.id);
