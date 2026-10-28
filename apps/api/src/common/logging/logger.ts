@@ -8,7 +8,7 @@ export const LOGGER = Symbol('LOGGER');
 /**
  * Keys whose values never reach a log line, wherever they appear (CG-OBS-03 · CG-SEC-06 ·
  * add-foundation-auth-access D7 / D8): the mail job's template parameters, tokens, cookies and the
- * internal key.
+ * internal key. The error reporter drops the same keys from an event (add-staging-deploy D9).
  */
 export const REDACTED_KEYS = [
   'params',

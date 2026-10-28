@@ -21,6 +21,7 @@ const SDKS = [
   { name: 'pg-boss', folder: 'platform/jobs' },
   { name: 'nodemailer', folder: 'platform/mail' },
   { name: 'openid-client', folder: 'auth/google' },
+  { name: '@sentry/nestjs', folder: 'platform/observability' },
 ];
 
 /** The SDK patterns for a file; `allowed` = the one SDK its wrapper folder may import. */

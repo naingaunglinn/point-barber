@@ -7,9 +7,10 @@ import { DomainEvents } from './events/domain-events.js';
 import { BackgroundTasks } from './http/background-tasks.js';
 import { ProblemFilter } from './http/problem.filter.js';
 import { LOGGER, createLogger } from './logging/logger.js';
+import { ErrorReporter } from './observability/error-reporter.js';
 
 // Cross-cutting providers every module may use (design D1 `src/common`): configuration, clock,
-// logger, the problem filter, background tasks and in-process events.
+// logger, the problem filter, the error reporter, background tasks and in-process events.
 @Global()
 @Module({
   providers: [
@@ -21,9 +22,10 @@ import { LOGGER, createLogger } from './logging/logger.js';
       useFactory: (config: AppConfig): Logger => createLogger(config.env.LOG_LEVEL),
     },
     ProblemFilter,
+    ErrorReporter,
     BackgroundTasks,
     DomainEvents,
   ],
-  exports: [AppConfig, Clock, LOGGER, ProblemFilter, BackgroundTasks, DomainEvents],
+  exports: [AppConfig, Clock, LOGGER, ProblemFilter, ErrorReporter, BackgroundTasks, DomainEvents],
 })
 export class CoreModule {}

@@ -1,0 +1,25 @@
+# The pilot server stack (add-staging-deploy — design D3 / D4):
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml …
+# - Images come from the registry: ${IMAGE_PREFIX}point-api:<tag> and so on; the server never
+#   builds (the deploy runs `up -d --no-build`).
+# - Only Caddy publishes ports (80/tcp, 443/tcp, 443/udp, from docker-compose.yml); every other
+#   service is reached over the Docker network only.
+# - mailpit is the inbox of the sign-in codes on the pilot server: staff use Google, and no code
+#   e-mail leaves the server (D-ARC-02 · ADR-007). It publishes no port; read it with
+#   `docker compose exec`.
+services:
+  api:
+    image: ${IMAGE_PREFIX}point-api:${APP_VERSION}
+
+  web:
+    image: ${IMAGE_PREFIX}point-web:${APP_VERSION}
+
+  backup:
+    image: ${IMAGE_PREFIX}point-backup:${APP_VERSION}
+
+  migrate:
+    image: ${IMAGE_PREFIX}point-api:${APP_VERSION}
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    restart: unless-stopped

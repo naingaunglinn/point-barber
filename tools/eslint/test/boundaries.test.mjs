@@ -120,7 +120,8 @@ describe('tools/eslint/boundaries.mjs (design D10)', () => {
 
 // add-foundation-auth-access task 2.8 / 2.10 — CG-ARCH-08 · guideline §24 row 22: an SDK is imported
 // only inside the one folder that wraps it — pg-boss in modules/platform/jobs, the SMTP client in
-// modules/platform/mail, the OpenID Connect client in modules/auth/google (task 5.13).
+// modules/platform/mail, the OpenID Connect client in modules/auth/google (task 5.13), the Sentry SDK
+// in modules/platform/observability (add-staging-deploy task 3.5).
 describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
   const messages = async (code, path) => {
     const [result] = await eslint.lintText(code, { filePath: join(root, path) });
@@ -134,8 +135,8 @@ describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
     'apps/api/src/common/http/x.ts',
     'apps/api/src/common/database/x.ts',
     'apps/api/src/app.module.ts',
-  ])('pg-boss, nodemailer and openid-client fail in %s', async (path) => {
-    for (const sdk of ['pg-boss', 'nodemailer', 'openid-client']) {
+  ])('pg-boss, nodemailer, openid-client and @sentry/nestjs fail in %s', async (path) => {
+    for (const sdk of ['pg-boss', 'nodemailer', 'openid-client', '@sentry/nestjs']) {
       expect(await messages(imports(sdk), path)).toEqual([
         { ruleId: RULE, message: expect.stringContaining('CG-ARCH-08') },
       ]);
@@ -157,6 +158,12 @@ describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
   it('openid-client passes in modules/auth/google, pg-boss does not', async () => {
     const path = 'apps/api/src/modules/auth/google/google.service.ts';
     expect(await lint(imports('openid-client'), path)).toEqual([]);
+    expect(await lint(imports('pg-boss'), path)).toEqual([RULE]);
+  });
+
+  it('@sentry/nestjs passes in modules/platform/observability, pg-boss does not', async () => {
+    const path = 'apps/api/src/modules/platform/observability/instrument.ts';
+    expect(await lint(imports('@sentry/nestjs'), path)).toEqual([]);
     expect(await lint(imports('pg-boss'), path)).toEqual([RULE]);
   });
 

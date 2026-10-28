@@ -60,6 +60,8 @@ export const apiEnvSchema = z
     COMPANY_NAME_MM: z.string().min(1),
     COMPANY_NAME_EN: z.string().min(1).optional(),
     JOBS_IN_API: flag(true),
+    // add-staging-deploy — design D9 / D13: error reporting only when set.
+    SENTRY_DSN_API: z.url({ protocol: /^https?$/ }).optional(),
   })
   .refine((env) => env.INTERNAL_SSR_KEY !== env.INTERNAL_OPS_KEY, {
     message: 'INTERNAL_SSR_KEY and INTERNAL_OPS_KEY must be different',
