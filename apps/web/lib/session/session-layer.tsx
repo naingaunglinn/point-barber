@@ -69,6 +69,9 @@ export function useSetLanguage(): (locale: Locale) => void {
 
 /** `POST /v1/auth/logout` → the login screen with "You signed out". */
 export async function signOut(): Promise<void> {
+  // From here a 401 is expected: a query still in flight (Today refreshes its visits) would otherwise send
+  // the browser to the login screen without the reason, before "You signed out" (e2e of 28/Oct/2026).
+  setApiHandlers({});
   await api('/auth/logout', { method: 'POST', signIn: true }).catch(() => undefined);
   navigation.assign(loginUrl({ reason: 1 }));
 }

@@ -238,4 +238,30 @@ describe('add-walkin-visit-checkout task 10.1 · More shows who is signed in, MM
       ),
     ).toBe(true);
   });
+
+  it('a 401 of a query in flight during Sign out does not redirect before the reason', async () => {
+    let finishLogout: (response: Response) => void = () => undefined;
+    fetchMock.mockImplementation((url) => {
+      if (url === '/api/v1/auth/logout') {
+        return new Promise<Response>((resolve) => {
+          finishLogout = resolve;
+        });
+      }
+      if (url === '/api/v1/me/visits')
+        return Promise.resolve(json(401, problem(401, 'unauthenticated')));
+      return Promise.resolve(json(200, meOf({ user: { ...meOf().user, ui_language: 2 } })));
+    });
+    renderStaff(
+      <SessionLayer locale="en">
+        <MoreScreen />
+      </SessionLayer>,
+      { locale: 'en' },
+    );
+    fireEvent.click(await screen.findByTestId('more-sign-out'));
+    await expect(api('/me/visits')).rejects.toBeInstanceOf(ApiProblem);
+    expect(assign).not.toHaveBeenCalled();
+    finishLogout(new Response(null, { status: 204 }));
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('/login?reason=1'));
+    expect(assign).toHaveBeenCalledTimes(1);
+  });
 });
