@@ -19,6 +19,8 @@ RUN corepack enable
 WORKDIR /repo
 # Dependencies first, so a source change does not refetch them.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+# The pnpm patches of patchedDependencies (pnpm-workspace.yaml) — fetch and install read them.
+COPY patches ./patches
 # pnpm fetch always reads pnpm-lock.yaml as is (no --frozen-lockfile flag in pnpm 12).
 RUN pnpm fetch
 COPY . .
