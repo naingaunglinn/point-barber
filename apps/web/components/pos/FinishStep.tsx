@@ -147,19 +147,21 @@ export function FinishStep({
   return (
     <section className="grid gap-4" data-testid="finish-step">
       {alert !== null && <FormAlert problem={alert} />}
-      <FormField label={t('phone')} error={phoneError}>
-        {(field) => (
-          <PhoneInput
-            {...field}
-            value={phone}
-            onChange={(value) => {
-              setPhone(value.raw);
-              setNameMissing(false);
-              onPhone(value.e164);
-            }}
-          />
-        )}
-      </FormField>
+      <div data-testid="finish-phone">
+        <FormField label={t('phone')} error={phoneError}>
+          {(field) => (
+            <PhoneInput
+              {...field}
+              value={phone}
+              onChange={(value) => {
+                setPhone(value.raw);
+                setNameMissing(false);
+                onPhone(value.e164);
+              }}
+            />
+          )}
+        </FormField>
+      </div>
       {lookup.kind === 'existing' && (
         <p data-testid="finish-customer">
           {lookup.customer.last_visit_at === null
@@ -173,18 +175,20 @@ export function FinishStep({
       {lookup.kind === 'new' && (
         <>
           <p data-testid="finish-customer">{t('new')}</p>
-          <FormField label={t('name')} required error={nameError}>
-            {(field) => (
-              <TextInput
-                {...field}
-                value={name}
-                onChange={(value) => {
-                  setName(value);
-                  setNameMissing(false);
-                }}
-              />
-            )}
-          </FormField>
+          <div data-testid="finish-name">
+            <FormField label={t('name')} required error={nameError}>
+              {(field) => (
+                <TextInput
+                  {...field}
+                  value={name}
+                  onChange={(value) => {
+                    setName(value);
+                    setNameMissing(false);
+                  }}
+                />
+              )}
+            </FormField>
+          </div>
         </>
       )}
       <div className="grid gap-2">

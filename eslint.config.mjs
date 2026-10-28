@@ -20,6 +20,8 @@ export default tseslint.config(
       // Fixture files that must fail are linted only by their rule tests (design D10).
       'tools/eslint/fixtures/**',
       'tools/eslint-plugin-point/fixtures/**',
+      // The fixture route without an access declaration (add-foundation-auth-access design D11).
+      'apps/api/test/fixtures/undeclared.controller.ts',
     ],
   },
   {

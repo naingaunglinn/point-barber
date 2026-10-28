@@ -1,18 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../src/common/database/prisma.service.js';
-import { FIXTURE_SESSION_HEADER, FIXTURE_USER_HEADER } from './helpers/fixture-actor.js';
+import { type TestPerson, cookieOf, createPerson, testCompany } from './helpers/people.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
-// add-foundation-auth-access task 2.1 — API-AUD-01 · D-AUD-02 · CG-DB-03 · design D3. Until the
-// session guard exists (group 4), the fixture-actor headers stand in for a signed-in caller.
+// add-foundation-auth-access task 2.1 — API-AUD-01 · D-AUD-02 · CG-DB-03 · design D3: a signed-in
+// caller (a real session through the session guard of group 4) and a call before sign-in.
 const REQUEST_ID = '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e70';
-const AUNG_USER = '0199a3f2-0000-7000-8000-00000000e004';
-const AUNG_SESSION = '0199a3f2-0000-7000-8000-0000000005e4';
 
 let t: TestApp;
+let aung: TestPerson;
 beforeAll(async () => {
   t = await startTestApp();
+  const prisma = t.app.get(PrismaService);
+  aung = await createPerson(prisma, await testCompany(prisma));
 });
 afterAll(async () => {
   await t.close();
@@ -23,12 +24,11 @@ describe('add-foundation-auth-access · audit · Every changing request carries 
     const res = await t.http
       .post('/api/v1/_fixtures/context')
       .set('X-Request-Id', REQUEST_ID)
-      .set(FIXTURE_USER_HEADER, AUNG_USER)
-      .set(FIXTURE_SESSION_HEADER, AUNG_SESSION);
+      .set('Cookie', cookieOf(aung.token));
     expect(res.status).toBe(200);
     expect(res.body).toStrictEqual({
-      user_id: AUNG_USER,
-      session_id: AUNG_SESSION,
+      user_id: aung.userId,
+      session_id: aung.sessionId,
       request_id: REQUEST_ID,
     });
   });
@@ -38,7 +38,7 @@ describe('add-foundation-auth-access · audit · Every changing request carries 
     // the settings: "empty" must come from the runner itself, not from a reused connection.
     const fresh = await startTestApp();
     try {
-      const res = await fresh.http.post('/api/v1/_fixtures/context');
+      const res = await fresh.http.post('/api/v1/_fixtures/context/anonymous');
       expect(res.status).toBe(200);
       expect(res.body).toStrictEqual({
         user_id: '',
@@ -51,10 +51,7 @@ describe('add-foundation-auth-access · audit · Every changing request carries 
   });
 
   it('Scenario: Nothing leaks to the next transaction', async () => {
-    await t.http
-      .post('/api/v1/_fixtures/context')
-      .set(FIXTURE_USER_HEADER, AUNG_USER)
-      .set(FIXTURE_SESSION_HEADER, AUNG_SESSION);
+    await t.http.post('/api/v1/_fixtures/context').set('Cookie', cookieOf(aung.token));
     const prisma = t.app.get(PrismaService);
     // Whichever pool connection a later transaction gets, it sees none of the three values.
     for (let i = 0; i < 5; i += 1) {

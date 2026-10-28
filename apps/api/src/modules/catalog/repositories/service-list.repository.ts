@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ServiceStatus } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { likeText } from '../../../common/database/like-text.js';
 
 // The operational reads of the POS (P2.SVC.01 · P2.CAT.01 — the catalog module owns the tables):
 // ACTIVE services in catalogue order, with where they are sold and the price rows of today.
@@ -61,8 +62,8 @@ export class ServiceListRepository {
           ? {}
           : {
               OR: [
-                { name_mm: { contains: text, mode: 'insensitive' as const } },
-                { name_en: { contains: text, mode: 'insensitive' as const } },
+                { name_mm: { contains: likeText(text), mode: 'insensitive' as const } },
+                { name_en: { contains: likeText(text), mode: 'insensitive' as const } },
               ],
             }),
       },

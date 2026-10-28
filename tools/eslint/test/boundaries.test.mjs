@@ -120,7 +120,7 @@ describe('tools/eslint/boundaries.mjs (design D10)', () => {
 
 // add-foundation-auth-access task 2.8 / 2.10 — CG-ARCH-08 · guideline §24 row 22: an SDK is imported
 // only inside the one folder that wraps it — pg-boss in modules/platform/jobs, the SMTP client in
-// modules/platform/mail.
+// modules/platform/mail, the OpenID Connect client in modules/auth/google (task 5.13).
 describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
   const messages = async (code, path) => {
     const [result] = await eslint.lintText(code, { filePath: join(root, path) });
@@ -134,8 +134,8 @@ describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
     'apps/api/src/common/http/x.ts',
     'apps/api/src/common/database/x.ts',
     'apps/api/src/app.module.ts',
-  ])('pg-boss and nodemailer fail in %s', async (path) => {
-    for (const sdk of ['pg-boss', 'nodemailer']) {
+  ])('pg-boss, nodemailer and openid-client fail in %s', async (path) => {
+    for (const sdk of ['pg-boss', 'nodemailer', 'openid-client']) {
       expect(await messages(imports(sdk), path)).toEqual([
         { ruleId: RULE, message: expect.stringContaining('CG-ARCH-08') },
       ]);
@@ -151,6 +151,12 @@ describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
   it('nodemailer passes in modules/platform/mail, pg-boss does not', async () => {
     const path = 'apps/api/src/modules/platform/mail/mailpit.transport.ts';
     expect(await lint(imports('nodemailer'), path)).toEqual([]);
+    expect(await lint(imports('pg-boss'), path)).toEqual([RULE]);
+  });
+
+  it('openid-client passes in modules/auth/google, pg-boss does not', async () => {
+    const path = 'apps/api/src/modules/auth/google/google.service.ts';
+    expect(await lint(imports('openid-client'), path)).toEqual([]);
     expect(await lint(imports('pg-boss'), path)).toEqual([RULE]);
   });
 

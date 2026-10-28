@@ -25,4 +25,8 @@ export const customerLookupSchema = z.strictObject({
   upcoming_bookings: z.array(upcomingBookingSchema),
 });
 
+/** P3.CUS.02 query: the phone as typed; the service normalises it (400 `phone_invalid`). */
+export const customerLookupQuerySchema = z.object({ phone: z.string().max(50) });
+
 export type CustomerLookupDto = z.infer<typeof customerLookupSchema>;
+export type CustomerLookupQuery = z.infer<typeof customerLookupQuerySchema>;

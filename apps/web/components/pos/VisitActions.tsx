@@ -57,6 +57,7 @@ export function VisitActions({
                 iconOnly
                 icon={<EllipsisVertical />}
                 aria-label={tAction('more')}
+                data-testid="visit-more"
               />
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
@@ -67,6 +68,7 @@ export function VisitActions({
                 <DropdownMenu.Item
                   className="flex min-h-11 cursor-pointer items-center rounded-sm px-2 text-base text-destructive outline-none data-[highlighted]:bg-muted"
                   onSelect={() => setAsking(true)}
+                  data-testid="visit-incomplete"
                 >
                   {t('incomplete.title')}
                 </DropdownMenu.Item>

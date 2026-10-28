@@ -90,7 +90,11 @@ export function PaymentList({ payments, methods, canVoid, onVoid }: PaymentListP
               )}
               {!voided && canVoid && (
                 <div className="mt-2">
-                  <Button variant="ghost" onClick={() => setVoiding(payment)}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setVoiding(payment)}
+                    data-testid="payment-void"
+                  >
                     {t('voidPayment')}
                   </Button>
                 </div>

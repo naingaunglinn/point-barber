@@ -18,7 +18,7 @@ import {
   useFormat,
 } from '@point/ui';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 
 import { orderedMethods } from './PaymentButtons';
 import { referenceHint } from './reference-hint';
@@ -55,6 +55,8 @@ export interface PaymentSheetProps {
   /** The last refusal of this sheet's request, or null. */
   readonly problem: PaymentProblem | null;
   readonly onSubmit: (payment: PaymentSubmit) => void | Promise<unknown>;
+  /** The saved check of a payment without an answer (`SavedCheck`), shown inside the sheet. */
+  readonly saved?: ReactNode;
 }
 
 const REFERENCE_CODES = new Set(['reference_required', 'reference_format', 'duplicate_reference']);
@@ -82,6 +84,7 @@ export function PaymentSheet(props: PaymentSheetProps) {
         </Button>
       }
     >
+      {props.saved !== undefined && <div className="mb-4">{props.saved}</div>}
       {/* The sheet's content unmounts when it closes, so every opening starts from the preset. */}
       <PaymentForm {...props} formId={formId} />
     </Sheet>
@@ -187,17 +190,20 @@ function PaymentForm({
                 value={item.id}
                 checked={methodId === item.id}
                 onChange={() => setMethodId(item.id)}
+                data-testid={`payment-method-${item.code}`}
               />
               {localized(item, 'name', locale)}
             </label>
           ))}
         </fieldset>
       )}
-      <FormField label={t('amount')} required error={amountError}>
-        {(field) => <MoneyInput {...field} value={amount} onChange={setAmount} />}
-      </FormField>
+      <div data-testid="payment-amount">
+        <FormField label={t('amount')} required error={amountError}>
+          {(field) => <MoneyInput {...field} value={amount} onChange={setAmount} />}
+        </FormField>
+      </div>
       {chosen?.requires_reference === true && (
-        <div className="grid gap-1">
+        <div className="grid gap-1" data-testid="payment-reference-field">
           <FormField label={t('reference')} required helper={helper} error={referenceError}>
             {(field) => (
               <TextInput

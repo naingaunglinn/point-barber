@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from 'next-intl';
 // first, then KBZPay, then Split, then the other active methods in their `sort_order`; each at least 72 px
 // high. Cash and KBZPay pay the full remaining amount — Cash at once, KBZPay through its reference sheet,
 // which the screen opens. While one payment request runs every button is busy, so a double tap records one
-// payment (AD-NET-01). Shown only while money is missing (the Finish step follows at 0).
+// payment (AD-NET-01). Shown only while money is missing (the Finish step below stays disabled until 0).
 
 export const CASH_CODE = 'CASH';
 export const KBZPAY_CODE = 'KBZPAY';

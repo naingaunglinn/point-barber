@@ -8,6 +8,14 @@ import { Clock } from '../../../common/clock/clock.js';
 // refused retry does not extend the wait. A restart empties every bucket alike. Keys whose window has
 // passed are swept away at most once a minute, so the map does not keep every address it has seen.
 
+/** One bucket a request must pass. */
+export interface RateLimitHit {
+  readonly bucket: string;
+  readonly key: string;
+  readonly limit: number;
+  readonly windowSeconds: number;
+}
+
 export type RateLimitResult =
   { readonly allowed: true } | { readonly allowed: false; readonly retryAfter: number };
 
@@ -33,23 +41,41 @@ export class RateLimiter {
   }
 
   hit(bucket: string, key: string, limit: number, windowSeconds: number): RateLimitResult {
+    return this.hitAll([{ bucket, key, limit, windowSeconds }]);
+  }
+
+  /**
+   * Several buckets for one request, checked in order (design D5): the first that is full refuses
+   * the request, and the request counts in none of them — it counts only when every bucket accepts.
+   */
+  hitAll(hits: readonly RateLimitHit[]): RateLimitResult {
     const now = this.clock.now().getTime();
     this.sweep(now);
-    const windowMs = windowSeconds * 1000;
-    const id = `${bucket}␟${key}`;
-    // A hit leaves the window exactly `windowSeconds` after it was made.
-    const live = (this.entries.get(id)?.times ?? []).filter((time) => now - time < windowMs);
-    if (live.length >= limit) {
+    const checked = hits.map(({ bucket, key, limit, windowSeconds }) => {
+      const windowMs = windowSeconds * 1000;
+      const id = `${bucket}␟${key}`;
+      // A hit leaves the window exactly `windowSeconds` after it was made.
+      const live = (this.entries.get(id)?.times ?? []).filter((time) => now - time < windowMs);
       this.entries.set(id, { windowMs, times: live });
-      const oldest = live[0] ?? now;
-      return {
-        allowed: false,
-        retryAfter: Math.max(1, Math.ceil((oldest + windowMs - now) / 1000)),
-      };
+      return { live, limit, windowMs };
+    });
+    for (const { live, limit, windowMs } of checked) {
+      if (live.length >= limit) {
+        const oldest = live[0] ?? now;
+        return {
+          allowed: false,
+          retryAfter: Math.max(1, Math.ceil((oldest + windowMs - now) / 1000)),
+        };
+      }
     }
-    live.push(now);
-    this.entries.set(id, { windowMs, times: live });
+    for (const { live } of checked) live.push(now);
     return { allowed: true };
+  }
+
+  /** Empties every bucket — what an API restart does (design D5); for tests. */
+  reset(): void {
+    this.entries.clear();
+    this.lastSweep = undefined;
   }
 
   /** Removes every key whose newest hit has left its window. */

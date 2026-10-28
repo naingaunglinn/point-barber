@@ -8,6 +8,7 @@ backup and secrets — are in [`../ops/`](../ops/README.md).
 | [`local-setup.md`](local-setup.md)           | A developer machine from nothing: tools, `.env`, hosts file, the Compose stack, host-run development, tests |
 | [`coding-guideline.md`](coding-guideline.md) | The rules for code (`CG-*`); delivered, kept as it is                                                       |
 | [`module-map.md`](module-map.md)             | The 13 API modules, which API part each owns, and the boundary rules                                        |
+| [`auth-and-access.md`](auth-and-access.md)   | Signing in locally, the seed people, the three guards, declaring access on an endpoint, audit, idempotency  |
 | [`db-changes.md`](db-changes.md)             | How the database is built and changed: `db/source/`, migrations, the one migrate entry point                |
 | [`../../VERSIONS.md`](../../VERSIONS.md)     | Every pinned tool and image, with the reason                                                                |
 

@@ -12,11 +12,15 @@ import { AppConfig, loadAppConfig } from '../../src/common/config/config.js';
 import { DatabaseProbe } from '../../src/common/database/prisma.service.js';
 import { LOGGER, createLogger } from '../../src/common/logging/logger.js';
 import { PlatformModule } from '../../src/modules/platform/index.js';
+import {
+  AccessFixtureController,
+  PublicApiFixtureController,
+} from '../fixtures/access.controller.js';
 import { AuditFixtureController } from '../fixtures/audit.controller.js';
 import { ContextFixtureController } from '../fixtures/context.controller.js';
 import { FixturesController } from '../fixtures/fixtures.controller.js';
 import { IdempotentRowsFixtureController } from '../fixtures/idempotent-rows.controller.js';
-import { fixtureActorMiddleware } from './fixture-actor.js';
+import { UndeclaredFixtureController } from '../fixtures/undeclared.controller.js';
 
 @Module({
   // The modules whose exports the fixture controllers inject (one instance each, shared with AppModule).
@@ -26,29 +30,15 @@ import { fixtureActorMiddleware } from './fixture-actor.js';
     ContextFixtureController,
     AuditFixtureController,
     IdempotentRowsFixtureController,
+    AccessFixtureController,
+    PublicApiFixtureController,
+    UndeclaredFixtureController,
   ],
 })
 class TestAppModule {}
 
+/** A clock a test sets and moves; it never reads the machine's time. */
 export class FixedClock extends Clock {
-  constructor(private readonly instant: Date) {
-    super();
-  }
-  override now(): Date {
-    return this.instant;
-  }
-}
-
-export interface TestApp {
-  readonly app: NestExpressApplication;
-  readonly http: ReturnType<typeof supertest>;
-  /** Every JSON log line the API wrote. */
-  readonly logs: Record<string, unknown>[];
-  close(): Promise<void>;
-}
-
-/** A clock a test moves (add-walkin-visit-checkout — month boundary, a visit across midnight). */
-export class MovableClock extends Clock {
   constructor(private instant: Date) {
     super();
   }
@@ -60,16 +50,38 @@ export class MovableClock extends Clock {
   }
 }
 
+type Http = ReturnType<typeof supertest>;
+const METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'] as const;
+type Requests = Pick<Http, (typeof METHODS)[number]>;
+
+export interface TestApp {
+  readonly app: NestExpressApplication;
+  /**
+   * Requests as the staff app sends them: `X-Requested-With: point-app` and the app's `Origin`,
+   * which the CSRF guard requires on every changing request (API-AUTH-02).
+   */
+  readonly http: Requests;
+  /** Requests with no header added — for the CSRF scenarios. */
+  readonly raw: Http;
+  /** The clock of the application when `now` was given. */
+  readonly clock: FixedClock | undefined;
+  /** Every JSON log line the API wrote. */
+  readonly logs: Record<string, unknown>[];
+  close(): Promise<void>;
+}
+
 export interface TestAppOptions {
   readonly now?: Date;
-  /** A clock of the test's own, instead of the fixed one of `now`. */
-  readonly clock?: Clock;
+  /** A clock the test made before the application (a month boundary, a visit across midnight). */
+  readonly clock?: FixedClock;
   readonly probe?: DatabaseProbe;
   /** Another database than DATABASE_URL — a fresh copy (helpers/databases.ts). */
   readonly databaseUrl?: string;
   /** JOBS_IN_API for this application: run the job workers (off by default in test:int). */
   readonly jobs?: boolean;
-  /** Providers replaced by a value — a fake of a port (CG-ARCH-08), e.g. storage or the renderer. */
+  /** Environment values replaced for this application, e.g. GOOGLE_ISSUER of the stub issuer. */
+  readonly env?: Partial<AppConfig['env']>;
+  /** Providers replaced for this application, e.g. a closed MaintenanceGate, storage or the renderer. */
   readonly overrides?: readonly { readonly provide: unknown; readonly useValue: unknown }[];
 }
 
@@ -89,21 +101,26 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   let builder = Test.createTestingModule({ imports: [TestAppModule] })
     .overrideProvider(LOGGER)
     .useValue(createLogger('info', stream));
-  if (options.clock !== undefined)
-    builder = builder.overrideProvider(Clock).useValue(options.clock);
-  else if (options.now !== undefined)
-    builder = builder.overrideProvider(Clock).useValue(new FixedClock(options.now));
+  const clock =
+    options.clock ?? (options.now === undefined ? undefined : new FixedClock(options.now));
+  if (clock !== undefined) builder = builder.overrideProvider(Clock).useValue(clock);
   if (options.probe !== undefined)
     builder = builder.overrideProvider(DatabaseProbe).useValue(options.probe);
-  for (const { provide, useValue } of options.overrides ?? [])
-    builder = builder.overrideProvider(provide).useValue(useValue);
-  if (options.databaseUrl !== undefined || options.jobs !== undefined) {
+  for (const override of options.overrides ?? []) {
+    builder = builder.overrideProvider(override.provide).useValue(override.useValue);
+  }
+  if (
+    options.databaseUrl !== undefined ||
+    options.jobs !== undefined ||
+    options.env !== undefined
+  ) {
     const { env } = loadAppConfig();
     const config: AppConfig = {
       env: {
         ...env,
         DATABASE_URL: options.databaseUrl ?? env.DATABASE_URL,
         JOBS_IN_API: options.jobs ?? env.JOBS_IN_API,
+        ...options.env,
       },
     };
     builder = builder.overrideProvider(AppConfig).useValue(config);
@@ -112,11 +129,20 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: false });
   configureApp(app);
-  app.use(fixtureActorMiddleware);
   await app.init();
+  const raw = supertest(app.getHttpServer());
+  const origin = app.get(AppConfig).env.APP_ORIGIN;
+  const http = Object.fromEntries(
+    METHODS.map((method) => [
+      method,
+      (url: string) => raw[method](url).set('X-Requested-With', 'point-app').set('Origin', origin),
+    ]),
+  ) as unknown as Requests;
   return {
     app,
-    http: supertest(app.getHttpServer()),
+    http,
+    raw,
+    clock,
     logs,
     close: () => app.close(),
   };
