@@ -91,11 +91,19 @@ describe('add-walkin-visit-checkout · payments · Checkout offers the active pa
     const codeOf = new Map(
       (await prisma.payment_methods.findMany()).map((method) => [method.id, method.code]),
     );
-    expect(rows.map((row) => [row.source, codeOf.get(row.entity_id ?? '')])).toStrictEqual([
-      [AuditSource.SYSTEM_JOB, 'CASH'],
-      [AuditSource.SYSTEM_JOB, 'KBZPAY'],
+    // Both rows are written in one transaction, so neither the time nor the UUIDv7 id orders them:
+    // compare by method code.
+    const created = rows
+      .map((row) => ({
+        source: row.source,
+        code: codeOf.get(row.entity_id ?? '') ?? '',
+        kind: (row.after_data as { kind: number }).kind,
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+    expect(created).toStrictEqual([
+      { source: AuditSource.SYSTEM_JOB, code: 'CASH', kind: 1 },
+      { source: AuditSource.SYSTEM_JOB, code: 'KBZPAY', kind: 2 },
     ]);
-    expect(rows.map((row) => (row.after_data as { kind: number }).kind)).toStrictEqual([1, 2]);
     expect(rows.every((row) => row.actor_user_id === null)).toBe(true);
   });
 
