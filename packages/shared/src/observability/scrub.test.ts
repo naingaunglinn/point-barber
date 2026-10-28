@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { REDACTED, redactText, scrubEvent, withoutQuery } from './scrub.js';
 
-// add-staging-deploy task 3.4 — the API `beforeSend` (design D9 · CG-OBS-03): spec "No secret or
-// personal data reaches Sentry".
+// add-staging-deploy tasks 3.4 / 4.1 — the `beforeSend` of the API and the web app (design D9 / D10 ·
+// CG-OBS-03): spec "No secret or personal data reaches Sentry".
 
 describe('scrubEvent (task 3.4)', () => {
   const event = {
@@ -63,5 +63,10 @@ describe('scrubEvent (task 3.4)', () => {
   it('keeps a short number (an id, a status) readable', () => {
     expect(redactText('status 500 at step 1234567')).toBe('status 500 at step 1234567');
     expect(withoutQuery('/a#b')).toBe('/a');
+  });
+
+  it('drops a form value sent as the request body', () => {
+    const scrubbed = scrubEvent({ request: { url: 'https://app.point.test/login', data: 'x' } });
+    expect(scrubbed.request).toStrictEqual({ url: 'https://app.point.test/login' });
   });
 });

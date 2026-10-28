@@ -1,12 +1,13 @@
+import { scrubEvent } from '@point/shared';
+
 import type { ErrorSink } from '../../../common/observability/error-reporter.js';
-import { scrubEvent } from './scrub.js';
 
 // The one file that imports @sentry/nestjs (CG-ARCH-08 · guideline §24 #22 · add-staging-deploy
 // design D9). Loaded only when SENTRY_DSN_API is set, with a dynamic import, so an API without a DSN
 // never loads the SDK. Capture is explicit — the problem filter and the jobs worker call it — so
 // every integration that captures or collects by itself is off: no default integrations, no
 // tracing, no breadcrumbs, no runtime instrumentation, nothing of the user, cookies, headers, bodies
-// or query strings; `beforeSend` scrubs what is left (scrub.ts).
+// or query strings; `beforeSend` scrubs what is left (scrubEvent of packages/shared).
 
 export interface SentryOptions {
   readonly dsn: string;

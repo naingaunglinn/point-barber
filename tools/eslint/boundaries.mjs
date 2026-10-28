@@ -73,6 +73,21 @@ const wrapperConfigs = SDKS.flatMap(({ name, folder }) =>
 
 const WEB_MESSAGE =
   'The web app reaches data only through the HTTP API — never the Prisma client or apps/api (ADR-001 · ADR-009 · design D10).';
+const WEB_PATTERNS = [
+  { regex: '^@prisma/', message: WEB_MESSAGE },
+  { regex: '(^|/)generated/prisma(/|$)', message: WEB_MESSAGE },
+  { regex: '^api(/|$)', message: WEB_MESSAGE },
+  // Any PostgreSQL client, not only Prisma (CG-ARCH-06 · guideline §24 row 20).
+  { regex: '^(pg|pg-[a-z-]+|postgres)(/|$)', message: WEB_MESSAGE },
+  { regex: '(^|/)apps/api(/|$)', message: WEB_MESSAGE },
+];
+// The web app's Sentry SDK: only its error-reporting files (CG-ARCH-08 · add-staging-deploy D10).
+const WEB_SENTRY_FILES = ['apps/web/lib/observability/**', 'apps/web/instrumentation.ts'];
+const WEB_SENTRY = {
+  regex: '^@sentry/',
+  message:
+    'The Sentry SDK is imported only in apps/web/lib/observability/ and apps/web/instrumentation.ts (CG-ARCH-08 · guideline §24 row 22).',
+};
 
 export default [
   {
@@ -93,13 +108,10 @@ export default [
       'apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
       'packages/ui/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
     ],
-    rules: restrict([
-      { regex: '^@prisma/', message: WEB_MESSAGE },
-      { regex: '(^|/)generated/prisma(/|$)', message: WEB_MESSAGE },
-      { regex: '^api(/|$)', message: WEB_MESSAGE },
-      // Any PostgreSQL client, not only Prisma (CG-ARCH-06 · guideline §24 row 20).
-      { regex: '^(pg|pg-[a-z-]+|postgres)(/|$)', message: WEB_MESSAGE },
-      { regex: '(^|/)apps/api(/|$)', message: WEB_MESSAGE },
-    ]),
+    rules: restrict([...WEB_PATTERNS, WEB_SENTRY]),
+  },
+  {
+    files: WEB_SENTRY_FILES,
+    rules: restrict(WEB_PATTERNS),
   },
 ];

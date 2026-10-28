@@ -1,23 +1,11 @@
 import type { LoggerService } from '@nestjs/common';
+import { REDACTED_KEYS } from '@point/shared';
 import { type DestinationStream, type Logger, pino } from 'pino';
 
 // Structured JSON logs on stdout through one injected pino logger (ADR-007 decision 5 · CG-OBS-01).
-// The redaction list is the one place CG-OBS-03's "never logged" values are named.
+// The redaction list is the one place CG-OBS-03's "never logged" values are named: REDACTED_KEYS of
+// packages/shared, which the error reports of add-staging-deploy drop too.
 export const LOGGER = Symbol('LOGGER');
-
-/**
- * Keys whose values never reach a log line, wherever they appear (CG-OBS-03 · CG-SEC-06 ·
- * add-foundation-auth-access D7 / D8): the mail job's template parameters, tokens, cookies and the
- * internal key. The error reporter drops the same keys from an event (add-staging-deploy D9).
- */
-export const REDACTED_KEYS = [
-  'params',
-  'token',
-  'cookie',
-  'set-cookie',
-  'authorization',
-  'x-internal-key',
-] as const;
 
 /**
  * The sign-in code and the Google `state` by the paths they travel — a request body or query. Their

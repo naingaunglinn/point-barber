@@ -113,6 +113,16 @@ describe('tools/eslint/boundaries.mjs (design D10)', () => {
     expect(await lint(imports(from), 'apps/web/lib/x.ts')).toEqual([RULE]);
   });
 
+  // add-staging-deploy task 4.1 — CG-ARCH-08: the Sentry SDK only in the error-reporting files.
+  it('the web app imports @sentry/nextjs only in lib/observability and instrumentation.ts', async () => {
+    expect(await lint(imports('@sentry/nextjs'), 'apps/web/app/staff/layout.tsx')).toEqual([RULE]);
+    expect(await lint(imports('@sentry/nextjs'), 'apps/web/lib/observability/x.ts')).toEqual([]);
+    expect(await lint(imports('@sentry/nextjs'), 'apps/web/instrumentation.ts')).toEqual([]);
+    expect(await lint(imports('@prisma/client'), 'apps/web/lib/observability/x.ts')).toEqual([
+      RULE,
+    ]);
+  });
+
   it('the web app may import the shared package', async () => {
     expect(await lint(imports('@point/shared'), 'apps/web/lib/x.ts')).toEqual([]);
   });

@@ -13,6 +13,7 @@ export * from './list/cursor-page.js';
 export * from './money/lakh.js';
 export type { Mmk } from './money/mmk.js';
 export * from './money/money.js';
+export * from './observability/scrub.js';
 export * from './permissions/can.js';
 export * from './permissions/catalogue.js';
 export * from './permissions/grants.js';

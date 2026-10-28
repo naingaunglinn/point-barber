@@ -1,10 +1,22 @@
-import { REDACTED_KEYS } from '../../../common/logging/logger.js';
+// What may reach Sentry from the API and from the web app (add-staging-deploy design D9 / D10 ·
+// CG-OBS-03 · CG-SEC-06): no cookie, header, body, query string, user or IP; e-mail addresses and runs
+// of 8 or more digits (codes, phone numbers, tokens) in a message or an exception value become
+// `[redacted]`; any `extra` / `contexts` key on the redaction list is dropped. The list lives once
+// (CG-OBS-03): the API's logger redacts the same keys. Pure functions, unit-tested with built events.
 
-// What may reach Sentry (add-staging-deploy design D9 · CG-OBS-03 · CG-SEC-06): no cookie, header,
-// body, query string, user or IP; e-mail addresses and runs of 8 or more digits (codes, phone numbers,
-// tokens) in a message or an exception value become `[redacted]`; any `extra` / `contexts` key on the
-// logger's redaction list is dropped — the list lives once (REDACTED_KEYS). A pure function, so it is
-// unit-tested with built events and used by the web app's rules too.
+/**
+ * Keys whose values never reach a log line or an error report, wherever they appear (CG-OBS-03 ·
+ * CG-SEC-06 · add-foundation-auth-access D7 / D8): the mail job's template parameters, tokens,
+ * cookies and the internal key.
+ */
+export const REDACTED_KEYS = [
+  'params',
+  'token',
+  'cookie',
+  'set-cookie',
+  'authorization',
+  'x-internal-key',
+] as const;
 
 export const REDACTED = '[redacted]';
 
