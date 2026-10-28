@@ -8,8 +8,9 @@ import { json, problem, renderStaff } from '../../test/render';
 
 // add-foundation-auth-access tasks 7.3, 7.4, 7.8 and 7.9 — access spec "The app refreshes its grants on
 // focus and after an unexpected 403" and "A user sets their own interface language on their account",
-// auth spec "After sign-in the start page shows who is signed in and their branches" and "A lost
-// session leads to the login screen …" (API-AUTH-05 · AD-PERM-03 · AD-STATE-04 · AD-L10N-06 · D17).
+// auth spec "A lost session leads to the login screen …" (API-AUTH-05 · AD-PERM-03 · AD-STATE-04 ·
+// AD-L10N-06 · D17). The start page of task 7.8 was temporary: add-walkin-visit-checkout task 10.1 makes
+// `/` open Today and puts who is signed in, MM / EN and Sign out under More (owner 28/Oct/2026).
 
 const refresh = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({
@@ -23,11 +24,10 @@ vi.mock('./navigate', () => ({ navigation: { assign } }));
 const { SessionLayer } = await import('./session-layer');
 const { MainQueryState } = await import('./main-query-state');
 const { useCan } = await import('./grants');
-const { LandingPage } = await import('../../app/staff/(authed)/landing');
+const { MoreScreen } = await import('../../app/staff/(authed)/more/more-screen');
 const { ApiProblem, api } = await import('../api/client');
 
 const B3 = '0199a3f2-0000-7000-8001-0000000000b3';
-const B1 = '0199a3f2-0000-7000-8001-0000000000b1';
 
 function meOf(overrides: Partial<MeResponse> = {}): MeResponse {
   return {
@@ -207,63 +207,30 @@ describe('add-foundation-auth-access · access · A user sets their own interfac
   });
 });
 
-describe('add-foundation-auth-access · auth · After sign-in the start page shows who is signed in and their branches (task 7.8)', () => {
-  const start = (me: MeResponse, locale: 'my' | 'en') => {
+describe('add-walkin-visit-checkout task 10.1 · More shows who is signed in, MM / EN and Sign out', () => {
+  const more = (me: MeResponse, locale: 'my' | 'en') => {
     fetchMock.mockImplementation(() => Promise.resolve(json(200, me)));
     return renderStaff(
       <SessionLayer locale={locale}>
-        <LandingPage />
+        <MoreScreen />
       </SessionLayer>,
       { locale },
     );
   };
 
-  it('Scenario: A barber — Myanmar interface', async () => {
-    start(meOf(), 'my');
-    expect((await screen.findByTestId('landing-name')).textContent).toBe('ကိုအောင်');
-    expect(screen.getByTestId('landing-email').textContent).toBe('aung@point.test');
-    const items = screen.getByTestId('landing-branches').querySelectorAll('li');
-    expect([...items].map((item) => item.textContent)).toStrictEqual(['B3 · ပွိုင့် ၃.၀']);
+  it('A barber — Myanmar interface: the name in Myanmar', async () => {
+    more(meOf(), 'my');
+    expect((await screen.findByTestId('more-name')).textContent).toBe('ကိုအောင်');
   });
 
-  it('Scenario: English interface', async () => {
-    start(meOf({ user: { ...meOf().user, ui_language: 2 } }), 'en');
-    expect((await screen.findByTestId('landing-name')).textContent).toBe('Ko Aung');
-    const items = screen.getByTestId('landing-branches').querySelectorAll('li');
-    expect([...items].map((item) => item.textContent)).toStrictEqual(['B3 · Point 3.0']);
+  it('English interface: the English name', async () => {
+    more(meOf({ user: { ...meOf().user, ui_language: 2 } }), 'en');
+    expect((await screen.findByTestId('more-name')).textContent).toBe('Ko Aung');
   });
 
-  it('Scenario: The company admin sees three branches', async () => {
-    const branch = (id: string, code: string) => ({
-      id,
-      code,
-      name_mm: code,
-      name_en: code,
-      phone: null,
-      status: 1 as const,
-      is_public: true,
-    });
-    start(
-      meOf({
-        grants: [{ code: 'role.update', scope_type: 1, branch_ids: [] }],
-        branches_in_scope: [
-          branch(B1, 'B1'),
-          branch('0199a3f2-0000-7000-8001-0000000000b2', 'B2'),
-          branch(B3, 'B3'),
-        ],
-      }),
-      'en',
-    );
-    await screen.findByTestId('landing-branches');
-    const codes = [...screen.getByTestId('landing-branches').querySelectorAll('li')].map((item) =>
-      item.getAttribute('data-branch'),
-    );
-    expect(codes).toStrictEqual(['B1', 'B2', 'B3']);
-  });
-
-  it('Scenario: Sign out from the start page', async () => {
-    start(meOf({ user: { ...meOf().user, ui_language: 2 } }), 'en');
-    fireEvent.click(await screen.findByTestId('landing-sign-out'));
+  it('Sign out from More', async () => {
+    more(meOf({ user: { ...meOf().user, ui_language: 2 } }), 'en');
+    fireEvent.click(await screen.findByTestId('more-sign-out'));
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/login?reason=1'));
     expect(
       fetchMock.mock.calls.some(

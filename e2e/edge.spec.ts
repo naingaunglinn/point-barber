@@ -228,7 +228,7 @@ test.describe('add-repo-scaffold · platform-runtime · The Host header selects 
     const res = await page.goto(`${SITE_ORIGIN}/staff`);
     expect(res?.status()).toBe(404);
     await expect(page.locator('[data-testid="login-email"]')).toHaveCount(0);
-    await expect(page.locator('[data-testid="landing-name"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="today"]')).toHaveCount(0);
   });
 
   test('Scenario: The site tree cannot be opened through the staff host', async ({ page }) => {

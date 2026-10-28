@@ -7,7 +7,7 @@ import { renderPos, routeFetch } from '../../test/pos-render';
 import { json } from '../../test/render';
 
 // add-walkin-visit-checkout tasks 10.1 / 10.4 — the bottom navigation: Today with the number of open
-// visits as its badge (none when nothing is open) and the centre ＋ Start.
+// visits as its badge (none when nothing is open), the centre ＋ Start and More (owner 28/Oct/2026).
 const push = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn() }),
@@ -38,5 +38,13 @@ describe('StaffBottomNav', () => {
     renderPos(<StaffBottomNav />);
     await screen.findByRole('link', { name: /Today/ });
     expect(screen.queryByText('0')).toBeNull();
+  });
+
+  it('More is the last item and opens /more', async () => {
+    routeFetch(fetchMock, { [OPEN]: json(200, { items: [] }) });
+    renderPos(<StaffBottomNav />);
+    const links = await screen.findAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toStrictEqual(['/today', '/more']);
+    expect(screen.getByRole('link', { name: 'More' })).toBeTruthy();
   });
 });

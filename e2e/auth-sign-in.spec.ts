@@ -30,7 +30,8 @@ async function signInOnScreen(page: Page, email: string): Promise<void> {
   const code = await mailpit.readCode(email, since);
   await page.getByTestId('login-code').fill(code);
   await page.getByTestId('login-submit').click();
-  await expect(page.getByTestId('landing-name')).toBeVisible();
+  // The start page opens Today (add-walkin-visit-checkout task 10.1).
+  await expect(page.getByTestId('today')).toBeVisible();
 }
 
 test.describe('add-foundation-auth-access · auth · signing in with an e-mail code (task 8.4)', () => {
@@ -45,11 +46,9 @@ test.describe('add-foundation-auth-access · auth · signing in with an e-mail c
     await context.addCookies([LOCALE_COOKIE('my')]);
     const page = await context.newPage();
     await signInOnScreen(page, 'aung@point.test');
-    await expect(page.getByTestId('landing-name')).toHaveText('ကိုအောင်');
-    await expect(page.getByTestId('landing-email')).toHaveText('aung@point.test');
-    await expect(page.getByTestId('landing-branches').locator('li')).toHaveText([
-      'B3 · ပွိုင့် ၃.၀',
-    ]);
+    // On a phone who is signed in is under More, the last item of the bottom navigation (owner 28/Oct).
+    await page.locator('[data-slot="bottom-nav"] a[href="/more"]').click();
+    await expect(page.getByTestId('more-name')).toHaveText('ကိုအောင်');
     const session = (await context.cookies()).find((cookie) => cookie.name === 'point_session');
     expect(session).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax', path: '/' });
     await context.close();
@@ -67,9 +66,7 @@ test.describe('add-foundation-auth-access · auth · signing in with an e-mail c
     await context.addCookies([LOCALE_COOKIE('en')]);
     const page = await context.newPage();
     await signInOnScreen(page, 'aung@point.test');
-    await expect(page.getByTestId('landing-name')).toHaveText('Ko Aung');
-    await expect(page.getByTestId('landing-email')).toHaveText('aung@point.test');
-    await expect(page.getByTestId('landing-branches').locator('li')).toHaveText(['B3 · Point 3.0']);
+    await expect(page.getByTestId('user-menu-name')).toHaveText('Ko Aung');
     await context.close();
   });
 });

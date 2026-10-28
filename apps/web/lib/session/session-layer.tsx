@@ -167,8 +167,10 @@ function StaffShell({
         userMenu={
           <div className="flex items-center gap-2">
             {/* No profile page exists yet (AD-NAV-07 v1.8): the name is text until one does. */}
-            <span className="text-sm font-semibold">{localized(me.employee, 'name', locale)}</span>
-            <Button variant="ghost" onClick={() => void signOut()}>
+            <span className="text-sm font-semibold" data-testid="user-menu-name">
+              {localized(me.employee, 'name', locale)}
+            </span>
+            <Button variant="ghost" data-testid="user-menu-sign-out" onClick={() => void signOut()}>
               {t('signOut')}
             </Button>
           </div>
