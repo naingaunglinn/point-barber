@@ -9,6 +9,8 @@ import { APP_ORIGIN, IS_CI, SITE_ORIGIN } from './hosts.js';
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
+  // The fixture people, reset before every run (global-setup.ts).
+  globalSetup: './global-setup.ts',
   forbidOnly: IS_CI,
   retries: 0,
   workers: 1,

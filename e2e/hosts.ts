@@ -19,6 +19,9 @@ export const COMPOSE = env(
   'docker compose -f docker-compose.yml -f docker-compose.dev.yml',
 );
 
+/** Mailpit's API, where the sign-in codes arrive outside production (ADR-007 · docker-compose.dev.yml). */
+export const MAILPIT_URL = env('E2E_MAILPIT_URL', 'http://localhost:8025');
+
 /** Running in CI (GitHub Actions sets CI=true): stricter Playwright settings and an HTML report. */
 export const IS_CI = env('CI', '') !== '';
 

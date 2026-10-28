@@ -1,11 +1,16 @@
 import { Module, type OnModuleInit } from '@nestjs/common';
 import { PERMISSIONS } from '@point/shared';
 
+import { GrantSource } from '../../common/access/grant-set.js';
+import { EMPLOYEE_TARGET, TargetResolvers } from '../../common/access/resolvers.js';
 import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import { Audit, CodeTables, PlatformModule } from '../platform/index.js';
+import { PeopleGrantSource } from './access/people-grant-source.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CurrentCompany } from './company/current-company.js';
 import { PeopleDirectory } from './directory/people-directory.js';
+import { OrganizationController } from './organization/organization.controller.js';
+import { AccessRepository } from './repositories/access.repository.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
 import { EmployeeRepository } from './repositories/employee.repository.js';
@@ -19,11 +24,16 @@ import { BaseSeed } from './seed/base-seed.js';
 // Bounded context `people` (ADR-001 · docs/engineering/module-map.md): company, branches, employees,
 // branch assignments, roles and permissions. It builds on platform (audit writer, jobs); what platform
 // needs from people — the primary-branch rule of the audit writer, the steps of sync.code_tables —
-// is registered here at start-up, so the two modules never import each other.
+// is registered here at start-up, so the two modules never import each other. The access guard's
+// port GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design D11).
 @Module({
   imports: [PlatformModule],
+  controllers: [OrganizationController],
   providers: [
     PeopleRepository,
+    AccessRepository,
+    PeopleGrantSource,
+    { provide: GrantSource, useExisting: PeopleGrantSource },
     CatalogueRepository,
     CompanyRepository,
     EmployeeRepository,
@@ -37,6 +47,7 @@ import { BaseSeed } from './seed/base-seed.js';
     FirstAdmin,
   ],
   exports: [
+    GrantSource,
     PeopleDirectory,
     CurrentCompany,
     CompanyAdmin,
@@ -53,10 +64,12 @@ export class PeopleModule implements OnModuleInit {
     private readonly runner: TransactionRunner,
     private readonly catalogue: PermissionCatalogue,
     private readonly baseSeed: BaseSeed,
+    private readonly targets: TargetResolvers,
   ) {}
 
   onModuleInit(): void {
     this.audit.usePrimaryBranchOf((employeeId) => this.directory.primaryBranchId(employeeId));
+    this.targets.register(EMPLOYEE_TARGET, (id) => this.directory.employeeTarget(id));
     // sync.code_tables (design D10): the catalogue first, then the base seed that reads it.
     this.codeTables.contribute('permission catalogue', 10, async () => {
       await this.runner.run((tx) => this.catalogue.sync(tx, PERMISSIONS));

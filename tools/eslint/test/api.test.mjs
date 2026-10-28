@@ -116,4 +116,11 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
       { ruleId: 'point/one-access-decorator', message: expect.stringContaining('API-PERM-02') },
     ]);
   });
+
+  it('fails on the undeclared fixture route, which the root config therefore excludes', async () => {
+    const path = 'apps/api/test/fixtures/undeclared.controller.ts';
+    expect(await lint(readFileSync(join(root, path), 'utf8'), path)).toEqual([
+      { ruleId: 'point/one-access-decorator', message: expect.stringContaining('API-PERM-02') },
+    ]);
+  });
 });
