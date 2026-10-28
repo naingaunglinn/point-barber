@@ -123,6 +123,8 @@ export class SalesRepository {
       business_date: string;
       receipt: { number: string; year: number; month: number; seq: number };
       customer_id: string | null;
+      /** Now; earlier than `at` only for a late entry's entered finish time. */
+      recorded_at: Date;
     },
   ): Promise<void> {
     await tx.sales.update({
@@ -137,7 +139,7 @@ export class SalesRepository {
         receipt_month: finished.receipt.month,
         receipt_seq: finished.receipt.seq,
         customer_id: finished.customer_id,
-        updated_at: finished.at,
+        updated_at: finished.recorded_at,
       },
     });
   }

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import {
+  type CompleteRequest,
   ErrorCode,
+  type LateEntry,
+  LateEntryReason,
   type RequestLookupDto,
   type StartVisitRequest,
   VisitStatus,
@@ -18,9 +21,16 @@ import { type Tx, TransactionRunner } from '../../../common/database/transaction
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { DayLock } from '../../cash-closing/index.js';
+import { PayrollLock } from '../../payroll/index.js';
 import { Assignments } from '../../people/index.js';
 import { Audit, Idempotency } from '../../platform/index.js';
-import { Payments, Sales, type SaleViewer } from '../../sales/index.js';
+import {
+  Payments,
+  Sales,
+  type SaleViewer,
+  assertLateEntryOrder,
+  enteredTime,
+} from '../../sales/index.js';
 import { type VisitRow, VisitsRepository } from '../repositories/visits.repository.js';
 import { VisitView, visitForSale } from './visit-view.js';
 
@@ -46,6 +56,7 @@ export class Visits {
     private readonly payments: Payments,
     private readonly view: VisitView,
     private readonly dayLock: DayLock,
+    private readonly payrollLock: PayrollLock,
     private readonly assignments: Assignments,
     private readonly audit: Audit,
     private readonly clock: Clock,
@@ -54,6 +65,11 @@ export class Visits {
   /**
    * P4.VIS.03 START (walk-in): the performer is the caller, the location the branch. Through
    * Idempotency.run — a replay answers the stored visit (`replayed`), with no audit row.
+   *
+   * With `late_entry` (add-late-entry design D3 · D-VIS-13 · P4-RULE-02 / 13) the visit is yesterday's
+   * paper walk-in: its checks run before the transaction, the visit date is the business date of the
+   * entered start, the day lock and the payroll lock are taken on that date, and the unpaid block is
+   * skipped — a late entry neither waits for nor blocks the barber's live visits.
    */
   async start(
     viewer: SaleViewer,
@@ -64,6 +80,8 @@ export class Visits {
     const { actor } = viewer;
     if (!inReadScope(scope, body.branch_id))
       throw new ProblemException(ErrorCode.OUT_OF_SCOPE, 403);
+    const late = body.late_entry ?? null;
+    if (late !== null) this.assertLateEntry(viewer, body.branch_id, late);
     let warnings: WarningDto[] = [];
     const { replayed, row } = await this.runner.run((tx) =>
       this.idempotency.run(tx, {
@@ -73,18 +91,26 @@ export class Visits {
           visit.started_by_user_id === actor.user_id &&
           visit.branch_id === body.branch_id &&
           visit.booking_id === null &&
+          // late_entry is not an identifying member (add-late-entry recorded reading 5).
           visit.performed_by_employee_id === actor.employee_id,
         create: async () => {
           const now = this.clock.now();
-          const date = businessDateOf(now);
+          const startedAt = late === null ? now : new Date(late.started_at);
+          const date = businessDateOf(startedAt);
           await this.dayLock.assertOpen(tx, body.branch_id, date);
+          if (late !== null)
+            await this.payrollLock.assertNotFinalized(tx, {
+              employee_ids: [actor.employee_id],
+              dates: [date],
+            });
           const assigned = await this.assignments.isActiveAndAssigned(tx, {
             employee_id: actor.employee_id,
             branch_id: body.branch_id,
             date,
           });
           if (!assigned) throw new ProblemException(ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422);
-          const unpaid = await this.visits.awaitingPayment(tx, actor.employee_id);
+          const unpaid =
+            late === null ? await this.visits.awaitingPayment(tx, actor.employee_id) : null;
           if (unpaid !== null)
             throw new ProblemException(ErrorCode.UNPAID_VISIT_OPEN, 422, {
               context: { visit_id: unpaid.id },
@@ -95,8 +121,11 @@ export class Visits {
             branch_id: body.branch_id,
             performed_by_employee_id: actor.employee_id,
             started_by_user_id: actor.user_id,
-            started_at: now,
+            started_at: startedAt,
+            recorded_at: now,
             business_date: date,
+            late_entry:
+              late === null ? null : { reason: late.reason, note: late.note?.trim() || null },
           });
           const sale = await this.sales.createOpenForVisit(tx, visit, key);
           warnings = await this.sales.addServiceLines(
@@ -125,10 +154,49 @@ export class Visits {
     return { replayed, visit: await this.view.of(this.prisma, row, viewer, warnings) };
   }
 
-  /** P4.VIS.05 COMPLETE — at least one active SERVICE line; a repeat changes nothing (P4-RULE-11). */
-  async complete(viewer: SaleViewer, visitId: string): Promise<VisitDto> {
+  /**
+   * The late-entry checks of START that need no row (design D3 step 2): the code through the handler
+   * policy (API-PERM-02 — 403 with `context.required`), OTHER's note (400 `reason_required` —
+   * API-DATA-11), then a start later than now (422 `late_entry_time` — LE-1), before any lock.
+   */
+  private assertLateEntry(viewer: SaleViewer, branchId: string, late: LateEntry): void {
+    if (!viewer.can('sale.late_entry', branchId))
+      throw new ProblemException(ErrorCode.FORBIDDEN, 403, {
+        context: { required: 'sale.late_entry' },
+      });
+    if (late.reason === LateEntryReason.OTHER && blank(late.note))
+      throw new ProblemException(ErrorCode.REASON_REQUIRED, 400);
+    assertLateEntryOrder({ startedAt: late.started_at, now: this.clock.now() });
+  }
+
+  /**
+   * P4.VIS.05 COMPLETE — at least one active SERVICE line; a repeat changes nothing (P4-RULE-11). A
+   * late entry takes the entered `completed_at`: required, after the start, before the payments already
+   * on the sale and not later than now — checked before the locks and again with the locked payments
+   * (add-late-entry design D4 · recorded reading 1). Any other visit ignores a sent one.
+   */
+  async complete(
+    viewer: SaleViewer,
+    visitId: string,
+    body: CompleteRequest = {},
+  ): Promise<VisitDto> {
     const visit = await this.runner.run(async (tx) => {
-      const { visit: locked } = await this.lockSaleThenVisit(tx, visitId);
+      const now = this.clock.now();
+      const before = await this.visits.find(tx, visitId);
+      const late = before?.is_late_entry === true && before.status === VisitStatus.STARTED;
+      const completedAt = late ? enteredTime(body.completed_at, 'completed_at') : now;
+      const order = async (startedAt: Date, saleId: string) =>
+        assertLateEntryOrder({
+          startedAt,
+          completedAt,
+          receivedAts: await this.sales.receivedAts(tx, saleId),
+          now,
+        });
+      if (before !== null && late) {
+        const unlocked = await this.sales.findByVisit(tx, before.id);
+        if (unlocked !== null) await order(before.started_at, unlocked.id);
+      }
+      const { visit: locked, saleId } = await this.lockSaleThenVisit(tx, visitId);
       if (locked.status === VisitStatus.COMPLETED) {
         this.audit.skip();
         return locked;
@@ -137,11 +205,13 @@ export class Visits {
         throw new ProblemException(ErrorCode.INVALID_TRANSITION, 409, {
           context: { status: locked.status },
         });
-      const sale = await this.sales.findByVisit(tx, locked.id);
-      if (sale === null || !(await this.sales.hasActiveServiceLine(tx, sale.id)))
+      if (!(await this.sales.hasActiveServiceLine(tx, saleId)))
         throw new ProblemException(ErrorCode.SERVICE_REQUIRED, 422);
-      const now = this.clock.now();
-      await this.visits.markCompleted(tx, locked.id, now, viewer.actor.user_id);
+      if (late) {
+        await this.sales.lockPayments(tx, saleId);
+        await order(locked.started_at, saleId);
+      }
+      await this.visits.markCompleted(tx, locked.id, completedAt, viewer.actor.user_id, now);
       await this.audit.emit({
         action: VISIT_COMPLETE,
         entity_type: 'visits',

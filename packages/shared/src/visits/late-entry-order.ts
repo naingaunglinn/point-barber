@@ -8,10 +8,10 @@ import { toDate, type Instant } from '../time/instant.js';
 export type LateEntryTimeMember = 'started_at' | 'completed_at' | 'received_at' | 'finished_at';
 
 export interface LateEntryTimes {
-  readonly startedAt: Instant;
-  readonly completedAt?: Instant | null;
-  readonly receivedAts?: readonly Instant[];
-  readonly finishedAt?: Instant | null;
+  readonly startedAt: Instant | Date;
+  readonly completedAt?: Instant | Date | null;
+  readonly receivedAts?: readonly (Instant | Date)[];
+  readonly finishedAt?: Instant | Date | null;
   readonly now: Instant | Date;
 }
 

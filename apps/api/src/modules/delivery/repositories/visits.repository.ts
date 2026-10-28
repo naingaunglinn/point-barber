@@ -63,7 +63,11 @@ const day = (date: string): Date => new Date(`${date}T00:00:00Z`);
 
 @Injectable()
 export class VisitsRepository {
-  /** A walk-in visit of the caller at the branch (status 1 STARTED, location 1 BRANCH). */
+  /**
+   * A walk-in visit of the caller at the branch (status 1 STARTED, location 1 BRANCH). A late entry
+   * (D-VIS-13) carries its reason and note, `started_at` from paper and `recorded_at` = now, which is
+   * the row's created_at (the Visit DTO's `recorded_at`).
+   */
   insertWalkIn(
     tx: Tx,
     row: {
@@ -73,7 +77,9 @@ export class VisitsRepository {
       performed_by_employee_id: string;
       started_by_user_id: string;
       started_at: Date;
+      recorded_at: Date;
       business_date: string;
+      late_entry: { reason: number; note: string | null } | null;
     },
   ): Promise<VisitRow> {
     return tx.visits.create({
@@ -87,8 +93,11 @@ export class VisitsRepository {
         started_at: row.started_at,
         started_by_user_id: row.started_by_user_id,
         business_date: day(row.business_date),
-        created_at: row.started_at,
-        updated_at: row.started_at,
+        is_late_entry: row.late_entry !== null,
+        late_entry_reason: row.late_entry?.reason ?? null,
+        late_entry_note: row.late_entry?.note ?? null,
+        created_at: row.recorded_at,
+        updated_at: row.recorded_at,
       },
       select: VISIT,
     });
@@ -121,14 +130,21 @@ export class VisitsRepository {
     });
   }
 
-  async markCompleted(tx: Tx, id: string, at: Date, byUserId: string): Promise<void> {
+  /** `at` = the completion; `recordedAt` = now (earlier for a late entry's entered time). */
+  async markCompleted(
+    tx: Tx,
+    id: string,
+    at: Date,
+    byUserId: string,
+    recordedAt: Date = at,
+  ): Promise<void> {
     await tx.visits.update({
       where: { id },
       data: {
         status: VisitStatus.COMPLETED,
         completed_at: at,
         completed_by_user_id: byUserId,
-        updated_at: at,
+        updated_at: recordedAt,
       },
     });
   }
@@ -152,10 +168,10 @@ export class VisitsRepository {
     });
   }
 
-  async markFinished(tx: Tx, id: string, at: Date): Promise<void> {
+  async markFinished(tx: Tx, id: string, at: Date, recordedAt: Date): Promise<void> {
     await tx.visits.update({
       where: { id },
-      data: { status: VisitStatus.FINISHED, finished_at: at, updated_at: at },
+      data: { status: VisitStatus.FINISHED, finished_at: at, updated_at: recordedAt },
     });
   }
 

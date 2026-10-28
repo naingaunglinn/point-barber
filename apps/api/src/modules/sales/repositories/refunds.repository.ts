@@ -39,6 +39,8 @@ export class RefundsRepository {
       business_date: string;
       refunded_at: Date;
       refunded_by_user_id: string;
+      /** Now; later than `refunded_at` only for a late entry's change return. */
+      recorded_at: Date;
     },
   ): Promise<void> {
     await tx.refunds.create({
@@ -58,7 +60,7 @@ export class RefundsRepository {
         business_date: new Date(`${row.business_date}T00:00:00Z`),
         refunded_at: row.refunded_at,
         refunded_by_user_id: row.refunded_by_user_id,
-        created_at: row.refunded_at,
+        created_at: row.recorded_at,
       },
     });
   }

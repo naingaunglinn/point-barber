@@ -80,12 +80,13 @@ export class PaymentsRepository {
       external_reference: string | null;
       collected_by_employee_id: string;
       received_at: Date;
+      /** = received_at, except on a late entry, whose payment is received earlier than recorded. */
+      recorded_at: Date;
       recorded_by_user_id: string;
     },
   ): Promise<void> {
-    await tx.payments.create({
-      data: { ...row, created_at: row.received_at },
-    });
+    const { recorded_at, ...data } = row;
+    await tx.payments.create({ data: { ...data, created_at: recorded_at } });
   }
 
   /** The identifying fields of the payment stored under a client request id (design D7). */
@@ -114,10 +115,10 @@ export class PaymentsRepository {
   find(
     db: Tx,
     id: string,
-  ): Promise<{ id: string; sale_id: string; voided_at: Date | null } | null> {
+  ): Promise<{ id: string; sale_id: string; received_at: Date; voided_at: Date | null } | null> {
     return db.payments.findUnique({
       where: { id },
-      select: { id: true, sale_id: true, voided_at: true },
+      select: { id: true, sale_id: true, received_at: true, voided_at: true },
     });
   }
 
