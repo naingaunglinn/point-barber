@@ -24,8 +24,16 @@ import {
 // error. Catalogue order = sort_order, then the Myanmar name — the START chips are the first six
 // SIMPLE services of it (design D12).
 
-function toItem(row: ServiceListRow): ServiceListItemDto {
-  const branchIds = row.branch_services.map((sold) => sold.branch_id);
+/**
+ * One service as the caller may see it (API-PERM-03): the service is company data, but where it is sold
+ * and where it lacks a price is branch data, so both lists keep only the caller's read scope. With a
+ * `branch_id` the duration range is that branch's — the START chips and the picker are per branch.
+ */
+function toItem(row: ServiceListRow, scope: ReadScope, branchId?: string): ServiceListItemDto {
+  const branchIds = row.branch_services
+    .map((sold) => sold.branch_id)
+    .filter((id) => inReadScope(scope, id));
+  const rangeOf = branchId === undefined ? branchIds : [branchId];
   // Sold there, but no branch-level BRANCH price effective today: the quote would answer
   // not_sold_here (an OPTIONS service counts as priced when any of its variants is).
   const priced = new Set(
@@ -34,9 +42,11 @@ function toItem(row: ServiceListRow): ServiceListItemDto {
       .map((price) => price.branch_id),
   );
   const durations = [
-    ...row.branch_services.map((sold) => sold.duration_minutes),
+    ...row.branch_services
+      .filter((sold) => rangeOf.includes(sold.branch_id))
+      .map((sold) => sold.duration_minutes),
     ...row.service_prices
-      .filter((price) => branchIds.includes(price.branch_id))
+      .filter((price) => rangeOf.includes(price.branch_id))
       .flatMap((price) => (price.duration_minutes === null ? [] : [price.duration_minutes])),
   ];
   return {
@@ -87,7 +97,7 @@ export class ServiceCatalog {
     const page = rows.slice(0, query.limit);
     const last = page.at(-1);
     return {
-      items: page.map(toItem),
+      items: page.map((row) => toItem(row, scope, query.branch_id)),
       next_cursor: rows.length > query.limit && last !== undefined ? encodeCursor(last.id) : null,
       total: null,
     };

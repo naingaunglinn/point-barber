@@ -114,11 +114,13 @@ describe('PayrollLock.assertNotFinalized (P5-RULE-10)', () => {
   });
 
   it('employee_id is null when no employee was passed', async () => {
+    await setStatus(PayrollRunStatus.FINALIZED);
     const { error } = await check(['2026-10-05']);
     expect(error?.options.context?.employee_id).toBeNull();
   });
 
   it('one finalized date among several refuses', async () => {
+    await setStatus(PayrollRunStatus.FINALIZED);
     const { error } = await check(['2026-11-01', '2026-10-31']);
     expect(error?.code).toBe(ErrorCode.PAYROLL_FINALIZED);
   });

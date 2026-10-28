@@ -177,3 +177,22 @@ describe('query schemas of the walk-in reads', () => {
     expect(customerLookupQuerySchema.safeParse({}).success).toBe(false);
   });
 });
+
+describe('query and body edges (review of #20)', () => {
+  it('`?status=` and a blank are a 400, never status 0', () => {
+    expect(myVisitsQuerySchema.safeParse({ status: '' }).success).toBe(false);
+    expect(myVisitsQuerySchema.safeParse({ status: ' ' }).success).toBe(false);
+    expect(myVisitsQuerySchema.parse({ status: ['1', '2'] }).status).toStrictEqual([1, 2]);
+    expect(myVisitsQuerySchema.parse({}).status).toBeUndefined();
+  });
+
+  it('a reference is trimmed before its length is checked', () => {
+    const reference = `${'K'.repeat(100)} `;
+    const parsed = paymentCreateSchema.parse({
+      payment_method_id: '0199a3f2-0000-7000-800a-000000000001',
+      amount: 8_000,
+      external_reference: reference,
+    });
+    expect(parsed.external_reference).toBe('K'.repeat(100));
+  });
+});
