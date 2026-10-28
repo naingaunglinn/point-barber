@@ -200,13 +200,14 @@ describe('PriceQuote.quote — a scheduled price', () => {
     const current = await prisma.service_prices.findFirstOrThrow({
       where: { branch_id: B3, service_id: services.HAIRCUT, employee_id: null },
     });
+    const scheduled = randomUUID();
     await prisma.service_prices.update({
       where: { id: current.id },
       data: { effective_to: new Date('2026-10-05T00:00:00Z') },
     });
     await prisma.service_prices.create({
       data: {
-        id: randomUUID(),
+        id: scheduled,
         branch_id: B3,
         service_id: services.HAIRCUT,
         location_type: LocationType.BRANCH,
@@ -214,11 +215,20 @@ describe('PriceQuote.quote — a scheduled price', () => {
         effective_from: new Date('2026-10-06T00:00:00Z'),
       },
     });
-    expect((await quote([{ service_id: services.HAIRCUT }])).items[0]?.unit_price).toBe(8000n);
-    expect(
-      (await quote([{ service_id: services.HAIRCUT }], { date: '2026-10-06' })).items[0]
-        ?.unit_price,
-    ).toBe(9000n);
+    try {
+      expect((await quote([{ service_id: services.HAIRCUT }])).items[0]?.unit_price).toBe(8000n);
+      expect(
+        (await quote([{ service_id: services.HAIRCUT }], { date: '2026-10-06' })).items[0]
+          ?.unit_price,
+      ).toBe(9000n);
+    } finally {
+      // The fixture price is put back for the tests after this one (review of #20).
+      await prisma.service_prices.delete({ where: { id: scheduled } });
+      await prisma.service_prices.update({
+        where: { id: current.id },
+        data: { effective_to: current.effective_to },
+      });
+    }
   });
 });
 
@@ -247,9 +257,10 @@ describe('PriceQuote.assertQuotable — the date window of P2.PRC.06', () => {
   });
 
   it('Scenario: A closed past day — 04/Oct CLOSED → 422 day_closed, correction_path reopen', async () => {
+    const closing = randomUUID();
     await prisma.daily_closings.create({
       data: {
-        id: randomUUID(),
+        id: closing,
         branch_id: B3,
         business_date: new Date('2026-10-04T00:00:00Z'),
         status: DailyClosingStatus.CLOSED,
@@ -258,12 +269,16 @@ describe('PriceQuote.assertQuotable — the date window of P2.PRC.06', () => {
         closed_by_user_id: FIXTURE_IDS.users.E002,
       },
     });
-    const error = await refusal('2026-10-04');
-    expect([error?.code, error?.status]).toStrictEqual([ErrorCode.DAY_CLOSED, 422]);
-    expect(error?.options.context).toMatchObject({
-      business_date: '2026-10-04',
-      correction_path: 'reopen',
-    });
+    try {
+      const error = await refusal('2026-10-04');
+      expect([error?.code, error?.status]).toStrictEqual([ErrorCode.DAY_CLOSED, 422]);
+      expect(error?.options.context).toMatchObject({
+        business_date: '2026-10-04',
+        correction_path: 'reopen',
+      });
+    } finally {
+      await prisma.daily_closings.delete({ where: { id: closing } });
+    }
   });
 });
 
