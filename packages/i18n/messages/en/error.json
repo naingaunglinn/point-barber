@@ -48,5 +48,6 @@
   "outside_window": "This date is too far ahead.",
   "not_assigned_to_branch": "This person is not assigned to this branch on this date.",
   "method_inactive": "This payment method is switched off.",
-  "locked": "This record is finished and can no longer be changed."
+  "locked": "This record is finished and can no longer be changed.",
+  "late_entry_time": "The times must be in order — started, completed, paid, finished — and not later than now."
 }
