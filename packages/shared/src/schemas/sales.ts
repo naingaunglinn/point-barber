@@ -14,6 +14,7 @@ import {
   SaleStatus,
   VisitStatus,
 } from '../constants/status.js';
+import { toMmtIso } from '../time/mmt-iso.js';
 import {
   codeOf,
   employeeRefSchema,
@@ -331,17 +332,35 @@ export const requestLookupSchema = z.strictObject({
 
 // Request schemas (task 2.6) — plain z.object, so unknown members are stripped, never refused
 // (CG-API-03): a client-sent price or total has no effect (API-DATA-02). Only the members this
-// change builds (design D12); the late-entry, proxy, booking and product members come with their
-// changes. A blank reason is the service's 400 `reason_required` (API-DATA-11), not `validation`.
+// change builds (design D12) and the late-entry members of add-late-entry (its design D1); the proxy,
+// booking and product members come with their changes. A blank reason is the service's 400
+// `reason_required` (API-DATA-11), not `validation`.
 
 /** A free-text reason: at most 1,000 characters; blank or missing is checked by the service. */
 const reasonText = z.string().max(1000);
 
-/** P4.VIS.03 START (walk-in): the performer is the caller, the location the branch. */
+/**
+ * A late-entry time from paper (P4-RULE-13): any offset is accepted and normalised to Myanmar Time
+ * (API-DATA-03). Whether it is required depends on the stored visit, so the service checks that.
+ */
+const enteredTime = wireDateTime.transform((value) => toMmtIso(value));
+
+/** `LateEntry` — P4.VIS.03 (D-VIS-13): OTHER without a non-blank note is the service's 400. */
+export const lateEntrySchema = z.object({
+  reason: codeOf(LateEntryReason),
+  note: reasonText.nullish(),
+  started_at: enteredTime,
+});
+
+/** P4.VIS.03 START (walk-in or late entry): the performer is the caller, the location the branch. */
 export const startVisitRequestSchema = z.object({
   branch_id: z.uuid(),
   items: z.array(z.object({ service_id: z.uuid() })).optional(),
+  late_entry: lateEntrySchema.nullish(),
 });
+
+/** P4.VIS.05 COMPLETE: the completed time of a late entry; ignored on any other visit. */
+export const completeRequestSchema = z.object({ completed_at: enteredTime.nullish() });
 
 /** P4.SAL.04 add a line: one SERVICE line, priced by the server. */
 export const saleItemCreateSchema = z.object({
@@ -359,6 +378,7 @@ export const paymentCreateSchema = z.object({
   amount: wirePositiveAmount,
   external_reference: z.string().max(100).nullish(),
   collected_by_employee_id: z.uuid().nullish(),
+  received_at: enteredTime.nullish(),
 });
 
 /** P4.SAL.10 FINISH: the total on the Finish button, the customer or Skip, the override reason. */
@@ -366,6 +386,7 @@ export const finishRequestSchema = z.object({
   expected_total_amount: wireAmount,
   customer: z.object({ phone: z.string().max(50), name: z.string().max(255).nullish() }).nullish(),
   override_reason: reasonText.nullish(),
+  finished_at: enteredTime.nullish(),
 });
 
 /** A repeatable query member (`status=1&status=2`): one value arrives as a string, several as a list. */
@@ -401,7 +422,9 @@ export type VisitDto = z.infer<typeof visitSchema>;
 export type ReceiptLineDto = z.infer<typeof receiptLineSchema>;
 export type ReceiptViewDto = z.infer<typeof receiptViewSchema>;
 export type RequestLookupDto = z.infer<typeof requestLookupSchema>;
+export type LateEntry = z.infer<typeof lateEntrySchema>;
 export type StartVisitRequest = z.infer<typeof startVisitRequestSchema>;
+export type CompleteRequest = z.infer<typeof completeRequestSchema>;
 export type SaleItemCreate = z.infer<typeof saleItemCreateSchema>;
 export type ReasonBody = z.infer<typeof reasonBodySchema>;
 export type PaymentCreate = z.infer<typeof paymentCreateSchema>;

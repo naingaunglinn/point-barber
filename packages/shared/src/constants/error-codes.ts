@@ -56,6 +56,8 @@ export const ErrorCode = {
   METHOD_INACTIVE: 'method_inactive',
   // 423 — a write on a finished record that reached the database guard (design D9: no endpoint should).
   LOCKED: 'locked',
+  // add-late-entry — P4-RULE-13 · LE-1: the four late-entry times out of order or later than now.
+  LATE_ENTRY_TIME: 'late_entry_time',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
