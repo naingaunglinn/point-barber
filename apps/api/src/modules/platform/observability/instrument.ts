@@ -26,8 +26,9 @@ export async function startSentry({
     release,
     environment,
     defaultIntegrations: false,
-    // A thrown error's `cause` chain, and one event for an error reported twice.
-    integrations: [Sentry.linkedErrorsIntegration(), Sentry.dedupeIntegration()],
+    // A thrown error's `cause` chain. No dedupe: each capture is a separate defect (the same error
+    // on two requests is two events, which Sentry groups into one issue).
+    integrations: [Sentry.linkedErrorsIntegration()],
     enableRuntimeChannelInjection: false,
     maxBreadcrumbs: 0,
     sendClientReports: false,

@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const cookie = vi.hoisted(() => ({ value: undefined as string | undefined }));
+vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock('next/headers', () => ({
   cookies: async () => ({
     get: (name: string) =>
@@ -46,9 +47,9 @@ describe('the root layouts set <html lang>', () => {
     expect(layout.props.locale).toBe('my');
   });
 
-  it('the site tree stays on the default language until the website change adds [locale]', () => {
+  it('the site tree stays on the default language until the website change adds [locale]', async () => {
     cookie.value = 'en';
-    const layout = SiteLayout({ children: null }) as ReactElement<{ locale: string }>;
+    const layout = (await SiteLayout({ children: null })) as ReactElement<{ locale: string }>;
     expect(layout.props.locale).toBe('my');
   });
 
@@ -73,7 +74,7 @@ describe('the root layouts mount error reporting only with a DSN', () => {
 
   it('passes no reporting values without SENTRY_DSN_WEB, and RootLayout renders none', async () => {
     const staff = (await StaffLayout({ children: null })) as ReactElement<Reporting>;
-    const site = SiteLayout({ children: null }) as ReactElement<Reporting>;
+    const site = (await SiteLayout({ children: null })) as ReactElement<Reporting>;
     expect(staff.props.reporting).toBeUndefined();
     expect(site.props.reporting).toBeUndefined();
     const html = RootLayout({ tree: 'staff', locale: 'my', children: null }) as ReactElement<{
@@ -96,7 +97,7 @@ describe('the root layouts mount error reporting only with a DSN', () => {
       release: 'v0.1.0',
     };
     const staff = (await fresh.staff({ children: null })) as ReactElement<Reporting>;
-    const site = fresh.site({ children: null }) as ReactElement<Reporting>;
+    const site = (await fresh.site({ children: null })) as ReactElement<Reporting>;
     expect(staff.props.reporting).toStrictEqual(expected);
     expect(site.props.reporting).toStrictEqual(expected);
     const html = RootLayout({
