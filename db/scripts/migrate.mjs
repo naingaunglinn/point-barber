@@ -22,13 +22,7 @@ const APP_ROLE = 'point_app';
 const DAY = 86_400;
 // ADR-002 job table: 3 retries for each of the three; completed jobs kept 30 days (action item 5).
 const QUEUE_OPTIONS = { retryLimit: 3, retryBackoff: true, deleteAfterSeconds: 30 * DAY };
-// add-walkin-visit-checkout design D10: the receipt render, 3 attempts in all (2 retries).
-const QUEUES = {
-  'email.send': QUEUE_OPTIONS,
-  'auth.cleanup': QUEUE_OPTIONS,
-  'sync.code_tables': QUEUE_OPTIONS,
-  'receipt.render': { ...QUEUE_OPTIONS, retryLimit: 2 },
-};
+const QUEUES = ['email.send', 'auth.cleanup', 'sync.code_tables'];
 
 async function installPgBoss() {
   const boss = new PgBoss({
@@ -45,9 +39,9 @@ async function installPgBoss() {
   await boss.start();
   try {
     const created = [];
-    for (const [name, options] of Object.entries(QUEUES)) {
+    for (const name of QUEUES) {
       if ((await boss.getQueue(name)) === null) {
-        await boss.createQueue(name, options);
+        await boss.createQueue(name, QUEUE_OPTIONS);
         created.push(name);
       }
     }

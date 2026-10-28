@@ -11,8 +11,10 @@ beforeAll(() => {
   vi.stubEnv('API_INTERNAL_BASE', 'http://api:3001/api/v1');
 });
 
-function requestTo(host: string, path: string): NextRequest {
-  return new NextRequest(`http://localhost:3000${path}`, { headers: { host } });
+function requestTo(host: string, path: string, cookie?: string): NextRequest {
+  return new NextRequest(`http://localhost:3000${path}`, {
+    headers: { host, ...(cookie === undefined ? {} : { cookie }) },
+  });
 }
 
 // Technical guarantee of task 5.3 (design D11): proxy.ts applies resolveRoute without losing the
@@ -21,6 +23,23 @@ describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
   it('keeps the query string when it rewrites into a tree', () => {
     const response = proxy(requestTo('point.test', '/book?branch=B3&book=1'));
     expect(getRewrittenUrl(response)).toBe('http://localhost:3000/site/book?branch=B3&book=1');
+  });
+
+  it('redirects a staff path without the session cookie to the login screen (task 7.2)', () => {
+    const response = proxy(requestTo('app.point.test', '/?branch=B3'));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://app.point.test/login?return_to=%2F%3Fbranch%3DB3',
+    );
+  });
+
+  it('rewrites a staff path with the session cookie into the staff tree', () => {
+    const response = proxy(requestTo('app.point.test', '/?branch=B3', 'point_session=abc'));
+    expect(getRewrittenUrl(response)).toBe('http://localhost:3000/staff?branch=B3');
+  });
+
+  it('an empty session cookie counts as none', () => {
+    expect(proxy(requestTo('app.point.test', '/', 'point_session=')).status).toBe(307);
   });
 
   it("rewrites a refused path to the app's not-found page", () => {

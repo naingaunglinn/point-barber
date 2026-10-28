@@ -15,8 +15,6 @@ RUN apt-get update \
 RUN corepack enable
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-# The pnpm patches of patchedDependencies (pnpm-workspace.yaml) — fetch and install read them.
-COPY patches ./patches
 # pnpm fetch always reads pnpm-lock.yaml as is (no --frozen-lockfile flag in pnpm 12).
 RUN pnpm fetch
 COPY . .

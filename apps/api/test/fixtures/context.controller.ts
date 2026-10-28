@@ -1,18 +1,39 @@
 import { Controller, HttpCode, Post } from '@nestjs/common';
 
+import { Staff } from '../../src/common/access/declarations.js';
 import { Public } from '../../src/common/access/public.decorator.js';
 import { TransactionRunner } from '../../src/common/database/transaction-runner.js';
 
 // `POST /v1/_fixtures/context` — reads the three transaction settings inside its own transaction
-// (audit spec "Every changing request carries its user, session and request id into the database").
+// (audit spec "Every changing request carries its user, session and request id into the database"):
+// as a signed-in caller, and `context/anonymous` before sign-in.
 @Controller('v1/_fixtures/context')
 export class ContextFixtureController {
   constructor(private readonly runner: TransactionRunner) {}
 
   @Post()
   @HttpCode(200)
-  @Public()
+  @Staff()
   read(): Promise<{
+    user_id: string | null;
+    session_id: string | null;
+    request_id: string | null;
+  }> {
+    return this.settings();
+  }
+
+  @Post('anonymous')
+  @HttpCode(200)
+  @Public()
+  anonymous(): Promise<{
+    user_id: string | null;
+    session_id: string | null;
+    request_id: string | null;
+  }> {
+    return this.settings();
+  }
+
+  private settings(): Promise<{
     user_id: string | null;
     session_id: string | null;
     request_id: string | null;

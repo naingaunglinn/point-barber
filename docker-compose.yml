@@ -42,9 +42,6 @@ services:
     build: *api-build
     image: point-api:${APP_VERSION}
     restart: unless-stopped
-    # Headroom for the document renderer's Chromium next to Node (ADR-013 decision 7 · system design
-    # §4.1, a build-time size): one page at a time, recycled every 200 renders. CI renders inside it.
-    mem_limit: 1536m
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SITE_ORIGIN: ${SITE_ORIGIN}

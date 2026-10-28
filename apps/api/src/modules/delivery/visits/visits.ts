@@ -20,7 +20,7 @@ import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { DayLock } from '../../cash-closing/index.js';
 import { Assignments } from '../../people/index.js';
 import { Audit, Idempotency } from '../../platform/index.js';
-import { Payments, Sales, type SaleViewer } from '../../sales/index.js';
+import { Sales, type SaleViewer } from '../../sales/index.js';
 import { type VisitRow, VisitsRepository } from '../repositories/visits.repository.js';
 import { VisitView, visitForSale } from './visit-view.js';
 
@@ -43,7 +43,6 @@ export class Visits {
     private readonly idempotency: Idempotency,
     private readonly visits: VisitsRepository,
     private readonly sales: Sales,
-    private readonly payments: Payments,
     private readonly view: VisitView,
     private readonly dayLock: DayLock,
     private readonly assignments: Assignments,
@@ -218,8 +217,8 @@ export class Visits {
   }
 
   /**
-   * P4.REQ.01 — what the caller saved under a client request id (design D7): a visit (with its sale),
-   * else a payment (with its sale and visit); null when nothing was saved or another user saved it.
+   * P4.REQ.01 — what the caller saved under a client request id (design D7): a visit (with its sale);
+   * null when nothing was saved or another user saved it.
    */
   async lookupRequest(userId: string, key: string): Promise<RequestLookupDto | null> {
     const visit = await this.visits.findByClientRequestId(this.prisma, key);
@@ -233,15 +232,7 @@ export class Visits {
         visit_id: null,
       };
     }
-    const payment = await this.payments.createdBy(userId, key);
-    if (payment === null) return null;
-    return {
-      client_request_id: key,
-      resource_type: 'payment',
-      id: payment.id,
-      sale_id: payment.sale_id,
-      visit_id: payment.visit_id,
-    };
+    return null;
   }
 
   /** The row of the visit by id without a lock, then sale FOR UPDATE → visit FOR UPDATE (design D4). */

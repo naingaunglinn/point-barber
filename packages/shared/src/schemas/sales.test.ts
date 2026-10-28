@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { quoteRequestSchema } from './catalog.js';
+import { customerLookupQuerySchema } from './customers.js';
 import {
   finishRequestSchema,
+  myVisitsQuerySchema,
   paymentCreateSchema,
   reasonBodySchema,
+  receiptQuerySchema,
   saleItemCreateSchema,
   startVisitRequestSchema,
 } from './sales.js';
@@ -142,5 +145,35 @@ describe('quote request (P2.PRC.06)', () => {
     expect(quoteRequestSchema.safeParse({ ...body, location_type: 2 }).success).toBe(true);
     expect(quoteRequestSchema.safeParse({ ...body, location_type: 3 }).success).toBe(false);
     expect(quoteRequestSchema.safeParse({ ...body, date: '05/10/2026' }).success).toBe(false);
+  });
+});
+
+describe('query schemas of the walk-in reads', () => {
+  it('my visits: status repeatable or single, a business date, nothing = the default', () => {
+    expect(myVisitsQuerySchema.parse({ status: ['1', '2'] })).toStrictEqual({ status: [1, 2] });
+    expect(myVisitsQuerySchema.parse({ status: '3', date: '2026-10-05' })).toStrictEqual({
+      status: [3],
+      date: '2026-10-05',
+    });
+    expect(myVisitsQuerySchema.parse({})).toStrictEqual({});
+    expect(myVisitsQuerySchema.safeParse({ status: '4' }).success).toBe(false);
+    expect(myVisitsQuerySchema.safeParse({ date: '05/10/2026' }).success).toBe(false);
+  });
+
+  it('receipt: format json by default, pdf or png; width 58 or 80 only', () => {
+    expect(receiptQuerySchema.parse({})).toStrictEqual({ format: 'json' });
+    expect(receiptQuerySchema.parse({ format: 'pdf', width: '80' })).toStrictEqual({
+      format: 'pdf',
+      width: 80,
+    });
+    expect(receiptQuerySchema.safeParse({ format: 'html' }).success).toBe(false);
+    expect(receiptQuerySchema.safeParse({ width: '70' }).success).toBe(false);
+  });
+
+  it('customer lookup: the phone as typed is required', () => {
+    expect(customerLookupQuerySchema.parse({ phone: '09 7712 3456' })).toStrictEqual({
+      phone: '09 7712 3456',
+    });
+    expect(customerLookupQuerySchema.safeParse({}).success).toBe(false);
   });
 });

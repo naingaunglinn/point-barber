@@ -32,7 +32,8 @@ import { computeSaleTotals } from '../totals/sale-totals.js';
 
 export interface SaleViewer {
   readonly actor: Actor;
-  readonly rights: ActionRights;
+  /** The codes that let the caller act on someone else's sale, at that sale's branch. */
+  rightsAt(branchId: string): ActionRights;
 }
 
 const wire = (amount: bigint): number => moneyToWire(amount as Mmk);
@@ -233,7 +234,7 @@ export class SaleView {
           is_performer: visit?.performed_by_employee_id === viewer.actor.employee_id,
           is_recorder: visit?.started_by_user_id === viewer.actor.user_id,
         },
-        viewer.rights,
+        viewer.rightsAt(sale.branch_id),
       ),
       warnings: [...warnings],
       created_at: toMmtIso(sale.created_at),

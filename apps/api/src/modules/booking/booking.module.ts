@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { PeopleModule } from '../people/index.js';
 import { PlatformModule } from '../platform/index.js';
+import { CustomersController } from './customers/customers.controller.js';
 import { Customers } from './customers/customers.js';
 import { CustomersRepository } from './repositories/customers.repository.js';
 
@@ -10,6 +11,7 @@ import { CustomersRepository } from './repositories/customers.repository.js';
 // the phone lookup.
 @Module({
   imports: [PlatformModule, PeopleModule],
+  controllers: [CustomersController],
   providers: [CustomersRepository, Customers],
   exports: [Customers],
 })

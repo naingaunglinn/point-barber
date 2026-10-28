@@ -33,6 +33,12 @@ export { Skeleton, type SkeletonProps, type SkeletonShape } from './components/S
 export { toast, Toaster } from './components/Toaster/Toaster';
 
 export {
+  AppShell,
+  type AppShellProps,
+  type ShellModule,
+  type ShellScreen,
+} from './components/AppShell/AppShell';
+export {
   ApprovalCard,
   type ApprovalCardProps,
   type ApprovalFact,

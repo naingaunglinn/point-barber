@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { CashClosingModule } from '../cash-closing/index.js';
 import { PlatformModule } from '../platform/index.js';
+import { CatalogController } from './catalog.controller.js';
 import { Eligibility } from './eligibility/eligibility.js';
 import { PriceQuote } from './price-quote/price-quote.js';
 import { CatalogRepository } from './repositories/catalog.repository.js';
@@ -13,6 +14,7 @@ import { ServiceCatalog } from './service-list/service-catalog.js';
 // eligibility lookup and the operational reads of the POS.
 @Module({
   imports: [PlatformModule, CashClosingModule],
+  controllers: [CatalogController],
   providers: [CatalogRepository, ServiceListRepository, PriceQuote, Eligibility, ServiceCatalog],
   exports: [PriceQuote, Eligibility, ServiceCatalog],
 })

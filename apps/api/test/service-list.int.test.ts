@@ -73,6 +73,9 @@ describe('ServiceCatalog.listServices (P2.SVC.01)', () => {
     expect(
       (await list({ category_id: serviceCategories.SERVICES, q: 'shav' })).items.map((i) => i.id),
     ).toStrictEqual([services.SHAVE]);
+    // `%` and `_` are text, not ILIKE wildcards.
+    expect((await list({ branch_id: branches.B3, q: '%' })).items).toStrictEqual([]);
+    expect((await list({ branch_id: branches.B3, q: 'Hair_wash' })).items).toStrictEqual([]);
   });
 
   it('pages with an opaque cursor', async () => {

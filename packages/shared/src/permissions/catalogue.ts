@@ -24,8 +24,11 @@ export function permissionLevel(code: PermissionCode): PermissionLevel {
 
 type Entry = (typeof PERMISSION_ENTRIES)[number];
 
-/** The catalogue in the shape createCan takes: `{ [code]: { level } }`, codes kept as literals. */
-const LEVEL_BY_CODE = Object.fromEntries(
+/**
+ * The catalogue in the shape createCan / createGrants take: `{ [code]: { level } }`, codes kept as
+ * literals (the web app binds its GrantsProvider with it).
+ */
+export const LEVEL_BY_CODE = Object.fromEntries(
   PERMISSIONS.map((entry) => [entry.code, { level: entry.level }]),
 ) as { readonly [E in Entry as E['code']]: { readonly level: E['level'] } };
 

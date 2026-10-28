@@ -4,7 +4,9 @@ The API is one NestJS application split into 13 modules: the bounded contexts of
 design D1 of `add-repo-scaffold`. Each module is a folder under `apps/api/src/modules/`.
 
 A module folder is created by the change that first needs it. After `add-repo-scaffold` only
-`platform` exists. **No module outside this table is ever added**; a new resource goes into the module
+`platform` existed; `add-foundation-auth-access` adds `auth` (sign-in, sessions, `/me`) and `people`
+(company, branches, employees, roles, the permission catalogue). Sign-in and access are described in
+[`auth-and-access.md`](auth-and-access.md). **No module outside this table is ever added**; a new resource goes into the module
 that owns its part.
 
 | Module         | Owns (API part → resources)                                                                                                                                                     |
@@ -84,13 +86,20 @@ ADR-001's module boundary rules 1 and 2 bind all code:
 
 What enforces them at build time (design D10):
 
-| Check                                                                                         | Rule id                 | Where                                   |
-| --------------------------------------------------------------------------------------------- | ----------------------- | --------------------------------------- |
-| Another module is imported only through its `index.ts`; `app.module.ts` and `src/common/` too | `no-restricted-imports` | `tools/eslint/boundaries.mjs`           |
-| The Prisma client only in a module's `repositories/` and in `src/common/database/`            | `no-restricted-imports` | `tools/eslint/boundaries.mjs`           |
-| The web app imports no Prisma client, no PostgreSQL client and nothing from `apps/api`        | `no-restricted-imports` | `tools/eslint/boundaries.mjs`           |
-| No route handler under `/api` in the web app                                                  | guard                   | `tools/guards/check-web-api-routes.mjs` |
-| `$transaction` only in `src/common/database/` (`TransactionRunner`)                           | `no-restricted-syntax`  | `tools/eslint/api.mjs`                  |
+| Check                                                                                         | Rule id                      | Where                                   |
+| --------------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------- |
+| Another module is imported only through its `index.ts`; `app.module.ts` and `src/common/` too | `no-restricted-imports`      | `tools/eslint/boundaries.mjs`           |
+| The Prisma client only in a module's `repositories/` and in `src/common/database/`            | `no-restricted-imports`      | `tools/eslint/boundaries.mjs`           |
+| The web app imports no Prisma client, no PostgreSQL client and nothing from `apps/api`        | `no-restricted-imports`      | `tools/eslint/boundaries.mjs`           |
+| No route handler under `/api` in the web app                                                  | guard                        | `tools/guards/check-web-api-routes.mjs` |
+| `$transaction` only in `src/common/database/` (`TransactionRunner`)                           | `no-restricted-syntax`       | `tools/eslint/api.mjs`                  |
+| An SDK (pg-boss, nodemailer, openid-client) only in the one folder that wraps it              | `no-restricted-imports`      | `tools/eslint/boundaries.mjs`           |
+| Every endpoint carries exactly one access decorator (and `AccessGuard` closes one without)    | `point/one-access-decorator` | `tools/eslint/api.mjs`                  |
+
+What crosses the two modules of `add-foundation-auth-access` without an import cycle: `people`
+registers into `platform` at start-up (the audit writer's primary-branch rule, the steps of
+`sync.code_tables`, the `employee` target of the access guard) and supplies the access guard's port
+`GrantSource`; `auth` reads people only through `PeopleDirectory`.
 
 Lint cannot see which tables a repository writes. Rule 1's "own tables only" is kept by review; the
 table-ownership guard comes with `add-ci-guard-rails`.

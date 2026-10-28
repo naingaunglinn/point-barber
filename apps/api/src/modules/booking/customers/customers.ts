@@ -25,6 +25,11 @@ import { type CustomerRow, CustomersRepository } from '../repositories/customers
 // is never overwritten; INACTIVE → ACTIVE, archived → restored, each with a warning and an audit row.
 // No permission code is needed (D-CUS-03 "auto").
 
+/** The audit actions of the customer identity function; an endpoint that calls it lists them in @Audited. */
+export const CUSTOMER_CREATE = 'customer.create';
+export const CUSTOMER_RESTORE = 'customer.restore';
+export const CUSTOMER_REACTIVATE = 'customer.reactivate';
+
 export interface CustomerRef {
   readonly id: string;
   readonly name: string;
@@ -104,7 +109,7 @@ export class Customers {
     }
     if (created) {
       await this.audit.emit({
-        action: 'customer.create',
+        action: CUSTOMER_CREATE,
         entity_type: 'customers',
         entity_id: row.id,
         after: { name: row.name, phone_normalized: row.phone_normalized },
@@ -115,7 +120,7 @@ export class Customers {
     if (row.archived_at !== null) {
       await this.repository.reactivate(tx, row.id, now);
       await this.audit.emit({
-        action: 'customer.restore',
+        action: CUSTOMER_RESTORE,
         entity_type: 'customers',
         entity_id: row.id,
         before: { status: row.status, archived: true },
@@ -130,7 +135,7 @@ export class Customers {
     if (row.status !== CustomerStatus.ACTIVE) {
       await this.repository.reactivate(tx, row.id, now);
       await this.audit.emit({
-        action: 'customer.reactivate',
+        action: CUSTOMER_REACTIVATE,
         entity_type: 'customers',
         entity_id: row.id,
         before: { status: row.status },

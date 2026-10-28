@@ -108,3 +108,37 @@ describe('RateLimiter', () => {
     expect(rl.hit('otp_verify:ip', 'a', 1, 60).allowed).toBe(true);
   });
 });
+
+// add-foundation-auth-access task 5.3 — design D5: a request counts only when every bucket accepts.
+describe('RateLimiter.hitAll', () => {
+  const limiterAt = () => {
+    const clock = {
+      at: new Date('2026-10-05T02:30:00Z'),
+      now() {
+        return this.at;
+      },
+    };
+    return { clock, limiter: new RateLimiter(clock as never) };
+  };
+  const both = (email: string) => [
+    { bucket: 'otp:ip', key: 'ip', limit: 10, windowSeconds: 3600 },
+    { bucket: 'otp:email', key: email, limit: 1, windowSeconds: 60 },
+  ];
+
+  it('refuses with the first full bucket and counts the request in none', () => {
+    const { limiter } = limiterAt();
+    expect(limiter.hitAll(both('a'))).toStrictEqual({ allowed: true });
+    for (let i = 0; i < 20; i += 1) expect(limiter.hitAll(both('a')).allowed).toBe(false);
+    // Only one request counted for the IP: nine more addresses pass, the tenth does not.
+    for (let i = 0; i < 9; i += 1) expect(limiter.hitAll(both(`b${i}`)).allowed).toBe(true);
+    expect(limiter.hitAll(both('c'))).toStrictEqual({ allowed: false, retryAfter: 3600 });
+  });
+
+  it('reset() empties every bucket, as an API restart does', () => {
+    const { limiter } = limiterAt();
+    limiter.hitAll(both('a'));
+    limiter.reset();
+    expect(limiter.size).toBe(0);
+    expect(limiter.hitAll(both('a')).allowed).toBe(true);
+  });
+});

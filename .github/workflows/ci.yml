@@ -209,11 +209,6 @@ jobs:
           echo "::error::minio never became live"
           exit 1
 
-      # The DocumentRenderer's browser (ADR-013 · add-walkin-visit-checkout tasks 9.5 – 9.8): the headless
-      # shell of the pinned playwright-core, with its system libraries.
-      - name: Chromium headless shell (test/document-renderer.int.test.ts)
-        run: pnpm --filter api exec playwright-core install --with-deps --only-shell chromium
-
       - name: API integration tests (real app, real PostgreSQL 16, connected as point_app — D15)
         run: pnpm test:int
 
@@ -254,17 +249,6 @@ jobs:
 
       - name: The api image carries the first-admin command (P1-RULE-14 · add-foundation-auth-access D10)
         run: docker run --rm --entrypoint test "point-api:$APP_VERSION" -f /app/dist/cli/admin-create.js
-
-      # add-walkin-visit-checkout task 9.16 (ADR-013): the image's headless Chromium renders as the
-      # non-root user the server runs as, with the compose memory limit of the api service.
-      - name: The api image renders a receipt line (Chromium, document fonts, non-root)
-        run: |
-          set -euo pipefail
-          uid=$(docker run --rm --entrypoint id "point-api:$APP_VERSION" -u)
-          if [ "$uid" = "0" ]; then echo "::error::the api image runs as root"; exit 1; fi
-          docker run --rm --memory 1536m \
-            -v "$PWD/apps/api/scripts/render-smoke.mjs:/app/render-smoke.mjs:ro" \
-            --entrypoint node "point-api:$APP_VERSION" render-smoke.mjs
 
   e2e:
     name: e2e
