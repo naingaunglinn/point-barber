@@ -61,6 +61,22 @@ describe('RenderQueue', () => {
     await expect(next).resolves.toBe('next');
   });
 
+  it('a clean-up that never ends is given up, and the queue goes on (review of #26)', async () => {
+    const queue = new RenderQueue(50);
+    const hung = queue.run(() => sleep(500), {
+      priority: 'background',
+      timeoutMs: 50,
+      // A browser whose process never exits: close() never settles.
+      onTimeout: () => new Promise<void>(() => undefined),
+    });
+    const next = queue.run(() => Promise.resolve('next'), {
+      priority: 'background',
+      timeoutMs: 1000,
+    });
+    await expect(hung).rejects.toBeInstanceOf(RenderTimeout);
+    await expect(next).resolves.toBe('next');
+  });
+
   it('a failing render does not stop the queue', async () => {
     const queue = new RenderQueue();
     const bad = queue.run(() => Promise.reject(new Error('crash')), {

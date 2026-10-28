@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { AuditSource, DailyClosingStatus, ErrorCode, saleSchema } from '@point/shared';
+import { AuditSource, DailyClosingStatus, ErrorCode, SaleStatus, saleSchema } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -227,7 +227,7 @@ describe('POST /v1/payments/{id}/void (P4.PAY.03)', () => {
     expect(atLimit.body.paid_amount).toBe(6_000);
   });
 
-  it('a FINISHED sale — 409 invalid_transition with correction_path refund', async () => {
+  it('a FINISHED sale — 409 invalid_transition with status 2 and correction_path refund', async () => {
     const sale = await walkIn(AUNG, [services.HAIRCUT]);
     const paid = await api.pay(AUNG, sale.id, { payment_method_id: cash, amount: 10_000 });
     await api.complete(AUNG, (await api.get(AUNG, `/sales/${sale.id}`)).body.visit_id as string);
@@ -236,7 +236,7 @@ describe('POST /v1/payments/{id}/void (P4.PAY.03)', () => {
     expect(res.status).toBe(409);
     expect(res.body).toMatchObject({
       code: ErrorCode.INVALID_TRANSITION,
-      context: { correction_path: 'refund' },
+      context: { status: SaleStatus.FINISHED, correction_path: 'refund' },
     });
   });
 });

@@ -251,6 +251,45 @@ describe('FINISH needs a completed visit and full payment (P4.SAL.10)', () => {
     expect(await prisma.refunds.count({ where: { sale_id: saleId } })).toBe(0);
     expect(await counter(branches.B3, 2)).toBe(before);
   });
+
+  it('Scenarios: KBZPay 10,000 for a haircut of 8,000 — change due 2,000; FINISH returns 2,000 in cash', async () => {
+    const { saleId, visitId } = await start(KO_MIN, [services.HAIRCUT]);
+    const { sale: paid } = await pay(KO_MIN, saleId, {
+      payment_method_id: kbzpay,
+      amount: 10000,
+      external_reference: 'KBZ0001234568',
+    });
+    // change_due = 2,000 (10,000 − 8,000)
+    expect([paid.paid_amount, paid.remaining_amount, paid.change_due_amount]).toStrictEqual([
+      10000, 0, 2000,
+    ]);
+    await complete(KO_MIN, visitId);
+    const sale = await finish(KO_MIN, saleId, { expected_total_amount: 8000 });
+    expect([sale.status, sale.total_amount]).toStrictEqual([SaleStatus.FINISHED, 8000]);
+    expect(sale.refunds).toMatchObject([
+      { kind: RefundKind.OVERPAYMENT_RETURN, amount: 2000, automatic_change: true },
+    ]);
+    expect(sale.refunds[0]?.refund_receipt_number).toMatch(/^B3-RF-2026-OCT-\d{5}$/);
+  });
+
+  it('Scenario: Over-transfer inside a split — Cash 5,000 + KBZPay 10,000 on 11,000: change 4,000', async () => {
+    const { saleId, visitId } = await start(KO_MIN, [services.HAIRCUT, services.SHAVE]);
+    await pay(KO_MIN, saleId, { payment_method_id: cash, amount: 5000 });
+    const { sale: paid } = await pay(KO_MIN, saleId, {
+      payment_method_id: kbzpay,
+      amount: 10000,
+      external_reference: 'KBZ0001234571',
+    });
+    // paid = 15,000 (5,000 + 10,000); change_due = 4,000 (15,000 − 11,000)
+    expect([paid.total_amount, paid.paid_amount, paid.change_due_amount]).toStrictEqual([
+      11000, 15000, 4000,
+    ]);
+    await complete(KO_MIN, visitId);
+    // Accepted: the excess 4,000 is not larger than the non-cash payments (10,000).
+    const sale = await finish(KO_MIN, saleId, { expected_total_amount: 11000 });
+    expect([sale.status, sale.total_amount]).toStrictEqual([SaleStatus.FINISHED, 11000]);
+    expect(sale.refunds).toMatchObject([{ kind: RefundKind.OVERPAYMENT_RETURN, amount: 4000 }]);
+  });
 });
 
 describe('FINISH refuses a total the screen did not show (P4.SAL.10)', () => {

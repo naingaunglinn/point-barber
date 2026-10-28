@@ -32,12 +32,24 @@ const isMissing = (error: unknown): boolean =>
     (error as { name?: unknown }).name === 'NoSuchKey' ||
     (error as { $metadata?: { httpStatusCode?: unknown } }).$metadata?.httpStatusCode === 404);
 
-/** Built by the factory of PlatformModule; a test passes its own S3Sender. */
+/**
+ * How long one bucket call may take (CG-ERR-06 · guideline row 89): a bucket that stalls or an endpoint
+ * that drops packets fails the call instead of holding a receipt read or `receipt.render` until the OS
+ * gives up. The SDK retries a timed-out call (3 attempts in all) — safe for these idempotent calls.
+ */
+export const S3_TIMEOUTS = { connectionTimeout: 5_000, requestTimeout: 5_000 } as const;
+
+export interface S3Timeouts {
+  readonly connectionTimeout: number;
+  readonly requestTimeout: number;
+}
+
+/** Built by the factory of PlatformModule; a test passes its own S3Sender or shorter timeouts. */
 export class S3StorageService implements StorageService {
   private readonly bucket: string;
   private readonly client: S3Sender;
 
-  constructor(config: AppConfig, client?: S3Sender) {
+  constructor(config: AppConfig, client?: S3Sender, timeouts: S3Timeouts = S3_TIMEOUTS) {
     const env = config.env;
     this.bucket = env.S3_BUCKET_APP;
     this.client =
@@ -46,6 +58,8 @@ export class S3StorageService implements StorageService {
         endpoint: env.S3_ENDPOINT,
         region: env.S3_REGION,
         forcePathStyle: true,
+        // Without throwOnRequestTimeout the SDK only warns when requestTimeout passes.
+        requestHandler: { ...timeouts, throwOnRequestTimeout: true },
         credentials: {
           accessKeyId: env.S3_ACCESS_KEY_ID,
           secretAccessKey: env.S3_SECRET_ACCESS_KEY,

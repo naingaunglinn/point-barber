@@ -1,3 +1,4 @@
+import { createServer, type Server, type Socket } from 'node:net';
 import { Readable } from 'node:stream';
 import { text } from 'node:stream/consumers';
 
@@ -13,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { AppConfig } from '../../../common/config/config.js';
 import { InMemoryStorageService } from './in-memory-storage.service.js';
-import { S3StorageService, type S3Sender } from './s3-storage.service.js';
+import { S3_TIMEOUTS, S3StorageService, type S3Sender } from './s3-storage.service.js';
 import { StorageObjectMissing, type StorageService } from './storage.service.js';
 
 // add-walkin-visit-checkout task 3.4 — one contract for both StorageServices (ADR-014 · CG-ARCH-08):
@@ -151,5 +152,38 @@ describe('S3StorageService', () => {
     const there = answers('there');
     expect(await new S3StorageService(config, there).ensureBucket()).toBe('exists');
     expect(there.sent).toHaveLength(1);
+  });
+});
+
+describe('S3StorageService — a bucket that never answers (CG-ERR-06 · guideline row 89)', () => {
+  /** A TCP endpoint that accepts every connection and never answers. */
+  async function silentEndpoint(): Promise<{ url: string; server: Server; sockets: Socket[] }> {
+    const sockets: Socket[] = [];
+    const server = createServer((socket) => sockets.push(socket));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address() as { port: number };
+    return { url: `http://127.0.0.1:${port}`, server, sockets };
+  }
+
+  it('the production client times out after 5 s per attempt', () => {
+    expect(S3_TIMEOUTS).toStrictEqual({ connectionTimeout: 5_000, requestTimeout: 5_000 });
+  });
+
+  it('fails the call within the budget instead of waiting for the OS', async () => {
+    const silent = await silentEndpoint();
+    try {
+      const storage = new S3StorageService(
+        { env: { ...config.env, S3_ENDPOINT: silent.url } } as unknown as AppConfig,
+        undefined,
+        { connectionTimeout: 200, requestTimeout: 200 },
+      );
+      const started = Date.now();
+      await expect(storage.head('receipts/x.pdf')).rejects.toThrow();
+      // 3 attempts of 200 ms plus the SDK's back-off between them.
+      expect(Date.now() - started).toBeLessThan(4_000);
+    } finally {
+      for (const socket of silent.sockets) socket.destroy();
+      await new Promise<void>((resolve) => silent.server.close(() => resolve()));
+    }
   });
 });

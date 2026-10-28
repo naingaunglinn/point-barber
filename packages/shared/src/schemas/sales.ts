@@ -357,7 +357,8 @@ export const reasonBodySchema = z.object({ reason: reasonText.nullish() });
 export const paymentCreateSchema = z.object({
   payment_method_id: z.uuid(),
   amount: wirePositiveAmount,
-  external_reference: z.string().max(100).nullish(),
+  // Trimmed before any check (payments spec), so a pasted reference with a trailing space fits.
+  external_reference: z.string().trim().max(100).nullish(),
   collected_by_employee_id: z.uuid().nullish(),
 });
 
@@ -377,7 +378,10 @@ const repeated = <T extends z.ZodType>(item: T) =>
  * default — the open visits (1, 2) of any date plus today's FINISHED and INCOMPLETE ones.
  */
 export const myVisitsQuerySchema = z.object({
-  status: repeated(z.coerce.number().pipe(codeOf(VisitStatus))).optional(),
+  // Digits only: `?status=` or a blank is a 400, never status 0 (INCOMPLETE).
+  status: repeated(
+    z.string().regex(/^\d+$/).transform(Number).pipe(codeOf(VisitStatus)),
+  ).optional(),
   date: wireDate.optional(),
 });
 

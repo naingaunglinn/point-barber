@@ -87,7 +87,7 @@ export async function startSeededApp(
  */
 export function seededApp(
   now: Date | FixedClock,
-  options: Pick<TestAppOptions, 'overrides' | 'jobs'> = {},
+  options: Pick<TestAppOptions, 'overrides' | 'jobs' | 'poolSize'> = {},
 ): Promise<SeededApp> {
   return startSeededApp(now instanceof Date ? { ...options, now } : { ...options, clock: now });
 }

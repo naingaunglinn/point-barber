@@ -9,7 +9,7 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/bootstrap.js';
 import { Clock } from '../../src/common/clock/clock.js';
 import { AppConfig, loadAppConfig } from '../../src/common/config/config.js';
-import { DatabaseProbe } from '../../src/common/database/prisma.service.js';
+import { DatabaseProbe, PrismaService } from '../../src/common/database/prisma.service.js';
 import { LOGGER, createLogger } from '../../src/common/logging/logger.js';
 import { PlatformModule } from '../../src/modules/platform/index.js';
 import {
@@ -83,6 +83,8 @@ export interface TestAppOptions {
   readonly env?: Partial<AppConfig['env']>;
   /** Providers replaced for this application, e.g. a closed MaintenanceGate, storage or the renderer. */
   readonly overrides?: readonly { readonly provide: unknown; readonly useValue: unknown }[];
+  /** The database connections of the application (pg's default is 10) — the D6 concurrency tests. */
+  readonly poolSize?: number;
 }
 
 /** The real application (guards, pipes, filter, middleware) with the fixture endpoints added. */
@@ -124,6 +126,13 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
       },
     };
     builder = builder.overrideProvider(AppConfig).useValue(config);
+  }
+  const { poolSize } = options;
+  if (poolSize !== undefined) {
+    builder = builder.overrideProvider(PrismaService).useFactory({
+      factory: (config: AppConfig) => new PrismaService(config, poolSize),
+      inject: [AppConfig],
+    });
   }
 
   const moduleRef = await builder.compile();

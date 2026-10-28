@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import {
   DailyClosingStatus,
+  EmployeeStatus,
   ErrorCode,
   PaymentMethodKind,
   SaleStatus,
@@ -185,6 +186,23 @@ describe('A cash payment never exceeds the remaining amount (P4-RULE-09)', () =>
     expect([error.code, error.status]).toStrictEqual([ErrorCode.AMOUNT_EXCEEDS_REMAINING, 422]);
     expect(await prisma.payments.count({ where: { sale_id: saleId } })).toBe(0);
   });
+
+  it('two Cash 5,000 at once on 8,000 — one row; the other 422 amount_exceeds_remaining (review of #26)', async () => {
+    const { saleId } = await walkIn(KO_MIN, [services.HAIRCUT]);
+    // Two devices: the cap is checked under the sale lock, so the second sees remaining 3,000.
+    const both = await Promise.allSettled([
+      pay(KO_MIN, saleId, { payment_method_id: cash, amount: 5000 }),
+      pay(KO_MIN, saleId, { payment_method_id: cash, amount: 5000 }),
+    ]);
+    expect(both.map((result) => result.status).sort()).toStrictEqual(['fulfilled', 'rejected']);
+    const refused = both.find((result) => result.status === 'rejected');
+    expect(refused?.reason).toBeInstanceOf(ProblemException);
+    expect((refused?.reason as ProblemException).code).toBe(ErrorCode.AMOUNT_EXCEEDS_REMAINING);
+    expect(await prisma.payments.count({ where: { sale_id: saleId } })).toBe(1);
+    expect((await prisma.payments.findFirstOrThrow({ where: { sale_id: saleId } })).amount).toBe(
+      5000n,
+    );
+  });
 });
 
 describe('KBZPay needs a reference in the method format (D-PAY-02)', () => {
@@ -218,17 +236,31 @@ describe('KBZPay needs a reference in the method format (D-PAY-02)', () => {
 
   it('Scenario: No pattern set — KBZ123 is accepted', async () => {
     await prisma.payment_methods.update({ where: { id: kbzpay }, data: { reference_regex: null } });
+    try {
+      const { saleId } = await walkIn(KO_MIN, [services.HAIRCUT]);
+      const { sale } = await pay(KO_MIN, saleId, {
+        payment_method_id: kbzpay,
+        amount: 8000,
+        external_reference: 'KBZ123',
+      });
+      expect(sale.payments[0]?.external_reference).toBe('KBZ123');
+    } finally {
+      // Restored even when an assertion fails, so the reference tests after it keep the pattern.
+      await prisma.payment_methods.update({
+        where: { id: kbzpay },
+        data: { reference_regex: '^KBZ[0-9]{10}$' },
+      });
+    }
+  });
+
+  it('Myanmar digits in a reference are read as 0–9 — stored KBZ0001234575 (AD-FMT-10)', async () => {
     const { saleId } = await walkIn(KO_MIN, [services.HAIRCUT]);
     const { sale } = await pay(KO_MIN, saleId, {
       payment_method_id: kbzpay,
       amount: 8000,
-      external_reference: 'KBZ123',
+      external_reference: 'KBZ၀၀၀၁၂၃၄၅၇၅',
     });
-    expect(sale.payments[0]?.external_reference).toBe('KBZ123');
-    await prisma.payment_methods.update({
-      where: { id: kbzpay },
-      data: { reference_regex: '^KBZ[0-9]{10}$' },
-    });
+    expect(sale.payments[0]?.external_reference).toBe('KBZ0001234575');
   });
 });
 
@@ -253,6 +285,24 @@ describe('A reference is used only once per payment method (D-PAY-02 · API-IDEM
       409,
       { receipt_number: null },
     ]);
+  });
+
+  it('the same reference typed in Myanmar digits → 409 duplicate_reference (AD-FMT-10)', async () => {
+    const one = await walkIn(KO_MIN, [services.HAIRCUT]);
+    await pay(KO_MIN, one.saleId, {
+      payment_method_id: kbzpay,
+      amount: 8000,
+      external_reference: 'KBZ0001234585',
+    });
+    const two = await walkIn(KO_MIN, [services.HAIRCUT]);
+    const error = await refusal(() =>
+      pay(KO_MIN, two.saleId, {
+        payment_method_id: kbzpay,
+        amount: 8000,
+        external_reference: 'KBZ၀၀၀1234585',
+      }),
+    );
+    expect([error.code, error.status]).toStrictEqual([ErrorCode.DUPLICATE_REFERENCE, 409]);
   });
 
   it('Scenario: Reference already on a finished sale — the holder receipt number', async () => {
@@ -438,6 +488,31 @@ describe('"Collected by" defaults to the performer (D-VIS-06)', () => {
       }),
     );
     expect([error.code, error.status]).toStrictEqual([ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422]);
+  });
+
+  it('a B3 colleague who is INACTIVE → 422 not_assigned_to_branch, no row (review of #26)', async () => {
+    const { saleId } = await walkIn(KO_AUNG, [services.HAIRCUT]);
+    // Ko Min keeps his B3 assignment; only his status changes.
+    await prisma.employees.update({
+      where: { id: employees.E005 },
+      data: { status: EmployeeStatus.INACTIVE },
+    });
+    try {
+      const error = await refusal(() =>
+        pay(KO_AUNG, saleId, {
+          payment_method_id: cash,
+          amount: 10000,
+          collected_by_employee_id: employees.E005,
+        }),
+      );
+      expect([error.code, error.status]).toStrictEqual([ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422]);
+      expect(await prisma.payments.count({ where: { sale_id: saleId } })).toBe(0);
+    } finally {
+      await prisma.employees.update({
+        where: { id: employees.E005 },
+        data: { status: EmployeeStatus.ACTIVE },
+      });
+    }
   });
 });
 

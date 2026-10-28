@@ -228,7 +228,10 @@ describe('payments and FINISH — sale.checkoutActors (a sale id, a payment id) 
       { payment_method_id: cash, amount: 10_000 },
       randomUUID(),
     );
+    // He holds sale.finish_override for B1 only (access spec: 403 forbidden). API-PERM-03 v1.6 also
+    // names context.required here; decide() row 9 sends none — raised in the review of #26.
     expect(zaw.status).toBe(403);
+    expect(zaw.body.code).toBe(ErrorCode.FORBIDDEN);
     expect((await api.get(AUNG, `/sales/${v1.sale}`)).body.payments).toHaveLength(0);
   });
 

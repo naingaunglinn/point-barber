@@ -9,7 +9,7 @@ import { StorageObjectMissing, StorageService } from '../src/modules/platform/in
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
 // add-walkin-visit-checkout task 3.5 — one round trip through the application's StorageService
-// against a real S3 API: MinIO (docker-compose.dev.yml profile `storage`; a service of the CI job
+// against a real S3 API: MinIO (always part of docker-compose.dev.yml; a step of the CI job
 // `integration`). ADR-014 · design D10. The test creates its bucket when it is missing; in production
 // the bucket is the owner's.
 let t: TestApp;
