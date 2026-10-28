@@ -1,6 +1,9 @@
 // The in-process queue of the DocumentRenderer (ADR-013 decision 7 · add-walkin-visit-checkout design
 // D10): one render at a time; an interactive render (a receipt a person asked for) goes ahead of the
-// queued background renders (the jobs); each render has a timeout.
+// queued background renders (the jobs); each render has a timeout, and so has the clean-up after one.
+
+/** Build constant: how long the clean-up after a timed-out render may take (CG-ERR-06). */
+export const CLEANUP_TIMEOUT_MS = 2_000;
 
 export type RenderPriority = 'interactive' | 'background';
 
@@ -23,6 +26,8 @@ export class RenderQueue {
   private readonly interactive: Task[] = [];
   private readonly background: Task[] = [];
   private running = false;
+
+  constructor(private readonly cleanupMs: number = CLEANUP_TIMEOUT_MS) {}
 
   /** Runs `work` when it is its turn; `onTimeout` cleans up after a render that took too long. */
   run<T>(
@@ -65,12 +70,22 @@ export class RenderQueue {
       });
       task.resolve(await Promise.race([task.work(), timeout]));
     } catch (error) {
-      if (error instanceof RenderTimeout) await task.onTimeout().catch(() => undefined);
+      if (error instanceof RenderTimeout) await this.cleanUp(task);
       task.reject(error);
     } finally {
       clearTimeout(timer);
       this.running = false;
       void this.next();
     }
+  }
+
+  // A browser that never exits must not hold the queue: the clean-up is given up after cleanupMs.
+  private async cleanUp(task: Task): Promise<void> {
+    let timer: NodeJS.Timeout | undefined;
+    const deadline = new Promise<void>((done) => {
+      timer = setTimeout(done, this.cleanupMs);
+    });
+    await Promise.race([task.onTimeout().catch(() => undefined), deadline]);
+    clearTimeout(timer);
   }
 }

@@ -10,6 +10,7 @@ import {
   businessDateOf,
   moneyFromWire,
   moneyToWire,
+  normalizeDigits,
   toMmtIso,
 } from '@point/shared';
 
@@ -131,10 +132,11 @@ export class Payments {
     if (method?.status !== PaymentMethodStatus.ACTIVE || method.archived_at !== null)
       throw new ProblemException(ErrorCode.METHOD_INACTIVE, 422);
 
-    // Reference (P4-RULE-09): trimmed first; required, then the method's format; one per method.
+    // Reference (P4-RULE-09): trimmed and its Myanmar digits read as 0–9 first (AD-FMT-10); required,
+    // then the method's format; one per method.
     const reference = blank(body.external_reference)
       ? null
-      : (body.external_reference as string).trim();
+      : normalizeDigits(body.external_reference as string).trim();
     if (method.requires_reference && reference === null)
       throw new ProblemException(ErrorCode.REFERENCE_REQUIRED, 422);
     if (
