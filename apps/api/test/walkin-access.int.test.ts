@@ -22,6 +22,7 @@ const HNIN = 'E002';
 
 let s: SeededApp;
 let api: WalkinHttp;
+let cash: string;
 let v1: { visit: string; sale: string };
 let v2: { visit: string; sale: string };
 let v3: { visit: string; sale: string };
@@ -35,6 +36,7 @@ beforeAll(async () => {
   s = await seededApp(new Date('2026-10-05T10:00:00+06:30'));
   api = walkinHttp(s);
   const prisma = s.app.get(PrismaService);
+  cash = (await prisma.payment_methods.findFirstOrThrow({ where: { code: 'CASH' } })).id;
   // Three STARTED visits first: once one is COMPLETED and unpaid, START is blocked (P4-RULE-02).
   const ids = async () => {
     const visit = await api.start(AUNG, [services.HAIRCUT]);
@@ -208,12 +210,80 @@ describe('INCOMPLETE — visit.incompleteActors (a visit id) or visit.delete', (
   });
 });
 
+describe('payments and FINISH — sale.checkoutActors (a sale id, a payment id) or sale.finish_override', () => {
+  it('Scenario: A barber of another branch tries to take payment → 403 sale.finish_override, no row', async () => {
+    for (const who of [HTET, MIN] as const) {
+      const res = await api.post(
+        who,
+        `/sales/${v1.sale}/payments`,
+        { payment_method_id: cash, amount: 10_000 },
+        randomUUID(),
+      );
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject(forbidden('sale.finish_override'));
+    }
+    const zaw = await api.post(
+      ZAW,
+      `/sales/${v1.sale}/payments`,
+      { payment_method_id: cash, amount: 10_000 },
+      randomUUID(),
+    );
+    expect(zaw.status).toBe(403);
+    expect((await api.get(AUNG, `/sales/${v1.sale}`)).body.payments).toHaveLength(0);
+  });
+
+  it('the performer and the branch manager take payment; void by payment id follows the same sets', async () => {
+    const byAung = await api.pay(AUNG, v1.sale, { payment_method_id: cash, amount: 4_000 });
+    const byHnin = await api.pay(HNIN, v1.sale, { payment_method_id: cash, amount: 6_000 });
+    const [aungPayment] = byAung.payments;
+    const hninPayment = byHnin.payments.find((p) => p.id !== aungPayment?.id);
+    const min = await api.post(MIN, `/payments/${aungPayment?.id}/void`, {
+      reason: 'Wrong amount',
+    });
+    expect(min.status).toBe(403);
+    expect(min.body).toMatchObject(forbidden('sale.finish_override'));
+    expect(
+      (await api.post(AUNG, `/payments/${hninPayment?.id}/void`, { reason: 'Wrong amount' }))
+        .status,
+    ).toBe(200);
+    expect(
+      (await api.post(HNIN, `/payments/${aungPayment?.id}/void`, { reason: 'Wrong amount' }))
+        .status,
+    ).toBe(200);
+    const sale = await api.pay(AUNG, v1.sale, { payment_method_id: cash, amount: 10_000 });
+    expect(sale.remaining_amount).toBe(0);
+  });
+
+  it('FINISH: a colleague → 403; Scenario: Finish for an absent barber without a reason → 400', async () => {
+    const min = await api.post(MIN, `/sales/${v1.sale}/finish`, { expected_total_amount: 10_000 });
+    expect(min.status).toBe(403);
+    expect(min.body).toMatchObject(forbidden('sale.finish_override'));
+    const hnin = await api.post(HNIN, `/sales/${v1.sale}/finish`, {
+      expected_total_amount: 10_000,
+    });
+    expect(hnin.status).toBe(400);
+    expect(hnin.body.code).toBe(ErrorCode.REASON_REQUIRED);
+    expect((await api.get(AUNG, `/sales/${v1.sale}`)).body.status).toBe(1);
+  });
+
+  it('Scenario: Finish for an absent barber with a reason → 200, finished_by = Ma Hnin', async () => {
+    const sale = await api.finish(HNIN, v1.sale, {
+      expected_total_amount: 10_000,
+      override_reason: 'Ko Aung went home',
+    });
+    expect(sale.finished_by).toMatchObject({ user_id: FIXTURE_IDS.users.E002 });
+    expect(sale.items[0]?.performed_by).toMatchObject({ id: FIXTURE_IDS.employees.E004 });
+  });
+});
+
 describe('an id that is not a UUID is a missing row, never a 500', () => {
   it('a holder gets 404 on the entity routes; a caller without the code gets 403', async () => {
     expect((await api.get(HNIN, '/visits/not-a-uuid')).status).toBe(404);
     expect((await api.get(HNIN, '/sales/not-a-uuid')).status).toBe(404);
     expect((await api.post(HNIN, '/sales/not-a-uuid/items', {})).status).toBe(404);
+    expect((await api.post(HNIN, '/payments/not-a-uuid/void', {})).status).toBe(404);
     expect((await api.get(AUNG, '/visits/not-a-uuid')).status).toBe(403);
+    expect((await api.get(AUNG, '/sales/not-a-uuid/receipt')).status).toBe(404);
     expect((await api.get(AUNG, '/me/requests/not-a-uuid')).status).toBe(404);
   });
 });
