@@ -24,7 +24,9 @@ import { Customers } from '../../booking/index.js';
 import { DayLock } from '../../cash-closing/index.js';
 import { PayrollLock } from '../../payroll/index.js';
 import { Audit, Jobs } from '../../platform/index.js';
+import { assertLateEntryOrder, enteredTime } from '../late-entry/late-entry-times.js';
 import { Sales } from '../lines/sales.js';
+import type { VisitForSale } from '../ports/visits-port.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
 import { RECEIPT_RENDER, type ReceiptRenderData } from '../receipts/receipt-render.job.js';
 import { PaymentMethodsRepository } from '../repositories/payment-methods.repository.js';
@@ -45,6 +47,17 @@ export const CHANGE_RETURN_REASON = 'Change returned for over-transfer';
 
 const blank = (text: string | null | undefined): boolean => (text ?? '').trim() === '';
 const wire = (amount: bigint): number => moneyToWire(amount as Mmk);
+
+/** A late entry's finish: after the completion and every payment, not later than now (P4-RULE-10 #1). */
+function finishOrder(visit: VisitForSale, receivedAts: Date[], finishedAt: Date, now: Date): void {
+  assertLateEntryOrder({
+    startedAt: visit.started_at,
+    completedAt: visit.completed_at,
+    receivedAts,
+    finishedAt,
+    now,
+  });
+}
 
 @Injectable()
 export class SalesFinish {
@@ -81,7 +94,16 @@ export class SalesFinish {
         throw new ProblemException(ErrorCode.INVALID_TRANSITION, 409, {
           context: { status: SaleStatus.CANCELLED },
         });
-      const finishedAt = this.clock.now();
+      // A late entry finishes at its entered time, which decides the two day locks, the receipt
+      // month and the business date (add-late-entry design D4): required, and in order before the
+      // locks; again at step 12 with the locked payments.
+      const now = this.clock.now();
+      const visitBefore =
+        read.visit_id === null ? null : await this.registry.visits.read(tx, read.visit_id);
+      const late = visitBefore?.is_late_entry === true;
+      const finishedAt = late ? enteredTime(body.finished_at, 'finished_at') : now;
+      if (visitBefore !== null && late)
+        finishOrder(visitBefore, await this.sales.receivedAts(tx, read.id), finishedAt, now);
       const businessDate = businessDateOf(finishedAt);
 
       // 2. Day lock of the sale's business date (a visit crossing midnight checks the new day).
@@ -135,6 +157,7 @@ export class SalesFinish {
         });
       // 12. Payments FOR UPDATE; full payment, and an excess only up to the non-cash payments.
       await this.sales.lockPayments(tx, sale.id);
+      if (late) finishOrder(visit, await this.sales.receivedAts(tx, sale.id), finishedAt, now);
       if (!totals.finish_allowed)
         throw new ProblemException(ErrorCode.AMOUNT_MISMATCH, 422, {
           context: { remaining_amount: wire(totals.remaining) },
@@ -153,8 +176,9 @@ export class SalesFinish {
         business_date: businessDate,
         receipt,
         customer_id: customerId,
+        recorded_at: now,
       });
-      await this.registry.visits.markFinished(tx, visit.id, finishedAt);
+      await this.registry.visits.markFinished(tx, visit.id, finishedAt, now);
       // 15. The change of a non-cash over-transfer, returned in cash (owner B5 · D-PAY-05).
       let refundId: string | null = null;
       let refundNumber: string | null = null;
@@ -167,11 +191,11 @@ export class SalesFinish {
           ReceiptCounterKind.REFUND,
           businessDate,
         );
-        refundId = uuidV7(finishedAt.getTime());
+        refundId = uuidV7(now.getTime());
         refundNumber = rf.number;
         await this.refunds.insert(tx, {
           id: refundId,
-          client_request_id: uuidV7(finishedAt.getTime()),
+          client_request_id: uuidV7(now.getTime()),
           sale_id: sale.id,
           branch_id: sale.branch_id,
           kind: RefundKind.OVERPAYMENT_RETURN,
@@ -182,6 +206,7 @@ export class SalesFinish {
           business_date: businessDate,
           refunded_at: finishedAt,
           refunded_by_user_id: actor.user_id,
+          recorded_at: now,
         });
       }
       // 17. The render jobs and the audit row, inside the transaction (none survive a rollback).

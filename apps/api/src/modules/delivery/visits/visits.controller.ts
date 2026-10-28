@@ -1,11 +1,13 @@
 import { Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
+  type CompleteRequest,
   ErrorCode,
   type MyVisitsQuery,
   type ReasonBody,
   type RequestLookupDto,
   type StartVisitRequest,
   type VisitDto,
+  completeRequestSchema,
   myVisitsQuerySchema,
   reasonBodySchema,
   startVisitRequestSchema,
@@ -66,8 +68,11 @@ export class VisitsController {
   @HttpCode(200)
   @Can('visit.update', { branch: 'params.id→entity.branch_id', orSelf: 'visit.lineActors' })
   @Audited({ actions: [VISIT_COMPLETE] })
-  async complete(@Param('id') id: string): Promise<VisitDto> {
-    return this.visits.complete(await this.viewers.current(), id);
+  async complete(
+    @Param('id') id: string,
+    @ZBody(completeRequestSchema) body: CompleteRequest,
+  ): Promise<VisitDto> {
+    return this.visits.complete(await this.viewers.current(), id, body);
   }
 
   /** P4.VIS.06 INCOMPLETE — the performer, or `visit.delete` at the visit's branch. */
