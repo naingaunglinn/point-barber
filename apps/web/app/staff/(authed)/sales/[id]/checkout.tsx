@@ -171,7 +171,11 @@ export function Checkout({
           <PaymentSheet
             open={sheet !== null}
             onOpenChange={(open) => {
-              if (!open) setSheet(null);
+              if (open) return;
+              setSheet(null);
+              // A refusal of the sheet (a reference already used, its format …) belongs to its fields; it
+              // is not carried to the top of the checkout once the sheet is closed.
+              setPayProblem(null);
             }}
             methods={active}
             {...(sheet?.method === undefined ? {} : { method: sheet.method })}

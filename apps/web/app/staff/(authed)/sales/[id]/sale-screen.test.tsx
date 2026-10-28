@@ -279,6 +279,30 @@ describe('checkout (group 12)', () => {
       await screen.findByText('This reference is already recorded. Check the transfer.'),
     ).toBeTruthy();
   });
+
+  it('a reference refusal stays with the sheet: closing it leaves no alert on the checkout', async () => {
+    routeFetch(
+      fetchMock,
+      checkoutRoutes({
+        [`POST /api/v1/sales/${IDS.SALE}/payments`]: json(
+          409,
+          problem(409, 'duplicate_reference', { context: { receipt_number: 'B3-2026-OCT-00001' } }),
+        ),
+      }),
+    );
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('pay-KBZPAY'));
+    fireEvent.change(await screen.findByLabelText(/^Reference/), {
+      target: { value: 'KBZ0001234567' },
+    });
+    fireEvent.click(screen.getByTestId('payment-submit'));
+    expect(
+      await screen.findByText('This reference was already used on B3-2026-OCT-00001.'),
+    ).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
 
 describe('FINISH and after (group 13)', () => {
