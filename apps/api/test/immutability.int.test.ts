@@ -32,7 +32,7 @@ let payments: Payments;
 let walkin: ReturnType<typeof checkout>;
 let cash: string;
 let finished: { saleId: string; visitId: string; lineId: string; paymentId: string };
-let cancelled: { saleId: string; visitId: string };
+let cancelled: { saleId: string; visitId: string; lineId: string; paymentId: string };
 
 async function refusal(work: () => Promise<unknown>): Promise<ProblemException> {
   try {
@@ -72,11 +72,16 @@ beforeAll(async () => {
     lineId: paid.sale.items[0]?.id ?? '',
     paymentId: paid.sale.payments[0]?.id ?? '',
   };
-  // A visit marked incomplete: its sale is CANCELLED.
-  cancelled = await walkin.start(KO_MIN, [services.HAIRCUT]);
+  // A visit marked incomplete: its sale is CANCELLED. Its Cash 8,000 was voided first (no live payment
+  // may remain, P4.VIS.06), so the sale keeps a line and a voided payment.
+  const b = await walkin.start(KO_MIN, [services.HAIRCUT]);
+  const taken = await walkin.pay(KO_MIN, b.saleId, { payment_method_id: cash, amount: 8000 });
+  const paymentId = taken.sale.payments[0]?.id ?? '';
+  await as(KO_MIN, () => payments.void(KO_MIN.viewer, paymentId, 'Customer left'));
   await as(KO_MIN, () =>
-    s.app.get(Visits).incomplete(KO_MIN.viewer, cancelled.visitId, 'Started by mistake'),
+    s.app.get(Visits).incomplete(KO_MIN.viewer, b.visitId, 'Started by mistake'),
   );
+  cancelled = { ...b, lineId: taken.sale.items[0]?.id ?? '', paymentId };
 }, 60_000);
 afterAll(async () => {
   await owner.$disconnect();
@@ -140,12 +145,45 @@ describe('Direct writes on a CANCELLED sale — 409 with status 0 and no path', 
     const add = await refusal(() =>
       as(KO_MIN, () => lines.add(KO_MIN.viewer.actor, cancelled.saleId, shave)),
     );
-    expect(add.options.context).toStrictEqual({ status: SaleStatus.CANCELLED });
+    expect([add.code, add.status, add.options.context]).toStrictEqual([
+      ErrorCode.INVALID_TRANSITION,
+      409,
+      { status: SaleStatus.CANCELLED },
+    ]);
     const pay = await refusal(() =>
       walkin.pay(KO_MIN, cancelled.saleId, { payment_method_id: cash, amount: 8000 }),
     );
-    expect(pay.options.context).toStrictEqual({ status: SaleStatus.CANCELLED });
-    expect(await prisma.payments.count({ where: { sale_id: cancelled.saleId } })).toBe(0);
+    expect([pay.code, pay.status, pay.options.context]).toStrictEqual([
+      ErrorCode.INVALID_TRANSITION,
+      409,
+      { status: SaleStatus.CANCELLED },
+    ]);
+    // The voided Cash 8,000 only.
+    expect(await prisma.payments.count({ where: { sale_id: cancelled.saleId } })).toBe(1);
+  });
+
+  it('remove a line, void a payment — status 0 only (review of #26)', async () => {
+    const remove = await refusal(() =>
+      as(KO_MIN, () =>
+        lines.remove(KO_MIN.viewer.actor, cancelled.saleId, cancelled.lineId, 'Wrong service'),
+      ),
+    );
+    expect([remove.code, remove.status, remove.options.context]).toStrictEqual([
+      ErrorCode.INVALID_TRANSITION,
+      409,
+      { status: SaleStatus.CANCELLED },
+    ]);
+    const voided = await refusal(() =>
+      as(KO_MIN, () => payments.void(KO_MIN.viewer, cancelled.paymentId, 'Wrong method')),
+    );
+    expect([voided.code, voided.status, voided.options.context]).toStrictEqual([
+      ErrorCode.INVALID_TRANSITION,
+      409,
+      { status: SaleStatus.CANCELLED },
+    ]);
+    expect(
+      (await prisma.sale_items.findUniqueOrThrow({ where: { id: cancelled.lineId } })).removed_at,
+    ).toBeNull();
   });
 });
 
@@ -189,6 +227,15 @@ describe('The second wall — the guard triggers (SQLSTATE P0001 finished_immuta
   it('lines of a finished sale: INSERT, UPDATE and DELETE refused', async () => {
     expect(
       (
+        await sqlError(`
+          INSERT INTO sale_items (id, sale_id, sort_order, line_type, service_id, performed_by_employee_id,
+            description_mm, quantity, list_price_amount, unit_price_amount)
+          VALUES ('${randomUUID()}', '${finished.saleId}', 9, 1, '${services.SHAVE}',
+            '${FIXTURE_IDS.employees.E004}', 'Shave', 1, 3000, 3000)`)
+      ).state,
+    ).toBe('P0001');
+    expect(
+      (
         await sqlError(
           `UPDATE sale_items SET description_en = 'Cut' WHERE id = '${finished.lineId}'`,
         )
@@ -206,6 +253,22 @@ describe('The second wall — the guard triggers (SQLSTATE P0001 finished_immuta
       VALUES ('${randomUUID()}', '${cancelled.saleId}', 9, 1, '${services.SHAVE}',
         '${FIXTURE_IDS.employees.E005}', 'Shave', 1, 3000, 3000)`);
     expect(state).toBe('P0001');
+  });
+
+  it('a cancelled sale: its UPDATE and the UPDATE and DELETE of its lines refused (review of #26)', async () => {
+    expect(
+      (await sqlError(`UPDATE sales SET total_amount = 1 WHERE id = '${cancelled.saleId}'`)).state,
+    ).toBe('P0001');
+    expect(
+      (
+        await sqlError(
+          `UPDATE sale_items SET description_en = 'Cut' WHERE id = '${cancelled.lineId}'`,
+        )
+      ).state,
+    ).toBe('P0001');
+    expect((await sqlError(`DELETE FROM sale_items WHERE id = '${cancelled.lineId}'`)).state).toBe(
+      'P0001',
+    );
   });
 
   it('a FINISHED or INCOMPLETE visit takes updated_at only', async () => {

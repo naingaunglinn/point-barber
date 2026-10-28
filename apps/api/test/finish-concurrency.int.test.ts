@@ -2,12 +2,13 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import { SaleStatus } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { sqlStateOf } from '../src/common/database/errors.js';
 import { PrismaService } from '../src/common/database/prisma.service.js';
 import { ProblemException } from '../src/common/http/problem.exception.js';
 import { Visits } from '../src/modules/delivery/index.js';
+import { Audit } from '../src/modules/platform/index.js';
 import { Payments, type VisitsPort, VisitsRegistry } from '../src/modules/sales/index.js';
 import { checkout } from './helpers/checkout.js';
 import { type SeededApp, seededApp } from './helpers/seeded.js';
@@ -153,6 +154,39 @@ describe('No gap after a failure (D-PAY-06)', () => {
       Array.from({ length: 5 }, (_, i) => `B3-RF-2026-OCT-${String(i + 1).padStart(5, '0')}`),
     );
     expect(await counter(2)).toBe(5);
+  });
+
+  it('the render jobs are sent inside the transaction — a fault after them leaves no job (ADR-002)', async () => {
+    // KBZPay 10,000 on 8,000: FINISH would send two jobs (the sale and its change return).
+    const ids = await walkin.start(KO_MIN, [services.HAIRCUT]);
+    await walkin.pay(KO_MIN, ids.saleId, {
+      payment_method_id: kbzpay,
+      amount: 10000,
+      external_reference: 'KBZ0001234599',
+    });
+    await walkin.complete(KO_MIN, ids.visitId);
+    const jobs = () => prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT count(*) AS n FROM pgboss.job
+      WHERE name = 'receipt.render'
+        AND (data->>'entity_id' = ${ids.saleId}
+          OR data->>'entity_id' IN (SELECT id::text FROM refunds WHERE sale_id = ${ids.saleId}::uuid))`;
+    const [sales, refunds] = [await counter(1), await counter(2)];
+    // Step 17 sends the jobs, then emits the audit row: the fault comes after both sends.
+    vi.spyOn(s.app.get(Audit), 'emit').mockRejectedValueOnce(
+      new Error('fault injected after the jobs'),
+    );
+    try {
+      await expect(
+        walkin.finish(KO_MIN, ids.saleId, { expected_total_amount: 8000 }),
+      ).rejects.toThrow(/fault injected/);
+    } finally {
+      vi.restoreAllMocks();
+    }
+    expect((await jobs())[0]?.n).toBe(0n);
+    expect(await prisma.refunds.count({ where: { sale_id: ids.saleId } })).toBe(0);
+    expect([await counter(1), await counter(2)]).toStrictEqual([sales, refunds]);
+    await walkin.finish(KO_MIN, ids.saleId, { expected_total_amount: 8000 });
+    expect((await jobs())[0]?.n).toBe(2n);
   });
 });
 
