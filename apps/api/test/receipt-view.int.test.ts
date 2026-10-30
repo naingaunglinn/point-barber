@@ -119,7 +119,7 @@ describe('ReceiptView of a sale (task 9.9)', () => {
       ['Shave', 1, 3000, 3000],
     ]);
     // Both payments were recorded at the fixed clock's one instant, so their order is the ids'.
-    expect([...view.payments].sort((a, b) => a.amount - b.amount)).toStrictEqual([
+    expect([...view.payments].sort((a, b) => a.method.localeCompare(b.method))).toStrictEqual([
       { method: 'Cash', amount: 5000, reference: null },
       { method: 'KBZPay', amount: 6000, reference: 'KBZ0001234567' },
     ]);
