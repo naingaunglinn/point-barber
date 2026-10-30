@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 # API image (design D13 / D14 · ADR-001 · CG-DEP-03). Build from the repository root:
 #   docker build -f apps/api/Dockerfile --build-arg APP_VERSION=<tag or commit> .
-# Debian-based Node so that add-walkin-visit-checkout can add Chromium and fonts to the final stage
-# with apt (D14). The final stage holds the production dependencies, the build output and what the
+# Debian-based Node so that the final stage can carry Chromium and its libraries (D14 · ADR-013). The final stage holds the production dependencies, the build output and what the
 # `migrate` service runs (db/migrations, db/schema.prisma, db/scripts/migrate.mjs, prisma.config.ts
 # and the Prisma CLI) — no source, no test file, no environment file.
 ARG NODE_IMAGE=node:24.21.0-bookworm-slim
@@ -29,6 +28,9 @@ RUN pnpm install --offline --frozen-lockfile
 RUN pnpm turbo run build --filter=api --output-logs=errors-only
 # The api package with its production dependencies only (the `files` fields keep test/ out).
 RUN pnpm --filter=api deploy --prod --legacy /out
+# The pinned playwright-core on its own (it has no dependencies), so the runtime stage installs its
+# browser in a layer that only changes with the playwright-core version.
+RUN cp -rL /out/node_modules/playwright-core /playwright-core
 
 FROM ${NODE_IMAGE} AS runtime
 ARG APP_VERSION=0.0.0-dev
@@ -40,6 +42,15 @@ WORKDIR /app
 RUN apt-get update \
  && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/*
+# Headless Chromium of the DocumentRenderer (ADR-013 · add-walkin-visit-checkout task 9.15): the
+# headless shell of the pinned playwright-core with its system libraries, in a root-owned folder the
+# `node` user reads; the server launches it as `node`, never as root. The documents name only the fonts
+# they inline from @point/documents (Pyidaungsu, Inter — deployed with the api); the fonts --with-deps
+# installs are Chromium's fallback for a character neither of them has.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+COPY --from=build /playwright-core /tmp/playwright-core
+RUN node /tmp/playwright-core/cli.js install --with-deps --only-shell chromium \
+ && rm -rf /tmp/playwright-core /var/lib/apt/lists/*
 # Root-owned and read-only for the `node` user that runs the server. /out holds package.json,
 # node_modules and dist (the `files` field).
 COPY --from=build /out ./

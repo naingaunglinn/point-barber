@@ -116,11 +116,11 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       FROM service_prices p JOIN branches b ON b.id = p.branch_id
       JOIN services s ON s.id = p.service_id LEFT JOIN employees e ON e.id = p.employee_id
       WHERE s.name_en = 'Haircut' ORDER BY b.code, e.employee_code NULLS FIRST`;
-    expect(rows.map((r) => [r.branch, r.employee, Number(r.amount)])).toStrictEqual([
-      ['B1', null, 6000],
-      ['B2', null, 7000],
-      ['B3', null, 8000],
-      ['B3', 'E004', 10000],
+    expect(rows.map((r) => [r.branch, r.employee, r.amount])).toStrictEqual([
+      ['B1', null, 6000n],
+      ['B2', null, 7000n],
+      ['B3', null, 8000n],
+      ['B3', 'E004', 10000n],
     ]);
   });
 

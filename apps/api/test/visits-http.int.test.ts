@@ -6,7 +6,6 @@ import {
   ErrorCode,
   SaleStatus,
   VisitStatus,
-  businessDateOf,
   saleSchema,
   visitSchema,
 } from '@point/shared';
@@ -31,11 +30,13 @@ const at = (local: string) => s.clock?.set(new Date(`2026-10-05T${local}+06:30`)
 let s: SeededApp;
 let api: WalkinHttp;
 let prisma: PrismaService;
+let cash: string;
 
 beforeAll(async () => {
   s = await seededApp(new Date('2026-10-05T09:00:00+06:30'));
   api = walkinHttp(s);
   prisma = s.app.get(PrismaService);
+  cash = (await prisma.payment_methods.findFirstOrThrow({ where: { code: 'CASH' } })).id;
 });
 afterAll(() => s.close());
 
@@ -265,7 +266,9 @@ describe('INCOMPLETE closes a visit that will not be paid (P4.VIS.06)', () => {
   it('Scenarios: A finished visit cannot be marked incomplete or completed again; No receipt number is consumed', async () => {
     const finished = await api.start(AUNG, [services.HAIRCUT]);
     await api.complete(AUNG, finished.id);
-    await finishWithSql(finished.id, finished.sale.id);
+    await api.pay(AUNG, finished.sale.id, { payment_method_id: cash, amount: 10_000 });
+    const sale = await api.finish(AUNG, finished.sale.id, { expected_total_amount: 10_000 });
+    expect(sale.receipt_number).toBe('B3-2026-OCT-00001');
     for (const action of ['incomplete', 'complete']) {
       const res = await api.post(AUNG, `/visits/${finished.id}/${action}`, { reason: 'Late' });
       expect(res.status).toBe(409);
@@ -276,43 +279,13 @@ describe('INCOMPLETE closes a visit that will not be paid (P4.VIS.06)', () => {
     }
     const dropped = await api.start(AUNG, [services.HAIRCUT]);
     await api.post(AUNG, `/visits/${dropped.id}/incomplete`, { reason: 'Customer left' });
-    const sale = await prisma.sales.findUniqueOrThrow({ where: { id: dropped.sale.id } });
-    expect(sale).toMatchObject({
-      status: SaleStatus.CANCELLED,
-      receipt_number: null,
-      receipt_seq: null,
-    });
-    expect(await prisma.receipt_counters.count()).toBe(0);
+    const next = await api.start(AUNG, [services.HAIRCUT]);
+    await api.complete(AUNG, next.id);
+    await api.pay(AUNG, next.sale.id, { payment_method_id: cash, amount: 10_000 });
+    const second = await api.finish(AUNG, next.sale.id, { expected_total_amount: 10_000 });
+    expect(second.receipt_number).toBe('B3-2026-OCT-00002');
   });
 });
-
-/**
- * A FINISHED visit and sale as FINISH leaves them. FINISH itself comes with pull request B (groups 7 – 9),
- * so this pull request builds the row with SQL (tasks.md: a row a later group creates is built by the test).
- */
-async function finishWithSql(visitId: string, saleId: string): Promise<void> {
-  const visit = await prisma.visits.findUniqueOrThrow({ where: { id: visitId } });
-  const at = new Date((visit.completed_at ?? visit.started_at).getTime() + 60_000);
-  await prisma.$transaction([
-    prisma.sales.update({
-      where: { id: saleId },
-      data: {
-        status: SaleStatus.FINISHED,
-        receipt_number: 'B3-2026-OCT-00001',
-        receipt_year: 2026,
-        receipt_month: 10,
-        receipt_seq: 1,
-        finished_at: at,
-        finished_by_user_id: visit.started_by_user_id,
-        business_date: new Date(`${businessDateOf(at)}T00:00:00Z`),
-      },
-    }),
-    prisma.visits.update({
-      where: { id: visitId },
-      data: { status: VisitStatus.FINISHED, finished_at: at },
-    }),
-  ]);
-}
 
 describe('"Was it saved?" is answered by the client request id (P4.REQ.01)', () => {
   it("Scenarios: START was saved, the reply was lost; Someone else's key; nothing saved", async () => {
