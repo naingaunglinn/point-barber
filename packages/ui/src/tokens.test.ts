@@ -136,6 +136,15 @@ describe('tokens.css — fonts and the two component variables per tree', () => 
     expect(site.has('--font-myanmar')).toBe(false);
   });
 
+  // ui-foundation "Tabular figures" (AD-VIS-05): Pyidaungsu's Latin digits are not of equal width, so
+  // numbers keep Inter first in Myanmar text as well; Pyidaungsu only follows it (AD-FMT-10).
+  it('--font-numeric starts with Inter in English and in Myanmar text', () => {
+    const latin = declarationsOf(tokens, ':root, [lang]:not(:lang(my))').get('--font-numeric');
+    const myanmar = declarationsOf(tokens, ':lang(my)').get('--font-numeric');
+    expect(latin).toBe("'Inter', 'Manrope', system-ui, sans-serif");
+    expect(myanmar).toBe("'Inter', 'Manrope', var(--font-myanmar), system-ui, sans-serif");
+  });
+
   it('staff: the focus outline is --foreground and the input border --muted-foreground', () => {
     expect(staff.get('--focus-outline')).toBe('var(--foreground)');
     expect(staff.get('--field-border')).toBe('var(--muted-foreground)');

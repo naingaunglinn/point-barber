@@ -307,7 +307,9 @@
 }
 
 /* Font stacks follow the tree and the language of the text: for Myanmar text the stack starts with
- * `--font-myanmar` (D-UX-02). An element with a `lang` attribute applies the stack again
+ * `--font-myanmar` (D-UX-02). Numbers are always the digits 0–9 (AD-FMT-10), so `--font-numeric`
+ * keeps Inter's tabular figures first in Myanmar text too (AD-VIS-05); Pyidaungsu after it draws only
+ * the Myanmar digits a field shows before they are normalised. An element with a `lang` attribute applies the stack again
  * (`@layer base` below), so a Myanmar name in the English UI, or the English receipt in the
  * Myanmar UI, gets its own font. */
 :root {
@@ -322,7 +324,7 @@
 
 :lang(my) {
   --font-sans: var(--font-myanmar), 'Manrope', 'Inter', system-ui, sans-serif;
-  --font-numeric: var(--font-myanmar), 'Inter', 'Manrope', system-ui, sans-serif;
+  --font-numeric: 'Inter', 'Manrope', var(--font-myanmar), system-ui, sans-serif;
 }
 
 :root[data-tree='site'],
