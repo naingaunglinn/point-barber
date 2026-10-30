@@ -2,6 +2,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { VisitStatus } from '@point/shared';
+
 import { IDS, saleOf, visitOf } from '../../../../test/pos-fixtures';
 import { renderPos, routeFetch } from '../../../../test/pos-render';
 import { json, problem } from '../../../../test/render';
@@ -34,7 +36,7 @@ describe('Today (P4.VIS.02)', () => {
     const a = visitOf({ started_at: '2026-10-05T09:20:00+06:30' });
     const b = visitOf({
       id: B,
-      status: 2,
+      status: VisitStatus.COMPLETED,
       started_at: '2026-10-05T09:40:00+06:30',
       completed_at: '2026-10-05T10:00:00+06:30',
       sale: saleOf({ id: SALE_B, visit_id: B }),

@@ -3,7 +3,12 @@ import {
   type PaymentDto,
   type PaymentMethodDto,
   PaymentMethodKind,
+  PaymentMethodStatus,
+  maxMoney,
   moneyFromWire,
+  moneyToWire,
+  subtractMoney,
+  sumMoney,
 } from '@point/shared';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -35,7 +40,7 @@ const method = (
   reference_regex: null,
   is_system: code === 'CASH' || code === 'KBZPAY',
   sort_order,
-  status: 1,
+  status: PaymentMethodStatus.ACTIVE,
   archived_at: null,
   updated_at: '2026-10-05T10:00:00+06:30',
 });
@@ -143,11 +148,13 @@ describe('PaymentButtons (task 12.2)', () => {
 
 describe('MoneyStatus (task 12.6)', () => {
   const status = (total: number, paid: PaymentDto[]) => {
-    const sum = paid.reduce((acc, p) => acc + p.amount, 0);
+    const due = moneyFromWire(total);
+    const sum = sumMoney(paid.map((p) => moneyFromWire(p.amount)));
+    const zero = moneyFromWire(0);
     return checkoutMoney(
       {
-        remaining_amount: Math.max(total - sum, 0),
-        change_due_amount: Math.max(sum - total, 0),
+        remaining_amount: moneyToWire(maxMoney(subtractMoney(due, sum), zero)),
+        change_due_amount: moneyToWire(maxMoney(subtractMoney(sum, due), zero)),
         payments: paid,
       },
       [CASH, KBZ],

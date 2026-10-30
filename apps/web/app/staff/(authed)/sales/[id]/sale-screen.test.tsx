@@ -2,6 +2,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SaleStatus, VisitStatus } from '@point/shared';
+
 import {
   IDS,
   categoryOf,
@@ -125,11 +127,11 @@ describe('the state router (task 11.1)', () => {
 
   it('a CANCELLED sale → read-only with who marked it incomplete and why', async () => {
     const cancelled = visitOf({
-      status: 0,
+      status: VisitStatus.INCOMPLETE,
       incomplete_at: '2026-10-05T10:06:00+06:30',
       incomplete_by: { user_id: IDS.AUNG_USER, display_name: 'Ko Aung' },
       incomplete_reason: 'Started by mistake',
-      sale: saleOf({ status: 0, cancelled_at: '2026-10-05T10:06:00+06:30' }),
+      sale: saleOf({ status: SaleStatus.CANCELLED, cancelled_at: '2026-10-05T10:06:00+06:30' }),
     });
     routeFetch(fetchMock, {
       ...BASE,
@@ -314,7 +316,7 @@ describe('FINISH and after (group 13)', () => {
   });
   const FINISHED = saleOf({
     ...PAID,
-    status: 2,
+    status: SaleStatus.FINISHED,
     receipt_number: 'B3-2026-OCT-00001',
     business_date: '2026-10-05',
     finished_at: '2026-10-05T10:42:00+06:30',
@@ -478,10 +480,9 @@ describe('FINISH and after (group 13)', () => {
     routeFetch(fetchMock, {
       ...BASE,
       [SALE]: json(200, FINISHED),
-      [VISIT]: json(200, visitOf({ ...COMPLETED, status: 3, sale: FINISHED })),
+      [VISIT]: json(200, visitOf({ ...COMPLETED, status: VisitStatus.FINISHED, sale: FINISHED })),
       [`GET /api/v1/sales/${IDS.SALE}/receipt?format=json`]: json(200, receiptOf()),
       [`GET /api/v1/sales/${IDS.SALE}/receipt?format=pdf`]: new Response(new Blob(['%PDF']), {
-        status: 200,
         headers: { 'Content-Type': 'application/pdf' },
       }),
     });

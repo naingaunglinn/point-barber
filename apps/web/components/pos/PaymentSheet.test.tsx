@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
-import { type PaymentMethodDto, PaymentMethodKind, moneyFromWire } from '@point/shared';
+import {
+  type PaymentMethodDto,
+  PaymentMethodKind,
+  PaymentMethodStatus,
+  moneyFromWire,
+} from '@point/shared';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -27,7 +32,7 @@ const method = (
   reference_regex: regex,
   is_system: true,
   sort_order: is_cash ? 1 : 2,
-  status: 1,
+  status: PaymentMethodStatus.ACTIVE,
   archived_at: null,
   updated_at: '2026-10-05T10:00:00+06:30',
 });

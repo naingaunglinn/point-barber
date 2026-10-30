@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
-import type { SaleDto, VisitDto, WarningDto } from '@point/shared';
+import { type SaleDto, type VisitDto, VisitStatus, type WarningDto } from '@point/shared';
 import { Button, FormAlert } from '@point/ui';
 
 import { SaleLines } from '../../../../../components/pos/SaleLines';
@@ -46,7 +46,7 @@ export function SaleLinesEditor({
     serviceIds: picking ? services.data?.map((service) => service.id) : undefined,
   });
   const durations = useDurations(sale.branch_id);
-  const completed = visit.status === 2;
+  const completed = visit.status === VisitStatus.COMPLETED;
 
   return (
     <section className="grid gap-3">

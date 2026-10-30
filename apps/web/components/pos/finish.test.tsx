@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { type CustomerLookupDto, type SaleDto, moneyFromWire } from '@point/shared';
+import { CustomerStatus, type CustomerLookupDto, type SaleDto, moneyFromWire } from '@point/shared';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ const MA_SU: CustomerLookupDto = {
   id: '00000000-0000-4000-8000-0000000000a1',
   name: 'Ma Su',
   phone: '09 7712 3456',
-  status: 1,
+  status: CustomerStatus.ACTIVE,
   notes: null,
   last_visit_at: '2026-10-05T10:42:00+06:30',
   upcoming_bookings: [],

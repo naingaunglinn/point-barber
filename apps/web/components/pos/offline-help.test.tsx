@@ -57,16 +57,19 @@ describe('StaffOfflineBanner', () => {
 
 describe('WithOfflineHelp', () => {
   it('on /help/offline: the help once, the screen kept but hidden', () => {
-    pathname.current = '/help/offline';
-    renderStaff(
+    const shell = () => (
       <WithOfflineHelp>
-        <input aria-label="kept" defaultValue="Haircut" />
-      </WithOfflineHelp>,
+        <p data-testid="kept" />
+      </WithOfflineHelp>
     );
+    const view = renderStaff(shell());
+    const kept = screen.getByTestId('kept');
+    pathname.current = '/help/offline';
+    view.rerender(shell());
     expect(screen.getAllByTestId('offline-help')).toHaveLength(1);
     expect(screen.getByTestId('offline-help').textContent).toContain('Late entry');
-    const kept = screen.getByLabelText('kept', { selector: 'input' }) as HTMLInputElement;
-    expect(kept.value).toBe('Haircut');
+    // The same element: the screen stays mounted (its state kept), only hidden.
+    expect(screen.getByTestId('kept')).toBe(kept);
     expect(kept.parentElement?.className).toBe('hidden');
   });
 

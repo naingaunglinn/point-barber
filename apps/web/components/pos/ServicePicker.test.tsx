@@ -4,6 +4,7 @@ import {
   type ServiceCategoryDto,
   type ServiceListItemDto,
   ServicePricingMode,
+  ServiceStatus,
 } from '@point/shared';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ const CAT: ServiceCategoryDto = {
   name_mm: 'ဝန်ဆောင်မှုများ',
   name_en: 'Services',
   sort_order: 1,
-  status: 1,
+  status: ServiceStatus.ACTIVE,
   archived_at: null,
   updated_at: '2026-10-05T10:00:00+06:30',
 };
@@ -37,7 +38,7 @@ const service = (
     name_en,
     pricing_mode: mode,
     buffer_minutes: 0,
-    status: 1,
+    status: ServiceStatus.ACTIVE,
     show_on_website: true,
     sort_order: n,
     branch_ids: [],

@@ -1,4 +1,4 @@
-import { ServicePricingMode, type ServiceListItemDto } from '@point/shared';
+import { ServicePricingMode, ServiceStatus, type ServiceListItemDto } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
 import { START_CHIP_COUNT, startChips } from './start-chips';
@@ -19,7 +19,7 @@ const service = (
     name_en,
     pricing_mode: pricing_mode as ServiceListItemDto['pricing_mode'],
     buffer_minutes: 0,
-    status: 1,
+    status: ServiceStatus.ACTIVE,
     show_on_website: true,
     sort_order: n,
     branch_ids: [],

@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { problem } from '../../test/render';
 import { SAVED_CHECK_AFTER_MS, useSavedSubmit } from './use-saved-submit';
 
 // add-walkin-visit-checkout tasks 10.9 / 12.8 (the client logic) — visits spec '"Was it saved?" is
@@ -108,15 +109,13 @@ describe('useSavedSubmit', () => {
   it('a refusal (an answer with a status) ends the submit; the next action gets a new key', async () => {
     keys = 0;
     let n = 0;
+    const refusal = problem(422, 'day_closed');
     const { hook, calls, sendSpy } = setup(
-      () => (
-        (n += 1),
-        n === 1 ? Promise.reject({ status: 422, code: 'day_closed' }) : Promise.resolve('ok')
-      ),
+      () => ((n += 1), n === 1 ? Promise.reject(refusal) : Promise.resolve('ok')),
       async () => null,
     );
     await act(() => hook.result.current.submit());
-    expect(calls.refused).toStrictEqual([{ status: 422, code: 'day_closed' }]);
+    expect(calls.refused).toStrictEqual([refusal]);
     await act(() => hook.result.current.submit());
     expect(sendSpy.mock.calls.map(([k]) => k)).toStrictEqual(['K1', 'K2']);
   });

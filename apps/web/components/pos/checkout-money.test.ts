@@ -2,7 +2,13 @@ import {
   type PaymentDto,
   type PaymentMethodDto,
   PaymentMethodKind,
+  PaymentMethodStatus,
   type SaleDto,
+  maxMoney,
+  moneyFromWire,
+  moneyToWire,
+  subtractMoney,
+  sumMoney,
 } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
@@ -28,7 +34,7 @@ const method = (id: string, code: string, is_cash: boolean): PaymentMethodDto =>
   reference_regex: null,
   is_system: true,
   sort_order: is_cash ? 1 : 2,
-  status: 1,
+  status: PaymentMethodStatus.ACTIVE,
   archived_at: null,
   updated_at: '2026-10-05T10:00:00+06:30',
 });
@@ -56,12 +62,16 @@ const sale = (
   SaleDto,
   'total_amount' | 'paid_amount' | 'remaining_amount' | 'change_due_amount' | 'payments'
 > => {
-  const paid = payments.filter((p) => p.voided_at === null).reduce((sum, p) => sum + p.amount, 0);
+  const due = moneyFromWire(total);
+  const paid = sumMoney(
+    payments.filter((p) => p.voided_at === null).map((p) => moneyFromWire(p.amount)),
+  );
+  const zero = moneyFromWire(0);
   return {
     total_amount: total,
-    paid_amount: paid,
-    remaining_amount: Math.max(total - paid, 0),
-    change_due_amount: Math.max(paid - total, 0),
+    paid_amount: moneyToWire(paid),
+    remaining_amount: moneyToWire(maxMoney(subtractMoney(due, paid), zero)),
+    change_due_amount: moneyToWire(maxMoney(subtractMoney(paid, due), zero)),
     payments,
   };
 };

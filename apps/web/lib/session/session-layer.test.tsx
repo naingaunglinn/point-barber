@@ -260,7 +260,7 @@ describe('add-walkin-visit-checkout task 10.1 · More shows who is signed in, MM
     fireEvent.click(await screen.findByTestId('more-sign-out'));
     await expect(api('/me/visits')).rejects.toBeInstanceOf(ApiProblem);
     expect(assign).not.toHaveBeenCalled();
-    finishLogout(new Response(null, { status: 204 }));
+    finishLogout(json(204));
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/login?reason=1'));
     expect(assign).toHaveBeenCalledTimes(1);
   });

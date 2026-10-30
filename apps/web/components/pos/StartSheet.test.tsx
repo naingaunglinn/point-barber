@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { ServicePricingMode, type ServiceListItemDto } from '@point/shared';
+import { ServicePricingMode, ServiceStatus, type ServiceListItemDto } from '@point/shared';
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -22,7 +22,7 @@ const service = (
     name_en,
     pricing_mode: mode,
     buffer_minutes: 0,
-    status: 1,
+    status: ServiceStatus.ACTIVE,
     show_on_website: true,
     sort_order: n,
     branch_ids: [],

@@ -2,6 +2,8 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { VisitStatus } from '@point/shared';
+
 import { IDS, saleOf, serviceOf, visitOf } from '../../../../../test/pos-fixtures';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
 import { json, problem } from '../../../../../test/render';
@@ -86,7 +88,11 @@ describe('START (P4.VIS.03)', () => {
       [START]: json(422, problem(422, 'unpaid_visit_open', { context: { visit_id: waiting } })),
       [`GET /api/v1/visits/${waiting}`]: json(
         200,
-        visitOf({ id: waiting, status: 2, sale: saleOf({ id: waitingSale, visit_id: waiting }) }),
+        visitOf({
+          id: waiting,
+          status: VisitStatus.COMPLETED,
+          sale: saleOf({ id: waitingSale, visit_id: waiting }),
+        }),
       ),
     });
     await openSheet();
