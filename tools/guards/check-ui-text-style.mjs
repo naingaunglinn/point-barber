@@ -23,7 +23,11 @@ const CLASS = (name) => new RegExp(String.raw`(?<![\w-])(?:[\w-]+:)*!?${name}(?!
 const CHECKS = [
   { problem: 'uppercase', pattern: CLASS('uppercase') },
   { problem: 'italic', pattern: CLASS('italic') },
-  { problem: 'tracking-*', pattern: CLASS(String.raw`tracking-(?:[\w.]+|\[[^\]\s]+\])`) },
+  // Names the class it found (`tracking-wide`, `md:tracking-[0.2em]`), as the two above name theirs.
+  {
+    problem: (found) => found,
+    pattern: CLASS(String.raw`tracking-(?:[\w.]+|\[[^\]\s]+\])`),
+  },
   { problem: 'text-transform', pattern: /text-transform\s*:\s*(?:uppercase|capitalize)/ },
   { problem: 'font-style', pattern: /font-style\s*:\s*(?:italic|oblique)/ },
   { problem: 'letter-spacing', pattern: /letter-spacing\s*:/ },
@@ -65,8 +69,11 @@ export function findTextStyle(root) {
       lines.forEach((line, index) => {
         for (const check of CHECKS) {
           if (check.decoration && TOKEN_TABLE.has(rel)) continue;
-          if (check.pattern.test(line))
-            found.push({ path: rel, line: index + 1, problem: check.problem });
+          const match = check.pattern.exec(line);
+          if (match === null) continue;
+          const problem =
+            typeof check.problem === 'function' ? check.problem(match[0]) : check.problem;
+          found.push({ path: rel, line: index + 1, problem });
         }
       });
     }

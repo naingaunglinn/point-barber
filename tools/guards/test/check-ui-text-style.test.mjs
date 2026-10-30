@@ -38,8 +38,9 @@ describe('tools/guards/check-ui-text-style.mjs (AD-VIS-06 · FE-VIS-01b)', () =>
   it.each([
     ['uppercase', `export const c = 'text-sm uppercase';\n`],
     ['italic', `export const c = 'md:italic font-semibold';\n`],
-    ['tracking-*', `export const c = 'tracking-wide';\n`],
-    ['tracking-*', 'export const c = `px-2 tracking-[0.2em]`;\n'],
+    ['tracking-wide', `export const c = 'tracking-wide';\n`],
+    ['tracking-[0.2em]', 'export const c = `px-2 tracking-[0.2em]`;\n'],
+    ['md:tracking-tight', `export const c = 'text-lg md:tracking-tight';\n`],
     ['--decoration', `export const c = 'text-[var(--decoration)]';\n`],
     ['--decoration', `export const c = 'bg-decoration';\n`],
   ])('fails on %s in a component and names the file and line', (problem, code) => {
