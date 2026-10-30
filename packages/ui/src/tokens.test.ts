@@ -145,6 +145,17 @@ describe('tokens.css — fonts and the two component variables per tree', () => 
     expect(myanmar).toBe("'Inter', 'Manrope', var(--font-myanmar), system-ui, sans-serif");
   });
 
+  // ui-foundation "Myanmar fallback value in the English UI": a Myanmar value inside Latin text takes
+  // the Myanmar line-height of the nearest text size (16 px → 28 px), not the inherited Latin one.
+  it('every text size gives Myanmar text inside it its own line-height', () => {
+    for (const size of ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl']) {
+      const scoped = new RegExp(
+        String.raw`@scope \(\.text-${size}\) \{\s*\[lang\]:lang\(my\) \{\s*line-height: var\(--leading-${size}\);`,
+      );
+      expect(tokens).toMatch(scoped);
+    }
+  });
+
   it('staff: the focus outline is --foreground and the input border --muted-foreground', () => {
     expect(staff.get('--focus-outline')).toBe('var(--foreground)');
     expect(staff.get('--field-border')).toBe('var(--muted-foreground)');

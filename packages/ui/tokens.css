@@ -253,6 +253,48 @@
   font-synthesis: none;
 }
 
+/* Myanmar text inside Latin text — a DataText value in the English UI — keeps its own line-height,
+ * not the inherited Latin one: the size comes from the nearest text-size utility around it, the value
+ * from the `:lang(my)` tokens above (AD-L10N-04 · ui-foundation "Myanmar fallback value in the English
+ * UI"). `@scope` picks the nearest size; an element's own size utility (utilities layer) still wins. */
+@layer base {
+  @scope (.text-xs) {
+    [lang]:lang(my) {
+      line-height: var(--leading-xs);
+    }
+  }
+  @scope (.text-sm) {
+    [lang]:lang(my) {
+      line-height: var(--leading-sm);
+    }
+  }
+  @scope (.text-base) {
+    [lang]:lang(my) {
+      line-height: var(--leading-base);
+    }
+  }
+  @scope (.text-lg) {
+    [lang]:lang(my) {
+      line-height: var(--leading-lg);
+    }
+  }
+  @scope (.text-xl) {
+    [lang]:lang(my) {
+      line-height: var(--leading-xl);
+    }
+  }
+  @scope (.text-2xl) {
+    [lang]:lang(my) {
+      line-height: var(--leading-2xl);
+    }
+  }
+  @scope (.text-3xl) {
+    [lang]:lang(my) {
+      line-height: var(--leading-3xl);
+    }
+  }
+}
+
 /* ── Fonts (AD-VIS-05 · FE-VIS-02 · FE-PERF-06 · design D3) ──────────────────────────────────── */
 /* Self-hosted WOFF2 subsets of packages/ui/fonts (build-subsets.sh). The web app serves that folder
  * at /fonts/ on its own origin, so these URLs and the preloads of fontPreloads() are the same. */
