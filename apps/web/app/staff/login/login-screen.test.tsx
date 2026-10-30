@@ -139,6 +139,17 @@ describe('add-foundation-auth-access · auth · Code entry screen', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1); // only the code request
   });
 
+  it('leaving the code for Sign in shows no message before the press; the press checks it', async () => {
+    renderStaff(<LoginScreen />);
+    await toCodeStep();
+    fireEvent.change(byTestId('login-code'), { target: { value: '4829 173' } });
+    fireEvent.blur(byTestId('login-code'), { relatedTarget: byTestId('login-submit') });
+    expect(screen.queryByText('Enter the 8-digit code.')).toBeNull();
+    fireEvent.click(byTestId('login-submit'));
+    expect(await screen.findByText('Enter the 8-digit code.')).toBeDefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1); // only the code request
+  });
+
   it('a wrong code shows otp_invalid under the field', async () => {
     renderStaff(<LoginScreen />);
     await toCodeStep();

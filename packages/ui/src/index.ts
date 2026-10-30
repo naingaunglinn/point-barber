@@ -179,6 +179,7 @@ export {
   applyProblem,
   fieldErrorOf,
   formResolver,
+  movesToSubmit,
   registerField,
   useAppForm,
   useTextField,

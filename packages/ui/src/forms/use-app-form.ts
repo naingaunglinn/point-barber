@@ -96,7 +96,7 @@ interface FieldBlur {
  * validated: the submit validates every field, and a message shown on the press would push the button
  * down before the release, so the first press would not submit (workbook No 64).
  */
-function movesToSubmit({ target, relatedTarget }: FieldBlur): boolean {
+export function movesToSubmit({ target, relatedTarget }: FieldBlur): boolean {
   const form =
     target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
       ? target.form

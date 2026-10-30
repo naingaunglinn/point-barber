@@ -12,6 +12,7 @@ import {
   TextInput,
   applyProblem,
   fieldErrorOf,
+  movesToSubmit,
   useAppForm,
   useTextField,
   type FieldError,
@@ -274,8 +275,11 @@ function CodeStep({
               setDigits(next);
               if (error !== undefined && error.code !== 'login_locked') setError(check(next));
             }}
-            onBlur={() => {
-              if (digits !== '') setError((current) => current ?? check(digits));
+            onBlur={(event) => {
+              // Leaving the field for "Sign in" is left to the submit, which checks the code: a
+              // message shown on the press would move the button before the release (workbook No 64).
+              if (digits !== '' && !movesToSubmit(event))
+                setError((current) => current ?? check(digits));
             }}
           />
         )}
