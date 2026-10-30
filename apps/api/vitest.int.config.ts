@@ -46,6 +46,14 @@ export default defineConfig({
       // No job workers or pg-boss maintenance in the test applications: sending still works, and the
       // tests that need workers switch them on (test/jobs.int.test.ts).
       JOBS_IN_API: 'false',
+      // add-walkin-visit-checkout task 3.5 — the local minio of docker-compose.dev.yml and of the CI job
+      // `integration`. test/storage.int.test.ts uses it; every test app also checks its bucket once at
+      // start (development and test), so without MinIO each file waits a few seconds and warns.
+      S3_ENDPOINT: process.env.S3_ENDPOINT ?? 'http://localhost:9000',
+      S3_REGION: 'us-east-1',
+      S3_BUCKET_APP: 'point-it',
+      S3_ACCESS_KEY_ID: 'minio-dev',
+      S3_SECRET_ACCESS_KEY: 'minio-dev-only',
     },
   },
 });

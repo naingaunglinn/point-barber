@@ -1,0 +1,70 @@
+diff --git a/dist/index.js b/dist/index.js
+index 5c5294f19e3ccd1cde695a59c5f77a6b0344cd1c..f519b566e66a151aa9e126ac4c9bb89dd1b2c6ad 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -308,7 +308,20 @@ function normalize_timestamp(time) {
+   return `${time.replace(" ", "T")}+00:00`;
+ }
+ function normalize_timestamptz(time) {
+-  return time.replace(" ", "T").replace(/[+-]\d{2}(:\d{2})?$/, "+00:00");
++  // Point Barbershop patch: PostgreSQL writes a timestamptz in the session time zone, which is
++  // Asia/Yangon (D-PLT-15), not UTC. Keep the instant: apply the offset it sent, then return the UTC
++  // instant in the shape the adapter has always returned ("…+00:00").
++  const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})(\.\d+)?([+-])(\d{2})(?::?(\d{2}))?(?::?(\d{2}))?$/.exec(time);
++  if (match === null) {
++    return time.replace(" ", "T").replace(/[+-]\d{2}(:\d{2})?$/, "+00:00");
++  }
++  const [, day, clock, fraction = "", sign, hours, minutes = "00", seconds = "00"] = match;
++  const wall = Date.parse(`${day}T${clock}Z`);
++  if (Number.isNaN(wall)) {
++    return time.replace(" ", "T").replace(/[+-]\d{2}(:\d{2})?$/, "+00:00");
++  }
++  const offset = (sign === "-" ? -1 : 1) * (Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds));
++  return `${new Date(wall - offset * 1e3).toISOString().slice(0, 19)}${fraction}+00:00`;
+ }
+ function normalize_time(time) {
+   return time;
+@@ -389,7 +402,7 @@ function mapArg(arg, argType) {
+ function formatDateTime(date) {
+   const pad = (n, z = 2) => String(n).padStart(z, "0");
+   const ms = date.getUTCMilliseconds();
+-  return pad(date.getUTCFullYear(), 4) + "-" + pad(date.getUTCMonth() + 1) + "-" + pad(date.getUTCDate()) + " " + pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes()) + ":" + pad(date.getUTCSeconds()) + (ms ? "." + String(ms).padStart(3, "0") : "");
++  return pad(date.getUTCFullYear(), 4) + "-" + pad(date.getUTCMonth() + 1) + "-" + pad(date.getUTCDate()) + " " + pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes()) + ":" + pad(date.getUTCSeconds()) + (ms ? "." + String(ms).padStart(3, "0") : "") + "+00:00";
+ }
+ function formatDate(date) {
+   const pad = (n, z = 2) => String(n).padStart(z, "0");
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 9281922b6b59b1be547169480c7d42dfa0718d1e..531f7e75d9584c65c33e1ebabe34760f5e5ad180 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -272,7 +272,20 @@ function normalize_timestamp(time) {
+   return `${time.replace(" ", "T")}+00:00`;
+ }
+ function normalize_timestamptz(time) {
+-  return time.replace(" ", "T").replace(/[+-]\d{2}(:\d{2})?$/, "+00:00");
++  // Point Barbershop patch: PostgreSQL writes a timestamptz in the session time zone, which is
++  // Asia/Yangon (D-PLT-15), not UTC. Keep the instant: apply the offset it sent, then return the UTC
++  // instant in the shape the adapter has always returned ("…+00:00").
++  const match = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})(\.\d+)?([+-])(\d{2})(?::?(\d{2}))?(?::?(\d{2}))?$/.exec(time);
++  if (match === null) {
++    return time.replace(" ", "T").replace(/[+-]\d{2}(:\d{2})?$/, "+00:00");
++  }
++  const [, day, clock, fraction = "", sign, hours, minutes = "00", seconds = "00"] = match;
++  const wall = Date.parse(`${day}T${clock}Z`);
++  if (Number.isNaN(wall)) {
++    return time.replace(" ", "T").replace(/[+-]\d{2}(:\d{2})?$/, "+00:00");
++  }
++  const offset = (sign === "-" ? -1 : 1) * (Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds));
++  return `${new Date(wall - offset * 1e3).toISOString().slice(0, 19)}${fraction}+00:00`;
+ }
+ function normalize_time(time) {
+   return time;
+@@ -353,7 +366,7 @@ function mapArg(arg, argType) {
+ function formatDateTime(date) {
+   const pad = (n, z = 2) => String(n).padStart(z, "0");
+   const ms = date.getUTCMilliseconds();
+-  return pad(date.getUTCFullYear(), 4) + "-" + pad(date.getUTCMonth() + 1) + "-" + pad(date.getUTCDate()) + " " + pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes()) + ":" + pad(date.getUTCSeconds()) + (ms ? "." + String(ms).padStart(3, "0") : "");
++  return pad(date.getUTCFullYear(), 4) + "-" + pad(date.getUTCMonth() + 1) + "-" + pad(date.getUTCDate()) + " " + pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes()) + ":" + pad(date.getUTCSeconds()) + (ms ? "." + String(ms).padStart(3, "0") : "") + "+00:00";
+ }
+ function formatDate(date) {
+   const pad = (n, z = 2) => String(n).padStart(z, "0");

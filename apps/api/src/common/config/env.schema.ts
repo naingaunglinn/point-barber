@@ -60,6 +60,13 @@ export const apiEnvSchema = z
     COMPANY_NAME_MM: z.string().min(1),
     COMPANY_NAME_EN: z.string().min(1).optional(),
     JOBS_IN_API: flag(true),
+    // add-walkin-visit-checkout — the bucket of generated documents (ADR-014 · design D10): any
+    // S3-compatible endpoint (R2 / B2 in production, MinIO in development and CI).
+    S3_ENDPOINT: z.url({ protocol: /^https?$/ }),
+    S3_REGION: z.string().min(1),
+    S3_BUCKET_APP: z.string().min(3),
+    S3_ACCESS_KEY_ID: z.string().min(1),
+    S3_SECRET_ACCESS_KEY: z.string().min(1),
   })
   .refine((env) => env.INTERNAL_SSR_KEY !== env.INTERNAL_OPS_KEY, {
     message: 'INTERNAL_SSR_KEY and INTERNAL_OPS_KEY must be different',

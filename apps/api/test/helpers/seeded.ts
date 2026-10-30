@@ -10,7 +10,7 @@ import { TransactionRunner } from '../../src/common/database/transaction-runner.
 import { PermissionCatalogue } from '../../src/modules/people/index.js';
 import { type FreshDatabase, freshDatabase } from './databases.js';
 import { cookieOf, openSession } from './people.js';
-import { type TestApp, type TestAppOptions, startTestApp } from './test-app.js';
+import { type FixedClock, type TestApp, type TestAppOptions, startTestApp } from './test-app.js';
 
 // The people of docs/plan/spec-fixtures.md §2 on a fresh database (design D16): the base seed and the
 // fixture modules of `pnpm db:seed`, then the test catalogue — permissions.json plus the three fixture
@@ -42,6 +42,7 @@ export type FixturePerson = keyof typeof FIXTURE_IDS.employees;
 
 export interface SeededApp extends TestApp {
   readonly prisma: PrismaService;
+  readonly db: FreshDatabase;
   /** A new session of the fixture person; the Cookie header that carries it. */
   signIn(
     person: FixturePerson,
@@ -62,6 +63,7 @@ export async function startSeededApp(
   return {
     ...t,
     prisma,
+    db,
     async signIn(person, signInOptions = {}) {
       const at = signInOptions.at ?? t.clock?.now();
       const session = await openSession(
@@ -76,4 +78,16 @@ export async function startSeededApp(
       await db.drop();
     },
   };
+}
+
+/**
+ * add-walkin-visit-checkout — the same seeded application with its clock at `now` (or the test's own
+ * clock), so a walk-in test starts from the scenario data (B3, Ko Aung, Ko Min, Haircut 8,000 / 10,000 …)
+ * and never meets another test file's rows.
+ */
+export function seededApp(
+  now: Date | FixedClock,
+  options: Pick<TestAppOptions, 'overrides' | 'jobs' | 'poolSize'> = {},
+): Promise<SeededApp> {
+  return startSeededApp(now instanceof Date ? { ...options, now } : { ...options, clock: now });
 }

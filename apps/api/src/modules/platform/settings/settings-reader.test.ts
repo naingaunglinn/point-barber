@@ -13,7 +13,7 @@ import { NoTodayBranch, TodayBranch } from './today-branch.js';
 // design D13: until add-settings-store exists, every setting is its locked default ("no row =
 // default"), the maintenance gate is open and nobody has a today branch.
 describe('DefaultsSettingsReader (task 2.12)', () => {
-  it('holds the eleven locked defaults of P1.SET.02, Part 1 §8 and Part 4', () => {
+  it('holds the locked defaults of P1.SET.02, Part 1 §8, Part 4 and D-SCH-03', () => {
     expect(DEFAULT_SETTINGS).toStrictEqual({
       'booking.slot_interval_minutes': 15,
       'booking.advance_window_days': 14,
@@ -26,13 +26,18 @@ describe('DefaultsSettingsReader (task 2.12)', () => {
       'receipt.printer_width_mm': 58,
       'receipt.auto_print': false, // REC-37
       'dashboard.show_own_earnings_all': false, // P1-RULE-06 — not client-readable
+      // add-walkin-visit-checkout — D-SCH-03, server-only (the quote's block length).
+      'home_service.travel_minutes': 30,
     });
   });
 
   it('the client-readable list of P1.SET.02 is the ten keys without the earnings flag', () => {
     expect([...CLIENT_READABLE_KEYS].sort()).toStrictEqual(
       Object.keys(DEFAULT_SETTINGS)
-        .filter((key) => key !== 'dashboard.show_own_earnings_all')
+        .filter(
+          (key) =>
+            key !== 'dashboard.show_own_earnings_all' && key !== 'home_service.travel_minutes',
+        )
         .sort(),
     );
   });
