@@ -28,6 +28,11 @@ export class ErrorReporter {
     this.sink = sink;
   }
 
+  /** A sink is set — the SDK was started because SENTRY_DSN_API is set. */
+  get enabled(): boolean {
+    return this.sink !== undefined;
+  }
+
   capture(error: unknown, tags: Readonly<Record<string, string>>, request?: ReportedRequest): void {
     this.sink?.capture(error, tags, request);
   }

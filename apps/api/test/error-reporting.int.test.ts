@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { ErrorReporter } from '../src/common/observability/error-reporter.js';
 import { type EnvelopeSink, startEnvelopeSink } from './helpers/envelope-sink.js';
 import { requestCode } from './helpers/sign-in.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
@@ -22,6 +23,8 @@ afterAll(async () => {
 describe('add-staging-deploy · platform-runtime · API defects reach Sentry with release, environment and request id', () => {
   it('Scenario: No DSN — the API starts and nothing is sent', async () => {
     const t = await startTestApp();
+    // No SDK was started at all, not merely an SDK that had nowhere to send.
+    expect(t.app.get(ErrorReporter).enabled).toBe(false);
     expect((await t.http.get(BOOM)).status).toBe(500);
     await t.close();
     await pause(300);
@@ -32,6 +35,7 @@ describe('add-staging-deploy · platform-runtime · API defects reach Sentry wit
     let t: TestApp;
     beforeAll(async () => {
       t = await startTestApp({ env: { SENTRY_DSN_API: sink.dsn } });
+      expect(t.app.get(ErrorReporter).enabled).toBe(true);
     });
     afterAll(async () => {
       await t.close();

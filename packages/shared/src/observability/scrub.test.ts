@@ -60,6 +60,22 @@ describe('scrubEvent (task 3.4)', () => {
     }
   });
 
+  it.each([
+    ['09 7712 3456', 'customer 09 7712 3456 not found'],
+    ['09-7712-3456', 'customer 09-7712-3456 not found'],
+    ['+95 9 7712 3456', 'customer +95 9 7712 3456 not found'],
+    ['+959771234567', 'customer +959771234567 not found'],
+    ['0977123456', 'customer 0977123456 not found'],
+  ])('replaces a Myanmar mobile number written as %s', (phone, text) => {
+    const redacted = redactText(text);
+    expect(redacted).toBe(`customer ${REDACTED} not found`);
+    expect(redacted).not.toContain(phone);
+  });
+
+  it('keeps a date and a time readable', () => {
+    expect(redactText('closed on 2026-10-05 at 21:05')).toBe('closed on 2026-10-05 at 21:05');
+  });
+
   it('keeps a short number (an id, a status) readable', () => {
     expect(redactText('status 500 at step 1234567')).toBe('status 500 at step 1234567');
     expect(withoutQuery('/a#b')).toBe('/a');

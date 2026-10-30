@@ -22,10 +22,12 @@ export const REDACTED = '[redacted]';
 
 const EMAIL = /[^\s@<>()"',;]+@[^\s@<>()"',;]+\.[A-Za-z]{2,}/g;
 const LONG_DIGITS = /\d{8,}/g;
+// A Myanmar mobile number as people write it: 09 or +95 9, then 6 to 9 digits with spaces or dashes.
+const MM_PHONE = /(?:\+95[\s-]?|\b0)9(?:[\s-]?\d){6,9}\b/g;
 
-/** E-mail addresses and runs of 8+ digits replaced. */
+/** E-mail addresses, Myanmar mobile numbers in any spacing and runs of 8+ digits replaced. */
 export const redactText = (text: string): string =>
-  text.replace(EMAIL, REDACTED).replace(LONG_DIGITS, REDACTED);
+  text.replace(EMAIL, REDACTED).replace(MM_PHONE, REDACTED).replace(LONG_DIGITS, REDACTED);
 
 const DENIED = new Set<string>(REDACTED_KEYS);
 

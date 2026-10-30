@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures.js';
+import { expect, recordPolicyViolations, test } from './fixtures.js';
 import { APP_ORIGIN } from './hosts.js';
 import { signInAs } from './helpers/sign-in.js';
 import { restartApi, withServiceEnv } from './helpers/stack.js';
@@ -8,7 +8,8 @@ import { restartApi, withServiceEnv } from './helpers/stack.js';
 // add-staging-deploy task 5.3 — platform-runtime spec "Web app errors reach Sentry with a DSN read at
 // run time" (ADR-007 decision 3 · design D10). The same image runs twice: recreated with a DSN on the
 // fake ingest origin and APP_ENV=staging, then as .env has it (SENTRY_DSN_WEB empty). Playwright
-// intercepts the ingest origin, so nothing leaves the runner. Code requests in this file: 2;
+// intercepts the ingest origin, so nothing leaves the runner. Both contexts record the policy
+// violations too: with the SDK loaded is the pilot's configuration (D8). Code requests in this file: 2;
 // verifies: 2 (≤ 8 each — e2e/README.md).
 
 const INGEST = 'https://o0.ingest.sentry.io';
@@ -43,6 +44,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
     playwright,
     browser,
     app,
+    policyViolations,
   }) => {
     const release = ((await (await app.get('/api/v1/system/status')).json()) as { version: string })
       .version;
@@ -53,6 +55,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
       `${APP_ORIGIN}/login`,
       async () => {
         const context = await signInAs(browser, app, 'aung@point.test');
+        await recordPolicyViolations(context, policyViolations);
         const envelopes: string[] = [];
         await context.route(`${INGEST}/**`, async (route) => {
           envelopes.push(route.request().postData() ?? '');
@@ -73,14 +76,16 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
           environment: 'staging',
           request: { url: `${APP_ORIGIN}/` },
         });
+        expect(policyViolations, 'securitypolicyviolation events').toStrictEqual([]);
         await context.close();
       },
     );
   });
 
   // Ko Min, not Ko Aung: a second code for one address within 60 seconds would answer 429.
-  test('Scenario: The same image without a DSN', async ({ browser, app }) => {
+  test('Scenario: The same image without a DSN', async ({ browser, app, policyViolations }) => {
     const context = await signInAs(browser, app, 'min@point.test');
+    await recordPolicyViolations(context, policyViolations);
     const sentry: string[] = [];
     context.on('request', (request) => {
       if (/sentry/i.test(new URL(request.url()).host)) sentry.push(request.url());
@@ -93,6 +98,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
     expect(sentry).toStrictEqual([]);
     expect(await page.content()).not.toContain('ingest.sentry.io');
     await expect(page.locator('html')).not.toHaveAttribute('data-error-reporting', 'ready');
+    expect(policyViolations, 'securitypolicyviolation events').toStrictEqual([]);
     await context.close();
   });
 });

@@ -66,7 +66,7 @@ export class SessionGuard implements CanActivate {
       SESSION_REQUEST_WINDOW_SECONDS,
     );
     if (!cap.allowed) {
-      this.warnOnce(state.session.id, cap.retryAfter);
+      this.warnOnce(state.session.id);
       throw rateLimited(cap.retryAfter);
     }
 
@@ -86,12 +86,16 @@ export class SessionGuard implements CanActivate {
     return true;
   }
 
-  /** The first refusal of a window is logged once, with a hash of the session id — never the cookie. */
-  private warnOnce(sessionId: string, retryAfter: number): void {
+  /**
+   * The first refusal of a window is logged once, with a hash of the session id — never the cookie.
+   * Quiet for a whole window from that refusal: under a steady over-cap loop the sliding window's
+   * retry-after drops to about a second, which would log a line per second.
+   */
+  private warnOnce(sessionId: string): void {
     const now = this.clock.now().getTime();
     const until = this.warned.get(sessionId);
     if (until !== undefined && now < until) return;
-    this.warned.set(sessionId, now + retryAfter * 1000);
+    this.warned.set(sessionId, now + SESSION_REQUEST_WINDOW_SECONDS * 1000);
     for (const [id, end] of this.warned) if (end <= now) this.warned.delete(id);
     this.log.warn(
       { session: createHash('sha256').update(sessionId).digest('hex').slice(0, 16) },

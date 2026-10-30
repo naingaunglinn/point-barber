@@ -1,4 +1,4 @@
-import { type APIRequestContext, test as base } from '@playwright/test';
+import { type APIRequestContext, type BrowserContext, test as base } from '@playwright/test';
 
 import { APP_ORIGIN, SITE_ORIGIN } from './hosts.js';
 
@@ -36,6 +36,20 @@ const RECORD_VIOLATIONS = `
   });
 `;
 
+/**
+ * Records the policy violations of every page of `context` into `into` — for a context a spec opens
+ * itself (signInAs); the fixture's own context is recorded already.
+ */
+export async function recordPolicyViolations(
+  context: BrowserContext,
+  into: PolicyViolation[],
+): Promise<void> {
+  await context.exposeFunction('__pointPolicyViolation', (violation: PolicyViolation) => {
+    into.push(violation);
+  });
+  await context.addInitScript({ content: RECORD_VIOLATIONS });
+}
+
 export const test = base.extend<Hosts & Policy>({
   site: async ({ playwright }, use) => {
     const context = await playwright.request.newContext({
@@ -57,10 +71,7 @@ export const test = base.extend<Hosts & Policy>({
     await use([]);
   },
   context: async ({ context, policyViolations }, use) => {
-    await context.exposeFunction('__pointPolicyViolation', (violation: PolicyViolation) => {
-      policyViolations.push(violation);
-    });
-    await context.addInitScript({ content: RECORD_VIOLATIONS });
+    await recordPolicyViolations(context, policyViolations);
     await use(context);
     base.expect(policyViolations, 'securitypolicyviolation events').toStrictEqual([]);
   },

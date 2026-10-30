@@ -234,6 +234,17 @@ jobs:
       - name: The api image carries the first-admin command (P1-RULE-14 · add-foundation-auth-access D10)
         run: docker run --rm --entrypoint test "point-api:$APP_VERSION" -f /app/dist/cli/admin-create.js
 
+      # The SDKs are loaded by a dynamic import only when a DSN is set, so no CI run starts them from
+      # the images: a package missing after `pnpm deploy --prod` or the standalone trace would first
+      # show at a deploy (add-staging-deploy design D9 / D10).
+      - name: The api and web images can load their Sentry SDK
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint node -w /app "point-api:$APP_VERSION" \
+            --input-type=module -e "await import('@sentry/nestjs')"
+          docker run --rm --entrypoint node -w /app/apps/web "point-web:$APP_VERSION" \
+            -e "import('@sentry/nextjs').catch((error) => { console.error(error); process.exit(1); })"
+
   e2e:
     name: e2e
     runs-on: ubuntu-24.04
