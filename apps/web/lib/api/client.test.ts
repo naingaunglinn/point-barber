@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HttpStatus } from '@point/shared';
+
 import { ApiProblem, api, setApiHandlers } from './client';
 
 // add-foundation-auth-access task 7.1 — the API client (API-AUTH-02 · API-AUD-02 · AD-AUTH-01 ·
 // AD-PERM-03 · design D17), with a mocked fetch.
 
 const fetchMock = vi.fn<typeof fetch>();
+/** Caddy's answer while the API is down: the edge's, not an API status (API-SHAPE-04). */
+const BAD_GATEWAY = 502;
 
 function answer(status: number, body?: unknown, headers: Record<string, string> = {}): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -56,7 +60,7 @@ describe('api() (task 7.1)', () => {
   });
 
   it('returns nothing for 204', async () => {
-    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    fetchMock.mockResolvedValue(new Response(null, { status: HttpStatus.NO_CONTENT }));
     expect(await api('/auth/logout', { method: 'POST' })).toBeUndefined();
   });
 
@@ -71,7 +75,7 @@ describe('api() (task 7.1)', () => {
     );
     expect(failure).toBeInstanceOf(ApiProblem);
     expect(failure).toMatchObject({
-      status: 401,
+      status: HttpStatus.UNAUTHORIZED,
       problem: { code: 'login_locked', until: '2026-10-05T09:34:00+06:30' },
       serverTime: Date.parse('2026-10-05T02:44:00Z'),
     });
@@ -109,9 +113,9 @@ describe('api() (task 7.1)', () => {
   });
 
   it('a body that is not a problem still gives a problem', async () => {
-    fetchMock.mockResolvedValue(new Response('<html>', { status: 502 }));
+    fetchMock.mockResolvedValue(new Response('<html>', { status: BAD_GATEWAY }));
     await expect(api('/me')).rejects.toMatchObject({
-      status: 502,
+      status: BAD_GATEWAY,
       problem: { code: 'internal_error' },
     });
   });
