@@ -1,4 +1,4 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { catalogueCode, type ListQuery, listQuerySchema } from '@point/shared';
 import { z } from 'zod';
 
@@ -32,6 +32,13 @@ export class FixturesController {
   @Public()
   list(@ZQuery(listQuerySchema) query: ListQuery): { limit: number } {
     return { limit: query.limit };
+  }
+
+  /** A path with an id: the request log carries the pattern, never the id (task 2.6). */
+  @Get('items/:id')
+  @Public()
+  one(@Param('id') id: string): { id: string } {
+    return { id };
   }
 
   @Get('boom')

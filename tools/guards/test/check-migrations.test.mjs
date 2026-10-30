@@ -3,11 +3,26 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { checkMigrations } from '../check-migrations.mjs';
 
-const git = (cwd, ...args) => execFileSync('git', args, { cwd, stdio: 'pipe' }).toString();
+// A git hook exports GIT_DIR, GIT_INDEX_FILE … for its own repository, and the pre-push hook runs these
+// tests. Inherited, those variables point the git commands below at that repository instead of the
+// temporary one: from a linked worktree (absolute GIT_DIR) the tests committed into the developer's
+// branch, replaced its index and set core.bare = true and user.* in its config (15/Oct/2026). So
+// every git command here runs without them, and so does the guard while this file runs.
+const withoutGitVars = () =>
+  Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')));
+const git = (cwd, ...args) =>
+  execFileSync('git', args, { cwd, stdio: 'pipe', env: withoutGitVars() }).toString();
+const hookVars = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => name.startsWith('GIT_')),
+);
+beforeAll(() => {
+  for (const name of Object.keys(hookVars)) delete process.env[name];
+});
+afterAll(() => Object.assign(process.env, hookVars));
 
 function write(cwd, name, sql) {
   const dir = join(cwd, 'db', 'migrations', name);
@@ -151,6 +166,33 @@ describe('check-migrations (CG-DB-02)', { timeout: 30_000 }, () => {
     expect(checkMigrations({ cwd, baseRef: 'main' })[0]).toMatch(
       /migration_lock\.toml: merged migration file modified/,
     );
+  });
+
+  it('leaves the repository of a calling git hook alone', () => {
+    // The hook's repository: one commit on main, as a pre-push hook would see it.
+    const outer = mkdtempSync(join(tmpdir(), 'mig-guard-hook-'));
+    git(outer, 'init', '-q', '-b', 'main');
+    git(outer, 'config', 'user.email', 'dev@point.test');
+    git(outer, 'config', 'user.name', 'dev');
+    writeFileSync(join(outer, 'README.md'), 'outer\n');
+    git(outer, 'add', '.');
+    git(outer, 'commit', '-q', '-m', 'chore(repo): outer');
+    const before = git(outer, 'rev-parse', 'HEAD');
+    // The test's own git calls run while the hook's GIT_DIR is set: they must stay in their temp repo.
+    let cwd;
+    process.env.GIT_DIR = join(outer, '.git');
+    try {
+      cwd = repo();
+      write(cwd, '20261002000000_add_x', 'CREATE TABLE b (id int);\n');
+      commit(cwd);
+    } finally {
+      delete process.env.GIT_DIR;
+    }
+    // The guard itself runs without it, so its answer is about the temp repo (PR #17 review).
+    expect(checkMigrations({ cwd, baseRef: 'main' })).toEqual([]);
+    expect(git(outer, 'rev-parse', 'HEAD')).toBe(before);
+    expect(git(outer, 'config', '--get', 'core.bare').trim()).toBe('false');
+    expect(git(outer, 'branch', '--list').trim()).toBe('* main');
   });
 
   // Review #4 — nothing compared must not read as ok.

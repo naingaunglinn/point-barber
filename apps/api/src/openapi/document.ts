@@ -1,4 +1,12 @@
-import { healthSchema, problemSchema, systemStatusSchema } from '@point/shared';
+import {
+  branchAssignmentSchema,
+  branchSummarySchema,
+  grantSchema,
+  healthSchema,
+  meResponseSchema,
+  problemSchema,
+  systemStatusSchema,
+} from '@point/shared';
 import { z } from 'zod';
 
 // The OpenAPI document, generated from the Zod schemas of packages/shared (API-ERR-03 · design D5).
@@ -9,7 +17,15 @@ import { z } from 'zod';
 type JsonSchema = Record<string, unknown>;
 
 const schema = (zodSchema: z.ZodType): JsonSchema => {
-  const { $schema: _dialect, ...rest } = z.toJSONSchema(zodSchema, { io: 'output' });
+  const { $schema: _dialect, ...rest } = z.toJSONSchema(zodSchema, {
+    io: 'output',
+    // Zod writes a number literal as `number`; the smallint codes are `integer` in Part 1 (D-DB-03).
+    override: ({ zodSchema: source, jsonSchema }) => {
+      const def = source._zod.def;
+      if (def.type === 'literal' && def.values.every((value) => Number.isInteger(value)))
+        jsonSchema.type = 'integer';
+    },
+  });
   return rest;
 };
 
@@ -61,7 +77,11 @@ export function buildOpenApiDocument(version: string): JsonSchema {
     },
     components: {
       schemas: {
+        BranchAssignment: schema(branchAssignmentSchema),
+        BranchSummary: schema(branchSummarySchema),
+        Grant: schema(grantSchema),
         Health: schema(healthSchema),
+        MeResponse: schema(meResponseSchema),
         Problem: schema(problemSchema),
         SystemStatus: schema(systemStatusSchema),
       },

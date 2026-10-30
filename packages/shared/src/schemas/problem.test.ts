@@ -39,6 +39,25 @@ describe('problemSchema', () => {
     expect(problemSchema.safeParse({ ...notFound, request_id: 'sale-42' }).success).toBe(false);
   });
 
+  // API-ERR-02: login_locked (`until`), session_revoked (`reason`), rate_limited (`retry_after`).
+  it.each([
+    { code: 'login_locked', status: 401, until: '2026-10-01T15:25:00+06:30' },
+    { code: 'session_revoked', status: 401, reason: 4 },
+    { code: 'rate_limited', status: 429, retry_after: 900 },
+  ])('accepts the extension member of $code', (member) => {
+    const body = { ...notFound, ...member };
+    expect(problemSchema.parse(body)).toEqual(body);
+  });
+
+  it.each([
+    ['until without an offset', { until: '2026-10-01T15:25:00' }],
+    ['a fractional retry_after', { retry_after: 1.5 }],
+    ['a zero retry_after', { retry_after: 0 }],
+    ['a text reason', { reason: 'logout' }],
+  ])('refuses %s', (_, member) => {
+    expect(problemSchema.safeParse({ ...notFound, ...member }).success).toBe(false);
+  });
+
   it('refuses a camelCase member', () => {
     expect(problemSchema.safeParse({ ...notFound, requestId: notFound.request_id }).success).toBe(
       false,

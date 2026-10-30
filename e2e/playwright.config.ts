@@ -11,6 +11,8 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   // The catalogue specs need the catalogue build, not the stack: dev-ui/playwright.config.ts.
   testIgnore: ['dev-ui/**'],
+  // The fixture people, reset before every run (global-setup.ts).
+  globalSetup: './global-setup.ts',
   forbidOnly: IS_CI,
   retries: 0,
   workers: 1,

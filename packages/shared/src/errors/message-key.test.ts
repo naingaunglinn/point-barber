@@ -17,9 +17,11 @@ describe('errorMessageKey', () => {
     expect(errorMessageKey('zz_unknown')).toBe('error.unknown');
   });
 
+  // Later changes add their own codes (add-foundation-auth-access: the sign-in and access codes),
+  // so this pins the codes of add-shared-ui-components and the scaffold, not the whole list.
   it("holds this change's API codes", () => {
-    expect(Object.values(ErrorCode).sort()).toEqual(
-      [
+    expect(Object.values(ErrorCode)).toEqual(
+      expect.arrayContaining([
         'amount_invalid',
         'file_too_large',
         'file_type_not_allowed',
@@ -29,7 +31,7 @@ describe('errorMessageKey', () => {
         'phone_invalid',
         'reason_required',
         'validation',
-      ].sort(),
+      ]),
     );
   });
 });

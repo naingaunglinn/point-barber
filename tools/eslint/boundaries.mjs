@@ -15,6 +15,21 @@ const PRISMA = [
   { regex: '(^|/)generated/prisma(/|$)', message: PRISMA_MESSAGE },
 ];
 
+// An SDK is imported only inside the one folder that wraps it (CG-ARCH-08 · guideline §24 row 22):
+// the rest of the API uses the wrapper's service.
+const SDKS = [
+  { name: 'pg-boss', folder: 'platform/jobs' },
+  { name: 'nodemailer', folder: 'platform/mail' },
+  { name: 'openid-client', folder: 'auth/google' },
+];
+
+/** The SDK patterns for a file; `allowed` = the one SDK its wrapper folder may import. */
+const sdkPatterns = (allowed) =>
+  SDKS.filter(({ name }) => name !== allowed).map(({ name, folder }) => ({
+    regex: `^${name}(/|$)`,
+    message: `${name} is imported only in ${MODULES}/${folder}/ — use its service there (CG-ARCH-08 · guideline §24 row 22).`,
+  }));
+
 /**
  * From a file `depth` folders below its module's root, `../` × (depth + 1) leaves the module; a path
  * that then names another module and goes further than its index is a reach-in.
@@ -39,10 +54,21 @@ const restrict = (patterns) => ({ 'no-restricted-imports': ['error', { patterns 
 const depthGlob = (depth) => `${MODULES}/*/${'*/'.repeat(depth)}*.ts`;
 
 const moduleConfigs = Array.from({ length: MAX_DEPTH + 1 }, (_, depth) => [
-  { files: [depthGlob(depth)], rules: restrict([reachIn(depth), ...PRISMA]) },
+  { files: [depthGlob(depth)], rules: restrict([reachIn(depth), ...PRISMA, ...sdkPatterns()]) },
   // A module's repositories/ folder may use the Prisma client; the boundary rule still applies.
-  { files: [[depthGlob(depth), '**/repositories/**']], rules: restrict([reachIn(depth)]) },
+  {
+    files: [[depthGlob(depth), '**/repositories/**']],
+    rules: restrict([reachIn(depth), ...sdkPatterns()]),
+  },
 ]).flat();
+
+// Each wrapper folder may import its own SDK; every other rule still applies.
+const wrapperConfigs = SDKS.flatMap(({ name, folder }) =>
+  Array.from({ length: MAX_DEPTH }, (_, level) => ({
+    files: [`${MODULES}/${folder}/${'*/'.repeat(level)}*.ts`],
+    rules: restrict([reachIn(level + 1), ...PRISMA, ...sdkPatterns(name)]),
+  })),
+);
 
 const WEB_MESSAGE =
   'The web app reaches data only through the HTTP API — never the Prisma client or apps/api (ADR-001 · ADR-009 · design D10).';
@@ -53,13 +79,14 @@ export default [
     // the Prisma client only in src/common/database/.
     files: ['apps/api/src/**/*.ts'],
     ignores: [`${MODULES}/**`, 'apps/api/src/common/database/**', 'apps/api/src/generated/**'],
-    rules: restrict([FROM_OUTSIDE, ...PRISMA]),
+    rules: restrict([FROM_OUTSIDE, ...PRISMA, ...sdkPatterns()]),
   },
   {
     files: ['apps/api/src/common/database/**/*.ts'],
-    rules: restrict([FROM_OUTSIDE]),
+    rules: restrict([FROM_OUTSIDE, ...sdkPatterns()]),
   },
   ...moduleConfigs,
+  ...wrapperConfigs,
   {
     files: [
       'apps/web/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',

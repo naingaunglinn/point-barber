@@ -1,4 +1,4 @@
-import { BranchStatus, type BranchSummary, type MeGrants } from '@point/shared';
+import { BranchStatus, type BranchView, type MeGrants } from '@point/shared';
 
 import { BRANCHES, PEOPLE, type BranchCode } from './fixtures';
 
@@ -29,7 +29,7 @@ const grantsOf = (
 ): MeGrants['grants'] => codes.map((code) => ({ code, scope_type: scope, branch_ids: branchIds }));
 
 /** A fixture branch as `/me` lists it; its id is its code, as in the grants above. */
-const summaryOf = (code: BranchCode): BranchSummary => {
+const summaryOf = (code: BranchCode): BranchView => {
   const branch = BRANCHES.find((item) => item.code === code);
   if (branch === undefined) throw new Error(`unknown fixture branch ${code}`);
   return {

@@ -8,6 +8,15 @@ export const fieldErrorSchema = z.strictObject({
   params: z.record(z.string(), z.unknown()).optional(),
 });
 
+// Top-level extension members of the codes that carry one (API-ERR-02 · Part 0 §401 / §429):
+// `until` — login_locked (P1-RULE-03) · `reason` — session_revoked, the revoke_reason code
+// (P1-RULE-04) · `retry_after` — rate_limited, whole seconds, also sent as Retry-After (API-LIM-02).
+export const problemExtensionsSchema = z.strictObject({
+  until: z.iso.datetime({ offset: true }).optional(),
+  reason: z.number().int().optional(),
+  retry_after: z.number().int().positive().optional(),
+});
+
 export const problemSchema = z.strictObject({
   type: z.url().optional(),
   title: z.string(),
@@ -16,8 +25,10 @@ export const problemSchema = z.strictObject({
   detail: z.string().optional(),
   errors: z.array(fieldErrorSchema).optional(),
   context: z.record(z.string(), z.unknown()).optional(),
+  ...problemExtensionsSchema.shape,
   request_id: z.uuid(),
 });
 
 export type FieldError = z.infer<typeof fieldErrorSchema>;
+export type ProblemExtensions = z.infer<typeof problemExtensionsSchema>;
 export type Problem = z.infer<typeof problemSchema>;

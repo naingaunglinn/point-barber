@@ -1,1 +1,191 @@
-[]
+[
+  {
+    "code": "company.view",
+    "module": "company",
+    "action": "view",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.company.view",
+    "description": "company · view — Settings › Company menu"
+  },
+  {
+    "code": "company.update",
+    "module": "company",
+    "action": "update",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.company.update",
+    "description": "company · update — P1.CO.02"
+  },
+  {
+    "code": "branch.view",
+    "module": "branch",
+    "action": "view",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.branch.view",
+    "description": "branch · view — Settings › Branches menu"
+  },
+  {
+    "code": "branch.create",
+    "module": "branch",
+    "action": "create",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.branch.create",
+    "description": "branch · create — P1.BR.02"
+  },
+  {
+    "code": "branch.update",
+    "module": "branch",
+    "action": "update",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.branch.update",
+    "description": "branch · update — P1.BR.04"
+  },
+  {
+    "code": "branch.delete",
+    "module": "branch",
+    "action": "delete",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.branch.delete",
+    "description": "branch · delete (deactivate / re-activate) — P1.BR.05"
+  },
+  {
+    "code": "employee.view",
+    "module": "employee",
+    "action": "view",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.employee.view",
+    "description": "employee · view — P1.EMP.01/03/06/10, P1.RL.01, P1.PERM.01"
+  },
+  {
+    "code": "employee.create",
+    "module": "employee",
+    "action": "create",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.employee.create",
+    "description": "employee · create — P1.EMP.02"
+  },
+  {
+    "code": "employee.update",
+    "module": "employee",
+    "action": "update",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.employee.update",
+    "description": "employee · update (profile + website fields) — P1.EMP.04 profile group"
+  },
+  {
+    "code": "employee.delete",
+    "module": "employee",
+    "action": "delete",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.employee.delete",
+    "description": "employee · delete (Inactive / Resigned / Terminated / re-activate — record kept) — P1.EMP.05"
+  },
+  {
+    "code": "employee.rating_update",
+    "module": "employee",
+    "action": "rating_update",
+    "kind": "special",
+    "level": "branch",
+    "label_key": "permission.employee.rating_update",
+    "description": "employee · rating_update (field group) — P1.EMP.04 public_rating, P1.EMP.12"
+  },
+  {
+    "code": "employee.earnings_update",
+    "module": "employee",
+    "action": "earnings_update",
+    "kind": "special",
+    "level": "branch",
+    "label_key": "permission.employee.earnings_update",
+    "description": "employee · earnings_update (field group) — P1.EMP.04 show_own_earnings"
+  },
+  {
+    "code": "employee.access_update",
+    "module": "employee",
+    "action": "access_update",
+    "kind": "special",
+    "level": "branch",
+    "label_key": "permission.employee.access_update",
+    "description": "employee · access_update (devices, log out all, invite resend / cancel) — P1.EMP.13/14/15/16"
+  },
+  {
+    "code": "employee.branch_assign",
+    "module": "employee",
+    "action": "branch_assign",
+    "kind": "special",
+    "level": "branch",
+    "label_key": "permission.employee.branch_assign",
+    "description": "employee · branch_assign — P1.EMP.07/08"
+  },
+  {
+    "code": "role.view",
+    "module": "role",
+    "action": "view",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.role.view",
+    "description": "role · view — P1.RL.01/03, P1.PERM.01"
+  },
+  {
+    "code": "role.create",
+    "module": "role",
+    "action": "create",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.role.create",
+    "description": "role · create — P1.RL.02"
+  },
+  {
+    "code": "role.update",
+    "module": "role",
+    "action": "update",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.role.update",
+    "description": "role · update (name, description, permission set) — P1.RL.04/05"
+  },
+  {
+    "code": "role.delete",
+    "module": "role",
+    "action": "delete",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.role.delete",
+    "description": "role · delete (archive) — P1.RL.06"
+  },
+  {
+    "code": "role.assign",
+    "module": "role",
+    "action": "assign",
+    "kind": "special",
+    "level": "branch",
+    "label_key": "permission.role.assign",
+    "description": "role · assign — P1.EMP.11/11b"
+  },
+  {
+    "code": "settings.view",
+    "module": "settings",
+    "action": "view",
+    "kind": "crud",
+    "level": "mixed",
+    "label_key": "permission.settings.view",
+    "description": "settings · view (company values read-only at branch scope; branch values for covered branches) — P1.SET.01/05, P1.SYS.05"
+  },
+  {
+    "code": "settings.update",
+    "module": "settings",
+    "action": "update",
+    "kind": "crud",
+    "level": "mixed",
+    "label_key": "permission.settings.update",
+    "description": "settings · update (incl. reset, maintenance mode; company values + maintenance = company scope, branch overrides = branch in scope) — P1.SET.03/04, P1.SYS.03"
+  }
+]

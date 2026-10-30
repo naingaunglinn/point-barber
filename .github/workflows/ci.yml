@@ -180,8 +180,36 @@ jobs:
   integration:
     name: integration
     runs-on: ubuntu-24.04
-    services: *postgres-service
-    env: *postgres-env
+    # PostgreSQL as in job `db`, plus Mailpit: the mail tests deliver over SMTP and read the message
+    # back through Mailpit's API (add-foundation-auth-access task 2.10 · ADR-007).
+    services:
+      postgres:
+        image: postgres:16.15-bookworm
+        env:
+          POSTGRES_USER: point
+          POSTGRES_PASSWORD: point_ci
+          POSTGRES_DB: point
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U point"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.31.4
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGPASSWORD: point_ci
+      POSTGRES_USER: point
+      POSTGRES_DB: point
+      POINT_APP_DB_PASSWORD: app_ci
+      SMTP_HOST: localhost
+      MAIL_TRANSPORT: mailpit
     steps:
       - uses: actions/checkout@v7
 
@@ -231,12 +259,16 @@ jobs:
             fi
           done
 
-      - name: The api image holds no test file and no environment file (D13)
+      # And no development fixture (D-PLT-11 · add-foundation-auth-access design D16).
+      - name: The api image holds no test file, no fixture and no environment file (D13)
         run: |
           set -euo pipefail
           found=$(docker run --rm --entrypoint sh "point-api:$APP_VERSION" -c \
-            'find / -xdev \( -path "/app/test*" -o -name ".env" -o -name ".env.*" -o -name "*.int.test.*" \) -print 2>/dev/null' || true)
+            'find / -xdev \( -path "/app/test*" -o -path "/app/db/seed*" -o -name ".env" -o -name ".env.*" -o -name "*.int.test.*" \) -print 2>/dev/null' || true)
           if [ -n "$found" ]; then echo "::error::unexpected files in the api image:"; echo "$found"; exit 1; fi
+
+      - name: The api image carries the first-admin command (P1-RULE-14 · add-foundation-auth-access D10)
+        run: docker run --rm --entrypoint test "point-api:$APP_VERSION" -f /app/dist/cli/admin-create.js
 
   e2e:
     name: e2e
@@ -249,12 +281,15 @@ jobs:
       - name: Hosts-file lines for the local origins (D12)
         run: echo "127.0.0.1 point.test app.point.test postgres" | sudo tee -a /etc/hosts
 
-      - name: .env from .env.example, with generated internal keys
+      - name: .env from .env.example, with generated internal keys and sign-in secrets
         run: |
           set -euo pipefail
           cp .env.example .env
           sed -i "s|^INTERNAL_SSR_KEY=.*|INTERNAL_SSR_KEY=$(openssl rand -hex 32)|" .env
           sed -i "s|^INTERNAL_OPS_KEY=.*|INTERNAL_OPS_KEY=$(openssl rand -hex 32)|" .env
+          sed -i "s|^OTP_HMAC_SECRET=.*|OTP_HMAC_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^AUDIT_HASH_SECRET=.*|AUDIT_HASH_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^MAIL_PAYLOAD_KEY=.*|MAIL_PAYLOAD_KEY=$(openssl rand -base64 32)|" .env
           sed -i "s|^APP_VERSION=.*|APP_VERSION=${GITHUB_SHA::12}|" .env
 
       - name: Build its own images (independent of job images — D15)

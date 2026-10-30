@@ -1,8 +1,10 @@
-import type { Grant, MeGrants } from './grants.js';
+import { ScopeType } from '../constants/status.js';
+import type { GrantView, MeGrants } from './grants.js';
+import type { PermissionLevel } from './schema.js';
 
 // can() mirrors what the API decides, by the data level of each permission code (AD-PERM-03 ·
 // ADR-012 · design D7). It only shapes the UI: the API checks again on every request.
-export type Level = 'company' | 'branch' | 'mixed' | 'shared' | 'private';
+export type Level = PermissionLevel;
 
 /** Options each level accepts — the type refuses a check the level does not have. */
 export type CanOptions<L extends Level> = L extends 'branch'
@@ -19,10 +21,8 @@ export interface Can<C extends PermissionCatalogue> {
   (code: 'earnings.view_own'): boolean;
 }
 
-const COMPANY = 1;
-
-function reaches(grant: Grant, branchId: string): boolean {
-  return grant.scope_type === COMPANY || grant.branch_ids.includes(branchId);
+function reaches(grant: GrantView, branchId: string): boolean {
+  return grant.scope_type === ScopeType.COMPANY || grant.branch_ids.includes(branchId);
 }
 
 /**
@@ -36,7 +36,7 @@ export function createCan<const C extends PermissionCatalogue>(catalogue: C) {
       const level = catalogue[code]?.level;
       if (level === undefined) return false;
       const grants = me.grants.filter((grant) => grant.code === code);
-      const company = grants.some((grant) => grant.scope_type === COMPANY);
+      const company = grants.some((grant) => grant.scope_type === ScopeType.COMPANY);
       switch (level) {
         case 'shared':
           return grants.length > 0;

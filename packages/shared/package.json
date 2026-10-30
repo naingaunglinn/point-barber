@@ -12,10 +12,16 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./testing": {
+      "source": "./src/testing/fixture-ids.ts",
+      "types": "./dist/testing/fixture-ids.d.ts",
+      "default": "./dist/testing/fixture-ids.js"
+    },
     "./definitions/*.json": "./definitions/*.json"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "permissions:generate": "node scripts/generate-permissions.mjs",
     "typecheck": "tsc --noEmit",
     "test:zones": "node ../../tools/test-zones.mjs packages/shared/src/time packages/shared/src/format"
   },
