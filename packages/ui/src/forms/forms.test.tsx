@@ -243,6 +243,29 @@ describe('form binding', () => {
   });
 });
 
+describe('TextInput for a code typed as digits', () => {
+  it('shows the digits in the numeric font only on the numeric keyboard', () => {
+    renderIntl(
+      <>
+        <TextInput
+          value="1234 5678"
+          onChange={() => undefined}
+          inputMode="numeric"
+          data-testid="code"
+        />
+        <TextInput
+          value="aung@point.test"
+          onChange={() => undefined}
+          type="email"
+          data-testid="email"
+        />
+      </>,
+    );
+    expect(screen.getByTestId('code').className).toContain('font-numeric');
+    expect(screen.getByTestId('email').className).not.toContain('font-numeric');
+  });
+});
+
 describe('form binding of a TextInput (useTextField)', () => {
   it('validates on blur: an empty required field shows error.required', async () => {
     renderIntl(<TextDemo />);

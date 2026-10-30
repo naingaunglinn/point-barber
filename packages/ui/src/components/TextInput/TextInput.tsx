@@ -13,7 +13,8 @@ import { Textarea } from '../../primitives/textarea';
 // the user leaves it, Zawgyi-encoded Myanmar text is converted to Unicode, the field shows the
 // converted text and a notice (`common.zawgyi.converted`) asks the user to check it. Unicode text is
 // left as it is. 16 px text, a 48 / 40 px single line. A single line may also hold an e-mail address
-// or a code typed as digits (the sign-in screen): its keyboard and autofill hint come from the caller.
+// or a code typed as digits (the sign-in screen): its keyboard and autofill hint come from the caller,
+// and digits typed on the numeric keyboard are shown in the numeric font.
 
 export interface TextInputProps {
   readonly value: string;
@@ -50,6 +51,7 @@ export function TextInput({
   onChange,
   multiline = false,
   onBlur,
+  inputMode,
   type = 'text',
   ref,
   'aria-describedby': describedBy,
@@ -63,6 +65,7 @@ export function TextInput({
 
   const shared = {
     ...control,
+    inputMode,
     value,
     'aria-describedby': described,
     onChange: (event: { target: { value: string } }) => {
@@ -84,7 +87,12 @@ export function TextInput({
       {multiline ? (
         <Textarea {...shared} className="min-h-24 text-base" />
       ) : (
-        <Input {...shared} ref={ref} type={type} className={cn('h-12 text-base md:h-10')} />
+        <Input
+          {...shared}
+          ref={ref}
+          type={type}
+          className={cn('h-12 text-base md:h-10', inputMode === 'numeric' && 'font-numeric')}
+        />
       )}
       {converted ? (
         <p id={noticeId} data-slot="zawgyi-notice" className="text-sm text-muted-foreground">
