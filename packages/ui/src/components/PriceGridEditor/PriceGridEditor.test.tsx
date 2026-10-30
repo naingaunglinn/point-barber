@@ -114,7 +114,8 @@ describe('PriceGridEditor', () => {
       shopCells: [shop],
       defaultDurationMinutes: 30,
     });
-    const home = screen.getByRole('textbox', { name: 'Shop' }) as HTMLInputElement;
+    // A grid without option groups names its one price field by the tab: Home here.
+    const home = screen.getByRole('textbox', { name: 'Home' }) as HTMLInputElement;
     expect(home.value).toBe('');
     expect(home.getAttribute('placeholder')).toBe('Uses shop price · 7,000 Ks');
     expect(home.getAttribute('title')).toBeNull();
