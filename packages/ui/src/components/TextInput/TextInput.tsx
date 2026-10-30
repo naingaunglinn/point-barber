@@ -2,7 +2,7 @@
 
 import { cn } from 'cn';
 import { useTranslations } from 'next-intl';
-import { useId, useState, type Ref } from 'react';
+import { useId, useState, type FocusEvent, type Ref } from 'react';
 
 import { normalizeMyanmarText } from '@point/shared';
 
@@ -28,7 +28,8 @@ export interface TextInputProps {
   readonly readOnly?: boolean;
   readonly id?: string;
   readonly name?: string;
-  readonly onBlur?: () => void;
+  /** After the Zawgyi conversion; useTextField reads where the focus goes from the event. */
+  readonly onBlur?: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   readonly 'aria-label'?: string;
   /** Labels the field by a visible element elsewhere (a heading) instead of `aria-label`. */
   readonly 'aria-labelledby'?: string;
@@ -72,13 +73,13 @@ export function TextInput({
       setConverted(false);
       onChange(event.target.value);
     },
-    onBlur: () => {
+    onBlur: (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const result = normalizeMyanmarText(value);
       if (result.converted) {
         onChange(result.text);
         setConverted(true);
       }
-      onBlur?.();
+      onBlur?.(event);
     },
   };
 

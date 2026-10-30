@@ -107,6 +107,32 @@ async function flush() {
   });
 }
 
+/**
+ * Workbook No 64: pressing Save right after typing moves the focus from Phone to Save first. That blur
+ * shows no message (it would push Save down before the release); the press then submits and shows both.
+ */
+async function pressSaveAfterTyping() {
+  const save = screen.getByRole('button', { name: LABELS.save });
+  fireEvent.change(field('phone'), { target: { value: '0977' } });
+  fireEvent.blur(field('phone'), { relatedTarget: save });
+  await flush();
+  expect(field('phone').hasAttribute('aria-invalid')).toBe(false);
+  expect(field('phone').getAttribute('aria-describedby')).toBeNull();
+  fireEvent.click(save);
+  await flush();
+  expect(messageOf(field('name'))).toBe('This field is required.');
+  expect(messageOf(field('phone'))).toBe('Enter a valid phone number.');
+  expect(document.activeElement).toBe(field('name'));
+}
+
+/** Any other blur is validated: the focus moves from Phone to Name. */
+async function leavePhoneForName() {
+  fireEvent.change(field('phone'), { target: { value: '0977' } });
+  fireEvent.blur(field('phone'), { relatedTarget: field('name') });
+  await flush();
+  expect(messageOf(field('phone'))).toBe('Enter a valid phone number.');
+}
+
 describe('form binding', () => {
   it('validates on blur: an empty required field shows error.required', async () => {
     renderIntl(<Demo />);
@@ -146,6 +172,16 @@ describe('form binding', () => {
     expect(messageOf(field('phone'))).toBe('Enter a valid phone number.');
     expect(document.activeElement).toBe(field('name'));
     expect(save).toHaveProperty('disabled', false);
+  });
+
+  it('Scenario: Submit with two invalid fields — the first press on Save right after typing submits', async () => {
+    renderIntl(<Demo />);
+    await pressSaveAfterTyping();
+  });
+
+  it('validates a blur that moves the focus to another field', async () => {
+    renderIntl(<Demo />);
+    await leavePhoneForName();
   });
 
   it('Scenario: Server error on a field and without a field — under Phone, then an inline alert, no toast', async () => {
@@ -302,5 +338,15 @@ describe('form binding of a TextInput (useTextField)', () => {
     expect(messageOf(field('name'))).toBe('This field is required.');
     expect(messageOf(field('phone'))).toBe('Enter a valid phone number.');
     expect(document.activeElement).toBe(field('name'));
+  });
+
+  it('Scenario: Submit with two invalid fields — the first press on Save right after typing submits', async () => {
+    renderIntl(<TextDemo />);
+    await pressSaveAfterTyping();
+  });
+
+  it('validates a blur that moves the focus to another field', async () => {
+    renderIntl(<TextDemo />);
+    await leavePhoneForName();
   });
 });

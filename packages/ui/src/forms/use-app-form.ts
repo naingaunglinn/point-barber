@@ -84,16 +84,49 @@ export function useAppForm<Input extends FieldValues, Output>(
   });
 }
 
-/** `register()` for a control in a `FormField`: re-validated on every change once it shows an error. */
+/** The part of a blur event the form binding reads. */
+interface FieldBlur {
+  readonly type: string;
+  readonly target: EventTarget;
+  readonly relatedTarget: EventTarget | null;
+}
+
+/**
+ * Whether a blur moves the focus to a submit button of the field's own form. That blur is not
+ * validated: the submit validates every field, and a message shown on the press would push the button
+ * down before the release, so the first press would not submit (workbook No 64).
+ */
+function movesToSubmit({ target, relatedTarget }: FieldBlur): boolean {
+  const form =
+    target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+      ? target.form
+      : null;
+  return (
+    form !== null &&
+    (relatedTarget instanceof HTMLButtonElement || relatedTarget instanceof HTMLInputElement) &&
+    relatedTarget.type === 'submit' &&
+    relatedTarget.form === form
+  );
+}
+
+/**
+ * `register()` for a control in a `FormField`: re-validated on every change once it shows an error; a
+ * blur to the form's submit button is left to the submit (`movesToSubmit`).
+ */
 export function registerField<Input extends FieldValues, Output>(
   form: UseFormReturn<Input, unknown, Output>,
   name: Path<Input>,
 ) {
-  return form.register(name, {
+  const registered = form.register(name, {
     onChange: () => {
       if (form.getFieldState(name).error) void form.trigger(name);
     },
   });
+  return {
+    ...registered,
+    onBlur: (event: FieldBlur) =>
+      movesToSubmit(event) ? Promise.resolve() : registered.onBlur(event),
+  };
 }
 
 /**
@@ -120,7 +153,9 @@ export function useTextField<Input extends FieldValues, Output>(
     ref: field.ref,
     value: typeof value === 'string' ? value : '',
     onChange: (next: string) => field.onChange(next),
-    onBlur: field.onBlur,
+    onBlur: (event: FieldBlur) => {
+      if (!movesToSubmit(event)) field.onBlur();
+    },
   };
 }
 
