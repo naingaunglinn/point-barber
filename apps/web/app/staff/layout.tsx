@@ -3,8 +3,6 @@ import type { ReactNode } from 'react';
 
 import { LOCALE_COOKIE, loadMessages, resolveLocale } from '@point/i18n';
 
-import { getEnv } from '../../env';
-import { reportingOf } from '../../lib/observability/options';
 import { RootLayout } from '../root-layout';
 import { StaffProviders } from './providers';
 
@@ -15,7 +13,7 @@ import { StaffProviders } from './providers';
 export default async function StaffLayout({ children }: Readonly<{ children: ReactNode }>) {
   const locale = resolveLocale({ cookie: (await cookies()).get(LOCALE_COOKIE)?.value });
   return (
-    <RootLayout tree="staff" locale={locale} reporting={reportingOf(getEnv())}>
+    <RootLayout tree="staff" locale={locale}>
       <StaffProviders locale={locale} messages={loadMessages(locale)}>
         {children}
       </StaffProviders>

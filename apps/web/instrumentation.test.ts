@@ -11,7 +11,11 @@ const sdk = vi.hoisted(() => ({
 }));
 vi.mock('@sentry/nextjs', () => sdk);
 
-const request = { path: '/?branch=B3', method: 'GET', headers: {} };
+const request = {
+  path: '/?branch=B3&code=48213907',
+  method: 'GET',
+  headers: { cookie: 'point_session=t', referer: 'https://app.point.test/?code=1' },
+};
 const context = {
   routerKind: 'App Router',
   routePath: '/staff',
@@ -59,7 +63,12 @@ describe('instrumentation.ts (task 4.2)', () => {
       defaultIntegrations: false,
       maxBreadcrumbs: 0,
     });
-    expect(sdk.captureRequestError).toHaveBeenCalledWith(error, request, context);
+    // The query string and the headers never reach the SDK.
+    expect(sdk.captureRequestError).toHaveBeenCalledWith(
+      error,
+      { path: '/', method: 'GET', headers: {} },
+      context,
+    );
   });
 
   it('does not stop the server when the environment is incomplete', async () => {

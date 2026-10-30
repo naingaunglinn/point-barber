@@ -47,9 +47,9 @@ describe('the root layouts set <html lang>', () => {
     expect(layout.props.locale).toBe('my');
   });
 
-  it('the site tree stays on the default language until the website change adds [locale]', async () => {
+  it('the site tree stays on the default language until the website change adds [locale]', () => {
     cookie.value = 'en';
-    const layout = (await SiteLayout({ children: null })) as ReactElement<{ locale: string }>;
+    const layout = SiteLayout({ children: null }) as ReactElement<{ locale: string }>;
     expect(layout.props.locale).toBe('my');
   });
 
@@ -65,47 +65,44 @@ describe('the root layouts set <html lang>', () => {
   });
 });
 
-// add-staging-deploy task 4.1 — <ErrorReporting> is mounted only when SENTRY_DSN_WEB is set; the
-// values are read by env.ts when the server starts (design D10). env.ts reads once, so a second
-// value needs fresh modules.
-describe('the root layouts mount error reporting only with a DSN', () => {
-  type Reporting = { reporting?: { dsn: string; environment: string; release: string } };
-  type Body = ReactElement<{ children: [unknown, ReactElement | null] }>;
+// add-staging-deploy task 4.1 — error reporting is mounted only when SENTRY_DSN_WEB is set, with the
+// values of the running environment, inside its own Suspense boundary so the layouts stay static
+// (design D10 · ADR-006). env.ts reads once, so a second value needs fresh modules.
+describe('the root layouts mount error reporting in a Suspense boundary', () => {
+  type Body = ReactElement<{ children: [unknown, ReactElement] }>;
 
-  it('passes no reporting values without SENTRY_DSN_WEB, and RootLayout renders none', async () => {
-    const staff = (await StaffLayout({ children: null })) as ReactElement<Reporting>;
-    const site = (await SiteLayout({ children: null })) as ReactElement<Reporting>;
-    expect(staff.props.reporting).toBeUndefined();
-    expect(site.props.reporting).toBeUndefined();
-    const html = RootLayout({ tree: 'staff', locale: 'my', children: null }) as ReactElement<{
-      children: [unknown, Body];
-    }>;
-    expect(html.props.children[1].props.children[1]).toBeNull();
+  it('the site layout reads nothing of the request: a plain function, no connection()', () => {
+    const layout = SiteLayout({ children: null }) as ReactElement<{ locale: string }>;
+    expect(layout).not.toBeInstanceOf(Promise);
+    expect(layout.props.locale).toBe('my');
   });
 
-  it('passes the DSN, environment and release to both trees when SENTRY_DSN_WEB is set', async () => {
+  it('RootLayout puts <RuntimeReporting> after the page, in both trees', () => {
+    for (const tree of ['staff', 'site'] as const) {
+      const html = RootLayout({ tree, locale: 'my', children: null }) as ReactElement<{
+        children: [unknown, Body];
+      }>;
+      expect((html.props.children[1].props.children[1].type as { name: string }).name).toBe(
+        'RuntimeReporting',
+      );
+    }
+  });
+
+  it('renders nothing without SENTRY_DSN_WEB', async () => {
+    const { RuntimeReportingValues } = await import('../lib/observability/runtime-reporting');
+    expect(await RuntimeReportingValues()).toBeNull();
+  });
+
+  it('passes the DSN, environment and release of the running environment when it is set', async () => {
     vi.resetModules();
     vi.stubEnv('SENTRY_DSN_WEB', 'https://public@o0.ingest.sentry.io/2');
     vi.stubEnv('APP_VERSION', 'v0.1.0');
-    const fresh = {
-      staff: (await import('./staff/layout')).default,
-      site: (await import('./site/layout')).default,
-    };
-    const expected = {
+    const { RuntimeReportingValues } = await import('../lib/observability/runtime-reporting');
+    const element = (await RuntimeReportingValues()) as ReactElement<Record<string, string>>;
+    expect(element.props).toStrictEqual({
       dsn: 'https://public@o0.ingest.sentry.io/2',
       environment: 'test',
       release: 'v0.1.0',
-    };
-    const staff = (await fresh.staff({ children: null })) as ReactElement<Reporting>;
-    const site = (await fresh.site({ children: null })) as ReactElement<Reporting>;
-    expect(staff.props.reporting).toStrictEqual(expected);
-    expect(site.props.reporting).toStrictEqual(expected);
-    const html = RootLayout({
-      tree: 'staff',
-      locale: 'my',
-      reporting: expected,
-      children: null,
-    }) as ReactElement<{ children: [unknown, Body] }>;
-    expect(html.props.children[1].props.children[1]?.props).toStrictEqual(expected);
+    });
   });
 });

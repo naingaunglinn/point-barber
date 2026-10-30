@@ -20,6 +20,15 @@ vi.mock('@sentry/nextjs', () => sdk);
 const { ErrorReporting } = await import('./error-reporting');
 const { initOptions, reportingOf } = await import('./options');
 const { reportCaught } = await import('./browser');
+const { ApiProblem } = await import('../api/client');
+
+const problem = (status: number) => ({
+  type: 'about:blank',
+  title: 'x',
+  status,
+  code: 'rate_limited',
+  request_id: '0192f0c4-0000-7000-8000-000000000000',
+});
 
 const OPTIONS = {
   dsn: 'https://public@o0.ingest.sentry.io/2',
@@ -59,8 +68,26 @@ describe('the web beforeSend (task 4.1)', () => {
         data: { email: 'aung@point.test' },
       },
     });
-    expect(event.request).toStrictEqual({ url: 'https://app.point.test/', method: 'POST' });
-    expect(event.message).toBe('failed for [redacted]');
+    expect(event?.request).toStrictEqual({ url: 'https://app.point.test/', method: 'POST' });
+    expect(event?.message).toBe('failed for [redacted]');
+  });
+
+  // platform-runtime spec: no event for an answer from 400 to 429 — e.g. `void api('/me', PATCH)` of
+  // the language switch answering 429 over the session cap, which no code catches.
+  it.each([400, 401, 403, 404, 409, 422, 429])('drops an API refusal %d', (status) => {
+    const error = new ApiProblem(status, problem(status), undefined);
+    expect(beforeSend({ message: 'x' }, { originalException: error })).toBeNull();
+  });
+
+  it.each([500, 503])('keeps an API failure %d, and any other error', (status) => {
+    const error = new ApiProblem(status, problem(status), undefined);
+    expect(beforeSend({ message: 'x' }, { originalException: error })).toMatchObject({
+      message: 'x',
+    });
+    expect(
+      beforeSend({ message: 'y' }, { originalException: new Error('render failed') }),
+    ).toMatchObject({ message: 'y' });
+    expect(beforeSend({ message: 'z' })).toMatchObject({ message: 'z' });
   });
 
   it('sends no breadcrumb and starts no integration of its own', () => {
