@@ -8,11 +8,17 @@ import { Audit, CodeTables, PlatformModule } from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CurrentCompany } from './company/current-company.js';
+import { Assignments } from './directory/assignments.js';
+import { BranchCodes } from './directory/branch-codes.js';
+import { DisplayNames } from './directory/display-names.js';
 import { PeopleDirectory } from './directory/people-directory.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { AccessRepository } from './repositories/access.repository.js';
+import { AssignmentsRepository } from './repositories/assignments.repository.js';
+import { BranchCodesRepository } from './repositories/branch-codes.repository.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
+import { DisplayNameRepository } from './repositories/display-name.repository.js';
 import { EmployeeRepository } from './repositories/employee.repository.js';
 import { PeopleRepository } from './repositories/people.repository.js';
 import { RoleRepository } from './repositories/role.repository.js';
@@ -32,13 +38,19 @@ import { BaseSeed } from './seed/base-seed.js';
   providers: [
     PeopleRepository,
     AccessRepository,
+    AssignmentsRepository,
+    BranchCodesRepository,
     PeopleGrantSource,
     { provide: GrantSource, useExisting: PeopleGrantSource },
     CatalogueRepository,
     CompanyRepository,
+    DisplayNameRepository,
     EmployeeRepository,
     RoleRepository,
     PeopleDirectory,
+    DisplayNames,
+    Assignments,
+    BranchCodes,
     CurrentCompany,
     CompanyAdmin,
     PermissionCatalogue,
@@ -49,6 +61,9 @@ import { BaseSeed } from './seed/base-seed.js';
   exports: [
     GrantSource,
     PeopleDirectory,
+    DisplayNames,
+    Assignments,
+    BranchCodes,
     CurrentCompany,
     CompanyAdmin,
     PermissionCatalogue,

@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { type MeResponse, todayMmt } from '@point/shared';
+import { type MeResponse, toMmtIso, todayMmt } from '@point/shared';
 
 import { GrantSet, GrantSource } from '../../../common/access/grant-set.js';
 import { Clock } from '../../../common/clock/clock.js';
 import { TransactionRunner } from '../../../common/database/transaction-runner.js';
-import { toMmtIso } from '../../../common/http/mmt-iso.js';
 import { RequestContext } from '../../../common/http/request-context.js';
 import { PeopleDirectory } from '../../people/index.js';
 import {
