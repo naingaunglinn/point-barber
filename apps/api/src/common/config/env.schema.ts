@@ -62,6 +62,13 @@ export const apiEnvSchema = z
     JOBS_IN_API: flag(true),
     // add-staging-deploy — design D9 / D13: error reporting only when set.
     SENTRY_DSN_API: z.url({ protocol: /^https?$/ }).optional(),
+    // add-walkin-visit-checkout — the bucket of generated documents (ADR-014 · design D10): any
+    // S3-compatible endpoint (R2 / B2 in production, MinIO in development and CI).
+    S3_ENDPOINT: z.url({ protocol: /^https?$/ }),
+    S3_REGION: z.string().min(1),
+    S3_BUCKET_APP: z.string().min(3),
+    S3_ACCESS_KEY_ID: z.string().min(1),
+    S3_SECRET_ACCESS_KEY: z.string().min(1),
   })
   .refine((env) => env.INTERNAL_SSR_KEY !== env.INTERNAL_OPS_KEY, {
     message: 'INTERNAL_SSR_KEY and INTERNAL_OPS_KEY must be different',

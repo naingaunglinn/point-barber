@@ -10,7 +10,11 @@ import type { Request, Response } from 'express';
 import type { Logger } from 'pino';
 
 import { AppConfig } from '../config/config.js';
-import { isClientRequestIdConflict } from '../database/errors.js';
+import {
+  isClientRequestIdConflict,
+  isFinishedImmutable,
+  isPaymentReferenceConflict,
+} from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
 import { ErrorReporter, isReported } from '../observability/error-reporter.js';
 import { ProblemException } from './problem.exception.js';
@@ -43,6 +47,14 @@ function toProblem(error: unknown): ProblemException | null {
   // add-foundation-auth-access D14); its transaction is aborted and the retry replays.
   if (isClientRequestIdConflict(error))
     return new ProblemException(ErrorCode.IDEMPOTENCY_IN_PROGRESS, 409);
+  // The reference index behind the reference lock (add-walkin-visit-checkout design D9): the other
+  // payment's sale is still OPEN when this is reached, so no receipt number is known.
+  if (isPaymentReferenceConflict(error))
+    return new ProblemException(ErrorCode.DUPLICATE_REFERENCE, 409, {
+      context: { receipt_number: null },
+    });
+  // The second wall (add-walkin-visit-checkout design D9): a finished record reached its guard trigger.
+  if (isFinishedImmutable(error)) return new ProblemException(ErrorCode.LOCKED, 423);
   // The JSON body could not be read: unparseable or above the 1 MB limit (design D7, reading 5).
   if (isBodyParserError(error))
     return new ProblemException(ErrorCode.VALIDATION, 400, { errors: [] });
@@ -73,6 +85,12 @@ export class ProblemFilter implements ExceptionFilter {
     const requestId =
       RequestContext.current()?.request_id ?? String(res.getHeader('X-Request-Id') ?? '');
 
+    // No endpoint should reach the guard triggers — the state checks come first (design D9).
+    if (isFinishedImmutable(error))
+      this.log.error(
+        { request_id: requestId, err: error },
+        'finished record reached its guard trigger',
+      );
     let problem = toProblem(error);
     if (problem === null) {
       // Logged with its stack; the client gets only the request id and no detail (D7 · API-ERR-02).

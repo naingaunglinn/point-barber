@@ -9,7 +9,7 @@ import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/bootstrap.js';
 import { Clock } from '../../src/common/clock/clock.js';
 import { AppConfig, loadAppConfig } from '../../src/common/config/config.js';
-import { DatabaseProbe } from '../../src/common/database/prisma.service.js';
+import { DatabaseProbe, PrismaService } from '../../src/common/database/prisma.service.js';
 import { LOGGER, createLogger } from '../../src/common/logging/logger.js';
 import { PlatformModule } from '../../src/modules/platform/index.js';
 import {
@@ -72,6 +72,8 @@ export interface TestApp {
 
 export interface TestAppOptions {
   readonly now?: Date;
+  /** A clock the test made before the application (a month boundary, a visit across midnight). */
+  readonly clock?: FixedClock;
   readonly probe?: DatabaseProbe;
   /** Another database than DATABASE_URL — a fresh copy (helpers/databases.ts). */
   readonly databaseUrl?: string;
@@ -79,8 +81,10 @@ export interface TestAppOptions {
   readonly jobs?: boolean;
   /** Environment values replaced for this application, e.g. GOOGLE_ISSUER of the stub issuer. */
   readonly env?: Partial<AppConfig['env']>;
-  /** Providers replaced for this application, e.g. a closed MaintenanceGate. */
+  /** Providers replaced for this application, e.g. a closed MaintenanceGate, storage or the renderer. */
   readonly overrides?: readonly { readonly provide: unknown; readonly useValue: unknown }[];
+  /** The database connections of the application (pg's default is 10) — the D6 concurrency tests. */
+  readonly poolSize?: number;
 }
 
 /** The real application (guards, pipes, filter, middleware) with the fixture endpoints added. */
@@ -99,7 +103,8 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
   let builder = Test.createTestingModule({ imports: [TestAppModule] })
     .overrideProvider(LOGGER)
     .useValue(createLogger('info', stream));
-  const clock = options.now === undefined ? undefined : new FixedClock(options.now);
+  const clock =
+    options.clock ?? (options.now === undefined ? undefined : new FixedClock(options.now));
   if (clock !== undefined) builder = builder.overrideProvider(Clock).useValue(clock);
   if (options.probe !== undefined)
     builder = builder.overrideProvider(DatabaseProbe).useValue(options.probe);
@@ -121,6 +126,13 @@ export async function startTestApp(options: TestAppOptions = {}): Promise<TestAp
       },
     };
     builder = builder.overrideProvider(AppConfig).useValue(config);
+  }
+  const { poolSize } = options;
+  if (poolSize !== undefined) {
+    builder = builder.overrideProvider(PrismaService).useFactory({
+      factory: (config: AppConfig) => new PrismaService(config, poolSize),
+      inject: [AppConfig],
+    });
   }
 
   const moduleRef = await builder.compile();

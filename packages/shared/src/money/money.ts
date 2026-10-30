@@ -43,6 +43,27 @@ export function sumMoney(amounts: readonly Mmk[]): Mmk {
   return amounts.reduce<bigint>((total, amount) => total + amount, 0n) as Mmk;
 }
 
+/** The difference of two amounts; negative when `b` is larger (8,000 − 10,000 = −2,000). */
+export function subtractMoney(a: Mmk, b: Mmk): Mmk {
+  return (a - b) as Mmk;
+}
+
+/**
+ * A line total: the unit amount times a whole quantity (2,000 × 3 = 6,000). Throws unless the
+ * quantity is a non-negative safe integer — a quantity is a count, never a fraction.
+ */
+export function multiplyMoney(amount: Mmk, quantity: number): Mmk {
+  if (!Number.isSafeInteger(quantity) || quantity < 0) {
+    throw new RangeError(`A quantity must be a whole number ≥ 0, got ${quantity}`);
+  }
+  return (amount * BigInt(quantity)) as Mmk;
+}
+
+/** The larger of two amounts — `maxMoney(total − paid, 0)` is the remaining amount. */
+export function maxMoney(a: Mmk, b: Mmk): Mmk {
+  return a >= b ? a : b;
+}
+
 /** The amount with the opposite sign — a deduction shown as `-1,000 Ks` (a receipt's discount line). */
 export function negateMoney(amount: Mmk): Mmk {
   return -amount as Mmk;
