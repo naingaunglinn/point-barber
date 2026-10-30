@@ -12,7 +12,17 @@ describe('language files', () => {
 
   it.each(LOCALES)('loads the namespaces of this change for %s', (locale) => {
     expect(Object.keys(loadMessages(locale)).sort()).toEqual([...NAMESPACES].sort());
-    expect(NAMESPACES).toEqual(['common', 'status', 'error', 'reason', 'receipt', 'devui', 'auth']);
+    expect(NAMESPACES).toEqual([
+      'common',
+      'status',
+      'error',
+      'reason',
+      'receipt',
+      'devui',
+      'auth',
+      'today',
+      'pos',
+    ]);
   });
 
   // ui-foundation "Every visible string comes from the my and en language files" — receipt labels are

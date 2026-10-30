@@ -8,7 +8,7 @@ import { APP_ORIGIN, SITE_ORIGIN } from './hosts.js';
 const SITE_PLACEHOLDER = '[data-testid="site-placeholder"]';
 const LOGIN_EMAIL = '[data-testid="login-email"]';
 const LOGIN_GOOGLE = '[data-testid="login-google"]';
-const LANDING_NAME = '[data-testid="landing-name"]';
+const TODAY = '[data-testid="today"]';
 
 test.describe('smoke: health through both hosts (P1.SYS.01)', () => {
   test('health is ok on the public host and on the staff host', async ({ site, app }) => {
@@ -31,7 +31,7 @@ test.describe('add-foundation-auth-access · platform-runtime · The Host header
     expect(res?.status()).toBe(200);
     await expect(page.locator(SITE_PLACEHOLDER)).toHaveCount(1);
     await expect(page.locator(LOGIN_EMAIL)).toHaveCount(0);
-    await expect(page.locator(LANDING_NAME)).toHaveCount(0);
+    await expect(page.locator(TODAY)).toHaveCount(0);
   });
 
   test('Scenario: Staff host shows the staff tree — the login screen without a session', async ({

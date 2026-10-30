@@ -1,0 +1,117 @@
+{
+  "arrival": {
+    "walkIn": "Walk-in",
+    "title": "New customer"
+  },
+  "start": {
+    "title": "Start a visit",
+    "branch": "Branch",
+    "barber": "Barber",
+    "services": "Services (optional)",
+    "submit": "Start",
+    "openUnpaid": "Open the previous customer"
+  },
+  "checkout": {
+    "split": "Split",
+    "remaining": "Remaining to pay: {amount}",
+    "changeToReturn": "Change to return: {amount}",
+    "voidPayment": "Void payment",
+    "customerGave": "Customer gave",
+    "cashChange": "Change: {amount}",
+    "referenceInUse": "This reference is already recorded. Check the transfer.",
+    "void": {
+      "title": "Void payment",
+      "consequence": "{method} {amount} stays on the sale, struck through, and no longer counts.",
+      "confirm": "Void payment"
+    },
+    "collectedBy": "Collected by",
+    "method": "Method",
+    "amount": "Amount",
+    "reference": "Reference",
+    "submit": "Take payment",
+    "referenceHint": {
+      "prefixDigits": "{prefix} followed by {count} digits",
+      "digits": "{count} digits"
+    },
+    "progress": {
+      "services": "Services",
+      "payment": "Payment",
+      "finish": "Finish"
+    },
+    "items": "Items",
+    "total": "Total",
+    "howCalculated": "How is this calculated?",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "serviceCharge": "Service charge",
+    "tax": "Tax"
+  },
+  "finish": {
+    "submit": "Finish · {total}",
+    "blocked": {
+      "remaining": "Take the remaining {amount} before you finish.",
+      "cashExcess": "Cash is more than the total. Void the cash payment and take it again."
+    },
+    "phone": "Customer phone (optional)",
+    "skip": "Skip",
+    "existing": "Existing customer: {name}",
+    "lastVisit": "Existing customer: {name} · last visit {date}",
+    "new": "New customer",
+    "name": "Name",
+    "override": {
+      "title": "Finish this sale",
+      "consequence": "You are finishing a sale that is not yours. Your reason is kept with the sale.",
+      "confirm": "Finish"
+    }
+  },
+  "success": {
+    "title": "Sale finished",
+    "receipt": "Receipt",
+    "share": "View / share PDF",
+    "next": "Next customer"
+  },
+  "saved": {
+    "checking": "Checking whether it was saved…",
+    "notSaved": "It wasn't saved. Try again.",
+    "already": "Already saved"
+  },
+  "visit": {
+    "started": "Started {time} · {elapsed}",
+    "done": "Service done · Take payment",
+    "incomplete": {
+      "title": "Mark incomplete",
+      "consequence": "The sale is cancelled: no revenue and no commission.",
+      "confirm": "Mark incomplete"
+    }
+  },
+  "lines": {
+    "remove": "Remove",
+    "removeTitle": "Remove service",
+    "removeConsequence": "{service} stays on the sale, struck through, and is no longer charged.",
+    "addedTitle": "Why was this added?",
+    "addedConsequence": "{service} is added after the service was done.",
+    "addedConfirm": "Add"
+  },
+  "picker": {
+    "title": "Add service",
+    "search": "Search services",
+    "empty": "No service found",
+    "detail": "{duration} · {price}"
+  },
+  "help": {
+    "offline": {
+      "title": "No connection",
+      "body": "Write the service on paper: the time, the services and the payment. When the connection is back, enter it with Late entry."
+    }
+  },
+  "warning": {
+    "notEligible": "Recorded — this barber is not set up for this service at this branch."
+  },
+  "finished": {
+    "locked": "Finished {datetime} by {name}",
+    "correction": "Use Refund / Adjustment"
+  },
+  "cancelled": {
+    "locked": "Marked incomplete {datetime} by {name}: {reason}"
+  }
+}
