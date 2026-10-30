@@ -27,3 +27,11 @@ export const IS_CI = env('CI', '') !== '';
 
 export const SITE_HOST = new URL(SITE_ORIGIN).host;
 export const APP_HOST = new URL(APP_ORIGIN).host;
+
+/**
+ * The runner's environment with some variables replaced — for a Compose command that must see
+ * another value than .env has (a shell variable wins over .env).
+ */
+export const environmentWith = (
+  overrides: Readonly<Record<string, string>>,
+): Record<string, string | undefined> => ({ ...process.env, ...overrides });

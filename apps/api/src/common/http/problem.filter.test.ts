@@ -1,9 +1,10 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { ErrorCode, problemSchema } from '@point/shared';
 import type { Logger } from 'pino';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { AppConfig } from '../config/config.js';
+import { ErrorReporter } from '../observability/error-reporter.js';
 import { ProblemException } from './problem.exception.js';
 import { ProblemFilter } from './problem.filter.js';
 import { RequestContext } from './request-context.js';
@@ -11,7 +12,9 @@ import { RequestContext } from './request-context.js';
 // The problem body with top-level extension members (API-ERR-01 · API-ERR-02 · P1-RULE-03 ·
 // P1-RULE-04 · API-LIM-02 · design D4 · D5) — add-foundation-auth-access task 1.1.
 const REQUEST_ID = '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e70';
-const config = { env: { SITE_ORIGIN: 'https://point.test' } } as unknown as AppConfig;
+const config = {
+  env: { SITE_ORIGIN: 'https://point.test', APP_ORIGIN: 'https://app.point.test' },
+} as unknown as AppConfig;
 const log = { error: () => undefined } as unknown as Logger;
 
 interface Sent {
@@ -21,7 +24,7 @@ interface Sent {
   headers: Record<string, string>;
 }
 
-function send(error: unknown): Sent {
+function send(error: unknown, reporter = new ErrorReporter()): Sent {
   const sent: Sent = { headers: {} };
   const res = {
     getHeader: () => undefined,
@@ -43,10 +46,13 @@ function send(error: unknown): Sent {
     },
   };
   const host = {
-    switchToHttp: () => ({ getRequest: () => ({ method: 'POST' }), getResponse: () => res }),
+    switchToHttp: () => ({
+      getRequest: () => ({ method: 'POST', originalUrl: '/api/v1/_fixtures/boom?code=1' }),
+      getResponse: () => res,
+    }),
   } as unknown as ArgumentsHost;
   RequestContext.run({ request_id: REQUEST_ID }, () => {
-    new ProblemFilter(config, log).catch(error, host);
+    new ProblemFilter(config, reporter, log).catch(error, host);
   });
   return sent;
 }
@@ -128,5 +134,36 @@ describe('ProblemFilter · extension members', () => {
     const sent = send(new Error('boom'));
     expect(sent.body).toStrictEqual(base('internal_error', 'Internal error', 500));
     expect(sent.headers).toStrictEqual({});
+  });
+});
+
+// add-staging-deploy task 3.4 — the capture filter (design D9 · CG-OBS-04): only a defect is reported.
+describe('ProblemFilter · error reporting', () => {
+  const reporting = (error: unknown) => {
+    const capture = vi.fn();
+    const reporter = new ErrorReporter();
+    reporter.use({ capture, close: () => Promise.resolve(true) });
+    send(error, reporter);
+    return capture;
+  };
+
+  it('reports an unexpected failure (500) with the request id, the URL and the method', () => {
+    const error = new Error('boom');
+    const capture = reporting(error);
+    expect(capture).toHaveBeenCalledOnce();
+    expect(capture).toHaveBeenCalledWith(
+      error,
+      { request_id: REQUEST_ID },
+      { url: 'https://app.point.test/api/v1/_fixtures/boom?code=1', method: 'POST' },
+    );
+  });
+
+  it.each([
+    [ErrorCode.VALIDATION, 400],
+    [ErrorCode.UNAUTHENTICATED, 401],
+    [ErrorCode.NOT_FOUND, 404],
+    [ErrorCode.RATE_LIMITED, 429],
+  ] as const)('never reports %s (%i)', (code, status) => {
+    expect(reporting(new ProblemException(code, status))).not.toHaveBeenCalled();
   });
 });

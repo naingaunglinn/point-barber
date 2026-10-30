@@ -2,6 +2,7 @@ import type { Logger } from 'pino';
 import { describe, expect, it } from 'vitest';
 
 import { TransactionScope } from '../database/transaction-scope.js';
+import { ErrorReporter, type ErrorSink } from '../observability/error-reporter.js';
 import { BackgroundTasks } from './background-tasks.js';
 import { RequestContext } from './request-context.js';
 
@@ -44,6 +45,27 @@ describe('BackgroundTasks', () => {
     expect(errors[0]?.msg).toBe('background task failed');
     expect(errors[0]?.fields.request_id).toBe(REQUEST_ID);
     expect((errors[0]?.fields.err as Error).message).toBe('mail transport down');
+  });
+
+  it('reports the failure with the request id tag (add-staging-deploy · CG-OBS-04)', async () => {
+    const captured: { error: unknown; tags: Readonly<Record<string, string>> }[] = [];
+    const reporter = new ErrorReporter();
+    const sink: ErrorSink = {
+      capture: (error, tags) => captured.push({ error, tags }),
+      close: async () => true,
+    };
+    reporter.use(sink);
+    const tasks = new BackgroundTasks(fakeLog().log, reporter);
+    RequestContext.run({ request_id: REQUEST_ID }, () => {
+      tasks.run(() => {
+        throw new Error('handler failed');
+      });
+    });
+    tasks.run(async () => undefined);
+    await tasks.drain();
+    expect(captured).toHaveLength(1);
+    expect((captured[0]?.error as Error).message).toBe('handler failed');
+    expect(captured[0]?.tags).toStrictEqual({ request_id: REQUEST_ID });
   });
 
   it('logs a synchronous throw the same way', async () => {

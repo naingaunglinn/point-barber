@@ -113,6 +113,16 @@ describe('tools/eslint/boundaries.mjs (design D10)', () => {
     expect(await lint(imports(from), 'apps/web/lib/x.ts')).toEqual([RULE]);
   });
 
+  // add-staging-deploy task 4.1 — CG-ARCH-08: the Sentry SDK only in the error-reporting files.
+  it('the web app imports @sentry/nextjs only in lib/observability and instrumentation.ts', async () => {
+    expect(await lint(imports('@sentry/nextjs'), 'apps/web/app/staff/layout.tsx')).toEqual([RULE]);
+    expect(await lint(imports('@sentry/nextjs'), 'apps/web/lib/observability/x.ts')).toEqual([]);
+    expect(await lint(imports('@sentry/nextjs'), 'apps/web/instrumentation.ts')).toEqual([]);
+    expect(await lint(imports('@prisma/client'), 'apps/web/lib/observability/x.ts')).toEqual([
+      RULE,
+    ]);
+  });
+
   it('the web app may import the shared package', async () => {
     expect(await lint(imports('@point/shared'), 'apps/web/lib/x.ts')).toEqual([]);
   });
@@ -120,7 +130,8 @@ describe('tools/eslint/boundaries.mjs (design D10)', () => {
 
 // add-foundation-auth-access task 2.8 / 2.10 — CG-ARCH-08 · guideline §24 row 22: an SDK is imported
 // only inside the one folder that wraps it — pg-boss in modules/platform/jobs, the SMTP client in
-// modules/platform/mail, the OpenID Connect client in modules/auth/google (task 5.13).
+// modules/platform/mail, the OpenID Connect client in modules/auth/google (task 5.13), the Sentry SDK
+// in modules/platform/observability (add-staging-deploy task 3.5).
 describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
   const messages = async (code, path) => {
     const [result] = await eslint.lintText(code, { filePath: join(root, path) });
@@ -134,8 +145,8 @@ describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
     'apps/api/src/common/http/x.ts',
     'apps/api/src/common/database/x.ts',
     'apps/api/src/app.module.ts',
-  ])('pg-boss, nodemailer and openid-client fail in %s', async (path) => {
-    for (const sdk of ['pg-boss', 'nodemailer', 'openid-client']) {
+  ])('pg-boss, nodemailer, openid-client and @sentry/nestjs fail in %s', async (path) => {
+    for (const sdk of ['pg-boss', 'nodemailer', 'openid-client', '@sentry/nestjs']) {
       expect(await messages(imports(sdk), path)).toEqual([
         { ruleId: RULE, message: expect.stringContaining('CG-ARCH-08') },
       ]);
@@ -157,6 +168,12 @@ describe('SDKs only inside their wrapper folder (CG-ARCH-08)', () => {
   it('openid-client passes in modules/auth/google, pg-boss does not', async () => {
     const path = 'apps/api/src/modules/auth/google/google.service.ts';
     expect(await lint(imports('openid-client'), path)).toEqual([]);
+    expect(await lint(imports('pg-boss'), path)).toEqual([RULE]);
+  });
+
+  it('@sentry/nestjs passes in modules/platform/observability, pg-boss does not', async () => {
+    const path = 'apps/api/src/modules/platform/observability/instrument.ts';
+    expect(await lint(imports('@sentry/nestjs'), path)).toEqual([]);
     expect(await lint(imports('pg-boss'), path)).toEqual([RULE]);
   });
 

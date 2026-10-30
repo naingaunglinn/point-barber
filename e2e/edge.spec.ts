@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test } from './fixtures.js';
 import { rawRequest } from './helpers/raw-request.js';
+import { withServiceEnv } from './helpers/stack.js';
 import { APP_ORIGIN, COMPOSE, SITE_HOST, SITE_ORIGIN } from './hosts.js';
 
 // The edge and the built stack (design D12 · D18): Playwright's request API through Caddy, and raw
@@ -254,5 +255,60 @@ test.describe('add-repo-scaffold · platform-runtime · The Host header selects 
       ".on('error', (e) => { console.error(e.message); process.exit(1); })",
     ].join('');
     expect(compose(`exec -T api node -e "${request}"`).trim()).toBe('404');
+  });
+});
+
+// ── add-staging-deploy task 5.1 ──────────────────────────────────────────────────────────────────
+// The e2e stack runs with CADDY_CSP_CONNECT=https://o0.ingest.sentry.io (the fake ingest origin of
+// design D10's test — e2e/README.md); the empty case recreates Caddy without it.
+
+const INGEST = 'https://o0.ingest.sentry.io';
+const policy = (connect: string) =>
+  `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src ${connect}; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`;
+
+/** The policy's directives: name → sources. */
+const directives = (header: string): Record<string, string[]> =>
+  Object.fromEntries(
+    header
+      .split(';')
+      .map((part) => part.trim().split(/\s+/))
+      .filter(([name]) => name !== undefined && name !== '')
+      .map(([name, ...sources]) => [name, sources]),
+  );
+
+test.describe('add-staging-deploy · platform-runtime · Both hosts send the content-security policy', () => {
+  test('Scenario: Staff host with error reporting configured', async ({ app }) => {
+    const res = await app.get('/login');
+    expect(res.status()).toBe(200);
+    expect(res.headers()['content-security-policy']).toBe(policy(`'self' ${INGEST}`));
+  });
+
+  test('Scenario: Public host carries the same policy', async ({ site, app }) => {
+    const staff = (await app.get('/login')).headers()['content-security-policy'];
+    const res = await site.get('/');
+    expect(res.status()).toBe(200);
+    expect(res.headers()['content-security-policy']).toBe(staff);
+    // An API answer through the edge carries it too.
+    expect((await app.get('/api/v1/health')).headers()['content-security-policy']).toBe(staff);
+  });
+
+  test('Scenario: No ingest origin configured', async ({ playwright }) => {
+    await withServiceEnv(
+      playwright,
+      'caddy',
+      { CADDY_CSP_CONNECT: '' },
+      `${APP_ORIGIN}/api/v1/health`,
+      async () => {
+        const fresh = await playwright.request.newContext({
+          baseURL: APP_ORIGIN,
+          ignoreHTTPSErrors: true,
+        });
+        const header = (await fresh.get('/api/v1/health')).headers()['content-security-policy'];
+        await fresh.dispose();
+        expect(header).toBeDefined();
+        expect(directives(header ?? '')['connect-src']).toStrictEqual(["'self'"]);
+        expect(header).not.toContain('sentry');
+      },
+    );
   });
 });

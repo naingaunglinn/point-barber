@@ -9,6 +9,7 @@ beforeAll(() => {
   vi.stubEnv('APP_ORIGIN', 'https://app.point.test');
   vi.stubEnv('NEXT_PUBLIC_API_BASE', '/api/v1');
   vi.stubEnv('API_INTERNAL_BASE', 'http://api:3001/api/v1');
+  vi.stubEnv('APP_ENV', 'test');
 });
 
 function requestTo(host: string, path: string, cookie?: string): NextRequest {

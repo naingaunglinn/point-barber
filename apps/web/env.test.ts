@@ -10,6 +10,8 @@ const complete: RawWebEnv = {
   APP_VERSION: '0.1.0',
   NEXT_PUBLIC_API_BASE: '/api/v1',
   API_INTERNAL_BASE: 'http://api:3001/api/v1',
+  APP_ENV: 'staging',
+  SENTRY_DSN_WEB: 'https://public@o0.ingest.sentry.io/2',
 };
 
 describe('apps/web/env.ts (CG-SEC-05 · ADR-009 action item 3 · design D11)', () => {
@@ -22,12 +24,15 @@ describe('apps/web/env.ts (CG-SEC-05 · ADR-009 action item 3 · design D11)', (
     expect(parseWebEnv({ ...complete, APP_VERSION: '' }).APP_VERSION).toBe('0.0.0-dev');
   });
 
-  it.each(['SITE_ORIGIN', 'APP_ORIGIN', 'NEXT_PUBLIC_API_BASE', 'API_INTERNAL_BASE'] as const)(
-    'fails with the name of the missing variable %s',
-    (name) => {
-      expect(() => parseWebEnv({ ...complete, [name]: undefined })).toThrow(`${name} is required`);
-    },
-  );
+  it.each([
+    'SITE_ORIGIN',
+    'APP_ORIGIN',
+    'NEXT_PUBLIC_API_BASE',
+    'API_INTERNAL_BASE',
+    'APP_ENV',
+  ] as const)('fails with the name of the missing variable %s', (name) => {
+    expect(() => parseWebEnv({ ...complete, [name]: undefined })).toThrow(`${name} is required`);
+  });
 
   it('names every failing variable in one error', () => {
     expect(() => parseWebEnv({ ...complete, SITE_ORIGIN: '', APP_ORIGIN: undefined })).toThrow(
@@ -55,5 +60,15 @@ describe('apps/web/env.ts (CG-SEC-05 · ADR-009 action item 3 · design D11)', (
     expect(() =>
       parseWebEnv({ ...complete, NEXT_PUBLIC_API_BASE: 'https://app.point.test/api/v1' }),
     ).toThrow('NEXT_PUBLIC_API_BASE must be a same-origin path');
+  });
+
+  // add-staging-deploy design D10: error reporting is off without a DSN.
+  it('reads an empty SENTRY_DSN_WEB as not set, and refuses one that is not a URL', () => {
+    expect(parseWebEnv({ ...complete, SENTRY_DSN_WEB: '' }).SENTRY_DSN_WEB).toBeUndefined();
+    expect(() => parseWebEnv({ ...complete, SENTRY_DSN_WEB: 'sentry' })).toThrow('SENTRY_DSN_WEB');
+  });
+
+  it('refuses an unknown APP_ENV', () => {
+    expect(() => parseWebEnv({ ...complete, APP_ENV: 'prod' })).toThrow('APP_ENV');
   });
 });

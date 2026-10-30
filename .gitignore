@@ -38,3 +38,4 @@ apps/web/catalogue-flag.generated.ts
 
 # Generated Prisma client (db/schema.prisma → prisma generate)
 apps/api/src/generated/
+deploy-history.log
