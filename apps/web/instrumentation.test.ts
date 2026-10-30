@@ -39,7 +39,9 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('instrumentation.ts (task 4.2)', () => {
+// Each test imports the module afresh (vi.resetModules); on a loaded machine that import can pass the
+// default 5 s, and a test that times out mid-import would finish its register() in the next test.
+describe('instrumentation.ts (task 4.2)', { timeout: 30_000 }, () => {
   it('does nothing without SENTRY_DSN_WEB', async () => {
     vi.stubEnv('SENTRY_DSN_WEB', '');
     const { register, onRequestError } = await import('./instrumentation');
