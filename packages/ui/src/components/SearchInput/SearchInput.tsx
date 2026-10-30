@@ -21,7 +21,6 @@ export interface SearchInputProps {
   readonly onSearch?: (value: string) => void;
   /** Translated: what it searches ("Receipt no."). */
   readonly placeholder: string;
-  readonly autoFocus?: boolean;
   readonly className?: string;
 }
 
@@ -30,7 +29,6 @@ export function SearchInput({
   onChange,
   onSearch,
   placeholder,
-  autoFocus,
   className,
 }: SearchInputProps) {
   const t = useTranslations('common.action');
@@ -52,7 +50,6 @@ export function SearchInput({
         value={value}
         placeholder={placeholder}
         aria-label={placeholder}
-        autoFocus={autoFocus}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
           if (event.key !== 'Enter') return;

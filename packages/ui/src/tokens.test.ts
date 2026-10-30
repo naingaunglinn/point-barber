@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -144,6 +144,32 @@ describe('tokens.css — fonts and the two component variables per tree', () => 
   it('site: the focus outline is --ring and the input border --input', () => {
     expect(site.get('--focus-outline')).toBe('var(--ring)');
     expect(site.get('--field-border')).toBe('var(--input)');
+  });
+
+  // Task 11.21 (AD-VIS-03 · AD-A11Y-02): outlines and borders reach --ring / --input only through the
+  // two variables above — no utility class (`ring-ring/50`, `border-input`, `bg-input/30` …) and no
+  // `var(--ring)` / `var(--input)` anywhere in the package's source.
+  const DIRECT =
+    /var\(--(?:ring|input)\)|--color-(?:ring|input)\b|(?<![\w-])(?:ring-offset|ring|border(?:-[xytrblse])?|outline|bg|text|fill|stroke|shadow|divide|accent|caret|decoration|placeholder|from|via|to)-(?:ring|input)(?:\/\d+)?(?![\w-])/g;
+
+  it('the check finds the shapes it looks for', () => {
+    const sample =
+      'focus-visible:ring-ring/50 border-input bg-input/30 outline-ring focus-visible:border-ring var(--input)';
+    expect(sample.match(DIRECT)).toHaveLength(6);
+  });
+
+  it('no component style refers to --ring or --input directly', () => {
+    const source = join(ui, 'src');
+    const files = readdirSync(source, { recursive: true, encoding: 'utf8' }).filter(
+      (file) => /\.(?:tsx?|css)$/.test(file) && !/\.test\.tsx?$/.test(file),
+    );
+    expect(files.length).toBeGreaterThan(50);
+    const found = files.flatMap((file) => {
+      // A data-slot value names a part (`text-input`), it is not a style.
+      const text = readFileSync(join(source, file), 'utf8').replace(/data-slot="[^"]*"/g, '');
+      return [...text.matchAll(DIRECT)].map(([match]) => `${file}: ${match}`);
+    });
+    expect(found).toEqual([]);
   });
 });
 

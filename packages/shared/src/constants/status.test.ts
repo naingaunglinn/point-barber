@@ -47,6 +47,11 @@ describe('status constants', () => {
     });
   });
 
+  it('pins branches.status (part1 — not a badge of AD-CMP-05)', () => {
+    expect(BranchStatus).toEqual({ INACTIVE: 0, ACTIVE: 1 });
+    expect(Object.values(STATUS_BY_TABLE)).not.toContain(BranchStatus);
+  });
+
   it('holds the 71 (table, code) pairs of AD-CMP-05, codes unique per table', () => {
     const tables = Object.values(STATUS_BY_TABLE);
     expect(tables).toHaveLength(19);

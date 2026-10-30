@@ -181,6 +181,7 @@ export {
   formResolver,
   registerField,
   useAppForm,
+  useTextField,
   type AppFormProps,
 } from './forms/use-app-form';
 

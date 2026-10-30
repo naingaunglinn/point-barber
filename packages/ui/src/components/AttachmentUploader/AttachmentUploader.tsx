@@ -217,6 +217,8 @@ export function AttachmentUploader(props: AttachmentUploaderProps) {
         onDrop={onDrop}
         className={cn(
           'rounded-lg border-2 border-dashed border-[var(--field-border)]',
+          // A button takes no aria-invalid: the zone shows it, the message is the button's description.
+          control['aria-invalid'] && 'border-destructive',
           dragging && 'border-primary bg-muted',
         )}
       >
@@ -225,8 +227,6 @@ export function AttachmentUploader(props: AttachmentUploaderProps) {
           id={id}
           {...name}
           aria-describedby={described}
-          aria-invalid={control['aria-invalid']}
-          aria-required={control['aria-required']}
           disabled={disabled}
           onClick={() => input.current?.click()}
           className="flex min-h-24 w-full flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground"

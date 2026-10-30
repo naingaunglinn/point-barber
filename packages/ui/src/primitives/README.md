@@ -47,3 +47,7 @@ Changed after generation, and only this (re-apply it when a part is generated ag
 
 The `data-open:` / `data-checked:` … variants come from `../../primitives.css`; the animations from
 `tw-animate-css`.
+
+- **Input group** (`input-group.tsx`): the addon's click handler that focused the input is removed — a
+  `role="group"` element with a click handler fails `jsx-a11y` (add-shared-ui-components task 11.9); the input
+  next to it is focused directly.

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
+import { HttpStatus } from '@point/shared';
 import { ErrorState } from '@point/ui';
 
 import { ApiProblem } from '../api/client';
@@ -18,12 +19,17 @@ export function MainQueryState({
   children,
 }: Readonly<{ error: unknown; children: ReactNode }>) {
   const t = useTranslations('auth.landing');
-  if (!(error instanceof ApiProblem) || (error.status !== 403 && error.status !== 404)) {
+  if (
+    !(error instanceof ApiProblem) ||
+    (error.status !== HttpStatus.FORBIDDEN && error.status !== HttpStatus.NOT_FOUND)
+  ) {
     return <>{children}</>;
   }
   return (
     <div className="flex flex-col items-center gap-3 p-4">
-      <ErrorState problem={{ code: error.status === 403 ? 'forbidden' : 'not_found' }} />
+      <ErrorState
+        problem={{ code: error.status === HttpStatus.FORBIDDEN ? 'forbidden' : 'not_found' }}
+      />
       <Link href="/" className="font-semibold text-primary underline">
         {t('home')}
       </Link>

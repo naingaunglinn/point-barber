@@ -3,6 +3,7 @@
 import { toNestErrors } from '@hookform/resolvers';
 import {
   get,
+  useController,
   useForm,
   type FieldError as FormError,
   type FieldErrors,
@@ -93,6 +94,34 @@ export function registerField<Input extends FieldValues, Output>(
       if (form.getFieldState(name).error) void form.trigger(name);
     },
   });
+}
+
+/**
+ * `registerField()` for a controlled shared input (TextInput): the same validation — on blur and on
+ * submit, again on every change once the field shows an error — the value as a string, and the ref
+ * the form focuses on its first error.
+ */
+export function useTextField<Input extends FieldValues, Output>(
+  form: UseFormReturn<Input, unknown, Output>,
+  name: Path<Input>,
+) {
+  const { field } = useController({
+    control: form.control,
+    name,
+    rules: {
+      onChange: () => {
+        if (form.getFieldState(name).error) void form.trigger(name);
+      },
+    },
+  });
+  const value: unknown = field.value;
+  return {
+    name: field.name,
+    ref: field.ref,
+    value: typeof value === 'string' ? value : '',
+    onChange: (next: string) => field.onChange(next),
+    onBlur: field.onBlur,
+  };
 }
 
 /** The error of a field for `FormField` (`{ code, params }`), or undefined. */

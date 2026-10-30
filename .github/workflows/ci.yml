@@ -1,6 +1,7 @@
 # CI for point-barber (design D15 · ADR-001 action item 4 · system-design §4.1).
 # PR-A brought the jobs static, unit and pr-title; PR-B adds db; PR-C adds integration; PR-E adds
-# images and e2e (stack and health — PR-I adds the Playwright tests and the secret check).
+# images and e2e (stack and health — PR-I adds the Playwright tests and the secret check);
+# add-shared-ui-components adds the three-zone unit run and the job catalogue.
 # The PostgreSQL service and its variables are declared once, in job db, and reused by anchor.
 name: CI
 
@@ -88,6 +89,41 @@ jobs:
 
       - name: Unit tests (Vitest — incl. guard, lint-rule and runner tests)
         run: pnpm test
+
+      # CG-TIME-04 · add-shared-ui-components design D13: the time, format and date-component suites
+      # again under TZ=UTC, TZ=Asia/Yangon and TZ=America/Los_Angeles, with the same expected values.
+      - name: Unit tests under three time zones
+        run: pnpm test:zones
+
+  catalogue:
+    name: catalogue
+    runs-on: ubuntu-24.04
+    # About 4 minutes on green runs; a hung build or browser ends the job instead of holding the runner.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      # The catalogue build of apps/web (add-shared-ui-components design D12 · D13): its own package
+      # script sets the catalogue flag, so this job never names it; turbo builds the packages first.
+      - name: Catalogue build
+        run: pnpm exec turbo run build:catalogue --filter=web
+
+      - name: Chromium for Playwright
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+
+      # `next start` alone — no API, no database — on port 3100, staff host localhost and site host
+      # 127.0.0.1 (e2e/dev-ui/playwright.config.ts starts it): every project of design D13.
+      - name: Playwright on /dev/ui
+        run: pnpm --filter e2e e2e:catalogue
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: catalogue-playwright-report
+          path: e2e/dev-ui/playwright-report/
 
   db:
     name: db
@@ -280,7 +316,7 @@ jobs:
       - name: Chromium for Playwright (the only browser — task 8.1)
         run: pnpm --filter e2e exec playwright install --with-deps chromium
 
-      - name: Playwright — smoke.spec.ts and edge.spec.ts against the stack (D15 · D18)
+      - name: Playwright — smoke, edge and catalogue (404) specs against the stack (D15 · D18)
         env:
           E2E_COMPOSE: ${{ env.COMPOSE }}
         run: pnpm e2e
