@@ -30,6 +30,32 @@ export const ErrorCode = {
   // · Part 1 v1.6 §11b · D4).
   EMAIL_INVALID: 'email_invalid',
   OTP_FORMAT: 'otp_format',
+  // add-walkin-visit-checkout — API-ERR-02 · Part 4 §11 · Part 2 / 3 / 5 / 7 rules this change applies
+  // (task 2.12). out_of_scope, phone_invalid and reason_required are above.
+  UNPAID_VISIT_OPEN: 'unpaid_visit_open',
+  DAY_CLOSED: 'day_closed',
+  DATE_IN_FUTURE: 'date_in_future',
+  PAYROLL_FINALIZED: 'payroll_finalized',
+  SERVICE_REQUIRED: 'service_required',
+  VISIT_NOT_COMPLETED: 'visit_not_completed',
+  PAYMENTS_EXIST: 'payments_exist',
+  AMOUNT_MISMATCH: 'amount_mismatch',
+  AMOUNT_EXCEEDS_REMAINING: 'amount_exceeds_remaining',
+  REFERENCE_REQUIRED: 'reference_required',
+  REFERENCE_FORMAT: 'reference_format',
+  DUPLICATE_REFERENCE: 'duplicate_reference',
+  TOTAL_CHANGED: 'total_changed',
+  INVALID_TRANSITION: 'invalid_transition',
+  NOT_SOLD_HERE: 'not_sold_here',
+  VARIANT_REQUIRED: 'variant_required',
+  SERVICE_INACTIVE: 'service_inactive',
+  CATEGORY_INACTIVE: 'category_inactive',
+  OUTSIDE_WINDOW: 'outside_window',
+  NOT_ASSIGNED_TO_BRANCH: 'not_assigned_to_branch',
+  // A payment method that is not ACTIVE — the code Part 7 §12 defines for it, applied to P4.PAY.02.
+  METHOD_INACTIVE: 'method_inactive',
+  // 423 — a write on a finished record that reached the database guard (design D9: no endpoint should).
+  LOCKED: 'locked',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

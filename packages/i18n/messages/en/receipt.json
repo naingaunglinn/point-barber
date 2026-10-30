@@ -8,5 +8,6 @@
   "total": "Total",
   "changeReturned": "Change returned (cash)",
   "refund": "Refund",
-  "original": "Original receipt"
+  "original": "Original receipt",
+  "closed": "Closed"
 }

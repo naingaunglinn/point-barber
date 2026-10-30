@@ -66,6 +66,15 @@ export function formatDate(
   return `${FORMAT_WORDS[locale].weekday[getISODay(date) - 1]}, ${text}`;
 }
 
+/** An ISO `day_of_week` (1 Mon … 7 Sun) → its word in the UI language (`Mon` in English). */
+export function formatWeekday(isoDay: number, { locale }: Options): string {
+  const word = FORMAT_WORDS[locale].weekday[isoDay - 1];
+  if (!Number.isInteger(isoDay) || word === undefined) {
+    throw new RangeError(`Not an ISO weekday: ${String(isoDay)}`);
+  }
+  return word;
+}
+
 /** A wire time `14:30` or an instant → `2:30 PM` — no seconds, no zone label, in both languages. */
 export function formatTime(value: string | Date, _options: Options): string {
   const { text, marker } = clock(timeOfDay(value));

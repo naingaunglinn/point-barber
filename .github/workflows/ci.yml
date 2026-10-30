@@ -145,7 +145,8 @@ jobs:
     name: integration
     runs-on: ubuntu-24.04
     # PostgreSQL as in job `db`, plus Mailpit: the mail tests deliver over SMTP and read the message
-    # back through Mailpit's API (add-foundation-auth-access task 2.10 · ADR-007).
+    # back through Mailpit's API (add-foundation-auth-access task 2.10 · ADR-007). MinIO starts in a
+    # step below (add-walkin-visit-checkout task 3.5).
     services:
       postgres:
         image: postgres:16.15-bookworm
@@ -193,6 +194,26 @@ jobs:
       - name: Migrate (the one entry point — D4.6)
         run: node db/scripts/migrate.mjs
 
+      # The S3 API of the storage round trip (ADR-014 · add-walkin-visit-checkout task 3.5). A step, not
+      # a service: a service container cannot be given the `server /data` command. The pinned image and
+      # development credentials of docker-compose.dev.yml (VERSIONS.md); the test creates its bucket.
+      - name: MinIO (S3 API for test/storage.int.test.ts)
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minio-dev -e MINIO_ROOT_PASSWORD=minio-dev-only \
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/live; then exit 0; fi
+            sleep 1
+          done
+          echo "::error::minio never became live"
+          exit 1
+
+      # The DocumentRenderer's browser (ADR-013 · add-walkin-visit-checkout tasks 9.5 – 9.8): the headless
+      # shell of the pinned playwright-core, with its system libraries.
+      - name: Chromium headless shell (test/document-renderer.int.test.ts)
+        run: pnpm --filter api exec playwright-core install --with-deps --only-shell chromium
+
       - name: API integration tests (real app, real PostgreSQL 16, connected as point_app — D15)
         run: pnpm test:int
 
@@ -233,6 +254,17 @@ jobs:
 
       - name: The api image carries the first-admin command (P1-RULE-14 · add-foundation-auth-access D10)
         run: docker run --rm --entrypoint test "point-api:$APP_VERSION" -f /app/dist/cli/admin-create.js
+
+      # add-walkin-visit-checkout task 9.16 (ADR-013): the image's headless Chromium renders as the
+      # non-root user the server runs as, with the compose memory limit of the api service.
+      - name: The api image renders a receipt line (Chromium, document fonts, non-root)
+        run: |
+          set -euo pipefail
+          uid=$(docker run --rm --entrypoint id "point-api:$APP_VERSION" -u)
+          if [ "$uid" = "0" ]; then echo "::error::the api image runs as root"; exit 1; fi
+          docker run --rm --memory 1536m \
+            -v "$PWD/apps/api/scripts/render-smoke.mjs:/app/render-smoke.mjs:ro" \
+            --entrypoint node "point-api:$APP_VERSION" render-smoke.mjs
 
   e2e:
     name: e2e

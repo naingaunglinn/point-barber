@@ -1,6 +1,5 @@
-import { ErrorCode } from '@point/shared';
+import { ErrorCode, toMmtIso } from '@point/shared';
 
-import { toMmtIso } from '../../../common/http/mmt-iso.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
 
 // What a sign-in returns (design D3): an expected refusal is an outcome, not an exception, so the

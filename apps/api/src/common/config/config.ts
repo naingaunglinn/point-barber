@@ -42,6 +42,11 @@ export function loadAppConfig(): AppConfig {
     COMPANY_NAME_MM: process.env.COMPANY_NAME_MM,
     COMPANY_NAME_EN: process.env.COMPANY_NAME_EN,
     JOBS_IN_API: process.env.JOBS_IN_API,
+    S3_ENDPOINT: process.env.S3_ENDPOINT,
+    S3_REGION: process.env.S3_REGION,
+    S3_BUCKET_APP: process.env.S3_BUCKET_APP,
+    S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+    S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
   });
   return { env };
 }

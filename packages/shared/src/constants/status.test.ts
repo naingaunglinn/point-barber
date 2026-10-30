@@ -8,16 +8,33 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AttachmentKind,
   AuditSource,
   BranchStatus,
+  CustomerStatus,
+  DiscountType,
   EmployeeStatus,
+  LateEntryReason,
+  LocationType,
   LoginMethod,
+  PaymentMethodKind,
+  PaymentMethodStatus,
+  PriceSource,
+  ProxyReason,
+  ReceiptCounterKind,
+  RefundKind,
   RevokeReason,
   RoleStatus,
   STATUS_BY_TABLE,
+  SaleAdjustmentType,
+  SaleItemLineType,
+  SaleStatus,
   ScopeType,
+  ServicePricingMode,
+  ServiceStatus,
   UiLanguage,
   UserStatus,
+  VisitStatus,
 } from './status.js';
 
 // D-DB-03 · API-DATA-04 · AD-IMPL-04: every status code of the 19 tables of AD-CMP-05 has a named
@@ -65,6 +82,9 @@ const files = [
   'part1-foundation-v3-constraints.sql',
   'part1b-login-v1-constraints.sql',
   'part8-system-website-v1-constraints.sql',
+  'part4-visits-sales-payments-v1-constraints.sql',
+  'part2-services-scheduling-v1-constraints.sql',
+  'part3-customers-booking-v3-constraints.sql',
 ].map((name) => readFileSync(join(source, name), 'utf8'));
 
 /** The values of `CHECK (<column> IN (…))` (or `<column> IS NULL OR <column> IN (…)`). */
@@ -92,7 +112,37 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['RevokeReason', RevokeReason, 'user_sessions', 'revoke_reason'],
     ['AuditSource', AuditSource, 'audit_events', 'source'],
     ['UiLanguage', UiLanguage, 'users', 'ui_language'],
+    // add-walkin-visit-checkout task 2.1
+    ['VisitStatus', VisitStatus, 'visits', 'status'],
+    ['LocationType', LocationType, 'visits', 'location_type'],
+    ['SaleStatus', SaleStatus, 'sales', 'status'],
+    ['SaleItemLineType', SaleItemLineType, 'sale_items', 'line_type'],
+    ['PaymentMethodKind', PaymentMethodKind, 'payment_methods', 'kind'],
+    ['PaymentMethodStatus', PaymentMethodStatus, 'payment_methods', 'status'],
+    ['RefundKind', RefundKind, 'refunds', 'kind'],
+    ['ReceiptCounterKind', ReceiptCounterKind, 'receipt_counters', 'kind'],
+    // add-walkin-visit-checkout tasks 2.2 – 2.4 (the enums of the response DTOs)
+    ['ProxyReason', ProxyReason, 'visits', 'proxy_reason'],
+    ['LateEntryReason', LateEntryReason, 'visits', 'late_entry_reason'],
+    ['DiscountType', DiscountType, 'discount_requests', 'discount_type'],
+    ['SaleAdjustmentType', SaleAdjustmentType, 'sale_adjustments', 'adjustment_type'],
+    ['ServicePricingMode', ServicePricingMode, 'services', 'pricing_mode'],
+    ['ServiceStatus', ServiceStatus, 'services', 'status'],
+    ['CustomerStatus', CustomerStatus, 'customers', 'status'],
+    // task 3.6 — the receipt files
+    ['AttachmentKind', AttachmentKind, 'attachments', 'kind'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
+  });
+});
+
+describe('PriceSource (P2-RULE-03 / 05 — an API value, no column)', () => {
+  it('names the four sources 1 – 4', () => {
+    expect(PriceSource).toStrictEqual({
+      BRANCH: 1,
+      BARBER_OVERRIDE: 2,
+      HOME: 3,
+      HOME_FALLBACK_BRANCH: 4,
+    });
   });
 });

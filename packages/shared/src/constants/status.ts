@@ -137,3 +137,85 @@ export type AuditSource = (typeof AuditSource)[keyof typeof AuditSource];
 /** part1 — users.ui_language; NULL = the system default (D-PLT-03). */
 export const UiLanguage = { MY: 1, EN: 2 } as const;
 export type UiLanguage = (typeof UiLanguage)[keyof typeof UiLanguage];
+
+/** part4 — visits.location_type (D-SVC-06); also the `location_type` of a price quote. */
+export const LocationType = { BRANCH: 1, HOME: 2 } as const;
+export type LocationType = (typeof LocationType)[keyof typeof LocationType];
+
+/** part4 — sale_items.line_type; TRANSPORT_FEE = the home-service fee line (D-SVC-06). */
+export const SaleItemLineType = { SERVICE: 1, PRODUCT: 2, TRANSPORT_FEE: 3 } as const;
+export type SaleItemLineType = (typeof SaleItemLineType)[keyof typeof SaleItemLineType];
+
+/** part4 — payment_methods.kind (D-PAY-01). */
+export const PaymentMethodKind = { CASH: 1, MOBILE_WALLET: 2, BANK_TRANSFER: 3, CARD: 4 } as const;
+export type PaymentMethodKind = (typeof PaymentMethodKind)[keyof typeof PaymentMethodKind];
+
+/** part4 — payment_methods.status. */
+export const PaymentMethodStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type PaymentMethodStatus = (typeof PaymentMethodStatus)[keyof typeof PaymentMethodStatus];
+
+/** part4 — refunds.kind; OVERPAYMENT_RETURN = the change of a non-cash over-transfer (D-PAY-05). */
+export const RefundKind = { SALE_REFUND: 1, OVERPAYMENT_RETURN: 2 } as const;
+export type RefundKind = (typeof RefundKind)[keyof typeof RefundKind];
+
+/** part4 — receipt_counters.kind: the sale series and the RF series (D-PAY-06). */
+export const ReceiptCounterKind = { SALE: 1, REFUND: 2 } as const;
+export type ReceiptCounterKind = (typeof ReceiptCounterKind)[keyof typeof ReceiptCounterKind];
+
+/**
+ * Part 2 P2-RULE-03 / 05 — the `price_source` of a quote item (no column: an API value). HOME_FALLBACK_BRANCH
+ * = a HOME quote that used the branch-level BRANCH row because no HOME row exists.
+ */
+export const PriceSource = {
+  BRANCH: 1,
+  BARBER_OVERRIDE: 2,
+  HOME: 3,
+  HOME_FALLBACK_BRANCH: 4,
+} as const;
+export type PriceSource = (typeof PriceSource)[keyof typeof PriceSource];
+
+// add-walkin-visit-checkout — the enums of the Part 2 / 3 / 4 response DTOs (task 2.2 – 2.4). Each set
+// equals the CHECK list of its column in db/source (status.test.ts).
+
+/** part4 — visits.proxy_reason; NULL = recorded by the performer (D-VIS-04 / 12). */
+export const ProxyReason = { PHONE_UNAVAILABLE: 1, OTHER: 2 } as const;
+export type ProxyReason = (typeof ProxyReason)[keyof typeof ProxyReason];
+
+/** part4 — visits.late_entry_reason; NULL = not a late entry (D-VIS-13). */
+export const LateEntryReason = {
+  INTERNET_OUTAGE: 1,
+  POWER_OUTAGE: 2,
+  PHONE_BROKEN: 3,
+  FORGOT: 4,
+  OTHER: 9,
+} as const;
+export type LateEntryReason = (typeof LateEntryReason)[keyof typeof LateEntryReason];
+
+/** part4 — discount_codes.discount_type and discount_requests.discount_type. */
+export const DiscountType = { PERCENT: 1, AMOUNT: 2 } as const;
+export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType];
+
+/** part4 — sale_adjustments.adjustment_type; OTHER = a note only (F-P4-07). */
+export const SaleAdjustmentType = {
+  PAYMENT_METHOD: 1,
+  PERFORMER: 2,
+  COLLECTED_BY: 3,
+  OTHER: 9,
+} as const;
+export type SaleAdjustmentType = (typeof SaleAdjustmentType)[keyof typeof SaleAdjustmentType];
+
+/** part2 — services.pricing_mode (D-SVC-05). */
+export const ServicePricingMode = { SIMPLE: 1, OPTIONS: 2 } as const;
+export type ServicePricingMode = (typeof ServicePricingMode)[keyof typeof ServicePricingMode];
+
+/** part2 — services.status. */
+export const ServiceStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
+
+/** part3 — customers.status. */
+export const CustomerStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type CustomerStatus = (typeof CustomerStatus)[keyof typeof CustomerStatus];
+
+/** part8 — attachments.kind; a receipt PDF / PNG is a DOCUMENT (add-walkin-visit-checkout design D10). */
+export const AttachmentKind = { DOCUMENT: 1, IMAGE: 2, IMPORT_FILE: 3 } as const;
+export type AttachmentKind = (typeof AttachmentKind)[keyof typeof AttachmentKind];
