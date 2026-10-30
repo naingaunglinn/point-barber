@@ -237,13 +237,37 @@ jobs:
       # The SDKs are loaded by a dynamic import only when a DSN is set, so no CI run starts them from
       # the images: a package missing after `pnpm deploy --prod` or the standalone trace would first
       # show at a deploy (add-staging-deploy design D9 / D10).
-      - name: The api and web images can load their Sentry SDK
+      - name: The api image can load its Sentry SDK
         run: |
-          set -euo pipefail
           docker run --rm --entrypoint node -w /app "point-api:$APP_VERSION" \
             --input-type=module -e "await import('@sentry/nestjs')"
-          docker run --rm --entrypoint node -w /app/apps/web "point-web:$APP_VERSION" \
-            -e "import('@sentry/nextjs').catch((error) => { console.error(error); process.exit(1); })"
+
+      # The web server's SDK is bundled by Next.js or traced into the standalone output; either way the
+      # proof is the server itself: started with a DSN (instrumentation.ts register()), it answers a
+      # page, stays up and logs no missing module.
+      - name: The web image starts with SENTRY_DSN_WEB set
+        run: |
+          set -euo pipefail
+          cid=$(docker run -d -p 3300:3000 \
+            -e SITE_ORIGIN=https://point.test -e APP_ORIGIN=https://app.point.test \
+            -e NEXT_PUBLIC_API_BASE=/api/v1 -e API_INTERNAL_BASE=http://127.0.0.1:9/api/v1 \
+            -e INTERNAL_SSR_KEY=ci-only -e APP_ENV=staging \
+            -e SENTRY_DSN_WEB=https://public@o0.ingest.sentry.io/2 \
+            "point-web:$APP_VERSION")
+          trap 'docker rm -f "$cid" >/dev/null' EXIT
+          code=000
+          for _ in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: app.point.test' http://127.0.0.1:3300/login || true)
+            [ "$code" != 000 ] && break
+            sleep 1
+          done
+          sleep 3
+          docker logs "$cid" > web.log 2>&1 || true
+          if [ "$code" = 000 ] || [ "$(docker inspect -f '{{.State.Running}}' "$cid")" != true ] \
+            || grep -Eq 'ERR_MODULE_NOT_FOUND|Cannot find (module|package)' web.log; then
+            echo "::error::the web image did not start cleanly with a DSN (HTTP $code)"; cat web.log; exit 1
+          fi
+          echo "web answered $code with a DSN set"
 
   e2e:
     name: e2e
