@@ -6,10 +6,17 @@ import { catalogueCode, ErrorCode, normalizePhone, type Problem } from '@point/s
 
 import { Button } from '../components/Button/Button';
 import { FormField } from '../components/FormField/FormField';
+import { TextInput } from '../components/TextInput/TextInput';
 import { Input } from '../primitives/input';
 import { renderIntl } from '../test/intl';
 import { FormAlert } from './FormAlert';
-import { applyProblem, fieldErrorOf, registerField, useAppForm } from './use-app-form';
+import {
+  applyProblem,
+  fieldErrorOf,
+  registerField,
+  useAppForm,
+  useTextField,
+} from './use-app-form';
 
 // ui-foundation "Forms validate on blur and submit, stay submittable, and map server errors to
 // fields" (AD-FORM-03 · AD-FORM-04 · API-ERR-01 · API-ERR-03 · CG-UI-06 · design D9).
@@ -62,6 +69,27 @@ function Demo({ answer }: { answer?: () => Problem | null }) {
           {(control) => <Input {...control} {...registerField(form, name)} />}
         </FormField>
       ))}
+      <Button type="submit" variant="primary">
+        {LABELS.save}
+      </Button>
+    </form>
+  );
+}
+
+/** The same form with the shared TextInput, bound by useTextField instead of registerField. */
+function TextDemo() {
+  const form = useAppForm(schema, { defaultValues: { name: '', phone: '', amount: '' } });
+  const name = useTextField(form, 'name');
+  const phone = useTextField(form, 'phone');
+  const submit = form.handleSubmit(() => undefined);
+  return (
+    <form onSubmit={submit} noValidate>
+      <FormField label={LABELS.name} required error={fieldErrorOf(form.formState.errors, 'name')}>
+        {(control) => <TextInput {...control} {...name} />}
+      </FormField>
+      <FormField label={LABELS.phone} required error={fieldErrorOf(form.formState.errors, 'phone')}>
+        {(control) => <TextInput {...control} {...phone} />}
+      </FormField>
       <Button type="submit" variant="primary">
         {LABELS.save}
       </Button>
@@ -212,5 +240,44 @@ describe('form binding', () => {
   it('the inline alert of an internal error shows the short error ID', () => {
     renderIntl(<FormAlert problem={problem('internal_error')} />);
     expect(screen.getByRole('alert').textContent).toContain('Error ID: 0192a5c4');
+  });
+});
+
+describe('form binding of a TextInput (useTextField)', () => {
+  it('validates on blur: an empty required field shows error.required', async () => {
+    renderIntl(<TextDemo />);
+    fireEvent.focus(field('name'));
+    fireEvent.blur(field('name'));
+    await flush();
+    expect(field('name').getAttribute('aria-invalid')).toBe('true');
+    expect(messageOf(field('name'))).toBe('This field is required.');
+  });
+
+  it('does not validate while typing before the field has shown an error', async () => {
+    renderIntl(<TextDemo />);
+    fireEvent.change(field('phone'), { target: { value: '0977' } });
+    await flush();
+    expect(field('phone').hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('Scenario: The error clears while typing — after the first character', async () => {
+    renderIntl(<TextDemo />);
+    fireEvent.blur(field('name'));
+    await flush();
+    expect(messageOf(field('name'))).toBe('This field is required.');
+    fireEvent.change(field('name'), { target: { value: 'M' } });
+    await flush();
+    expect(field('name').hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('Scenario: Submit with two invalid fields — both messages, focus in Name', async () => {
+    renderIntl(<TextDemo />);
+    const save = screen.getByRole('button', { name: LABELS.save });
+    fireEvent.change(field('phone'), { target: { value: '0977' } });
+    fireEvent.submit(save.closest('form') as HTMLFormElement);
+    await flush();
+    expect(messageOf(field('name'))).toBe('This field is required.');
+    expect(messageOf(field('phone'))).toBe('Enter a valid phone number.');
+    expect(document.activeElement).toBe(field('name'));
   });
 });
