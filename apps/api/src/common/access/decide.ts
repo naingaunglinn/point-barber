@@ -27,7 +27,10 @@ export type Decision =
       readonly allow: false;
       readonly status: 403 | 404;
       readonly code: ErrorCode;
-      /** `context.required` of a 403 forbidden for a caller who does not hold the code. */
+      /**
+       * `context.required` of a 403 forbidden: the code the caller does not hold (row 2), or holds
+       * but not for the target branch (row 9 — API-PERM-03 v1.6).
+       */
       readonly required?: string;
     };
 
@@ -97,12 +100,13 @@ export function decide(
       if (READS.has(method.toUpperCase())) {
         return { allow: false, status: 404, code: ErrorCode.NOT_FOUND };
       }
-      const scopeError = view ? undefined : declaration.scopeError;
-      return {
-        allow: false,
-        status: 403,
-        code: scopeError === 'out_of_scope' ? ErrorCode.OUT_OF_SCOPE : ErrorCode.FORBIDDEN,
-      };
+      // Row 9: `forbidden` names the code, as for a caller without it (API-PERM-03 v1.6: "403
+      // `forbidden` (`context.required`)"); `out_of_scope` only where a part's endpoint names it.
+      if (!view && declaration.scopeError === 'out_of_scope') {
+        return { allow: false, status: 403, code: ErrorCode.OUT_OF_SCOPE };
+      }
+      const required = view ? `${declaration.module}.view` : declaration.code;
+      return { allow: false, status: 403, code: ErrorCode.FORBIDDEN, required };
     }
   }
 }

@@ -253,7 +253,7 @@ const cases: readonly [
     can('settings.update', { branch: 'body.branch_id?' }),
     at([B1]),
     'PUT',
-    forbidden(),
+    forbidden('settings.update'),
   ],
   // Row 6 — the entity or employee does not exist.
   [
@@ -312,7 +312,7 @@ const cases: readonly [
     can('employee.rating_update', { branch: 'body.branch_id' }),
     at([B1]),
     'POST',
-    forbidden(),
+    forbidden('employee.rating_update'),
   ],
   [
     '9 · scopeError out_of_scope',
@@ -328,7 +328,7 @@ const cases: readonly [
     can('employee.rating_update', { branch: 'body.items[].branch_id' }),
     at([B3, B1]),
     'POST',
-    forbidden(),
+    forbidden('employee.rating_update'),
   ],
   [
     '9 · match any, no branch covered',
@@ -336,7 +336,7 @@ const cases: readonly [
     can('employee.rating_update', { target: 'employee:id' }),
     at([B1, B2], 'any'),
     'PATCH',
-    forbidden(),
+    forbidden('employee.rating_update'),
   ],
   [
     '9 · required branch missing, branch scope',
@@ -344,7 +344,7 @@ const cases: readonly [
     can('employee.rating_update', { branch: 'body.branch_id' }),
     at([]),
     'POST',
-    forbidden(),
+    forbidden('employee.rating_update'),
   ],
   // Row 10 — covered.
   [
@@ -408,6 +408,8 @@ describe('decide() (task 4.6 · design D11)', () => {
     expect(decide(declaration, people.manager, at([B3]), 'GET')).toStrictEqual(allow);
     expect(decide(declaration, people.manager, at([B3]), 'DELETE')).toStrictEqual(allow);
     expect(decide(declaration, people.manager, at([B1]), 'GET')).toStrictEqual(notFound);
-    expect(decide(declaration, people.manager, at([B1]), 'DELETE')).toStrictEqual(forbidden());
+    expect(decide(declaration, people.manager, at([B1]), 'DELETE')).toStrictEqual(
+      forbidden('employee.rating_update'),
+    );
   });
 });
