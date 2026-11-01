@@ -1,4 +1,4 @@
-import { AuditSource } from '@point/shared';
+import { AuditSource, PERMISSIONS } from '@point/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../src/common/database/prisma.service.js';
@@ -38,7 +38,9 @@ async function start(run: number) {
 describe('the sync.code_tables job at every start (task 3.5)', () => {
   it('Scenario: First start · Second start changes nothing', async () => {
     const first = await start(1);
-    expect(await first.prisma.permissions.count({ where: { archived_at: null } })).toBe(21);
+    expect(await first.prisma.permissions.count({ where: { archived_at: null } })).toBe(
+      PERMISSIONS.length,
+    );
     expect(await first.prisma.roles.count()).toBe(3);
     const before = await first.prisma.permissions.findMany({
       select: { code: true, updated_at: true },
@@ -47,7 +49,7 @@ describe('the sync.code_tables job at every start (task 3.5)', () => {
     await first.t.close();
 
     const second = await start(2);
-    expect(await second.prisma.permissions.count()).toBe(21);
+    expect(await second.prisma.permissions.count()).toBe(PERMISSIONS.length);
     expect(await second.prisma.roles.count()).toBe(3);
     expect(
       await second.prisma.permissions.findMany({
@@ -66,7 +68,7 @@ describe('the sync.code_tables job at every start (task 3.5)', () => {
         entity_type: 'permissions',
       },
     ]);
-    expect((sync[0]?.after_data as { created: string[] }).created).toHaveLength(21);
+    expect((sync[0]?.after_data as { created: string[] }).created).toHaveLength(PERMISSIONS.length);
     await second.t.close();
   }, 60_000);
 });

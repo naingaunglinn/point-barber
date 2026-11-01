@@ -1,4 +1,4 @@
-import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Injectable, type OnModuleDestroy, type OnModuleInit, Optional } from '@nestjs/common';
 import { APP_TIME_ZONE } from '@point/shared';
 import { PrismaPg } from '@prisma/adapter-pg';
 
@@ -28,8 +28,14 @@ export class PrismaService
   extends PrismaClient
   implements DatabaseProbe, OnModuleInit, OnModuleDestroy
 {
-  constructor(config: AppConfig) {
-    super({ adapter: new PrismaPg({ connectionString: config.env.DATABASE_URL }) });
+  /** `poolSize`: pg's 10 connections unless a test asks for more (design D6 — a pool of 20 or more). */
+  constructor(config: AppConfig, @Optional() poolSize?: number) {
+    super({
+      adapter: new PrismaPg({
+        connectionString: config.env.DATABASE_URL,
+        ...(poolSize === undefined ? {} : { max: poolSize }),
+      }),
+    });
   }
 
   async onModuleInit(): Promise<void> {

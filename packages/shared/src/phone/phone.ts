@@ -34,3 +34,14 @@ export function formatPhone(e164: E164): string {
   if (local.length === 7) return `09 ${local.slice(0, 3)} ${local.slice(3)}`;
   return e164;
 }
+
+/**
+ * The receipt form of a Myanmar number (AD-RCPT-01): `+95977123456` → `09•••••456` — `09`, five dots,
+ * the last three digits, so neither the number nor its length is printed. A number outside Myanmar has
+ * no defined mask and gives null: the receipt then prints no phone.
+ */
+export function maskPhone(e164: E164): string | null {
+  const local = /^\+959(\d+)$/.exec(e164)?.[1];
+  if (local === undefined || local.length < 3) return null;
+  return `09•••••${local.slice(-3)}`;
+}

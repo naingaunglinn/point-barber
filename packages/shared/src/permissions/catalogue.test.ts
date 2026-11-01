@@ -17,6 +17,10 @@ const json: unknown = JSON.parse(
   readFileSync(join(shared, 'definitions/permissions.json'), 'utf8'),
 );
 
+/** The modules of Part 1 §10; the codes of later parts are added by their changes (Part 4 §9 below). */
+const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'settings']);
+const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
+
 const count = <K extends string>(values: readonly K[]) =>
   values.reduce<Record<string, number>>(
     (acc, value) => ({ ...acc, [value]: (acc[value] ?? 0) + 1 }),
@@ -25,7 +29,8 @@ const count = <K extends string>(values: readonly K[]) =>
 
 describe('add-foundation-auth-access · access · The permission catalogue is one file and holds the 21 Part 1 codes', () => {
   it('Scenario: Count by level and by kind', () => {
-    const entries = permissionCatalogueSchema.parse(json);
+    const all = permissionCatalogueSchema.parse(json);
+    const entries = all.filter((entry) => PART1_MODULES.has(entry.module));
     expect(entries).toHaveLength(21);
     expect(count(entries.map((entry) => entry.level))).toStrictEqual({
       company: 8,
@@ -33,8 +38,8 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
       mixed: 2,
     });
     expect(count(entries.map((entry) => entry.kind))).toStrictEqual({ crud: 16, special: 5 });
-    expect(entries.filter((entry) => entry.action === 'manage')).toStrictEqual([]);
-    for (const entry of entries) expect(entry.label_key).toBe(`permission.${entry.code}`);
+    expect(all.filter((entry) => entry.action === 'manage')).toStrictEqual([]);
+    for (const entry of all) expect(entry.label_key).toBe(`permission.${entry.code}`);
   });
 
   it('Scenario: A code that is not in the file does not compile', () => {
@@ -46,36 +51,37 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
   });
 
   it('holds the codes and levels of the Part 1 table', () => {
-    expect(Object.fromEntries(PERMISSIONS.map((entry) => [entry.code, entry.level]))).toStrictEqual(
-      {
-        'company.view': 'company',
-        'company.update': 'company',
-        'branch.view': 'branch',
-        'branch.create': 'company',
-        'branch.update': 'branch',
-        'branch.delete': 'company',
-        'employee.view': 'branch',
-        'employee.create': 'branch',
-        'employee.update': 'branch',
-        'employee.delete': 'branch',
-        'employee.rating_update': 'branch',
-        'employee.earnings_update': 'branch',
-        'employee.access_update': 'branch',
-        'employee.branch_assign': 'branch',
-        'role.view': 'company',
-        'role.create': 'company',
-        'role.update': 'company',
-        'role.delete': 'company',
-        'role.assign': 'branch',
-        'settings.view': 'mixed',
-        'settings.update': 'mixed',
-      },
-    );
+    const part1 = PERMISSIONS.filter((entry) => PART1_MODULES.has(entry.module));
+    expect(Object.fromEntries(part1.map((entry) => [entry.code, entry.level]))).toStrictEqual({
+      'company.view': 'company',
+      'company.update': 'company',
+      'branch.view': 'branch',
+      'branch.create': 'company',
+      'branch.update': 'branch',
+      'branch.delete': 'company',
+      'employee.view': 'branch',
+      'employee.create': 'branch',
+      'employee.update': 'branch',
+      'employee.delete': 'branch',
+      'employee.rating_update': 'branch',
+      'employee.earnings_update': 'branch',
+      'employee.access_update': 'branch',
+      'employee.branch_assign': 'branch',
+      'role.view': 'company',
+      'role.create': 'company',
+      'role.update': 'company',
+      'role.delete': 'company',
+      'role.assign': 'branch',
+      'settings.view': 'mixed',
+      'settings.update': 'mixed',
+    });
   });
 
   it('marks the five special actions', () => {
     expect(
-      PERMISSIONS.filter((entry) => entry.kind === 'special').map((entry) => entry.code),
+      PERMISSIONS.filter(
+        (entry) => PART1_MODULES.has(entry.module) && entry.kind === 'special',
+      ).map((entry) => entry.code),
     ).toStrictEqual([
       'employee.rating_update',
       'employee.earnings_update',
@@ -83,6 +89,11 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
       'employee.branch_assign',
       'role.assign',
     ]);
+  });
+
+  it('holds nothing but the codes of Part 1 and Part 4', () => {
+    const modules = new Set([...PART1_MODULES, ...PART4_MODULES]);
+    expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
 
   it('answers the level of a code', () => {
@@ -99,6 +110,45 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     expect(result.stderr).toBe('');
     expect(result.status).toBe(0);
     expect(PERMISSIONS).toStrictEqual(json);
+  });
+});
+
+// add-walkin-visit-checkout task 1.3 — the 22 codes of Part 4 §9 with their kind and level (ADR-011 ·
+// ADR-012).
+describe('add-walkin-visit-checkout · the 22 Part 4 codes', () => {
+  it('holds the codes, kinds and levels of the Part 4 table', () => {
+    const part4 = PERMISSIONS.filter((entry) => PART4_MODULES.has(entry.module));
+    expect(
+      Object.fromEntries(part4.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`])),
+    ).toStrictEqual({
+      'visit.view': 'crud · branch',
+      'visit.update': 'crud · branch',
+      'visit.delete': 'crud · branch',
+      'sale.view': 'crud · branch',
+      'sale.create': 'crud · branch',
+      'sale.delete': 'crud · branch',
+      'sale.finish_override': 'special · branch',
+      'sale.override_price': 'special · branch',
+      'sale.late_entry': 'special · branch',
+      'sale.refund': 'special · branch',
+      'sale.adjust': 'special · branch',
+      'payment.view': 'crud · branch',
+      'payment.verify': 'special · branch',
+      'discount.view': 'crud · mixed',
+      'discount.create': 'crud · company',
+      'discount.update': 'crud · company',
+      'discount.delete': 'crud · company',
+      'discount.approve': 'special · branch',
+      'payment_method.view': 'crud · company',
+      'payment_method.create': 'crud · company',
+      'payment_method.update': 'crud · company',
+      'payment_method.delete': 'crud · company',
+    });
+  });
+
+  it('types a Part 4 code', () => {
+    const code: PermissionCode = 'sale.finish_override';
+    expect(permissionLevel(code)).toBe('branch');
   });
 });
 

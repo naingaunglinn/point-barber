@@ -14,6 +14,10 @@ const ROW_GROUPS = {
   employee_role_branches: '008',
   branch_services: '009',
   service_prices: '00a',
+  // add-walkin-visit-checkout (fixture modules 070, 080, 090)
+  employee_service_eligibilities: '00c',
+  branch_opening_hours: '00d',
+  role_permissions: '00e',
 } as const;
 
 export const FIXTURE_IDS = {
@@ -42,6 +46,8 @@ export const FIXTURE_IDS = {
   },
   serviceCategories: { SERVICES: id('004', '1') },
   services: { HAIRCUT: id('005', '1'), SHAVE: id('005', '2'), HAIR_WASH: id('005', '3') },
+  // add-walkin-visit-checkout — spec-fixtures §2 customers (fixture module 060).
+  customers: { MA_SU: id('00b', '1') },
 } as const;
 
 /** The id of row `n` (1, 2, …) of a fixture table whose rows have no code of their own. */

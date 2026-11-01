@@ -1,11 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Health, SystemStatus } from '@point/shared';
+import { type Health, type SystemStatus, toMmtIso } from '@point/shared';
 import type { Logger } from 'pino';
 
 import { Clock } from '../../../common/clock/clock.js';
 import { AppConfig } from '../../../common/config/config.js';
 import { DatabaseProbe } from '../../../common/database/prisma.service.js';
-import { toMmtIso } from '../../../common/http/mmt-iso.js';
 import { HEALTH_PING_TIMEOUT_MS } from '../../../common/limits.js';
 import { LOGGER } from '../../../common/logging/logger.js';
 

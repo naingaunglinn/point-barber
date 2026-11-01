@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, formatDateTime, formatTime, formatTimeRange } from './date-time.js';
+import {
+  formatDate,
+  formatDateTime,
+  formatTime,
+  formatTimeRange,
+  formatWeekday,
+} from './date-time.js';
 
 // ui-foundation · "Dates and times are formatted in Myanmar Time whatever the device time zone is"
 // (D-PLT-05 · D-PLT-15 · AD-FMT-02 · AD-FMT-03 · API-DATA-03). Run under three zones by test:zones.
@@ -63,6 +69,25 @@ describe('formatDate', () => {
 
   it('refuses a date that does not exist', () => {
     expect(() => formatDate('2026-02-31', { locale: 'en' })).toThrow(RangeError);
+  });
+});
+
+describe('formatWeekday', () => {
+  it('ISO day_of_week, Monday first', () => {
+    expect([1, 2, 3, 4, 5, 6, 7].map((day) => formatWeekday(day, { locale: 'en' }))).toStrictEqual([
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun',
+    ]);
+  });
+
+  it('refuses a number that is not a weekday', () => {
+    for (const day of [0, 8, 1.5])
+      expect(() => formatWeekday(day, { locale: 'en' })).toThrow(RangeError);
   });
 });
 

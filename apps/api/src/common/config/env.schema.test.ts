@@ -22,6 +22,12 @@ const valid = {
   GOOGLE_CLIENT_ID: 'client-id.apps.googleusercontent.com',
   GOOGLE_CLIENT_SECRET: 'google-secret',
   COMPANY_NAME_MM: 'ပွိုင့် ဘာဘာရှော့',
+  // add-walkin-visit-checkout — the bucket (ADR-014 · task 3.5).
+  S3_ENDPOINT: 'http://localhost:9000',
+  S3_REGION: 'us-east-1',
+  S3_BUCKET_APP: 'point-app',
+  S3_ACCESS_KEY_ID: 'minio-dev',
+  S3_SECRET_ACCESS_KEY: 'minio-dev-only',
 };
 
 function messageOf(raw: Record<string, string | undefined>): string {
@@ -209,4 +215,21 @@ describe('API environment schema · sign-in, mail, jobs (design D18)', () => {
       expect(messageOf({ ...valid, [name]: 'yes' })).toMatch(new RegExp(name));
     },
   );
+
+  // add-walkin-visit-checkout task 3.5 — the bucket of generated documents (ADR-014).
+  it.each([
+    'S3_ENDPOINT',
+    'S3_REGION',
+    'S3_BUCKET_APP',
+    'S3_ACCESS_KEY_ID',
+    'S3_SECRET_ACCESS_KEY',
+  ])('stops the start when %s is missing, naming it', (name) => {
+    const rest: Record<string, string> = { ...valid };
+    delete rest[name];
+    expect(() => parseApiEnv(rest)).toThrow(new RegExp(`${name} is required`));
+  });
+
+  it('refuses an S3_ENDPOINT that is not an http(s) URL', () => {
+    expect(messageOf({ ...valid, S3_ENDPOINT: 'localhost:9000' })).toMatch(/S3_ENDPOINT/);
+  });
 });

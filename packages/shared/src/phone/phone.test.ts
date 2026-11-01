@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatPhone, normalizePhone } from './phone.js';
+import { formatPhone, maskPhone, normalizePhone } from './phone.js';
 
 // ui-foundation · "Phone numbers are normalised to E.164 by one shared function"
 // (D-CUS-02 · API-DATA-06 · AD-FORM-10 · AD-FMT-04 · P3-RULE-01).
@@ -39,5 +39,27 @@ describe('formatPhone', () => {
     expect(formatPhone('+9591234567')).toBe('09 123 4567');
     expect(formatPhone('+95112345678')).toBe('+95112345678');
     expect(formatPhone('+6591234567')).toBe('+6591234567');
+  });
+});
+
+// add-walkin-visit-checkout task 2.11 — the receipt never prints the full phone: `09`, five dots,
+// the last three digits (AD-RCPT-01 · D-CUS-02).
+describe('maskPhone', () => {
+  it('Ma Su +95977123456 → 09•••••456', () => {
+    expect(maskPhone('+95977123456')).toBe('09•••••456');
+  });
+
+  it('is the mask of the normalised number, whatever was typed', () => {
+    const typed = normalizePhone('09 7712 3456');
+    expect(typed !== 'phone_invalid' && maskPhone(typed)).toBe('09•••••456');
+  });
+
+  it('keeps five dots for a shorter or longer Myanmar number', () => {
+    expect(maskPhone('+9591234567')).toBe('09•••••567');
+    expect(maskPhone('+959123456789')).toBe('09•••••789');
+  });
+
+  it('prints nothing for a number outside Myanmar (no mask is defined for it)', () => {
+    expect(maskPhone('+66812345678')).toBeNull();
   });
 });

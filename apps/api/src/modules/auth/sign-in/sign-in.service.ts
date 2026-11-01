@@ -1,11 +1,10 @@
 import { createHmac } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import { EmployeeStatus, LoginMethod, UserStatus } from '@point/shared';
+import { EmployeeStatus, LoginMethod, UserStatus, toMmtIso } from '@point/shared';
 
 import { AppConfig } from '../../../common/config/config.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
-import { toMmtIso } from '../../../common/http/mmt-iso.js';
 import { RequestContext } from '../../../common/http/request-context.js';
 import { PeopleDirectory } from '../../people/index.js';
 import { Audit } from '../../platform/index.js';

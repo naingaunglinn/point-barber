@@ -16,10 +16,15 @@
 	encode zstd gzip
 	# Configured here, specified by add-public-website-pages (P8-RULE-13): never forwarded.
 	request_header -X-Internal-Key
+	# The content-security policy (add-staging-deploy design D8 · ADR-009 action item 1 · CG-SEC-12):
+	# one value for both hosts. CADDY_CSP_CONNECT is the Sentry ingest origin of the web app's error
+	# reports, or empty ('self' only). 'unsafe-inline' for scripts and styles: Next.js writes its
+	# hydration data as inline scripts and React writes style attributes (D8).
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		Strict-Transport-Security "{$CADDY_HSTS:max-age=31536000}"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' {$CADDY_CSP_CONNECT}; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		-Server
 	}
 	# JSON to stdout; the query string is cut from the logged URI (same reason as the API, D5).

@@ -1,7 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "rootDir": ".",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "customConditions": ["source"],
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
 }

@@ -21,6 +21,10 @@ const webEnvSchema = z.object({
   NEXT_PUBLIC_API_BASE: z.string().regex(/^\/(?!\/)/, 'must be a same-origin path such as /api/v1'),
   // Server-side calls go over the Docker network (`http://api:3001/api/v1`).
   API_INTERNAL_BASE: httpUrl,
+  // add-staging-deploy design D10: error reporting, read at run time so one image serves every
+  // environment; off without a DSN.
+  APP_ENV: z.enum(['development', 'test', 'staging', 'production']),
+  SENTRY_DSN_WEB: httpUrl.optional(),
 });
 
 export type WebEnv = z.infer<typeof webEnvSchema>;
@@ -52,6 +56,8 @@ export function getEnv(): WebEnv {
     APP_VERSION: process.env.APP_VERSION,
     NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE,
     API_INTERNAL_BASE: process.env.API_INTERNAL_BASE,
+    APP_ENV: process.env.APP_ENV,
+    SENTRY_DSN_WEB: process.env.SENTRY_DSN_WEB,
   });
   return cached;
 }

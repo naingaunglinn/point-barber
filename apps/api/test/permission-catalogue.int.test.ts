@@ -37,11 +37,11 @@ const permissionRows = () => prisma.permissions.findMany({ orderBy: { code: 'asc
 const without = (code: string) => PERMISSIONS.filter((entry) => entry.code !== code);
 
 describe('PermissionCatalogue.sync (task 3.1)', () => {
-  it('on a fresh database creates the 21 codes and one permission.sync row', async () => {
+  it('on a fresh database creates every code of the file and one permission.sync row', async () => {
     const result = await sync(PERMISSIONS);
-    expect(result.created).toHaveLength(21);
+    expect(result.created).toHaveLength(PERMISSIONS.length);
     const rows = await permissionRows();
-    expect(rows).toHaveLength(21);
+    expect(rows).toHaveLength(PERMISSIONS.length);
     expect(rows.every((row) => row.archived_at === null)).toBe(true);
     expect(rows.find((row) => row.code === 'role.assign')).toMatchObject({
       module: 'role',
@@ -56,7 +56,9 @@ describe('PermissionCatalogue.sync (task 3.1)', () => {
       actor_user_id: null,
       branch_id: null,
     });
-    expect((audit[0]?.after_data as { created: string[] }).created).toHaveLength(21);
+    expect((audit[0]?.after_data as { created: string[] }).created).toHaveLength(
+      PERMISSIONS.length,
+    );
   });
 
   it('an unchanged second run changes no row and writes no audit row', async () => {
@@ -125,10 +127,13 @@ describe('PermissionCatalogue.sync (task 3.1)', () => {
     expect(row.archived_at).toBeNull();
   });
 
-  it('two runs at once do not race (advisory lock): 21 rows, one creating run', async () => {
+  it('two runs at once do not race (advisory lock): one row per code, one creating run', async () => {
     const results = await Promise.all([sync(PERMISSIONS), sync(PERMISSIONS)]);
-    expect(results.map((result) => result.created.length).sort()).toStrictEqual([0, 21]);
-    expect(await permissionRows()).toHaveLength(21);
+    expect(results.map((result) => result.created.length).sort()).toStrictEqual([
+      0,
+      PERMISSIONS.length,
+    ]);
+    expect(await permissionRows()).toHaveLength(PERMISSIONS.length);
     expect(await syncRows()).toHaveLength(1);
   });
 });

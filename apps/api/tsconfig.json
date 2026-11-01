@@ -5,6 +5,8 @@
     "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    // @point/documents is read from source (`source` condition): its receipt templates are TSX.
+    "jsx": "react-jsx",
     "customConditions": ["source"],
     "types": ["node"]
   },

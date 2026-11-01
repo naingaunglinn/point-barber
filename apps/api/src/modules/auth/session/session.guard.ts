@@ -1,7 +1,10 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ErrorCode } from '@point/shared';
+import { ErrorCode, SESSION_REQUEST_LIMIT, SESSION_REQUEST_WINDOW_SECONDS } from '@point/shared';
 import type { Request, Response } from 'express';
+import type { Logger } from 'pino';
 
 import type { AccessDeclaration } from '../../../common/access/declarations.js';
 import { ACCESS_METADATA } from '../../../common/access/public.decorator.js';
@@ -9,22 +12,30 @@ import { Clock } from '../../../common/clock/clock.js';
 import { AppConfig } from '../../../common/config/config.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { RequestContext } from '../../../common/http/request-context.js';
-import { MaintenanceGate } from '../../platform/index.js';
+import { LOGGER } from '../../../common/logging/logger.js';
+import { MaintenanceGate, RateLimiter } from '../../platform/index.js';
+import { rateLimited } from '../sign-in/outcome.js';
 import { SESSION_COOKIE, readCookie, sessionCookie } from './session-cookie.js';
 import { SessionService, sessionState } from './session.service.js';
 
 // The second global guard (P1-RULE-04 · API-AUTH-01 · ADR-005 action item 1 · design D2): on every
 // request to a staff endpoint — anything that is not @Public() or @Internal() — the cookie, the
 // session row, `revoked_at`, `users.status` and `employees.status`, in this order and before any
-// permission check; then the maintenance step. It fills the request context with the caller.
+// permission check; then the per-session request cap (API-LIM-03 · add-staging-deploy D7) and the
+// maintenance step. It fills the request context with the caller.
 @Injectable()
 export class SessionGuard implements CanActivate {
+  /** Per session: the end of the window whose first refusal was logged (one warn line per window). */
+  private readonly warned = new Map<string, number>();
+
   constructor(
     private readonly reflector: Reflector,
     private readonly sessions: SessionService,
     private readonly maintenance: MaintenanceGate,
+    private readonly limiter: RateLimiter,
     private readonly clock: Clock,
     private readonly config: AppConfig,
+    @Inject(LOGGER) private readonly log: Logger,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -46,6 +57,19 @@ export class SessionGuard implements CanActivate {
       });
     }
 
+    // 600 requests per session per 60 s; a refused request is not counted and runs nothing — the
+    // access guard, the handler, its transaction and its audit row never start (design D7).
+    const cap = this.limiter.hit(
+      'session',
+      state.session.id,
+      SESSION_REQUEST_LIMIT,
+      SESSION_REQUEST_WINDOW_SECONDS,
+    );
+    if (!cap.allowed) {
+      this.warnOnce(state.session.id);
+      throw rateLimited(cap.retryAfter);
+    }
+
     const ctx = RequestContext.current();
     if (ctx !== undefined) {
       ctx.user_id = state.session.user_id;
@@ -60,5 +84,22 @@ export class SessionGuard implements CanActivate {
         .append('Set-Cookie', sessionCookie(token, this.config.env.SESSION_COOKIE_SECURE));
     }
     return true;
+  }
+
+  /**
+   * The first refusal of a window is logged once, with a hash of the session id — never the cookie.
+   * Quiet for a whole window from that refusal: under a steady over-cap loop the sliding window's
+   * retry-after drops to about a second, which would log a line per second.
+   */
+  private warnOnce(sessionId: string): void {
+    const now = this.clock.now().getTime();
+    const until = this.warned.get(sessionId);
+    if (until !== undefined && now < until) return;
+    this.warned.set(sessionId, now + SESSION_REQUEST_WINDOW_SECONDS * 1000);
+    for (const [id, end] of this.warned) if (end <= now) this.warned.delete(id);
+    this.log.warn(
+      { session: createHash('sha256').update(sessionId).digest('hex').slice(0, 16) },
+      'session request cap reached',
+    );
   }
 }

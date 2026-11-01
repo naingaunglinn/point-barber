@@ -4,21 +4,36 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
-import { PgBoss, type SendOptions, type WorkOptions, fromPrisma } from 'pg-boss';
+import {
+  type JobWithMetadata,
+  PgBoss,
+  type SendOptions,
+  type WorkOptions,
+  fromPrisma,
+} from 'pg-boss';
 import type { Logger } from 'pino';
 
 import { AppConfig } from '../../../common/config/config.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { LOGGER } from '../../../common/logging/logger.js';
+import { ErrorReporter } from '../../../common/observability/error-reporter.js';
 
 // Background jobs on pg-boss (ADR-002 · add-foundation-auth-access design D3 · D9). The one folder
 // that imports pg-boss (CG-ARCH-08). Schema `pgboss` and the queues are created by the owner-role
 // step of db/scripts/migrate.mjs; the API starts pg-boss with schema creation and migration off, as
 // role point_app. A job is sent inside the caller's transaction — `send(tx, …)` binds pg-boss's
 // `db` executor to the Prisma transaction — so a rolled-back transaction leaves no job. The workers
-// run in this process when JOBS_IN_API=true (the default), and stop with it.
+// run in this process when JOBS_IN_API=true (the default), and stop with it. A job whose last retry
+// throws is reported as a defect, tagged with its queue (add-staging-deploy D9 · CG-OBS-04).
 
-export type JobHandler<T> = (data: T, job: { readonly id: string }) => Promise<void>;
+/** The attempt a handler runs: `retry_count` 0 is the first; `retry_count = retry_limit` the last. */
+export interface JobAttempt {
+  readonly id: string;
+  readonly retry_count: number;
+  readonly retry_limit: number;
+}
+
+export type JobHandler<T> = (data: T, job: JobAttempt) => Promise<void>;
 export type JobSendOptions = Omit<SendOptions, 'db'>;
 
 export const PGBOSS_SCHEMA = 'pgboss';
@@ -39,6 +54,7 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
 
   constructor(
     private readonly config: AppConfig,
+    private readonly reporter: ErrorReporter,
     @Inject(LOGGER) private readonly log: Logger,
   ) {
     const workers = config.env.JOBS_IN_API;
@@ -118,8 +134,22 @@ export class Jobs implements OnApplicationBootstrap, OnApplicationShutdown {
 
   private async startWorker({ name, handler, options }: Registration): Promise<void> {
     if (!this.config.env.JOBS_IN_API) return;
-    await this.boss.work<never>(name, { ...options, batchSize: 1 }, async ([job]) => {
-      if (job !== undefined) await handler(job.data, { id: job.id });
-    });
+    await this.boss.work<never>(
+      name,
+      { ...options, batchSize: 1, includeMetadata: true },
+      async ([job]) => {
+        if (job === undefined) return;
+        // `includeMetadata` adds the retry limit; the spread options hide that from the overload.
+        const { id, data, retryCount, retryLimit } = job as JobWithMetadata<never>;
+        try {
+          await handler(data, { id, retry_count: retryCount, retry_limit: retryLimit });
+        } catch (error) {
+          // pg-boss retries the job until retryCount reaches retryLimit; only that last failure is a
+          // defect — an earlier one may still succeed (a mail server back after a minute).
+          if (retryCount >= retryLimit) this.reporter.capture(error, { job: name });
+          throw error;
+        }
+      },
+    );
   }
 }

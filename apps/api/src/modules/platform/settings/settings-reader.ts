@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
 // — "no row = default" is exactly D-PLT-16 — and that change swaps the implementation behind
 // SettingsReader, moving the defaults into settings.json.
 
-/** The eleven settings this change reads, with their locked defaults. */
+/** The settings the API reads, with their locked defaults. */
 export const DEFAULT_SETTINGS = {
   'booking.slot_interval_minutes': 15,
   'booking.advance_window_days': 14,
@@ -19,6 +19,9 @@ export const DEFAULT_SETTINGS = {
   'receipt.auto_print': false,
   // Server-only: the company switch of P1-RULE-06's own-earnings flag.
   'dashboard.show_own_earnings_all': false,
+  // add-walkin-visit-checkout — server-only, read by the price quote's block length (P2-RULE-10):
+  // home travel time before and after a HOME visit, branch setting, default 30 minutes (D-SCH-03).
+  'home_service.travel_minutes': 30,
 } as const;
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

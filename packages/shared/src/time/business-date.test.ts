@@ -16,6 +16,10 @@ describe('businessDateOf', () => {
     ['2026-10-04T23:59:59Z', '2026-10-05'],
     // UTC midnight itself = 06:30 MMT.
     ['2026-10-05T00:00:00Z', '2026-10-05'],
+    // add-walkin-visit-checkout task 2.7 — the month boundary in UTC: a sale finished at 23:59 MMT
+    // on 31/Oct is an October sale; one minute later it is November's (receipt month, payroll).
+    ['2026-10-31T17:29:00Z', '2026-10-31'],
+    ['2026-10-31T17:30:00Z', '2026-11-01'],
   ])('%s → %s', (instant, date) => {
     expect(businessDateOf(instant)).toBe(date);
     expect(businessDateOf(new Date(instant))).toBe(date);

@@ -35,7 +35,22 @@ const MANAGER = [
   'role.assign',
   'settings.view',
   'settings.update',
+  // Part 4 §9 (add-walkin-visit-checkout task 1.4).
+  'visit.view',
+  'visit.update',
+  'visit.delete',
+  'sale.view',
+  'sale.create',
+  'sale.delete',
+  'sale.finish_override',
+  'sale.override_price',
+  'sale.late_entry',
+  'payment.view',
+  'payment.verify',
+  'discount.view',
+  'discount.approve',
 ];
+const BARBER = ['sale.create', 'sale.late_entry'];
 
 /** The job's two steps: the catalogue, then the base seed. */
 async function firstStart(entries = PERMISSIONS) {
@@ -104,8 +119,8 @@ describe('add-foundation-auth-access · access · The first start creates the se
     expect(Object.keys(roles).sort()).toStrictEqual(['Admin', 'Barber', 'Manager']);
     expect(roles.Admin).toMatchObject({ name_mm: 'အက်ဒမင်', status: 1 });
     expect(roles.Manager).toMatchObject({ name_mm: 'မန်နေဂျာ', status: 1 });
-    expect(roles.Barber).toMatchObject({ name_mm: 'ဘာဘာ', status: 1, codes: [] });
-    expect(roles.Admin?.codes).toHaveLength(21);
+    expect(roles.Barber).toMatchObject({ name_mm: 'ဘာဘာ', status: 1, codes: BARBER });
+    expect(roles.Admin?.codes).toHaveLength(PERMISSIONS.length);
     expect(roles.Manager?.codes).toStrictEqual([...MANAGER].sort());
     expect(roles.Manager?.codes).not.toContain('employee.update');
     expect(roles.Manager?.codes).not.toContain('employee.branch_assign');
@@ -150,7 +165,7 @@ describe('add-foundation-auth-access · access · The first start creates the se
       where: { role_id: manager?.id, permission_id: update.id },
     });
     await firstStart();
-    expect((await roleCodes()).Manager?.codes).toHaveLength(5);
+    expect((await roleCodes()).Manager?.codes).toHaveLength(MANAGER.length - 1);
     expect(await prisma.roles.count()).toBe(3);
   });
 });
@@ -213,9 +228,9 @@ describe('add-foundation-auth-access · access · A company admin holds all five
     };
     await runner.run((tx) => t.app.get(PermissionCatalogue).sync(tx, [...PERMISSIONS, extra]));
     const roles = await roleCodes();
-    expect(roles.Admin?.codes).toHaveLength(22);
+    expect(roles.Admin?.codes).toHaveLength(PERMISSIONS.length + 1);
     expect(roles.Admin?.codes).toContain('fixture.view');
-    expect(roles.Manager?.codes).toHaveLength(6);
+    expect(roles.Manager?.codes).toHaveLength(MANAGER.length);
     const rows = await prisma.audit_events.findMany({ where: { action: 'role.permissions_set' } });
     expect(rows).toMatchObject([
       {
