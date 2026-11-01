@@ -4,8 +4,10 @@
 // change adds the codes its clients read.
 export const HttpStatus = {
   NO_CONTENT: 204,
+  BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  TOO_MANY_REQUESTS: 429, // RFC 6585
 } as const;
 export type HttpStatus = (typeof HttpStatus)[keyof typeof HttpStatus];
