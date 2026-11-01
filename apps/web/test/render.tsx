@@ -6,6 +6,15 @@ import type { ReactElement } from 'react';
 import { loadMessages, type Locale } from '@point/i18n';
 import { FormatProvider } from '@point/ui';
 
+// A browser API that jsdom lacks and the AppShell calls (it measures its top bar), as in
+// packages/ui/vitest.setup.ts.
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub;
+
 // Renders a staff screen inside the providers of the staff layout (design D17): the language, a fresh
 // query cache and the formatting profile. Component tests only (jsdom).
 export function renderStaff(
