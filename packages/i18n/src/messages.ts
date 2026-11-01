@@ -3,16 +3,20 @@ import authEn from '../messages/en/auth.json';
 import commonEn from '../messages/en/common.json';
 import devuiEn from '../messages/en/devui.json';
 import errorEn from '../messages/en/error.json';
+import posEn from '../messages/en/pos.json';
 import reasonEn from '../messages/en/reason.json';
 import receiptEn from '../messages/en/receipt.json';
 import statusEn from '../messages/en/status.json';
+import todayEn from '../messages/en/today.json';
 import authMy from '../messages/my/auth.json';
 import commonMy from '../messages/my/common.json';
 import devuiMy from '../messages/my/devui.json';
 import errorMy from '../messages/my/error.json';
+import posMy from '../messages/my/pos.json';
 import reasonMy from '../messages/my/reason.json';
 import receiptMy from '../messages/my/receipt.json';
 import statusMy from '../messages/my/status.json';
+import todayMy from '../messages/my/today.json';
 
 // The messages of one language, one JSON file per namespace (D-PLT-03 · AD-L10N-01 · design D6).
 // The English files define the key set; `pnpm i18n:check` keeps Myanmar equal to it.
@@ -25,6 +29,8 @@ const MESSAGES = {
     receipt: receiptEn,
     devui: devuiEn,
     auth: authEn,
+    today: todayEn,
+    pos: posEn,
   },
   my: {
     common: commonMy,
@@ -34,6 +40,8 @@ const MESSAGES = {
     receipt: receiptMy,
     devui: devuiMy,
     auth: authMy,
+    today: todayMy,
+    pos: posMy,
   },
 } as const;
 

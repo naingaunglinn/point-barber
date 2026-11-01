@@ -8,6 +8,13 @@ import type { Mmk } from './mmk.js';
 const MAX_WIRE = BigInt(Number.MAX_SAFE_INTEGER);
 const MIN_WIRE = BigInt(Number.MIN_SAFE_INTEGER);
 
+/**
+ * The largest cash change of a non-cash over-transfer: 10,000 Ks (owner 01/Nov/2026 sheet WR1 · D-PAY-05 ·
+ * API Part 4 v1.4 P4-RULE-10 #12). A named constant, not a settings key: FINISH refuses a larger change
+ * with 422 `change_too_large`, and the checkout shows no "Change to return" above it.
+ */
+export const MAX_OVER_TRANSFER_CHANGE_AMOUNT = 10_000n as Mmk;
+
 /** Digits with optional single comma or space separators: `7,000`, `7000`, `7 000`. */
 const AMOUNT_TEXT = /^\d+(?:[, ]\d+)*$/;
 
