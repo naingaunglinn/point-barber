@@ -17,8 +17,9 @@ import { checkoutMoney } from './checkout-money';
 // add-walkin-visit-checkout task 12.6 — the two display rules of the checkout (AD-POS-08 · payments spec
 // "A non-cash over-transfer is returned in cash", "Remaining to pay" · sales-checkout "Finish stays
 // disabled …"): "Remaining to pay" while money is missing; "Change to return" only when FINISH would accept
-// the excess — it is not larger than the non-voided non-cash payments. The amounts come from the server's
-// Sale (API-DATA-02); the client only decides what to show.
+// the excess — it is not larger than the non-voided non-cash payments nor than
+// MAX_OVER_TRANSFER_CHANGE_AMOUNT (task 15.6 — owner WR1). The amounts come from the server's Sale
+// (API-DATA-02); the client only decides what to show.
 const CASH_ID = '00000000-0000-4000-8000-0000000000c1';
 const KBZ_ID = '00000000-0000-4000-8000-0000000000c2';
 
@@ -126,6 +127,43 @@ describe('checkoutMoney (task 12.6)', () => {
       changeToReturn: null,
       finishBlocked: 'remaining',
     });
+  });
+
+  // Task 15.6 — owner sheet WR1 (payments spec "The change of an over-transfer is at most 10,000 Ks").
+  it('Scenario: The checkout shows the refusal before Finish — KBZPay 20,000 on 8,000: no change line, Finish blocked', () => {
+    expect(checkoutMoney(sale(8000, [payment(KBZ_ID, 20000)]), METHODS)).toStrictEqual({
+      remaining: null,
+      changeToReturn: null,
+      finishBlocked: 'change_too_large',
+    });
+  });
+
+  it('Scenario: A change of exactly 10,000 Ks — KBZPay 18,000 on 8,000: "Change to return: 10,000 Ks", Finish open', () => {
+    expect(checkoutMoney(sale(8000, [payment(KBZ_ID, 18000)]), METHODS)).toStrictEqual({
+      remaining: null,
+      changeToReturn: 10000n,
+      finishBlocked: null,
+    });
+  });
+
+  it('Scenario: One kyat above the limit — KBZPay 18,001 on 8,000: change 10,001, Finish blocked', () => {
+    expect(checkoutMoney(sale(8000, [payment(KBZ_ID, 18001)]), METHODS)).toStrictEqual({
+      remaining: null,
+      changeToReturn: null,
+      finishBlocked: 'change_too_large',
+    });
+  });
+
+  it('Scenario: A cash excess above the limit is a cash excess — Cash 15,000 + KBZPay 1,000 on 5,000', () => {
+    expect(
+      checkoutMoney(sale(5000, [payment(CASH_ID, 15000), payment(KBZ_ID, 1000)]), METHODS),
+    ).toStrictEqual({ remaining: null, changeToReturn: null, finishBlocked: 'cash_excess' });
+  });
+
+  it('the voided KBZPay 20,000 and KBZPay 10,000 on 8,000 — "Change to return: 2,000 Ks", Finish open', () => {
+    expect(
+      checkoutMoney(sale(8000, [payment(KBZ_ID, 20000, true), payment(KBZ_ID, 10000)]), METHODS),
+    ).toStrictEqual({ remaining: null, changeToReturn: 2000n, finishBlocked: null });
   });
 
   it('a voided payment counts for nothing', () => {

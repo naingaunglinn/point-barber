@@ -1,4 +1,5 @@
 import {
+  MAX_OVER_TRANSFER_CHANGE_AMOUNT,
   type Mmk,
   maxMoney,
   moneyFromWire,
@@ -37,7 +38,10 @@ export interface SaleTotals {
   readonly remaining: Mmk;
   readonly change_due: Mmk;
   readonly non_cash_paid: Mmk;
-  /** paid ≥ total and the excess is covered by non-cash payments (owner B5 — cash is never overpaid). */
+  /**
+   * paid ≥ total, the excess is covered by non-cash payments (owner B5 — cash is never overpaid) and the
+   * change is at most MAX_OVER_TRANSFER_CHANGE_AMOUNT (owner WR1 — API Part 4 v1.4 P4-RULE-10 #12).
+   */
   readonly finish_allowed: boolean;
 }
 
@@ -72,6 +76,7 @@ export function computeSaleTotals(
     remaining: maxMoney(subtractMoney(total, paid), ZERO),
     change_due: changeDue,
     non_cash_paid: nonCashPaid,
-    finish_allowed: paid >= total && changeDue <= nonCashPaid,
+    finish_allowed:
+      paid >= total && changeDue <= nonCashPaid && changeDue <= MAX_OVER_TRANSFER_CHANGE_AMOUNT,
   };
 }

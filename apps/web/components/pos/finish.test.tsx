@@ -114,6 +114,18 @@ describe('FinishStep (tasks 13.1 / 13.2)', () => {
       screen.getByText('Cash is more than the total. Void the cash payment and take it again.'),
     ).toBeTruthy();
   });
+
+  it('Scenario: Finish stays disabled on a change above 10,000 Ks — error.change_too_large under it (task 15.6)', () => {
+    const { onFinish } = finish({
+      total: moneyFromWire(8000),
+      money: { remaining: null, changeToReturn: null, finishBlocked: 'change_too_large' },
+    });
+    const submit = screen.getByTestId('finish-submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    expect(screen.getByText('Check the transfer amount.')).toBeTruthy();
+    fireEvent.click(submit);
+    expect(onFinish).not.toHaveBeenCalled();
+  });
 });
 
 const finishedSale = (extra: Partial<SaleDto> = {}) =>

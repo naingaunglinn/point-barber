@@ -2,7 +2,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SaleStatus, VisitStatus } from '@point/shared';
+import { PaymentMethodKind, SaleStatus, VisitStatus } from '@point/shared';
 
 import {
   IDS,
@@ -438,6 +438,88 @@ describe('FINISH and after (group 13)', () => {
     renderPos(<SaleScreen id={IDS.SALE} />);
     expect((await screen.findByTestId('money-change')).textContent).toContain('2,000');
     expect(screen.getByTestId('finish-submit')).toBeTruthy();
+  });
+
+  // Tasks 15.6 / 15.7 — payments spec "The change of an over-transfer is at most 10,000 Ks" (owner WR1):
+  // Ko Min's Haircut 8,000 paid by one KBZPay payment.
+  const overTransfer = (amount: number, change: number) => {
+    const kbzpay = {
+      id: IDS.KBZPAY,
+      code: 'KBZPAY',
+      name_mm: 'KBZPay',
+      name_en: 'KBZPay',
+      kind: PaymentMethodKind.MOBILE_WALLET,
+    };
+    const over = saleOf({
+      ...PAID,
+      items: [
+        lineOf({ unit_price_amount: 8_000, list_price_amount: 8_000, line_total_amount: 8_000 }),
+      ],
+      subtotal_amount: 8_000,
+      total_amount: 8_000,
+      paid_amount: amount,
+      change_due_amount: change,
+      payments: [
+        paymentOf({
+          amount,
+          external_reference: 'KBZ0001234592',
+          payment_method: kbzpay,
+          effective_payment_method: kbzpay,
+        }),
+      ],
+    });
+    return {
+      ...paidRoutes(),
+      [SALE]: json(200, over),
+      [VISIT]: json(200, visitOf({ ...COMPLETED, sale: over })),
+    };
+  };
+
+  it.each([
+    ['en', 'Check the transfer amount.'],
+    ['my', 'ငွေလွှဲ ပမာဏ စစ်ပါ'],
+  ] as const)(
+    'Scenario: The checkout shows the refusal before Finish — KBZPay 20,000 on 8,000 (%s): no "Change to return", Finish disabled with the message',
+    async (locale, message) => {
+      routeFetch(fetchMock, overTransfer(20_000, 12_000)); // 20,000 − 8,000
+      renderPos(<SaleScreen id={IDS.SALE} />, { locale });
+      const finish = (await screen.findByTestId('finish-submit')) as HTMLButtonElement;
+      expect(screen.queryByTestId('money-change')).toBeNull();
+      expect(finish.disabled).toBe(true);
+      const reason = document.getElementById(finish.getAttribute('aria-describedby') ?? '');
+      expect(reason?.textContent).toBe(message);
+      fireEvent.click(finish);
+      expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(0);
+    },
+  );
+
+  it('Scenario: A change of exactly 10,000 Ks — KBZPay 18,000: "Change to return: 10,000 Ks", Finish enabled', async () => {
+    routeFetch(fetchMock, overTransfer(18_000, 10_000)); // 18,000 − 8,000
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    expect((await screen.findByTestId('money-change')).textContent).toBe(
+      'Change to return: 10,000 Ks',
+    );
+    const finish = screen.getByTestId('finish-submit') as HTMLButtonElement;
+    expect(finish.disabled).toBe(false);
+    expect(finish.getAttribute('aria-describedby')).toBeNull();
+  });
+
+  it('a FINISH refusal change_too_large shows the message of error.change_too_large once (task 15.7)', async () => {
+    routeFetch(
+      fetchMock,
+      paidRoutes({
+        [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(
+          422,
+          problem(422, 'change_too_large', {
+            context: { change_due_amount: 12_000, max_change_amount: 10_000 },
+          }),
+        ),
+      }),
+    );
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('finish-submit'));
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
+    expect(screen.getByRole('alert').textContent).toBe('Check the transfer amount.');
   });
 
   it('total_changed → the sale is loaded again', async () => {

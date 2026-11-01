@@ -1,4 +1,5 @@
 import {
+  MAX_OVER_TRANSFER_CHANGE_AMOUNT,
   type Mmk,
   type PaymentMethodDto,
   PaymentMethodKind,
@@ -12,12 +13,15 @@ import {
 // lines appear and why Finish is disabled:
 // - "Remaining to pay" while `remaining_amount` is above 0 (payments spec — visible until it reaches 0);
 // - "Change to return" only when FINISH would accept the excess: `change_due_amount` is not larger than the
-//   non-voided non-cash payments (payments spec "A non-cash over-transfer is returned in cash");
-// - Finish disabled while money is missing, or on a cash excess (void the cash payment and take it again).
+//   non-voided non-cash payments (payments spec "A non-cash over-transfer is returned in cash") nor than
+//   MAX_OVER_TRANSFER_CHANGE_AMOUNT, the constant FINISH step 12 reads (task 15.6 — owner WR1);
+// - Finish disabled while money is missing, on a cash excess (void the cash payment and take it again), or
+//   — checked after the cash excess, in FINISH's order — on a change above that limit (void the payment and
+//   record the right amount).
 // A payment's method is cash when the active methods (`GET /v1/payment-methods`) say `is_cash`; a method no
 // longer in that list is judged by its kind.
 
-export type FinishBlock = 'remaining' | 'cash_excess';
+export type FinishBlock = 'remaining' | 'cash_excess' | 'change_too_large';
 
 export interface CheckoutMoney {
   readonly remaining: Mmk | null;
@@ -47,10 +51,18 @@ export function checkoutMoney(sale: SaleMoney, methods: readonly MethodCash[]): 
   );
   const remaining = moneyFromWire(sale.remaining_amount);
   const change = moneyFromWire(sale.change_due_amount);
-  const accepted = change <= nonCash;
+  const cashExcess = change > nonCash;
+  const tooLarge = change > MAX_OVER_TRANSFER_CHANGE_AMOUNT;
   return {
     remaining: remaining > 0n ? remaining : null,
-    changeToReturn: change > 0n && accepted ? change : null,
-    finishBlocked: remaining > 0n ? 'remaining' : accepted ? null : 'cash_excess',
+    changeToReturn: change > 0n && !cashExcess && !tooLarge ? change : null,
+    finishBlocked:
+      remaining > 0n
+        ? 'remaining'
+        : cashExcess
+          ? 'cash_excess'
+          : tooLarge
+            ? 'change_too_large'
+            : null,
   };
 }

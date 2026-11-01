@@ -30,7 +30,8 @@ import type { CheckoutMoney } from './checkout-money';
 // "Skip"; as soon as the number is complete the screen looks it up — an existing customer is named ("· last
 // visit <date>" when there is one) and nothing more is asked; a new one needs a Name. An archived customer
 // is restored by FINISH itself, so nothing is asked either. One primary button carries the total and stays
-// disabled, with the reason under it, while money is missing or a cash excess exists. Where
+// disabled, with the reason under it, while money is missing, a cash excess exists or the change of an
+// over-transfer is above 10,000 Ks (`error.change_too_large` — task 15.6, owner WR1). Where
 // `Sale.actions.finish_needs_reason` is true, Finish asks for the reason first and sends it as
 // `override_reason` (task 13.3). A refusal of FINISH (task 13.4) lands on its field — `phone_invalid` on the
 // phone, `validation` of `customer.name` on the name — and every other one above the button; after
@@ -84,6 +85,7 @@ export function FinishStep({
   onFinish,
 }: FinishStepProps) {
   const t = useTranslations('pos.finish');
+  const tError = useTranslations('error');
   const format = useFormat('FinishStep');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
@@ -95,7 +97,9 @@ export function FinishStep({
       ? t('blocked.remaining', { amount: formatMoney(money.remaining ?? moneyFromWire(0), format) })
       : money.finishBlocked === 'cash_excess'
         ? t('blocked.cashExcess')
-        : undefined;
+        : money.finishBlocked === 'change_too_large'
+          ? tError('change_too_large')
+          : undefined;
 
   const skip = () => {
     setPhone('');

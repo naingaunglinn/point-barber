@@ -18,12 +18,12 @@ import {
   tapCounter,
 } from './helpers/walkin.js';
 
-// add-walkin-visit-checkout group 14 — the walk-in flows end to end on the stack (AD-QA-03 · AD-GOAL-01 ·
-// D-VIS-07 / 09 / 10 · D-PAY-01 / 02 / 05 · D-CUS-03 · P4-RULE-03). Ko Aung (Haircut 10,000, his own
-// price) and Ko Min (Haircut 8,000, Shave 3,000) at B3, on the real clock: each expected receipt number
-// is read from the server's month and the last number at B3 (helpers/walkin.ts). Before each flow the
-// person's open visits are closed through the API. Elements by test id or role, never by text
-// (CG-TEST-06). Code requests in this file: 2, verifies: 2 (≤ 8 each — e2e/README.md).
+// add-walkin-visit-checkout groups 14 and 15 (task 15.8) — the walk-in flows end to end on the stack
+// (AD-QA-03 · AD-GOAL-01 · D-VIS-07 / 09 / 10 · D-PAY-01 / 02 / 05 · D-CUS-03 · P4-RULE-03). Ko Aung
+// (Haircut 10,000, his own price) and Ko Min (Haircut 8,000, Shave 3,000) at B3, on the real clock: each
+// expected receipt number is read from the server's month and the last number at B3 (helpers/walkin.ts).
+// Before each flow the person's open visits are closed through the API. Elements by test id or role, never
+// by text (CG-TEST-06). Code requests in this file: 2, verifies: 2 (≤ 8 each — e2e/README.md).
 
 test.describe.configure({ mode: 'serial' });
 
@@ -159,6 +159,41 @@ test.describe('14.4 – 14.5 Split and over-transfer (Ko Min)', () => {
     await expect(page.getByTestId('success-change')).toContainText(refund);
     await context.close();
   });
+});
+
+test.describe('15.8 Flow "over-transfer above the limit" — Ko Min, KBZPay 20,000 on 8,000', () => {
+  // Payments spec "The change of an over-transfer is at most 10,000 Ks" (owner WR1 · D-PAY-05): the
+  // message of `error.change_too_large` under the disabled Finish, then the correction.
+  for (const [name, language, message, wrong, right] of [
+    ['MM at 360 × 800', 'my', 'ငွေလွှဲ ပမာဏ စစ်ပါ', 'KBZ0001234592', 'KBZ0001234593'],
+    ['EN at 360 × 800', 'en', 'Check the transfer amount.', 'KBZ0001234594', 'KBZ0001234595'],
+  ] as const) {
+    test(name, async ({ browser }) => {
+      setLanguage(PEOPLE.min, language);
+      await clearOpenVisits(minApi);
+      const { context, page } = await pageAs(browser, min, MOBILE);
+      await start(page, 1);
+      await complete(page);
+      await page.getByTestId('pay-KBZPAY').click();
+      await payInSheet(page, null, '20000', wrong);
+      // change 12,000 (20,000 − 8,000) > 10,000: no "Change to return", Finish disabled with the message.
+      const finish = page.getByTestId('finish-submit');
+      await expect(finish).toBeDisabled();
+      await expect(finish).toHaveAccessibleDescription(message);
+      await expect(page.getByTestId('money-change')).toHaveCount(0);
+      await page.getByTestId('payment-void').click();
+      await giveReason(page, 'Wrong amount typed');
+      await page.getByTestId('pay-KBZPAY').click();
+      await payInSheet(page, null, '18000', right);
+      // change 10,000 (18,000 − 8,000) — the largest accepted.
+      await expect(page.getByTestId('money-change')).toContainText('10,000');
+      await expect(finish).toBeEnabled();
+      const refund = await nextReceipt(minApi, 'refund');
+      await finishSkip(page);
+      await expect(page.getByTestId('success-change')).toContainText(refund);
+      await context.close();
+    });
+  }
 });
 
 test.describe('14.6 Negative flows', () => {
