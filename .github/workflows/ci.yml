@@ -331,6 +331,35 @@ jobs:
           name: compose-logs
           path: compose-logs.txt
 
+  # add-staging-deploy design D17 (tasks 6.8-6.10, 7.1): deploy.sh, rollback.sh, entry.sh and the
+  # pilot backup against a real server stack — a local registry, a local origin with release tags and
+  # the staging override. The scenarios are in tools/ci/deploy-script-test.sh.
+  deploy-script:
+    name: deploy-script
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Deploy, rollback and entry scenarios
+        run: bash tools/ci/deploy-script-test.sh
+
+      - name: Server stack logs
+        if: failure()
+        run: |
+          w="$RUNNER_TEMP/deploy-script/point"
+          docker compose --project-directory "$w" -f "$w/docker-compose.yml" \
+            -f "$w/docker-compose.staging.yml" logs --no-color --timestamps > deploy-script-logs.txt || true
+
+      - name: Upload server stack logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deploy-script-logs
+          path: deploy-script-logs.txt
+
   pr-title:
     name: pr-title
     if: github.event_name == 'pull_request'
