@@ -7,6 +7,7 @@ import type {
   PlaywrightWorkerArgs,
 } from '@playwright/test';
 
+import { type PolicyViolation, recordPolicyViolations } from '../fixtures.js';
 import { APP_ORIGIN } from '../hosts.js';
 import { APP_HEADERS, signInWithCode } from './sign-in.js';
 import { sql } from './stack.js';
@@ -54,6 +55,13 @@ export function setLanguage(email: string, language: 'my' | 'en'): void {
   sql(`UPDATE users SET ui_language = ${language === 'my' ? 1 : 2} WHERE email = '${email}';`);
 }
 
+/**
+ * The content-security-policy violations of every page `pageAs` opened in the running test
+ * (add-staging-deploy · the fixture's own context is recorded by fixtures.ts). walkin.spec.ts empties it
+ * before each test and expects it empty after.
+ */
+export const walkinViolations: PolicyViolation[] = [];
+
 export async function pageAs(
   browser: Browser,
   session: Session,
@@ -65,6 +73,7 @@ export async function pageAs(
     storageState: session,
     viewport,
   });
+  await recordPolicyViolations(context, walkinViolations);
   return { context, page: await context.newPage() };
 }
 

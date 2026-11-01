@@ -16,6 +16,7 @@ import {
   sessionOf,
   setLanguage,
   tapCounter,
+  walkinViolations,
 } from './helpers/walkin.js';
 
 // add-walkin-visit-checkout groups 14 and 15 (task 15.8) — the walk-in flows end to end on the stack
@@ -39,6 +40,15 @@ test.beforeAll(async ({ playwright }) => {
   aungApi = await apiAs(playwright, aung);
   minApi = await apiAs(playwright, min);
 });
+// Every walk-in screen works under the content-security policy of add-staging-deploy: no
+// securitypolicyviolation in any context pageAs opened (fixtures.ts checks only its own context).
+test.beforeEach(() => {
+  walkinViolations.length = 0;
+});
+test.afterEach(() => {
+  expect(walkinViolations, 'securitypolicyviolation events').toStrictEqual([]);
+});
+
 test.afterAll(async () => {
   await aungApi.dispose();
   await minApi.dispose();
