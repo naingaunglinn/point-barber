@@ -9,5 +9,7 @@ export default defineConfig({
   test: {
     name: 'web',
     environment: 'node',
+    // Component tests switch to jsdom with `// @vitest-environment jsdom`; see test/setup.ts.
+    setupFiles: ['./test/setup.ts'],
   },
 });

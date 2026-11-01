@@ -12,6 +12,7 @@ import {
   StorageService,
 } from '../src/modules/platform/index.js';
 import { type ReceiptDocument, ReceiptFiles } from '../src/modules/sales/index.js';
+import { type FreshDatabase, freshDatabase } from './helpers/databases.js';
 import { createPerson, testCompany } from './helpers/people.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
@@ -19,7 +20,8 @@ import { type TestApp, startTestApp } from './helpers/test-app.js';
 // design D10): read → render and put outside any transaction → a short transaction under
 // `receipt:<entity_id>` that looks again, then stores the two rows or deletes this path's objects. The
 // job and a GET that race store one PDF row, one PNG row and two objects. Storage and renderer are the
-// in-memory fakes (CG-ARCH-08); the receipt template comes with tasks 9.2 / 9.3.
+// in-memory fakes (CG-ARCH-08); the receipt template comes with tasks 9.2 / 9.3. On a fresh
+// copy of the migrated database: its person and attachment rows never reach the configured one.
 
 /** Holds every PDF render until `release()` — both paths have read "no files" and rendered. */
 class GatedRenderer extends InMemoryDocumentRenderer {
@@ -43,6 +45,7 @@ class GatedRenderer extends InMemoryDocumentRenderer {
 
 const storage = new InMemoryStorageService();
 const renderer = new GatedRenderer();
+let db: FreshDatabase;
 let t: TestApp;
 let prisma: PrismaService;
 let files: ReceiptFiles;
@@ -50,7 +53,9 @@ let companyId: string;
 let userId: string;
 
 beforeAll(async () => {
+  db = await freshDatabase();
   t = await startTestApp({
+    databaseUrl: db.url,
     overrides: [
       { provide: StorageService, useValue: storage },
       { provide: DocumentRenderer, useValue: renderer },
@@ -61,7 +66,10 @@ beforeAll(async () => {
   companyId = await testCompany(prisma);
   userId = (await createPerson(prisma, companyId)).userId;
 });
-afterAll(() => t.close());
+afterAll(async () => {
+  await t.close();
+  await db.drop();
+});
 beforeEach(() => {
   renderer.calls.length = 0;
 });

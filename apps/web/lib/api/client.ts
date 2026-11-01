@@ -42,6 +42,8 @@ export interface ApiRequest {
   readonly body?: unknown;
   /** Sign-in calls: a 401 or 403 is the caller's to show, not the session layer's. */
   readonly signIn?: boolean;
+  /** Extra request headers, e.g. the `Idempotency-Key` of a row-creating money call (API-IDEM-01). */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 const fallbackProblem = (status: number): Problem => ({
@@ -54,7 +56,32 @@ const fallbackProblem = (status: number): Problem => ({
 
 /** `GET /v1/me` → `api<MeResponse>('/me')`. Throws ApiProblem for any status ≥ 400. */
 export async function api<T>(path: string, request: ApiRequest = {}): Promise<T> {
-  const { method = 'GET', body, signIn = false } = request;
+  return (await send<T>(path, request)).data;
+}
+
+/**
+ * The same call, with what the response says about itself: `replayed` = `Idempotent-Replayed: true`,
+ * the answer of a repeated `Idempotency-Key` (API-IDEM-01 — "Already saved").
+ */
+export async function apiWithMeta<T>(
+  path: string,
+  request: ApiRequest = {},
+): Promise<{ readonly data: T; readonly replayed: boolean }> {
+  const { data, response } = await send<T>(path, request);
+  return { data, replayed: response.headers.get('idempotent-replayed') === 'true' };
+}
+
+/** A file answer (API-SHAPE-05 — a receipt PDF) as a Blob; a refusal is still an ApiProblem. */
+export async function apiBlob(path: string, request: ApiRequest = {}): Promise<Blob> {
+  return (await send<Blob>(path, request, 'blob')).data;
+}
+
+async function send<T>(
+  path: string,
+  request: ApiRequest,
+  read: 'json' | 'blob' = 'json',
+): Promise<{ readonly data: T; readonly response: Response }> {
+  const { method = 'GET', body, signIn = false, headers = {} } = request;
   const response = await fetch(`${PUBLIC_API_BASE}${path}`, {
     method,
     credentials: 'same-origin',
@@ -62,12 +89,14 @@ export async function api<T>(path: string, request: ApiRequest = {}): Promise<T>
       'X-Requested-With': 'point-app',
       'X-Client': 'web',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...headers,
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  if (response.status === 204) return undefined as T;
+  if (response.status === 204) return { data: undefined as T, response };
+  if (response.ok && read === 'blob') return { data: (await response.blob()) as T, response };
   const data: unknown = await response.json().catch(() => null);
-  if (response.ok) return data as T;
+  if (response.ok) return { data: data as T, response };
 
   const problem =
     data !== null && typeof data === 'object' && 'code' in data

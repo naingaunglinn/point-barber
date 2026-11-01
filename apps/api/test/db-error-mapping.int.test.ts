@@ -10,6 +10,7 @@ import { LOGGER } from '../src/common/logging/logger.js';
 import { ErrorReporter } from '../src/common/observability/error-reporter.js';
 import { ProblemFilter } from '../src/common/http/problem.filter.js';
 import { RequestContext } from '../src/common/http/request-context.js';
+import { type FreshDatabase, freshDatabase } from './helpers/databases.js';
 import { createBranch, createPerson, testCompany } from './helpers/people.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
@@ -18,13 +19,17 @@ import { type TestApp, startTestApp } from './helpers/test-app.js';
 // payments_reference_unique → 409 duplicate_reference { receipt_number: null } (the final guard
 // behind the reference lock; the service answers with the number first), and the client_request_id
 // indexes of visits, sales and payments → 409 idempotency_in_progress, so the client's retry replays.
+// On a fresh copy of the migrated database: its rows (a wallet, payments …) never reach the
+// configured one.
+let db: FreshDatabase;
 let t: TestApp;
 let prisma: PrismaService;
 let filter: ProblemFilter;
 let ids: { branch: string; employee: string; user: string; method: string; sale: string };
 
 beforeAll(async () => {
-  t = await startTestApp();
+  db = await freshDatabase();
+  t = await startTestApp({ databaseUrl: db.url });
   prisma = t.app.get(PrismaService);
   filter = new ProblemFilter(t.app.get(AppConfig), t.app.get(ErrorReporter), t.app.get(LOGGER));
   const companyId = await testCompany(prisma);
@@ -48,7 +53,10 @@ beforeAll(async () => {
   });
   ids = { branch, employee: person.employeeId, user: person.userId, method, sale };
 });
-afterAll(() => t.close());
+afterAll(async () => {
+  await t.close();
+  await db.drop();
+});
 
 const payment = (reference: string | null, clientRequestId = randomUUID()) => ({
   id: randomUUID(),
