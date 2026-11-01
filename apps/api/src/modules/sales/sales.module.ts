@@ -30,6 +30,7 @@ import { SalesController } from './sales.controller.js';
 import { PaymentMethodSeed } from './seed/payment-method-seed.js';
 import { SaleView } from './view/sale-view.js';
 import { SaleViewers } from './view/sale-viewers.js';
+import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
 
 // Bounded context `sales` (ADR-001 · docs/engineering/module-map.md): sales, sale items, receipt
 // counters, payment methods, payments, refunds. It builds on people (the company), platform and
@@ -68,6 +69,7 @@ import { SaleViewers } from './view/sale-viewers.js';
     ReceiptReads,
     SaleViewers,
     SaleAccess,
+    PilotPaymentMethods,
   ],
   exports: [
     PaymentMethodSeed,
@@ -78,6 +80,7 @@ import { SaleViewers } from './view/sale-viewers.js';
     SaleViewers,
     Payments,
     SalesFinish,
+    PilotPaymentMethods,
   ],
 })
 export class SalesModule implements OnModuleInit {

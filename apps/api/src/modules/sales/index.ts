@@ -2,6 +2,7 @@
 // here.
 export { SalesModule } from './sales.module.js';
 export { PaymentMethodSeed } from './seed/payment-method-seed.js';
+export { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
 export { type ActionRights, saleActions } from './actions/sale-actions.js';
 export { SaleLines } from './lines/sale-lines.js';
 export { SALE_ITEM_ADD, SALE_ITEM_REMOVE, Sales, assertSaleOpen } from './lines/sales.js';
