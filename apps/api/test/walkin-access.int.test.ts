@@ -139,7 +139,7 @@ describe('lines — visit.lineActors (a sale id) or visit.update', () => {
       service_id: services.SHAVE,
     });
     expect(res.status).toBe(403);
-    expect(res.body.code).toBe(ErrorCode.FORBIDDEN);
+    expect(res.body).toMatchObject(forbidden('visit.update'));
     expect((await api.get(AUNG, `/sales/${v1.sale}`)).body.items).toHaveLength(2);
   });
 
@@ -168,13 +168,13 @@ describe('lines — visit.lineActors (a sale id) or visit.update', () => {
 });
 
 describe('COMPLETE — visit.lineActors (a visit id) or visit.update', () => {
-  it('a colleague → 403 visit.update; a manager of another branch → 403; the performer → 200', async () => {
+  it('a colleague or a manager of another branch → 403 visit.update; the performer → 200', async () => {
     const min = await api.post(MIN, `/visits/${v1.visit}/complete`);
     expect(min.status).toBe(403);
     expect(min.body).toMatchObject(forbidden('visit.update'));
     const zaw = await api.post(ZAW, `/visits/${v1.visit}/complete`);
     expect(zaw.status).toBe(403);
-    expect(zaw.body.code).toBe(ErrorCode.FORBIDDEN);
+    expect(zaw.body).toMatchObject(forbidden('visit.update'));
     const aung = await api.post(AUNG, `/visits/${v1.visit}/complete`);
     expect(aung.status).toBe(200);
     expect(aung.body.status).toBe(VisitStatus.COMPLETED);
@@ -188,13 +188,14 @@ describe('COMPLETE — visit.lineActors (a visit id) or visit.update', () => {
 });
 
 describe('INCOMPLETE — visit.incompleteActors (a visit id) or visit.delete', () => {
-  it('a colleague → 403 visit.delete; a manager of another branch → 403; the performer → 200', async () => {
+  it('a colleague or a manager of another branch → 403 visit.delete; the performer → 200', async () => {
     const body = { reason: 'Customer left' };
     const min = await api.post(MIN, `/visits/${v3.visit}/incomplete`, body);
     expect(min.status).toBe(403);
     expect(min.body).toMatchObject(forbidden('visit.delete'));
     const zaw = await api.post(ZAW, `/visits/${v3.visit}/incomplete`, body);
     expect(zaw.status).toBe(403);
+    expect(zaw.body).toMatchObject(forbidden('visit.delete'));
     const aung = await api.post(AUNG, `/visits/${v3.visit}/incomplete`, body);
     expect(aung.status).toBe(200);
     expect(aung.body.status).toBe(VisitStatus.INCOMPLETE);
@@ -228,10 +229,8 @@ describe('payments and FINISH — sale.checkoutActors (a sale id, a payment id) 
       { payment_method_id: cash, amount: 10_000 },
       randomUUID(),
     );
-    // He holds sale.finish_override for B1 only (access spec: 403 forbidden). API-PERM-03 v1.6 also
-    // names context.required here; decide() row 9 sends none — raised in the review of #26.
     expect(zaw.status).toBe(403);
-    expect(zaw.body.code).toBe(ErrorCode.FORBIDDEN);
+    expect(zaw.body).toMatchObject(forbidden('sale.finish_override'));
     expect((await api.get(AUNG, `/sales/${v1.sale}`)).body.payments).toHaveLength(0);
   });
 
