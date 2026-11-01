@@ -9,7 +9,8 @@ import { useState } from 'react';
 // task 11.3): name, price, duration and the performer's chip on every line; a removed line stays, struck
 // through (the row is kept — D-DAT-05). While `Sale.actions.edit_lines` allows it a line is removed through
 // the reason dialog and the screen sends `reason` (design D12). The duration comes from the service list,
-// since a sale line stores none.
+// since a sale line stores none. Every "Remove" is named with its line's service ("Remove Haircut" — the
+// visible text first, WCAG 2.5.3), so a screen reader tells the buttons apart.
 
 export interface SaleLinesProps {
   readonly items: readonly SaleItemDto[];
@@ -29,6 +30,7 @@ export function SaleLines({ items, durations, canEdit, onRemove }: SaleLinesProp
         {items.map((item) => {
           const removed = item.removed_at !== null;
           const minutes = item.service_id === null ? undefined : durations?.get(item.service_id);
+          const service = localized(item, 'description', locale);
           return (
             <li
               key={item.id}
@@ -38,7 +40,7 @@ export function SaleLines({ items, durations, canEdit, onRemove }: SaleLinesProp
               <div
                 className={removed ? 'flex justify-between line-through' : 'flex justify-between'}
               >
-                <span>{localized(item, 'description', locale)}</span>
+                <span>{service}</span>
                 <MoneyText amount={moneyFromWire(item.unit_price_amount)} />
               </div>
               <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
@@ -49,7 +51,11 @@ export function SaleLines({ items, durations, canEdit, onRemove }: SaleLinesProp
               </div>
               {!removed && canEdit && (
                 <div className="mt-2">
-                  <Button variant="ghost" onClick={() => setRemoving(item)}>
+                  <Button
+                    variant="ghost"
+                    aria-label={[t('remove'), service].join(' ')}
+                    onClick={() => setRemoving(item)}
+                  >
                     {t('remove')}
                   </Button>
                 </div>

@@ -15,12 +15,15 @@ import { useSavedSubmit } from '../../../../../components/pos/use-saved-submit';
 import { api, apiWithMeta } from '../../../../../lib/api/client';
 import { type ScreenProblem, screenProblem } from '../../../../../lib/pos/problem';
 import { lookupRequest, useServices, useStore } from '../../../../../lib/pos/queries';
+import { useAction } from '../../../../../lib/pos/use-action';
 import { useBranch } from '../../../../../lib/session/branch';
 import { useMe } from '../../../../../lib/session/use-me';
 
 // ＋ Start → arrival step ("Walk-in") → the START sheet (AD-POS-01 / 02 / 03 · AD-NET-01 / 02 ·
 // add-walkin-visit-checkout tasks 10.5 – 10.9). One Idempotency-Key per tap on Start, kept across its
 // retries; after 15 s without an answer the key is looked up. The visit opens on the screen of its sale.
+// "Open the previous customer" reads the waiting visit like the screen's other requests: one at a time,
+// busy while it runs, a failure shown in the sheet.
 // The page title is the START sheet's (WCAG 2.4.2 · AD-A11Y-01 — task 13.8).
 export function NewVisitScreen() {
   const t = useTranslations('pos.start');
@@ -36,6 +39,8 @@ export function NewVisitScreen() {
   // second tap in that gap starts nothing (AD-NET-01 — one tap, one row).
   const [opening, setOpening] = useState(false);
   const chosen = useRef<readonly string[]>([]);
+  // The read of the visit that waits for payment (no sale to reload: nothing is stale here).
+  const unpaid = useAction(() => undefined);
 
   const start = useSavedSubmit<{ data: VisitDto }, RequestLookupDto>({
     send: (key) =>
@@ -69,6 +74,7 @@ export function NewVisitScreen() {
       <ArrivalStep
         onWalkIn={() => {
           setProblem(null);
+          unpaid.clear();
           setSheet(true);
         }}
       />
@@ -84,11 +90,19 @@ export function NewVisitScreen() {
           onStart={(serviceIds) => {
             chosen.current = serviceIds;
             setProblem(null);
+            unpaid.clear();
             return start.submit();
           }}
-          onOpenUnpaid={async (visitId) => {
-            const visit = await api<VisitDto>(`/visits/${visitId}`);
-            router.push(`/sales/${visit.sale.id}`);
+          openingUnpaid={opening || unpaid.pending}
+          unpaidProblem={unpaid.problem}
+          onOpenUnpaid={(visitId) => {
+            void unpaid.run(
+              () => api<VisitDto>(`/visits/${visitId}`),
+              (visit) => {
+                setOpening(true);
+                router.push(`/sales/${visit.sale.id}`);
+              },
+            );
           }}
           saved={<SavedCheck state={start.state} onRetry={start.retry} />}
         />

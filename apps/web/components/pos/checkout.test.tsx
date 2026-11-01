@@ -196,12 +196,42 @@ describe('PaymentList (task 12.5)', () => {
     expect(voided?.getAttribute('data-voided')).toBe('true');
     expect(voided?.querySelector('.line-through')).not.toBeNull();
     expect(
-      within(voided as HTMLElement).queryByRole('button', { name: 'Void payment' }),
+      within(voided as HTMLElement).queryByRole('button', { name: /^Void payment/ }),
     ).toBeNull();
     expect(within(kbz as HTMLElement).getByTestId('payment-reference').textContent).toBe(
       'KBZ0001234567',
     );
     expect(within(kbz as HTMLElement).getByText('Ko Min')).toBeTruthy();
+  });
+
+  it('each "Void payment" is named by its line — method and amount — so a screen reader tells them apart', () => {
+    renderStaff(
+      <PaymentList
+        payments={[payment(CASH, 5000), payment(KBZ, 6000)]}
+        methods={[CASH, KBZ]}
+        canVoid
+        onVoid={() => {}}
+      />,
+    );
+    const buttons = screen.getAllByTestId('payment-void');
+    expect(buttons.map((button) => button.getAttribute('aria-label'))).toStrictEqual([
+      'Void payment Cash 5,000 Ks',
+      'Void payment KBZPay 6,000 Ks',
+    ]);
+    // The visible text is unchanged and starts the name (WCAG 2.5.3).
+    expect(buttons.map((button) => button.textContent)).toStrictEqual([
+      'Void payment',
+      'Void payment',
+    ]);
+  });
+
+  it('Myanmar: the name is the Myanmar button text, the method and the amount', () => {
+    renderStaff(
+      <PaymentList payments={[payment(CASH, 5000)]} methods={[CASH]} canVoid onVoid={() => {}} />,
+      { locale: 'my' },
+    );
+    const button = screen.getByTestId('payment-void');
+    expect(button.getAttribute('aria-label')).toBe(`${button.textContent} ငွေသား 5,000 ကျပ်`);
   });
 
   it('Void payment asks for the reason and sends it', async () => {
@@ -214,7 +244,7 @@ describe('PaymentList (task 12.5)', () => {
         onVoid={onVoid}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Void payment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Void payment Cash 8,000 Ks' }));
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog.textContent).toContain('Cash 8,000 Ks');
     const field = within(dialog).getByRole('textbox');
@@ -237,7 +267,7 @@ describe('PaymentList (task 12.5)', () => {
         onVoid={() => {}}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Void payment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Void payment/ })).toBeNull();
     expect(screen.queryByLabelText('Customer gave')).toBeNull();
   });
 

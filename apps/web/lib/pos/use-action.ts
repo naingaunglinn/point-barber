@@ -2,13 +2,23 @@
 
 import { useCallback, useRef, useState } from 'react';
 
+import { ErrorCode } from '@point/shared';
+
 import { type ScreenProblem, screenProblem } from './problem';
 
-// One state change of a POS screen (COMPLETE, INCOMPLETE, a line, a void, FINISH): no Idempotency-Key —
-// these are idempotent by state (API-IDEM-01) — one request at a time, the refusal kept for the screen.
-// Codes that mean "the screen is stale" (`invalid_transition`, `total_changed`) also reload the sale
-// (design D11: an action on stale data is decided by the server, then the screen reloads).
-const STALE = new Set(['invalid_transition', 'total_changed']);
+// One state change of a POS screen (COMPLETE, INCOMPLETE, a line, a void, FINISH — or a read a tap starts):
+// no Idempotency-Key — these are idempotent by state (API-IDEM-01) — one request at a time, the refusal
+// kept for the screen.
+// Codes that mean "the screen is stale" also reload the sale (design D11: an action on stale data is
+// decided by the server, then the screen reloads): `invalid_transition`, `total_changed`,
+// `amount_mismatch` (a payment was voided or taken elsewhere) and `change_too_large` (the payments
+// changed, so the change of an over-transfer is now above 10,000 Ks).
+const STALE = new Set<string>([
+  ErrorCode.INVALID_TRANSITION,
+  ErrorCode.TOTAL_CHANGED,
+  ErrorCode.AMOUNT_MISMATCH,
+  ErrorCode.CHANGE_TOO_LARGE,
+]);
 
 export function useAction(onStale: () => unknown) {
   const [pending, setPending] = useState(false);

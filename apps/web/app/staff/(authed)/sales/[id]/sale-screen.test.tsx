@@ -93,7 +93,7 @@ describe('the state router (task 11.1)', () => {
     renderPos(<SaleScreen id={IDS.SALE} />);
     await screen.findByTestId('visit-in-progress');
     expect(screen.queryByTestId('add-service')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull();
     expect(screen.queryByTestId('visit-done')).toBeNull();
   });
 
@@ -146,7 +146,7 @@ describe('the state router (task 11.1)', () => {
     renderPos(<SaleScreen id={IDS.SALE} />);
     const view = await screen.findByTestId('sale-cancelled');
     expect(view.textContent).toContain('Started by mistake');
-    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull();
   });
 });
 
@@ -221,7 +221,11 @@ describe('in progress (tasks 11.3 – 11.6)', () => {
       line_type: 1,
       service_id: IDS.SHAVE,
     });
-    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Remove' })).toHaveLength(2));
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('button', { name: /^Remove/ }).map((b) => b.getAttribute('aria-label')),
+      ).toStrictEqual(['Remove Haircut', 'Remove Shave']),
+    );
   });
 });
 
@@ -550,17 +554,53 @@ describe('FINISH and after (group 13)', () => {
     expect(screen.getByRole('alert').textContent).toBe('Check the transfer amount.');
   });
 
-  it('total_changed → the sale is loaded again', async () => {
+  // Design D11: a FINISH refused on stale data reloads the sale — the total changed, a payment was voided
+  // elsewhere (amount_mismatch), or the change of an over-transfer is now above 10,000 Ks.
+  it.each([
+    [409, 'total_changed'],
+    [422, 'amount_mismatch'],
+    [422, 'change_too_large'],
+  ] as const)('%s %s → the sale is loaded again', async (status, code) => {
     routeFetch(
       fetchMock,
       paidRoutes({
-        [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(409, problem(409, 'total_changed')),
+        [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(status, problem(status, code)),
       }),
     );
     renderPos(<SaleScreen id={IDS.SALE} />);
-    fireEvent.click(await screen.findByTestId('finish-submit'));
+    const finish = await screen.findByTestId('finish-submit');
     const before = saleReads();
+    fireEvent.click(finish);
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(1));
     await waitFor(() => expect(saleReads()).toBeGreaterThan(before));
+  });
+
+  it('change_too_large, and the reloaded sale shows the over-transfer — the message once, under the button', async () => {
+    const reloaded = overTransfer(20_000, 12_000);
+    const left = reloaded[SALE] as Response;
+    let reads = 0;
+    routeFetch(fetchMock, {
+      ...reloaded,
+      // The first read is the paid sale the screen showed; the reload answers what another device left.
+      [SALE]: () => ((reads += 1), reads === 1 ? json(200, PAID) : left.clone()),
+      [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(
+        422,
+        problem(422, 'change_too_large', {
+          context: { change_due_amount: 12_000, max_change_amount: 10_000 },
+        }),
+      ),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('finish-submit'));
+    // The reloaded sale disables the button with its reason; the refusal is not repeated above it.
+    await waitFor(() =>
+      expect(screen.getByTestId('finish-submit').getAttribute('aria-describedby')).not.toBeNull(),
+    );
+    const finish = screen.getByTestId('finish-submit');
+    const reason = document.getElementById(finish.getAttribute('aria-describedby') ?? '');
+    expect(reason?.textContent).toBe('Check the transfer amount.');
+    expect(screen.getAllByText('Check the transfer amount.')).toHaveLength(1);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('the phone lookup fails (500) — the Name is offered; FINISH naming customer.name makes it required', async () => {

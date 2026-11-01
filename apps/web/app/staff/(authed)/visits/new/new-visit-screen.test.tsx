@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { VisitStatus } from '@point/shared';
@@ -101,6 +101,53 @@ describe('START (P4.VIS.03)', () => {
       'Finish payment for your previous customer first',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Open the previous customer' }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/sales/${waitingSale}`));
+  });
+
+  it('"Open the previous customer" whose read fails — busy while it reads, the alert in the sheet, the link kept; a second tap opens it', async () => {
+    const waiting = '0199a3f2-0000-7000-8005-000000000009';
+    const waitingSale = '0199a3f2-0000-7000-8006-000000000009';
+    let reads = 0;
+    let answer: (response: Response) => void = () => {};
+    routeFetch(fetchMock, {
+      [SERVICES]: services,
+      [START]: json(422, problem(422, 'unpaid_visit_open', { context: { visit_id: waiting } })),
+      [`GET /api/v1/visits/${waiting}`]: () => {
+        reads += 1;
+        return new Promise<Response>((resolve) => {
+          answer = resolve;
+        });
+      },
+    });
+    await openSheet();
+    fireEvent.click(screen.getByTestId('start-submit'));
+    const link = (await screen.findByTestId('start-open-unpaid')) as HTMLButtonElement;
+    fireEvent.click(link);
+    await waitFor(() => expect(link.getAttribute('aria-busy')).toBe('true'));
+    fireEvent.click(link);
+    expect(reads).toBe(1);
+    await act(async () => answer(json(500, problem(500, 'internal_error'))));
+    const unpaid = screen.getByTestId('start-unpaid');
+    expect(
+      await within(unpaid).findByText(
+        'Something went wrong on the server. Try again; if it happens again, give the error ID to an admin.',
+      ),
+    ).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
+    fireEvent.click(within(unpaid).getByTestId('start-open-unpaid'));
+    await waitFor(() => expect(reads).toBe(2));
+    await act(async () =>
+      answer(
+        json(
+          200,
+          visitOf({
+            id: waiting,
+            status: VisitStatus.COMPLETED,
+            sale: saleOf({ id: waitingSale, visit_id: waiting }),
+          }),
+        ),
+      ),
+    );
     await waitFor(() => expect(push).toHaveBeenCalledWith(`/sales/${waitingSale}`));
   });
 

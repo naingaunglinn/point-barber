@@ -70,13 +70,13 @@ describe('SaleLines (task 11.3)', () => {
     expect(haircut?.textContent).toContain('Ko Aung');
     expect(shave?.getAttribute('data-removed')).toBe('true');
     expect(shave?.querySelector('.line-through')).not.toBeNull();
-    expect(within(shave as HTMLElement).queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(within(shave as HTMLElement).queryByRole('button', { name: /^Remove/ })).toBeNull();
   });
 
   it('Remove asks for the reason and sends it', async () => {
     const onRemove = vi.fn();
     renderStaff(<SaleLines items={lines} canEdit onRemove={onRemove} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Haircut' }));
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog.textContent).toContain('Haircut stays on the sale');
     fireEvent.change(within(dialog).getByRole('textbox'), { target: { value: 'Wrong service' } });
@@ -88,6 +88,21 @@ describe('SaleLines (task 11.3)', () => {
 
   it('no edit_lines → no Remove', () => {
     renderStaff(<SaleLines items={lines} canEdit={false} onRemove={() => {}} />);
-    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull();
+  });
+
+  it('each "Remove" is named by its line\'s service, in both languages', () => {
+    const open = [
+      item('1', 'Haircut', 'ဆံပင်ညှပ်', 8000),
+      item('3', 'Shave', 'မုတ်ဆိတ်ရိတ်', 3000),
+    ];
+    const view = renderStaff(<SaleLines items={open} canEdit onRemove={() => {}} />);
+    expect(
+      screen.getAllByRole('button', { name: /^Remove/ }).map((b) => b.getAttribute('aria-label')),
+    ).toStrictEqual(['Remove Haircut', 'Remove Shave']);
+    view.unmount();
+    renderStaff(<SaleLines items={open} canEdit onRemove={() => {}} />, { locale: 'my' });
+    const [first] = within(screen.getByTestId('sale-lines')).getAllByRole('button');
+    expect(first?.getAttribute('aria-label')).toBe(`${first?.textContent} ဆံပင်ညှပ်`);
   });
 });

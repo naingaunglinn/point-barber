@@ -19,7 +19,9 @@ import { isCashPayment } from './checkout-money';
 // 12.5): method, amount, KBZPay reference and the collector's chip on every line; a voided payment stays,
 // struck through (D-DAT-05). While the sale is open a payment is voided through the reason dialog — the
 // screen sends `reason` (design D12). On a cash line the optional "Customer gave" helper shows the change
-// to hand back; it is never sent or stored. A voided line is struck through in the muted tone.
+// to hand back; it is never sent or stored. A voided line is struck through in the muted tone. Every
+// "Void payment" is named with its line's method and amount ("Void payment Cash 8,000 Ks" — the visible
+// text first, WCAG 2.5.3), so a screen reader tells the buttons apart.
 
 export interface PaymentListProps {
   readonly payments: readonly PaymentDto[];
@@ -60,6 +62,7 @@ export function PaymentList({ payments, methods, canVoid, onVoid }: PaymentListP
         {payments.map((payment) => {
           const voided = payment.voided_at !== null;
           const amount = moneyFromWire(payment.amount);
+          const method = localized(payment.payment_method, 'name', locale);
           return (
             <li
               key={payment.id}
@@ -73,7 +76,7 @@ export function PaymentList({ payments, methods, canVoid, onVoid }: PaymentListP
                     : 'flex justify-between'
                 }
               >
-                <span>{localized(payment.payment_method, 'name', locale)}</span>
+                <span>{method}</span>
                 <MoneyText amount={amount} />
               </div>
               {payment.external_reference !== null && (
@@ -92,6 +95,7 @@ export function PaymentList({ payments, methods, canVoid, onVoid }: PaymentListP
                 <div className="mt-2">
                   <Button
                     variant="ghost"
+                    aria-label={[t('voidPayment'), method, formatMoney(amount, format)].join(' ')}
                     onClick={() => setVoiding(payment)}
                     data-testid="payment-void"
                   >

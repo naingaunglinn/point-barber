@@ -282,6 +282,15 @@ describe('FinishStep — override and refusals (tasks 13.3 / 13.4)', () => {
     },
   );
 
+  it('change_too_large refused while the button already says it — the message once, under the button', () => {
+    finish({
+      money: { remaining: null, changeToReturn: null, finishBlocked: 'change_too_large' },
+      problem: { code: 'change_too_large', request_id: 'r' },
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByText('Check the transfer amount.')).toHaveLength(1);
+  });
+
   it('payroll_finalized as an alert', () => {
     finish({ problem: { code: 'payroll_finalized', request_id: 'r' } });
     expect(screen.getByRole('alert').textContent).toContain('Payroll for this period is finalized');

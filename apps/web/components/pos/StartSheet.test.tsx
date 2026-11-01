@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { ServicePricingMode, ServiceStatus, type ServiceListItemDto } from '@point/shared';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderStaff } from '../../test/render';
@@ -118,6 +118,18 @@ describe('StartSheet (task 10.7)', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Open the previous customer' }));
     expect(onOpenUnpaid).toHaveBeenCalledWith('visit-b');
+  });
+
+  it('the link busy while the visit is read; a failed read as an alert under it, the link kept', () => {
+    sheet({
+      problem: { code: 'unpaid_visit_open', context: { visit_id: 'visit-b' }, request_id: 'r' },
+      openingUnpaid: true,
+      unpaidProblem: { code: 'not_found', request_id: 'r' },
+    });
+    const unpaid = screen.getByTestId('start-unpaid');
+    const link = within(unpaid).getByRole('button', { name: 'Open the previous customer' });
+    expect(link.getAttribute('aria-busy')).toBe('true');
+    expect(within(unpaid).getByText("This item doesn't exist or was archived.")).toBeTruthy();
   });
 
   it('Scenario: START on a closed day — "This day is closed — ask an admin to reopen it."', () => {

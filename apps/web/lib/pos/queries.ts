@@ -2,18 +2,20 @@
 
 import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  CursorPage,
-  CustomerLookupDto,
-  PaymentMethodDto,
-  QuoteDto,
-  QuoteItemDto,
-  ReceiptViewDto,
-  RequestLookupDto,
-  SaleDto,
-  ServiceCategoryDto,
-  ServiceListItemDto,
-  VisitDto,
+import {
+  type CursorPage,
+  type CustomerLookupDto,
+  LocationType,
+  type PaymentMethodDto,
+  type QuoteDto,
+  type QuoteItemDto,
+  type ReceiptViewDto,
+  type RequestLookupDto,
+  type SaleDto,
+  type ServiceCategoryDto,
+  type ServiceListItemDto,
+  type VisitDto,
+  VisitStatus,
 } from '@point/shared';
 
 import { ApiProblem, api, apiBlob } from '../api/client';
@@ -33,11 +35,13 @@ const LIVE = {
 } as const;
 const CATALOGUE = { staleTime: 5 * 60_000, refetchOnWindowFocus: true } as const;
 
+const OPEN_VISITS = `/me/visits?status=${VisitStatus.STARTED}&status=${VisitStatus.COMPLETED}`;
+
 /** P4.VIS.02 — the caller's open visits (STARTED and COMPLETED, any date), oldest first. */
 export function useOpenVisits() {
   return useQuery({
     queryKey: posKeys.openVisits,
-    queryFn: async () => (await api<{ items: VisitDto[] }>('/me/visits?status=1&status=2')).items,
+    queryFn: async () => (await api<{ items: VisitDto[] }>(OPEN_VISITS)).items,
     ...LIVE,
   });
 }
@@ -120,7 +124,7 @@ export function useQuote(input: {
           method: 'POST',
           body: {
             branch_id: branchId,
-            location_type: 1,
+            location_type: LocationType.BRANCH,
             date,
             employee_id: employeeId,
             items: ids.slice(at, at + QUOTE_ITEMS_MAX).map((service_id) => ({ service_id })),

@@ -38,8 +38,9 @@ import type { CheckoutMoney } from './checkout-money';
 // 15.6, owner WR1). Where `Sale.actions.finish_needs_reason` is true, Finish asks for the reason first and
 // sends it as `override_reason` (task 13.3). A refusal of FINISH (task 13.4) lands on its field —
 // `phone_invalid` on the phone, `validation` of `customer.name` on the name — and every other one in the
-// bar above the button, so it is in view wherever the screen is scrolled. After `total_changed` the screen
-// reloads the sale, so the new total is on the button.
+// bar above the button, so it is in view wherever the screen is scrolled; one the disabled reason already
+// says (`change_too_large` after the reload) is not shown twice. After `total_changed` the screen reloads
+// the sale, so the new total is on the button.
 
 /** The screen's lookup of the typed phone (P3.CUS.02). */
 export type CustomerLookupState =
@@ -158,7 +159,10 @@ export function FinishStep({
     ? { code: 'required' }
     : fieldOf('customer.name', name);
   const alert =
-    problem !== null && problem.code !== 'phone_invalid' && nameError === undefined
+    problem !== null &&
+    problem.code !== 'phone_invalid' &&
+    nameError === undefined &&
+    !(problem.code === 'change_too_large' && money.finishBlocked === 'change_too_large')
       ? problem
       : null;
 

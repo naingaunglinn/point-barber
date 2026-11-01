@@ -13,7 +13,8 @@ import { startChips } from './start-chips';
 // optional chips (a service is optional at START — D-VIS-02); one primary "Start" with its in-flight
 // spinner. The screen owns the request: `onStart` gets the chosen service ids in chip order. A refusal is
 // shown in the sheet (task 10.8): `unpaid_visit_open` with a link to that visit (the screen reads it and
-// opens its sale), `day_closed` as the lock banner, anything else (`not_assigned_to_branch` …) as an alert.
+// opens its sale — the link busy while it reads, a failed read as an alert under it, the link kept for
+// another try), `day_closed` as the lock banner, anything else (`not_assigned_to_branch` …) as an alert.
 
 export interface StartSheetProps {
   readonly open: boolean;
@@ -29,6 +30,10 @@ export interface StartSheetProps {
   readonly problem?: StartProblem | null;
   /** `unpaid_visit_open`: open the visit that waits for payment (`context.visit_id`). */
   readonly onOpenUnpaid?: (visitId: string) => void;
+  /** True while the screen reads that visit to open its sale. */
+  readonly openingUnpaid?: boolean;
+  /** The failed read of that visit, or null. */
+  readonly unpaidProblem?: StartProblem | null;
   /** The saved check of a START without an answer (`SavedCheck`), shown inside the sheet. */
   readonly saved?: ReactNode;
 }
@@ -49,6 +54,8 @@ export function StartSheet({
   onStart,
   problem = null,
   onOpenUnpaid,
+  openingUnpaid = false,
+  unpaidProblem = null,
   saved,
 }: StartSheetProps) {
   const t = useTranslations('pos.start');
@@ -85,10 +92,15 @@ export function StartSheet({
         <div role="alert" className="mb-4 grid gap-2" data-testid="start-unpaid">
           <p>{tError('unpaid_visit_open')}</p>
           {typeof problem.context?.visit_id === 'string' && (
-            <Button onClick={() => onOpenUnpaid?.(problem.context?.visit_id as string)}>
+            <Button
+              loading={openingUnpaid}
+              onClick={() => onOpenUnpaid?.(problem.context?.visit_id as string)}
+              data-testid="start-open-unpaid"
+            >
               {t('openUnpaid')}
             </Button>
           )}
+          {unpaidProblem !== null && <FormAlert problem={unpaidProblem} />}
         </div>
       )}
       {problem !== null &&
