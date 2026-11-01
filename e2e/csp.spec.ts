@@ -21,7 +21,8 @@ test.describe('add-staging-deploy · platform-runtime · The screens run under t
     await expect(page.getByTestId('login-code')).toBeVisible();
     await page.getByTestId('login-code').fill(await mailpit.readCode('aung@point.test', since));
     await page.getByTestId('login-submit').click();
-    await expect(page.getByTestId('landing-name')).toBeVisible();
+    // The start page is Today (add-walkin-visit-checkout task 10.1).
+    await expect(page.getByTestId('today')).toBeVisible();
     expect(policyViolations).toStrictEqual([]);
   });
 

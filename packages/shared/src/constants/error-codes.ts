@@ -40,6 +40,8 @@ export const ErrorCode = {
   VISIT_NOT_COMPLETED: 'visit_not_completed',
   PAYMENTS_EXIST: 'payments_exist',
   AMOUNT_MISMATCH: 'amount_mismatch',
+  // FINISH — the change of a non-cash over-transfer above 10,000 Ks (API Part 4 v1.4 §11 — owner WR1).
+  CHANGE_TOO_LARGE: 'change_too_large',
   AMOUNT_EXCEEDS_REMAINING: 'amount_exceeds_remaining',
   REFERENCE_REQUIRED: 'reference_required',
   REFERENCE_FORMAT: 'reference_format',

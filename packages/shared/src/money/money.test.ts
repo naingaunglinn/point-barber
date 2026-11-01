@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { formatMoney } from '../format/money.js';
 import type { Mmk } from './mmk.js';
 import {
+  MAX_OVER_TRANSFER_CHANGE_AMOUNT,
   maxMoney,
   moneyFromWire,
   moneyToWire,
@@ -131,5 +132,18 @@ describe('negateMoney', () => {
     const discount = moneyFromWire(1000);
     expect(formatMoney(negateMoney(discount), { locale: 'en', profile: 'app' })).toBe('-1,000 Ks');
     expect(negateMoney(negateMoney(discount))).toBe(1000n);
+  });
+});
+
+// add-walkin-visit-checkout task 15.1 — the change of a non-cash over-transfer is at most 10,000 Ks (owner
+// sheet WR1 · D-PAY-05 · P4-RULE-10 #12, API Part 4 v1.4): one named constant, not a settings key, read by
+// FINISH and by the checkout.
+describe('MAX_OVER_TRANSFER_CHANGE_AMOUNT', () => {
+  it('is 10,000 Ks, held as Mmk', () => {
+    expect(MAX_OVER_TRANSFER_CHANGE_AMOUNT).toBe(10000n);
+    expectTypeOf(MAX_OVER_TRANSFER_CHANGE_AMOUNT).toEqualTypeOf<Mmk>();
+    expect(formatMoney(MAX_OVER_TRANSFER_CHANGE_AMOUNT, { locale: 'en', profile: 'app' })).toBe(
+      '10,000 Ks',
+    );
   });
 });

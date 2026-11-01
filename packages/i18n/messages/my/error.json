@@ -35,6 +35,7 @@
   "visit_not_completed": "Service done ကို အရင်နှိပ်ပါ။",
   "payments_exist": "ဒီအရောင်းမှာ ငွေပေးချေမှု ရှိနေပါတယ် — အရင် Void လုပ်ပါ။",
   "amount_mismatch": "ပေးထားတဲ့ငွေနဲ့ စုစုပေါင်း မကိုက်ပါ။",
+  "change_too_large": "ငွေလွှဲ ပမာဏ စစ်ပါ",
   "amount_exceeds_remaining": "ဒီပမာဏက ပေးရန်ကျန်တဲ့ငွေထက် များနေပါတယ်။",
   "reference_required": "Reference နံပါတ် ထည့်ပါ။",
   "reference_format": "Reference နံပါတ်ရဲ့ ပုံစံ မမှန်ပါ။",

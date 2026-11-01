@@ -62,8 +62,10 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
           await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
         const page = await context.newPage();
+        // `/` opens Today with the query kept (add-walkin-visit-checkout task 10.1); the event's URL
+        // has no query string.
         await page.goto('/?branch=B3');
-        await expect(page.getByTestId('landing-name')).toBeVisible();
+        await expect(page.getByTestId('today')).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('data-error-reporting', 'ready');
         await throwUncaught(page);
         await expect.poll(() => envelopes.length).toBe(1);
@@ -74,7 +76,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
         expect(events[0]).toMatchObject({
           release,
           environment: 'staging',
-          request: { url: `${APP_ORIGIN}/` },
+          request: { url: `${APP_ORIGIN}/today` },
         });
         expect(policyViolations, 'securitypolicyviolation events').toStrictEqual([]);
         await context.close();
@@ -92,7 +94,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
     });
     const page = await context.newPage();
     await page.goto('/');
-    await expect(page.getByTestId('landing-name')).toBeVisible();
+    await expect(page.getByTestId('today')).toBeVisible();
     await throwUncaught(page);
     await page.waitForTimeout(2000);
     expect(sentry).toStrictEqual([]);
