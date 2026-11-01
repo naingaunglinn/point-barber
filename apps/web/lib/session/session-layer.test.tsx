@@ -228,6 +228,19 @@ describe('add-walkin-visit-checkout task 10.1 · More shows who is signed in, MM
     expect((await screen.findByTestId('more-name')).textContent).toBe('Ko Aung');
   });
 
+  it.each([
+    ['en', 2, 'More'],
+    ['my', 1, 'နောက်ထပ်'],
+  ] as const)(
+    'the page title (task 13.8 · WCAG 2.4.2) — %s: "%s"',
+    async (locale, uiLanguage, title) => {
+      more(meOf({ user: { ...meOf().user, ui_language: uiLanguage } }), locale);
+      await screen.findByTestId('more-name');
+      expect(document.title).toBe(title);
+      expect(document.head.querySelectorAll('title')).toHaveLength(1);
+    },
+  );
+
   it('Sign out from More', async () => {
     more(meOf({ user: { ...meOf().user, ui_language: 2 } }), 'en');
     fireEvent.click(await screen.findByTestId('more-sign-out'));

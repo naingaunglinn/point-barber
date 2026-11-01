@@ -154,3 +154,15 @@ describe('START (P4.VIS.03)', () => {
     expect(keys[1]).toBe(keys[0]);
   });
 });
+
+describe('the page title (task 13.8 · WCAG 2.4.2)', () => {
+  it.each([
+    ['en', 'Start a visit'],
+    ['my', 'ဝန်ဆောင်မှု စမယ်'],
+  ] as const)('%s: the document title is "%s"', async (locale, title) => {
+    routeFetch(fetchMock, { [SERVICES]: services });
+    renderPos(<NewVisitScreen />, { locale });
+    await waitFor(() => expect(document.title).toBe(title));
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
+  });
+});

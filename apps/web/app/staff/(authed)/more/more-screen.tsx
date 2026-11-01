@@ -23,6 +23,8 @@ export function MoreScreen() {
   if (me === undefined) return null;
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-6" data-testid="more">
+      {/* The page title is the screen's name (WCAG 2.4.2 · AD-A11Y-01 — task 13.8). */}
+      <title>{tCommon('more')}</title>
       <PageHeader title={tCommon('more')} />
       <section className="grid gap-1">
         <p className="text-sm text-muted-foreground">{t('signedInAs')}</p>

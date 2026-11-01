@@ -15,12 +15,17 @@ import { type ReactNode, useEffect, useRef } from 'react';
 // /help/offline in place (history.pushState — Next.js's router follows it without a request) and the shell
 // shows the help over the screen, which stays mounted underneath — Back returns to it with its input kept.
 // Online the link is an ordinary link.
+//
+// The help carries the page title (WCAG 2.4.2 · AD-A11Y-01 — task 13.8), as the route's page renders
+// nothing. Opened in place, the screen underneath keeps its own <title>: React puts a newly mounted title
+// before the ones already in <head>, so the help's is the document's until it closes.
 export const OFFLINE_HELP_PATH = '/help/offline';
 
 export function OfflineHelp() {
   const t = useTranslations('pos.help.offline');
   return (
     <article className="grid gap-3" data-testid="offline-help">
+      <title>{t('title')}</title>
       <h1 className="text-xl font-semibold">{t('title')}</h1>
       <p>{t('body')}</p>
     </article>

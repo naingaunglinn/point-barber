@@ -31,6 +31,15 @@ describe('OfflineHelp (task 10.10)', () => {
     expect(within(page).queryByRole('button')).toBeNull();
     expect(page.querySelector('form, input, textarea')).toBeNull();
   });
+
+  it.each([
+    ['en', 'No connection'],
+    ['my', 'အင်တာနက် မရှိပါ'],
+  ] as const)('the page title (task 13.8 · WCAG 2.4.2) — %s: "%s"', (locale, title) => {
+    renderStaff(<OfflineHelp />, { locale });
+    expect(document.title).toBe(title);
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
+  });
 });
 
 describe('WarningNotes (task 11.5)', () => {

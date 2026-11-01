@@ -12,6 +12,7 @@
     "openUnpaid": "အရင် ဧည့်သည်ကို ဖွင့်မယ်"
   },
   "checkout": {
+    "title": "ငွေရှင်း",
     "split": "ခွဲပေး",
     "remaining": "ပေးရန် ကျန်: {amount}",
     "changeToReturn": "ပြန်အမ်းရန်: {amount}",

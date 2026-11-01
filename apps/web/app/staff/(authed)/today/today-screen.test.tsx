@@ -79,3 +79,15 @@ describe('Today (P4.VIS.02)', () => {
     await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(1));
   });
 });
+
+describe('the page title (task 13.8 · WCAG 2.4.2)', () => {
+  it.each([
+    ['en', 'Today'],
+    ['my', 'ယနေ့'],
+  ] as const)('%s: the document title is "%s"', async (locale, title) => {
+    routeFetch(fetchMock, { [OPEN]: json(200, { items: [] }) });
+    renderPos(<TodayScreen />, { locale });
+    await waitFor(() => expect(document.title).toBe(title));
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
+  });
+});

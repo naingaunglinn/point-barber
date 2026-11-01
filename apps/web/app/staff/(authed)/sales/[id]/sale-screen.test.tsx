@@ -155,9 +155,14 @@ describe('in progress (tasks 11.3 – 11.6)', () => {
       [`POST /api/v1/visits/${IDS.VISIT}/complete`]: json(200, done),
     });
     renderPos(<SaleScreen id={IDS.SALE} />);
-    fireEvent.click(await screen.findByTestId('visit-done'));
+    const serviceDone = await screen.findByTestId('visit-done');
+    expect(document.title).toBe('In progress');
+    fireEvent.click(serviceDone);
     expect(await screen.findByTestId('checkout')).toBeTruthy();
     expect(screen.getByTestId('checkout-total').textContent).toContain('10,000');
+    // The page title follows the step, rewritten in place (task 13.8).
+    expect(document.title).toBe('Checkout');
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
   });
 
   it('Scenario: No service yet — the service_required alert, still in progress', async () => {
@@ -307,28 +312,28 @@ describe('checkout (group 12)', () => {
   });
 });
 
-describe('FINISH and after (group 13)', () => {
-  const paidRoutes = (extra: Record<string, Route> = {}) => ({
-    ...BASE,
-    [SALE]: json(200, PAID),
-    [VISIT]: json(200, visitOf({ ...COMPLETED, sale: PAID })),
-    ...extra,
-  });
-  const FINISHED = saleOf({
-    ...PAID,
-    status: SaleStatus.FINISHED,
-    receipt_number: 'B3-2026-OCT-00001',
-    business_date: '2026-10-05',
-    finished_at: '2026-10-05T10:42:00+06:30',
-    finished_by: { user_id: IDS.AUNG_USER, display_name: 'Ko Aung' },
-    actions: {
-      ...saleOf().actions,
-      edit_lines: false,
-      take_payment: false,
-      mark_incomplete: false,
-    },
-  });
+const paidRoutes = (extra: Record<string, Route> = {}) => ({
+  ...BASE,
+  [SALE]: json(200, PAID),
+  [VISIT]: json(200, visitOf({ ...COMPLETED, sale: PAID })),
+  ...extra,
+});
+const FINISHED = saleOf({
+  ...PAID,
+  status: SaleStatus.FINISHED,
+  receipt_number: 'B3-2026-OCT-00001',
+  business_date: '2026-10-05',
+  finished_at: '2026-10-05T10:42:00+06:30',
+  finished_by: { user_id: IDS.AUNG_USER, display_name: 'Ko Aung' },
+  actions: {
+    ...saleOf().actions,
+    edit_lines: false,
+    take_payment: false,
+    mark_incomplete: false,
+  },
+});
 
+describe('FINISH and after (group 13)', () => {
   it('Skip → FINISH with no customer and the total on the button → the success panel; Next customer → Today', async () => {
     routeFetch(
       fetchMock,
@@ -492,5 +497,71 @@ describe('FINISH and after (group 13)', () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/receipt?format=json'))).toBe(
       true,
     );
+  });
+});
+
+describe('the page title by step (task 13.8 · WCAG 2.4.2 · AD-A11Y-01)', () => {
+  const CANCELLED_VISIT = visitOf({
+    status: VisitStatus.INCOMPLETE,
+    incomplete_at: '2026-10-05T10:06:00+06:30',
+    incomplete_by: { user_id: IDS.AUNG_USER, display_name: 'Ko Aung' },
+    incomplete_reason: 'Started by mistake',
+    sale: saleOf({ status: SaleStatus.CANCELLED, cancelled_at: '2026-10-05T10:06:00+06:30' }),
+  });
+  const STEPS = [
+    {
+      step: 'in progress',
+      routes: { ...BASE, [SALE]: json(200, saleOf()), [VISIT]: json(200, visitOf()) },
+      en: 'In progress',
+      my: 'လုပ်ဆောင်နေဆဲ',
+    },
+    {
+      step: 'checkout',
+      routes: { ...BASE, [SALE]: json(200, saleOf()), [VISIT]: json(200, visitOf(COMPLETED)) },
+      en: 'Checkout',
+      my: 'ငွေရှင်း',
+    },
+    {
+      step: 'the success panel right after FINISH',
+      routes: paidRoutes({ [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(200, FINISHED) }),
+      finish: true,
+      en: 'Sale finished',
+      my: 'ငွေရှင်းပြီးပါပြီ',
+    },
+    {
+      step: 'a finished sale opened again',
+      routes: {
+        ...BASE,
+        [SALE]: json(200, FINISHED),
+        [VISIT]: json(200, visitOf({ ...COMPLETED, status: VisitStatus.FINISHED, sale: FINISHED })),
+        [`GET /api/v1/sales/${IDS.SALE}/receipt?format=json`]: json(200, receiptOf()),
+      },
+      en: 'Sale finished',
+      my: 'ငွေရှင်းပြီးပါပြီ',
+    },
+    {
+      step: 'a cancelled sale',
+      routes: {
+        ...BASE,
+        [SALE]: json(200, CANCELLED_VISIT.sale),
+        [VISIT]: json(200, CANCELLED_VISIT),
+      },
+      en: 'Cancelled',
+      my: 'ပယ်ဖျက်ပြီး',
+    },
+  ] as const;
+  const ROWS = STEPS.flatMap((row) =>
+    (['en', 'my'] as const).map((locale) => ({ ...row, locale, title: row[locale] })),
+  );
+
+  it.each(ROWS)('$step · $locale → "$title"', async ({ routes, locale, title, ...row }) => {
+    routeFetch(fetchMock, routes);
+    renderPos(<SaleScreen id={IDS.SALE} />, { locale });
+    if ('finish' in row) {
+      fireEvent.click(await screen.findByTestId('finish-submit'));
+      expect(await screen.findByTestId('success-panel')).toBeTruthy();
+    }
+    await waitFor(() => expect(document.title).toBe(title));
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
   });
 });

@@ -14,7 +14,8 @@ import { useOpenVisits } from '../../../../lib/pos/queries';
 // Today (AD-TODAY-01 / 02 · AD-STATE-01..05 · add-walkin-visit-checkout tasks 10.3 / 10.4): the date as
 // `Mon, 05/Oct/2026`, the branch chip in the app bar, ＋ Start as the page's primary action (AD-LAY-05 —
 // the way in where the bottom navigation is not shown), and "In progress" — my open visits, oldest
-// first. A card's next action opens its sale; ＋ Start opens the arrival step.
+// first. A card's next action opens its sale; ＋ Start opens the arrival step. The page title is the
+// screen's name (WCAG 2.4.2 · AD-A11Y-01 — task 13.8).
 export function TodayScreen() {
   const t = useTranslations('today');
   const router = useRouter();
@@ -22,6 +23,7 @@ export function TodayScreen() {
   const visits = useOpenVisits();
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="today">
+      <title>{t('title')}</title>
       <StaffOfflineBanner />
       <div data-testid="today-header">
         <PageHeader

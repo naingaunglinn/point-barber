@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
@@ -21,7 +21,9 @@ import { useMe } from '../../../../../lib/session/use-me';
 // ＋ Start → arrival step ("Walk-in") → the START sheet (AD-POS-01 / 02 / 03 · AD-NET-01 / 02 ·
 // add-walkin-visit-checkout tasks 10.5 – 10.9). One Idempotency-Key per tap on Start, kept across its
 // retries; after 15 s without an answer the key is looked up. The visit opens on the screen of its sale.
+// The page title is the START sheet's (WCAG 2.4.2 · AD-A11Y-01 — task 13.8).
 export function NewVisitScreen() {
+  const t = useTranslations('pos.start');
   const router = useRouter();
   const locale = useLocale() as Locale;
   const me = useMe().data;
@@ -62,6 +64,7 @@ export function NewVisitScreen() {
   if (me === undefined) return null;
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="new-visit">
+      <title>{t('title')}</title>
       <StaffOfflineBanner />
       <ArrivalStep
         onWalkIn={() => {

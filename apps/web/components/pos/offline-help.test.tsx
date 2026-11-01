@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, fireEvent, screen } from '@testing-library/react';
+import { useTranslations } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderStaff } from '../../test/render';
@@ -71,6 +72,25 @@ describe('WithOfflineHelp', () => {
     // The same element: the screen stays mounted (its state kept), only hidden.
     expect(screen.getByTestId('kept')).toBe(kept);
     expect(kept.parentElement?.className).toBe('hidden');
+  });
+
+  it('the page title (task 13.8): the help names the page while open; Back gives the screen its title again', () => {
+    // A screen underneath with a title of its own, as Today's.
+    const Today = () => <title>{useTranslations('today')('title')}</title>;
+    const shell = () => (
+      <WithOfflineHelp>
+        <Today />
+      </WithOfflineHelp>
+    );
+    const view = renderStaff(shell());
+    expect(document.title).toBe('Today');
+    pathname.current = '/help/offline';
+    view.rerender(shell());
+    expect(document.title).toBe('No connection');
+    pathname.current = '/today';
+    view.rerender(shell());
+    expect(document.title).toBe('Today');
+    expect(document.head.querySelectorAll('title')).toHaveLength(1);
   });
 
   it('anywhere else: the screen, no help', () => {

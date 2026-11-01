@@ -12,6 +12,7 @@
     "openUnpaid": "Open the previous customer"
   },
   "checkout": {
+    "title": "Checkout",
     "split": "Split",
     "remaining": "Remaining to pay: {amount}",
     "changeToReturn": "Change to return: {amount}",
