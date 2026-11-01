@@ -97,21 +97,16 @@ journalctl -t pilot-backup --since yesterday
   - `upload`: the bucket key, or the provider;
   - `dump`: the `postgres` container is down.
 
-**The restore drill** (once before the pilot starts, and after any change to the script). It restores
-into a scratch database and never touches the real one:
+**The restore drill** (once before the pilot starts, and after any change to the script). It streams
+the dump from the bucket into a scratch database, so it never touches the real one and, like the
+backup, never writes the dump to the server's disk (CG-SEC-11):
 
 ```sh
-alias dc='docker compose -f docker-compose.yml -f docker-compose.staging.yml'
-# 1. Fetch last night's dump from the bucket console (owner) or with rclone, into /tmp on the server.
-# 2. Restore into a scratch database and compare one count:
-dc exec postgres sh -c 'createdb -U "$POSTGRES_USER" restore_check'
-dc exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d restore_check --no-owner --no-privileges' < /tmp/point-<date>.dump
-dc exec postgres sh -c 'psql -U "$POSTGRES_USER" -d restore_check -tAc "SELECT count(*) FROM users"'
-dc exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT count(*) FROM users"'
-# 3. Clean up — the dump holds personal data (CG-SEC-11):
-dc exec postgres sh -c 'dropdb -U "$POSTGRES_USER" restore_check'
-shred -u /tmp/point-<date>.dump
+sudo -u deploy /opt/point/infra/pilot-backup/restore-check.sh <YYYY-MM-DD>   # e.g. last night's date
 ```
 
-The two counts match, or differ only by users created since 03:00. Write the date and the result in
-`install.md`'s install record.
+It prints `restore-check ok pilot/daily/point-<date>.dump: users <n> in the dump, <m> now`, and it
+drops the scratch database. The two counts match, or differ only by users created since 03:00.
+`restore-check FAILED read …` means the object is missing or the key cannot read it; `FAILED
+restore …` means the dump does not restore — treat that as a failed backup. Write the date and the
+result in `install.md`'s install record. CI job `deploy-script` runs the same script.

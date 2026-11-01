@@ -13,11 +13,6 @@ on:
   push:
     tags: ['v*.*.*']
 
-# One deploy or rollback at a time; a queued one waits, it is never cancelled.
-concurrency:
-  group: pilot-deploy
-  cancel-in-progress: false
-
 permissions:
   contents: read
 
@@ -89,8 +84,15 @@ jobs:
     name: deploy
     needs: images
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     # Required reviewers: both developers, "prevent self-review" on (CG-GIT-05 · task 1.7).
     environment: pilot
+    # On the job, not the workflow, so building images never blocks a rollback. One deploy or rollback
+    # runs at a time; GitHub keeps one more waiting, and a newer one replaces a waiting one — never
+    # the running one. A deploy waiting for its approval may hold the group (docs/ops/rollback.md).
+    concurrency:
+      group: pilot-deploy
+      cancel-in-progress: false
     steps:
       - name: deploy <tag> through the server's forced command
         env:

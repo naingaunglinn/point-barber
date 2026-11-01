@@ -34,7 +34,6 @@ main() {
   previous_commit=$(git rev-parse HEAD)
   previous_version=$(env_value APP_VERSION)
   previous_ok=$(ok_tags | tail -n 1)
-  previous_ok="${previous_ok:-$previous_version}"
 
   # Before `up`, the running containers are untouched: a failure puts the checkout and APP_VERSION back.
   put_back() {
@@ -52,16 +51,25 @@ main() {
   # 4. The release's images (migrate uses point-api).
   compose pull --quiet api web backup || put_back "pull failed"
 
-  # 5. Migrations before the new code (CG-DB-01); additive, so the running release keeps working.
-  compose --profile tools run --rm migrate || put_back "migrate failed"
+  # 5. Migrations before the new code (CG-DB-01); additive, so the running release keeps working. Its
+  # output can hold row values, so it goes to the server journal, not to the job log (CG-SEC-11).
+  if ! journal compose --profile tools run --rm migrate; then
+    say "the migrate output is in the server journal: journalctl -t point-deploy --since -15min"
+    put_back "migrate failed"
+  fi
 
-  # 6. Start the release.
-  compose up -d --no-build
+  # 6. Start the release; Caddy too when its configuration changed (a bind-mounted file is not
+  # re-read by `up -d`).
+  if ! compose up -d --no-build || ! recreate_caddy_if_changed "$previous_commit"; then
+    history_line deploy "$tag" failed
+    say "starting $tag failed — $(go_back_hint "$previous_ok")"
+    exit 1
+  fi
 
   # 7–8. Confirm, record.
   if ! confirm_release "$tag"; then
     history_line deploy "$tag" failed
-    say "deploy of $tag failed — to go back: rollback $previous_ok"
+    say "deploy of $tag failed — $(go_back_hint "$previous_ok")"
     exit 1
   fi
   history_line deploy "$tag" ok

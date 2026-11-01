@@ -12,10 +12,6 @@ on:
         required: true
         type: string
 
-concurrency:
-  group: pilot-deploy
-  cancel-in-progress: false
-
 permissions:
   contents: read
 
@@ -23,7 +19,12 @@ jobs:
   rollback:
     name: rollback
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     environment: pilot
+    # The deploy job's group (release.yml): one deploy or rollback at a time on the server.
+    concurrency:
+      group: pilot-deploy
+      cancel-in-progress: false
     steps:
       - name: rollback <tag> through the server's forced command
         env:

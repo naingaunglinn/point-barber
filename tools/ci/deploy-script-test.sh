@@ -82,10 +82,12 @@ v2=$(commit_with_file "$v1" "db/migrations/$MIGRATION/migration.sql" \
   'CREATE TABLE deploy_check (id integer PRIMARY KEY);' 'test: one more migration')
 v4=$(commit_with_file "$v2" "db/migrations/$BROKEN/migration.sql" \
   'SELECT * FROM no_such_table;' 'test: a migration that fails')
+# v0.1.1 is a tag on a side commit that main does not contain.
+side=$(commit_with_file "$v1" "notes/side-branch.txt" 'a fix on another branch' 'test: off main')
 git init -q --bare "$ORIGIN"
 git push -q "$ORIGIN" "$v4:refs/heads/main" "$v1:refs/tags/v0.1.0" "$v2:refs/tags/v0.2.0" \
-  "$v2:refs/tags/v0.3.0" "$v4:refs/tags/v0.4.0"
-ok "origin has main and tags v0.1.0 … v0.4.0"
+  "$v2:refs/tags/v0.3.0" "$v4:refs/tags/v0.4.0" "$side:refs/tags/v0.1.1"
+ok "origin has main, tags v0.1.0 … v0.4.0 on it and v0.1.1 off it"
 
 # v0.1.0 is built from the commit; the later tags are thin images on top of it with their own
 # APP_VERSION and, for the api, the migration of their commit.
@@ -187,6 +189,14 @@ cmp -s "$SERVER/.env" "$WORK/env.csp" || fail ".env changed"
 expect_version v0.1.0
 ok "Scenario: The policy would block the error reports"
 cp "$WORK/env.before" "$SERVER/.env"
+
+# The server's own check that the tag is on main (design D5 step 1), behind release.yml's.
+entry "deploy v0.1.1"
+expect_code 1 "deploy of a tag off main"
+expect_out "v0.1.1 is not on main"
+[ "$(head_commit)" = "$(tag_commit v0.1.0)" ] || fail "the checkout moved"
+expect_version v0.1.0
+ok "a tag off main is refused on the server, nothing changed"
 endgroup
 
 # ---------------------------------------------------------------------------------------------
@@ -254,7 +264,6 @@ entry "rollback v0.1.0"
 expect_code 0 "rollback to v0.1.0"
 expect_version v0.1.0
 [ "$(sql "SELECT count(*) FROM _prisma_migrations")" = "$count" ] || fail "_prisma_migrations changed"
-grep -q 'migrate' <<<"$OUT" && fail "the rollback ran a migration"
 last_history | grep -Eq ' rollback v0.1.0 ok$' || fail "history ends with: $(last_history)"
 ok "Scenario: Back to the previous release ($count migrations before and after)"
 endgroup
@@ -336,7 +345,6 @@ backup() {
   OUT=$(cd "$SERVER" && PILOT_BACKUP_DATE="$1" bash infra/pilot-backup/pilot-backup.sh 2>&1) || CODE=$?
   echo "$OUT" | sed 's/^/      | /'
 }
-user_db() { env_value POSTGRES_USER; }
 
 backup 2026-10-06
 expect_code 0 "the backup of 06/Oct/2026"
@@ -346,14 +354,16 @@ bucket cat b:point-backup/pilot/daily/point-2026-10-06.dump \
   | compose exec -T postgres pg_restore --list >/dev/null || fail "pg_restore --list cannot read the dump"
 ok "Scenario: The nightly dump — pilot/daily/point-2026-10-06.dump exists, is not empty and pg_restore reads it"
 
+# The operator's restore drill (backup-restore.md, "Pilot") — the same script.
 source_users=$(sql "SELECT count(*) FROM users")
-compose exec -T postgres createdb -U "$(user_db)" restore_check
-bucket cat b:point-backup/pilot/daily/point-2026-10-06.dump \
-  | compose exec -T postgres pg_restore -U "$(user_db)" -d restore_check --no-owner --no-privileges
-restored_users=$(compose exec -T postgres psql -U "$(user_db)" -d restore_check -tAc "SELECT count(*) FROM users")
-compose exec -T postgres dropdb -U "$(user_db)" restore_check
-[ "$restored_users" = "$source_users" ] || fail "restored users $restored_users, source $source_users"
-ok "Scenario: The dump restores — users $restored_users in the restore, $source_users in the source"
+CODE=0
+OUT=$(cd "$SERVER" && bash infra/pilot-backup/restore-check.sh 2026-10-06 2>&1) || CODE=$?
+echo "$OUT" | sed 's/^/      | /'
+expect_code 0 "the restore drill of the 06/Oct dump"
+expect_out "restore-check ok pilot/daily/point-2026-10-06.dump: users $source_users in the dump, $source_users now"
+[ "$(sql "SELECT count(*) FROM pg_database WHERE datname = 'restore_check'")" = 0 ] \
+  || fail "the scratch database was not dropped"
+ok "Scenario: The dump restores — users $source_users in the restore and in the source"
 
 before=$(bucket hashsum md5 b:point-backup/pilot/daily/point-2026-10-06.dump)
 cp "$SERVER/.env" "$WORK/env.bucket"
@@ -367,6 +377,17 @@ expect_out "pilot-backup FAILED upload"
 [ "$(bucket hashsum md5 b:point-backup/pilot/daily/point-2026-10-06.dump)" = "$before" ] \
   || fail "the 06/Oct dump changed"
 ok "Scenario: The bucket is unreachable — FAILED upload, no 07/Oct object, the 06/Oct object unchanged"
+
+# A dump that fails after the upload began leaves a partial object, which the script deletes. Last,
+# because it stops the database.
+compose stop postgres >/dev/null 2>&1
+backup 2026-10-08
+compose start postgres >/dev/null 2>&1
+expect_code 1 "the backup of 08/Oct/2026 with postgres stopped"
+expect_out "pilot-backup FAILED dump"
+[ "$(bucket lsf -R --files-only b:point-backup/pilot/)" = "daily/point-2026-10-06.dump" ] \
+  || fail "a partial or 08/Oct object remains: $(bucket lsf -R --files-only b:point-backup/pilot/)"
+ok "a failed dump leaves no partial object and no 08/Oct object"
 endgroup
 
 echo "deploy-script: every scenario passed"

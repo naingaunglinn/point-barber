@@ -30,10 +30,17 @@ describe('release, deploy and rollback workflows (task 6.3)', () => {
   );
 
   it('every workflow that uses the pilot environment is one of the two', () => {
+    // `environment: pilot`, or the mapping form `environment:` with `name: pilot` under it.
+    const usesPilot = (text) =>
+      /^\s*environment:\s*pilot\s*$/m.test(text) ||
+      /^(\s*)environment:\s*\n(?:\1\s+.*\n)*?\1\s+name:\s*pilot\s*$/m.test(text);
     const pilot = readdirSync(workflows)
       .filter((file) => /\.ya?ml$/.test(file))
-      .filter((file) => /^\s*environment:\s*pilot\s*$/m.test(code(read(file))));
+      .filter((file) => usesPilot(code(read(file))));
     expect(pilot.sort()).toStrictEqual(['release.yml', 'rollback.yml']);
+    expect(usesPilot('jobs:\n  x:\n    environment:\n      url: u\n      name: pilot\n')).toBe(
+      true,
+    );
   });
 
   it('release.yml starts only from a release tag push', () => {
@@ -48,11 +55,16 @@ describe('release, deploy and rollback workflows (task 6.3)', () => {
     expect(text).not.toMatch(/^\s*(push|workflow_run|schedule):/m);
   });
 
-  it('a deploy and a rollback never run at the same time, and a queued one is never cancelled', () => {
+  it('the deploy and rollback jobs share one group that never cancels the running one, with a timeout', () => {
     for (const file of ['release.yml', 'rollback.yml']) {
-      expect(code(read(file))).toMatch(
-        /concurrency:\n {2}group: pilot-deploy\n {2}cancel-in-progress: false/,
+      const text = code(read(file));
+      // On the job, not the workflow, so building images never blocks a rollback.
+      expect(text).not.toMatch(/^concurrency:/m);
+      expect(text).toMatch(
+        / {4}concurrency:\n {6}group: pilot-deploy\n {6}cancel-in-progress: false/,
       );
+      expect(text).toMatch(/ {4}environment: pilot\n/);
+      expect(text).toMatch(/ {4}timeout-minutes: \d+\n/);
     }
   });
 });

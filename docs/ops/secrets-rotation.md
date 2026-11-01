@@ -82,7 +82,8 @@ What each rotation costs:
    `command="/opt/point/infra/deploy/entry.sh",restrict` prefix. Keep the old line for now.
 3. With the repository admin, in a shared screen session: replace `PILOT_SSH_KEY` in the environment
    `pilot` with the new private half. Then `shred -u /tmp/point-deploy`.
-4. Run the Rollback workflow with the tag running now. It changes nothing, and it proves the new key.
+4. Run the Rollback workflow from the running tag (Use workflow from → Tags), with `tag` = the tag
+   running now. It changes nothing, and it proves the new key.
 5. Delete the old line from `authorized_keys`.
 
 **The Sentry DSNs** (`SENTRY_DSN_API` → `api`, `SENTRY_DSN_WEB` → `web`). A DSN is not a secret, but

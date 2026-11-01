@@ -138,6 +138,29 @@ prune_images() {
     | grep -E "^${prefix//./\\.}point-(api|web|backup):v[0-9]+\.[0-9]+\.[0-9]+$" || true)
 }
 
+# Runs a command with its output in the server journal (tag point-deploy) instead of the deploy job's
+# log, which is public while the repository is: migrate output can carry row values (CG-SEC-11).
+journal() {
+  "$@" 2>&1 | logger -t point-deploy
+}
+
+# `up -d` does not re-read a bind-mounted file that the checkout replaced: when infra/caddy changed
+# between the release that ran and this one, Caddy is recreated so the new policy is served.
+recreate_caddy_if_changed() {
+  git diff --quiet "$1" HEAD -- infra/caddy && return 0
+  say "infra/caddy changed — recreating caddy"
+  compose up -d --no-build --force-recreate caddy
+}
+
+# The rollback hint after a failed start: none when no release has run here successfully yet.
+go_back_hint() {
+  if [[ "${1:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    say "to go back: rollback $1"
+  else
+    say "no earlier release ran here — fix the cause and deploy again"
+  fi
+}
+
 # One deploy or rollback at a time on the server, also when the operator starts one by hand.
 take_lock() {
   exec 9>"$DEPLOY_ROOT/.deploy.lock"

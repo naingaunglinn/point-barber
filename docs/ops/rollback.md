@@ -25,8 +25,12 @@ for "stop the harm now".
 
 **Normal way: the Rollback workflow.**
 
-1. Actions → Rollback → Run workflow, `tag` = the tag to go back to.
-2. The other developer approves the environment `pilot`.
+1. Actions → Rollback → Run workflow. Under "Use workflow from", choose **Tags → the tag running
+   now**. The environment `pilot` accepts only `v*.*.*` refs, so the default `main` is refused. Set
+   `tag` = the tag to go back to.
+2. The other developer approves the environment `pilot`. If a release is still waiting for its
+   approval, reject it first: it may hold the one deploy slot (`pilot-deploy`), and the rollback would
+   wait behind it. When minutes count, use the on-server command below instead.
 3. The server runs `infra/deploy/rollback.sh <tag>`:
    1. checks the tag is in the history as `ok`;
    2. checks it out and sets `APP_VERSION`;

@@ -106,8 +106,9 @@ of step 4 is what limits the deploy key.
    environment `pilot` (task 1.7):
    - `PILOT_SSH_KEY`: the private half, from `/tmp/point-deploy`;
    - `PILOT_SSH_HOST`: the server's host name or IPv4;
-   - `PILOT_SSH_KNOWN_HOSTS`: the output of `ssh-keyscan -t ed25519 <host>`, run from a machine that
-     has already checked the host key.
+   - `PILOT_SSH_KNOWN_HOSTS`: one line built from the server's own host key, so nothing is taken on
+     trust from the network: `echo "<host> $(cut -d' ' -f1,2 /etc/ssh/ssh_host_ed25519_key.pub)"`.
+     Here `<host>` is exactly what `PILOT_SSH_HOST` holds.
 4. Delete the private half from the server: `shred -u /tmp/point-deploy`.
 
 Check it from your own machine with the key: `ssh -i <key> deploy@<host> ls` must answer `refused`.
@@ -167,9 +168,8 @@ sudo systemctl enable --now point-pilot-backup.timer
 systemctl list-timers point-pilot-backup.timer   # NEXT shows 03:00
 ```
 
-The backup bucket values of step 5 must be in `.env`. Run it once by hand to check:
-`sudo systemctl start point-pilot-backup.service`, then
-`journalctl -t pilot-backup -n 5` → `pilot-backup ok pilot/daily/point-<date>.dump <bytes>`.
+The backup bucket values of step 5 must be in `.env`. The hand-run check needs a running database,
+so it comes after the first release (end of step 8).
 
 **8. The first release** (task 11.1). From a developer machine, push the tag on `main`:
 `git tag v0.1.0 <commit> && git push origin v0.1.0`. The release workflow:
@@ -181,6 +181,11 @@ The backup bucket values of step 5 must be in `.env`. Run it once by hand to che
 
 While the repository is public, set the three `ghcr.io/<owner>/point-*` packages to public (task 11.2).
 The server pulls without a login.
+
+Once the deploy is `ok`, check the backup of step 7 by hand:
+`sudo systemctl start point-pilot-backup.service`, then
+`journalctl -t pilot-backup -n 5` → `pilot-backup ok pilot/daily/point-<date>.dump <bytes>`, and run
+the restore drill once (`backup-restore.md`, "Pilot").
 
 **9. First company admin** (once per environment — P1-RULE-14), with the owner present. After the
 first deploy:
