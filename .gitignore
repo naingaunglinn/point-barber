@@ -39,3 +39,6 @@ apps/web/catalogue-flag.generated.ts
 # Generated Prisma client (db/schema.prisma → prisma generate)
 apps/api/src/generated/
 deploy-history.log
+
+# Server deploy lock (infra/deploy/lib.sh take_lock).
+.deploy.lock
