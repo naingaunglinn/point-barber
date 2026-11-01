@@ -7,13 +7,16 @@ import { PrismaService } from '../src/common/database/prisma.service.js';
 import { type Tx, TransactionRunner } from '../src/common/database/transaction-runner.js';
 import { ProblemException } from '../src/common/http/problem.exception.js';
 import { DayLock } from '../src/modules/cash-closing/index.js';
+import { type FreshDatabase, freshDatabase } from './helpers/databases.js';
 import { createBranch, createPerson, testCompany } from './helpers/people.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
 // add-walkin-visit-checkout tasks 3.1 / 3.2 — DayLock, the one gate of a branch-day (P7-RULE-02 ·
 // API-IDEM-06 · design D1): a future date is refused before any lock; then the shared advisory lock
 // `day:<branch>:<date>` held to commit; then the closing row — CLOSED → 422 day_closed with who closed
-// it and when. The clock is fixed at 05/Oct/2026 10:00 AM MMT.
+// it and when. The clock is fixed at 05/Oct/2026 10:00 AM MMT. On a fresh copy of the
+// migrated database: its branch, closer and closing rows never reach the configured one.
+let db: FreshDatabase;
 let t: TestApp;
 let prisma: PrismaService;
 let runner: TransactionRunner;
@@ -22,7 +25,8 @@ let branchId: string;
 let closer: { userId: string };
 
 beforeAll(async () => {
-  t = await startTestApp({ now: new Date('2026-10-05T10:00:00+06:30') });
+  db = await freshDatabase();
+  t = await startTestApp({ databaseUrl: db.url, now: new Date('2026-10-05T10:00:00+06:30') });
   prisma = t.app.get(PrismaService);
   runner = t.app.get(TransactionRunner);
   dayLock = t.app.get(DayLock);
@@ -34,7 +38,10 @@ beforeAll(async () => {
     data: { name_mm: 'မနှင်း', name_en: 'Ma Hnin' },
   });
 });
-afterAll(() => t.close());
+afterAll(async () => {
+  await t.close();
+  await db.drop();
+});
 
 async function closingRow(date: string, status: StatusCode<'daily_closings'>): Promise<void> {
   const closed = status === DailyClosingStatus.CLOSED;
