@@ -11,6 +11,7 @@ import { PrismaService } from '../src/common/database/prisma.service.js';
 import { ProblemException } from '../src/common/http/problem.exception.js';
 import { ProblemFilter } from '../src/common/http/problem.filter.js';
 import { RequestContext } from '../src/common/http/request-context.js';
+import { ErrorReporter } from '../src/common/observability/error-reporter.js';
 import { Visits } from '../src/modules/delivery/index.js';
 import { Payments, SaleLines } from '../src/modules/sales/index.js';
 import { checkout } from './helpers/checkout.js';
@@ -288,7 +289,7 @@ describe('The second wall — the guard triggers (SQLSTATE P0001 finished_immuta
       `UPDATE sales SET total_amount = 9000 WHERE id = '${finished.saleId}'`,
     );
     const logged: unknown[] = [];
-    const filter = new ProblemFilter(s.app.get(AppConfig), {
+    const filter = new ProblemFilter(s.app.get(AppConfig), s.app.get(ErrorReporter), {
       error: (...args: unknown[]) => logged.push(args),
     } as never);
     const out: { status?: number; body?: Record<string, unknown> } = {};

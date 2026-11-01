@@ -60,6 +60,8 @@ export const apiEnvSchema = z
     COMPANY_NAME_MM: z.string().min(1),
     COMPANY_NAME_EN: z.string().min(1).optional(),
     JOBS_IN_API: flag(true),
+    // add-staging-deploy — design D9 / D13: error reporting only when set.
+    SENTRY_DSN_API: z.url({ protocol: /^https?$/ }).optional(),
     // add-walkin-visit-checkout — the bucket of generated documents (ADR-014 · design D10): any
     // S3-compatible endpoint (R2 / B2 in production, MinIO in development and CI).
     S3_ENDPOINT: z.url({ protocol: /^https?$/ }),
