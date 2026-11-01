@@ -125,17 +125,32 @@ describe('the branch of an employee-targeted action (D12 · P1-RULE-10)', () => 
     expect(await appRows(requestId)).toMatchObject([{ branch_id: B3 }]);
   });
 
-  it('breaks a tie on effective_from by created_at, then id', async () => {
+  // created_at is set explicitly: rows written in the same millisecond share the default one, and
+  // the random id would then decide.
+  it('breaks a tie on effective_from by created_at', async () => {
     const target = await createPerson(t.prisma, await testCompany(t.prisma), {
       branches: [
-        { id: B3, from: '2026-09-01' },
-        { id: B1, from: '2026-09-01' },
+        { id: B1, from: '2026-09-01', createdAt: '2026-09-01T03:00:00Z' },
+        { id: B3, from: '2026-09-01', createdAt: '2026-09-01T02:00:00Z' },
       ],
     });
     const requestId = randomUUID();
     await post('employee-action', hnin, requestId).send({ employee_id: target.employeeId });
-    // B3's row was created first.
     expect(await appRows(requestId)).toMatchObject([{ branch_id: B3 }]);
+  });
+
+  it('then by id', async () => {
+    const createdAt = '2026-09-01T02:00:00Z';
+    const [lower, higher] = [randomUUID(), randomUUID()].sort();
+    const target = await createPerson(t.prisma, await testCompany(t.prisma), {
+      branches: [
+        { id: B3, from: '2026-09-01', createdAt, rowId: higher },
+        { id: B1, from: '2026-09-01', createdAt, rowId: lower },
+      ],
+    });
+    const requestId = randomUUID();
+    await post('employee-action', hnin, requestId).send({ employee_id: target.employeeId });
+    expect(await appRows(requestId)).toMatchObject([{ branch_id: B1 }]);
   });
 
   it('is NULL when the employee has no active assignment', async () => {
