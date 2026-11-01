@@ -87,8 +87,15 @@ async function counts() {
   };
 }
 
-const auditSince = (before: number) =>
-  prisma.audit_events.findMany({ orderBy: { id: 'asc' }, skip: before });
+/**
+ * The audit rows of one run, by its request id (design D8). Ids cannot order them: under the fixed
+ * clock the base seed, admin-create and the run all write in the same millisecond.
+ */
+const auditOf = (result: PilotSeedResult) => {
+  const requestId = /request_id (\S+)/.exec(result.stdout[0] ?? '')?.[1];
+  if (requestId === undefined) throw new Error(`no request_id in ${result.stdout[0]}`);
+  return prisma.audit_events.findMany({ where: { request_id: requestId } });
+};
 
 describe('add-pilot-data-seed · organization · Without --apply the command changes nothing', () => {
   it('Scenario: Dry run of the example file — exit 0, the plan, nothing written', async () => {
@@ -255,8 +262,8 @@ describe('add-pilot-data-seed · organization · The pilot database holds exactl
   it('Scenario: The rows of the first apply · Scenario: The branch of each row', async () => {
     await pilotDatabase();
     const before = await prisma.audit_events.count();
-    await apply();
-    const rows = await auditSince(before);
+    const rows = await auditOf(await apply());
+    expect(await prisma.audit_events.count()).toBe(before + 19);
     const actions: Record<string, number> = {};
     for (const row of rows) actions[row.action] = (actions[row.action] ?? 0) + 1;
     expect(actions).toStrictEqual({
@@ -377,7 +384,6 @@ describe('add-pilot-data-seed · organization · one branch and identity (brief 
 
   it('Scenario: The first admin is also a barber', async () => {
     await pilotDatabase();
-    const before = await prisma.audit_events.count();
     const result = await apply(
       file((d) =>
         d.people.unshift({
@@ -418,7 +424,7 @@ describe('add-pilot-data-seed · organization · one branch and identity (brief 
         employee_role_branches: [{ branch_id: branch.id }],
       },
     ]);
-    const created = (await auditSince(before)).filter(
+    const created = (await auditOf(result)).filter(
       (row) => row.action === 'employee.create' && row.entity_id === x00.id,
     );
     expect(created).toStrictEqual([]);
