@@ -10,9 +10,10 @@ import { minutesSince } from './minutes';
 // the customer or "Walk-in", the performer's chip, the branch, the start time and the minutes since. It
 // stays on the in-progress screen and every checkout step, so the barber never loses who and where.
 // It sticks under the AppShell top bar (sticky, z-20), not behind it. The shell has no height token — the
-// bar's `min-h-14` is only a floor; its height is that of its tallest control, the Button (`h-12`, from
-// 768 px `h-10`), plus `py-2` and the 1 px bottom border: 65 px on a phone, 57 px from 768 px. So the
-// offset is `top-16` / `md:top-14`, and the bar's border covers the header's top pixel.
+// bar's `min-h-14` is only a floor; its height is that of its tallest control plus `py-2` and the 1 px
+// bottom border: on a phone the branch Button (`h-12`) → 65 px; from 768 px the LanguageSwitch (`h-10`
+// buttons, `p-0.5` and a 1 px border) → 63 px. So the offset is `top-16` / `md:top-15`: the bar overlaps
+// at most the first 3 px of the header's 12 px padding, and no gap shows the page between the two.
 
 export interface VisitHeaderProps {
   readonly visit: VisitDto;
@@ -26,7 +27,7 @@ export function VisitHeader({ visit, branchName }: VisitHeaderProps) {
   const now = useNow();
   return (
     <header
-      className="sticky top-16 z-10 grid gap-1 border-b border-border bg-background p-3 md:top-14"
+      className="sticky top-16 z-10 grid gap-1 border-b border-border bg-background p-3 md:top-15"
       data-testid="visit-header"
     >
       <div className="flex items-center justify-between gap-2">
