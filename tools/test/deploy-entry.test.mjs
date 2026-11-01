@@ -18,6 +18,8 @@ for (const command of ['deploy', 'rollback']) {
   writeFileSync(
     join(dir, `${command}.sh`),
     `#!/usr/bin/env bash\necho "${command} $*" >> "$(dirname "$0")/calls.log"\n`,
+    // entry.sh execs them, as it execs the real ones on the server.
+    { mode: 0o755 },
   );
 }
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
