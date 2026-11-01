@@ -14,6 +14,7 @@ import { Idempotency } from './idempotency/idempotency.service.js';
 import { IdempotentInterceptor } from './idempotency/idempotent.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { Observability } from './observability/observability.js';
 import { RateLimiter } from './rate-limit/rate-limiter.js';
 import { AttachmentsRepository } from './repositories/attachments.repository.js';
 import { OpeningHoursRepository } from './repositories/opening-hours.repository.js';
@@ -28,9 +29,9 @@ import { SystemService } from './system/system.service.js';
 import { OpeningHours } from './website/opening-hours.js';
 
 // Bounded context `platform` (ADR-001 · docs/engineering/module-map.md): system health and status,
-// the audit writer, idempotency, the rate limiter, background jobs, mail, the settings seams and file
-// storage, the document renderer, opening hours; the settings store, notifications and uploads with later
-// changes.
+// the audit writer, idempotency, the rate limiter, background jobs, mail, error reporting, the settings
+// seams and file storage, the document renderer, opening hours; the settings store, notifications and
+// uploads with later changes.
 /**
  * The local MinIO's bucket, created when missing (development and test). MinIO may still be starting
  * when the API starts in the same stack, so a few tries one second apart; then a warning, never a stop.
@@ -66,6 +67,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     OpeningHoursRepository,
     OpeningHours,
     RateLimiter,
+    Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
     { provide: DocumentRenderer, useClass: ChromiumDocumentRenderer },
     // The seams of design D13: add-settings-store, scheduling and attendance replace them.

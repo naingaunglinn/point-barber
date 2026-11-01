@@ -16,11 +16,13 @@ import {
   isPaymentReferenceConflict,
 } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
+import { ErrorReporter, isReported } from '../observability/error-reporter.js';
 import { ProblemException } from './problem.exception.js';
 import { RequestContext } from './request-context.js';
 
 // One filter produces every error body (API-ERR-01 · API-ERR-02 · CG-ERR-02 · design D7):
-// RFC 9457 problem details, Content-Type application/problem+json, the request id in the body.
+// RFC 9457 problem details, Content-Type application/problem+json, the request id in the body. An
+// answer with status ≥ 500 is a defect and goes to the error reporter as well (add-staging-deploy D9).
 
 /** `not_found` → `Not found`. */
 export function titleOf(code: string): string {
@@ -72,6 +74,7 @@ function toProblem(error: unknown): ProblemException | null {
 export class ProblemFilter implements ExceptionFilter {
   constructor(
     private readonly config: AppConfig,
+    private readonly reporter: ErrorReporter,
     @Inject(LOGGER) private readonly log: Logger,
   ) {}
 
@@ -93,6 +96,13 @@ export class ProblemFilter implements ExceptionFilter {
       // Logged with its stack; the client gets only the request id and no detail (D7 · API-ERR-02).
       this.log.error({ request_id: requestId, err: error, method: req.method }, 'unhandled error');
       problem = new ProblemException(ErrorCode.INTERNAL_ERROR, 500);
+    }
+    if (isReported(problem.status)) {
+      this.reporter.capture(
+        error,
+        { request_id: requestId },
+        { url: new URL(req.originalUrl, this.config.env.APP_ORIGIN).href, method: req.method },
+      );
     }
 
     const { detail, errors, context, extensions, headers } = problem.options;

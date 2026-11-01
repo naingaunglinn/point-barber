@@ -42,6 +42,7 @@ export function loadAppConfig(): AppConfig {
     COMPANY_NAME_MM: process.env.COMPANY_NAME_MM,
     COMPANY_NAME_EN: process.env.COMPANY_NAME_EN,
     JOBS_IN_API: process.env.JOBS_IN_API,
+    SENTRY_DSN_API: process.env.SENTRY_DSN_API,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_REGION: process.env.S3_REGION,
     S3_BUCKET_APP: process.env.S3_BUCKET_APP,

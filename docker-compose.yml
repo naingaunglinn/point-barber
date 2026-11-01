@@ -30,6 +30,8 @@ services:
       # Default here, not only in the Caddyfile: Compose passes an empty string when the
       # variable is empty or missing from .env, and Caddy's {$CADDY_HSTS:…} default would not apply.
       CADDY_HSTS: ${CADDY_HSTS:-max-age=31536000}
+      # connect-src origin of the web app's error reporting (add-staging-deploy D8); empty = 'self' only.
+      CADDY_CSP_CONNECT: ${CADDY_CSP_CONNECT}
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -72,6 +74,8 @@ services:
       COMPANY_NAME_MM: ${COMPANY_NAME_MM}
       COMPANY_NAME_EN: ${COMPANY_NAME_EN}
       JOBS_IN_API: ${JOBS_IN_API}
+      # Error reporting (add-staging-deploy — design D9): off when empty.
+      SENTRY_DSN_API: ${SENTRY_DSN_API}
       # The bucket of generated documents (add-walkin-visit-checkout — ADR-014): api only.
       S3_ENDPOINT: ${S3_ENDPOINT}
       S3_REGION: ${S3_REGION}
@@ -105,6 +109,9 @@ services:
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
       API_INTERNAL_BASE: ${API_INTERNAL_BASE}
       INTERNAL_SSR_KEY: ${INTERNAL_SSR_KEY}
+      # Error reporting (add-staging-deploy — design D10): read at run time, off when the DSN is empty.
+      APP_ENV: ${APP_ENV}
+      SENTRY_DSN_WEB: ${SENTRY_DSN_WEB}
     volumes:
       - next_cache:/app/apps/web/.next/cache
 

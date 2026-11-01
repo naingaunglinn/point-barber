@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { PlaywrightWorkerArgs } from '@playwright/test';
 
-import { APP_ORIGIN, COMPOSE } from '../hosts.js';
+import { APP_ORIGIN, COMPOSE, environmentWith } from '../hosts.js';
 
 // The Compose stack under test (design D15 · add-foundation-auth-access D5): a Compose command, one SQL
 // statement as the database owner inside the postgres container, and the api restart that empties the
@@ -49,6 +49,45 @@ export async function restartApi(playwright: PlaywrightWorkerArgs['playwright'])
     }
     throw new Error('api did not answer health ok after the restart');
   } finally {
+    await context.dispose();
+  }
+}
+
+/**
+ * Recreates one service with some variables replaced (a shell variable wins over .env in Compose)
+ * and waits until `ready` answers 200 through the edge — then runs `body` and puts the service back
+ * as .env has it. For the cases of add-staging-deploy that need another value of one variable: an
+ * empty CADDY_CSP_CONNECT (D8), an empty SENTRY_DSN_WEB (D10).
+ */
+export async function withServiceEnv(
+  playwright: PlaywrightWorkerArgs['playwright'],
+  service: string,
+  overrides: Readonly<Record<string, string>>,
+  ready: string,
+  body: () => Promise<void>,
+): Promise<void> {
+  const up = (env: Readonly<Record<string, string>>) =>
+    execSync(`${COMPOSE} up -d ${service}`, {
+      cwd: repoRoot,
+      env: environmentWith(env),
+      stdio: 'ignore',
+    });
+  const context = await playwright.request.newContext({ ignoreHTTPSErrors: true });
+  const waitReady = async () => {
+    for (let i = 0; i < 90; i += 1) {
+      const res = await context.get(ready).catch(() => null);
+      if (res?.status() === 200) return;
+      await new Promise((done) => setTimeout(done, 1000));
+    }
+    throw new Error(`${ready} did not answer 200 after ${service} was recreated`);
+  };
+  try {
+    up(overrides);
+    await waitReady();
+    await body();
+  } finally {
+    up({});
+    await waitReady();
     await context.dispose();
   }
 }
