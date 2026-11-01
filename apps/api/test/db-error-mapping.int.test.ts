@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppConfig } from '../src/common/config/config.js';
 import { PrismaService } from '../src/common/database/prisma.service.js';
 import { LOGGER } from '../src/common/logging/logger.js';
+import { ErrorReporter } from '../src/common/observability/error-reporter.js';
 import { ProblemFilter } from '../src/common/http/problem.filter.js';
 import { RequestContext } from '../src/common/http/request-context.js';
 import { createBranch, createPerson, testCompany } from './helpers/people.js';
@@ -25,7 +26,7 @@ let ids: { branch: string; employee: string; user: string; method: string; sale:
 beforeAll(async () => {
   t = await startTestApp();
   prisma = t.app.get(PrismaService);
-  filter = new ProblemFilter(t.app.get(AppConfig), t.app.get(LOGGER));
+  filter = new ProblemFilter(t.app.get(AppConfig), t.app.get(ErrorReporter), t.app.get(LOGGER));
   const companyId = await testCompany(prisma);
   const branch = await createBranch(prisma, companyId);
   const person = await createPerson(prisma, companyId);
