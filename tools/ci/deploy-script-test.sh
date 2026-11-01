@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# CI job deploy-script (add-staging-deploy design D17 · tasks 6.8–6.10): the deploy, rollback and
-# entry scripts against a real server stack on the runner.
+# CI job deploy-script (add-staging-deploy design D17 · tasks 6.8–6.10, 7.1): the deploy, rollback and
+# entry scripts and the pilot backup against a real server stack on the runner.
 #   - a local registry (registry:2) holds the release images, as ghcr.io does for the pilot;
 #   - a local bare repository is `origin`, with release tags on main:
 #       v0.1.0  the commit under test
@@ -306,6 +306,67 @@ expect_version v0.2.0
 [ "$(head_commit)" = "$(tag_commit v0.2.0)" ] || fail "the checkout was not put back to v0.2.0"
 [ "$(env_value APP_VERSION)" = v0.2.0 ] || fail "APP_VERSION was not put back to v0.2.0"
 ok "Scenario: A failing migration stops the deploy"
+endgroup
+
+# ---------------------------------------------------------------------------------------------
+group 'Spec "The pilot database is dumped to the backup bucket every night" (task 7.1)'
+
+# A MinIO container stands for the owner's backup bucket; its root user stands for the bucket key.
+bucket_user=ci-backup
+bucket_password=$(openssl rand -hex 16)
+docker run -d --name backup-bucket -p 9100:9000 -e MINIO_ROOT_USER="$bucket_user" \
+  -e MINIO_ROOT_PASSWORD="$bucket_password" pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data >/dev/null
+for _ in $(seq 1 30); do
+  curl -sf http://127.0.0.1:9100/minio/health/ready >/dev/null && break
+  sleep 1
+done
+sed -i -e 's|^S3_ENDPOINT=.*|S3_ENDPOINT=http://127.0.0.1:9100|' -e 's|^S3_REGION=.*|S3_REGION=us-east-1|' \
+  -e 's|^S3_BUCKET_BACKUP=.*|S3_BUCKET_BACKUP=point-backup|' \
+  -e "s|^BACKUP_S3_ACCESS_KEY_ID=.*|BACKUP_S3_ACCESS_KEY_ID=$bucket_user|" \
+  -e "s|^BACKUP_S3_SECRET_ACCESS_KEY=.*|BACKUP_S3_SECRET_ACCESS_KEY=$bucket_password|" "$SERVER/.env"
+bucket() {
+  docker run --rm -i --network host -e RCLONE_CONFIG_B_TYPE=s3 -e RCLONE_CONFIG_B_PROVIDER=Other \
+    -e RCLONE_CONFIG_B_ENDPOINT=http://127.0.0.1:9100 -e RCLONE_CONFIG_B_REGION=us-east-1 \
+    -e RCLONE_CONFIG_B_ACCESS_KEY_ID="$bucket_user" -e RCLONE_CONFIG_B_SECRET_ACCESS_KEY="$bucket_password" \
+    rclone/rclone:1.75.2 "$@"
+}
+bucket mkdir b:point-backup
+backup() {
+  CODE=0
+  OUT=$(cd "$SERVER" && PILOT_BACKUP_DATE="$1" bash infra/pilot-backup/pilot-backup.sh 2>&1) || CODE=$?
+  echo "$OUT" | sed 's/^/      | /'
+}
+user_db() { env_value POSTGRES_USER; }
+
+backup 2026-10-06
+expect_code 0 "the backup of 06/Oct/2026"
+grep -Eq '^pilot-backup ok pilot/daily/point-2026-10-06\.dump [1-9][0-9]*$' <<<"$OUT" \
+  || fail "the backup did not report ok with a size"
+bucket cat b:point-backup/pilot/daily/point-2026-10-06.dump \
+  | compose exec -T postgres pg_restore --list >/dev/null || fail "pg_restore --list cannot read the dump"
+ok "Scenario: The nightly dump — pilot/daily/point-2026-10-06.dump exists, is not empty and pg_restore reads it"
+
+source_users=$(sql "SELECT count(*) FROM users")
+compose exec -T postgres createdb -U "$(user_db)" restore_check
+bucket cat b:point-backup/pilot/daily/point-2026-10-06.dump \
+  | compose exec -T postgres pg_restore -U "$(user_db)" -d restore_check --no-owner --no-privileges
+restored_users=$(compose exec -T postgres psql -U "$(user_db)" -d restore_check -tAc "SELECT count(*) FROM users")
+compose exec -T postgres dropdb -U "$(user_db)" restore_check
+[ "$restored_users" = "$source_users" ] || fail "restored users $restored_users, source $source_users"
+ok "Scenario: The dump restores — users $restored_users in the restore, $source_users in the source"
+
+before=$(bucket hashsum md5 b:point-backup/pilot/daily/point-2026-10-06.dump)
+cp "$SERVER/.env" "$WORK/env.bucket"
+sed -i 's|^S3_ENDPOINT=.*|S3_ENDPOINT=http://127.0.0.1:9|' "$SERVER/.env"
+backup 2026-10-07
+cp "$WORK/env.bucket" "$SERVER/.env"
+expect_code 1 "the backup of 07/Oct/2026 with the endpoint refusing connections"
+expect_out "pilot-backup FAILED upload"
+[ "$(bucket lsf -R b:point-backup/pilot/daily/)" = "point-2026-10-06.dump" ] \
+  || fail "the bucket holds more than the 06/Oct dump: $(bucket lsf -R b:point-backup/pilot/daily/)"
+[ "$(bucket hashsum md5 b:point-backup/pilot/daily/point-2026-10-06.dump)" = "$before" ] \
+  || fail "the 06/Oct dump changed"
+ok "Scenario: The bucket is unreachable — FAILED upload, no 07/Oct object, the 06/Oct object unchanged"
 endgroup
 
 echo "deploy-script: every scenario passed"
