@@ -78,13 +78,15 @@ export default defineConfig<CatalogueOptions>({
     url: `${CATALOGUE_APP_ORIGIN}/dev/ui`,
     reuseExistingServer: !IS_CI,
     timeout: 120_000,
-    // apps/web/env.ts validates all four on the first request. No API runs in this setup: the two
-    // API values only satisfy the schema, and the catalogue calls neither (11.18).
+    // apps/web/env.ts validates its required variables on the first request. No API runs in this
+    // setup: the two API values only satisfy the schema, and the catalogue calls neither (11.18).
+    // APP_ENV is required since add-staging-deploy (design D10); no SENTRY_DSN_WEB, so no reporting.
     env: {
       APP_ORIGIN: CATALOGUE_APP_ORIGIN,
       SITE_ORIGIN: CATALOGUE_SITE_ORIGIN,
       NEXT_PUBLIC_API_BASE: '/api/v1',
       API_INTERNAL_BASE: 'http://localhost:3001/api/v1',
+      APP_ENV: 'test',
     },
   },
 });
