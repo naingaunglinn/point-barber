@@ -100,8 +100,11 @@ describe('add-foundation-auth-access · access · A branch-data action needs the
     const before = actionCalls.branch_action;
     const res = await post('branch-action', hnin).send({ branch_id: B1 });
     expect(res.status).toBe(403);
-    expect(res.body).toMatchObject({ code: 'forbidden' });
-    expect(res.body.context).toBeUndefined();
+    // API-PERM-03 v1.6: a holder without the target branch is told the code, like a caller without it.
+    expect(res.body).toMatchObject({
+      code: 'forbidden',
+      context: { required: 'employee.rating_update' },
+    });
     expect(actionCalls.branch_action).toBe(before);
   });
 
