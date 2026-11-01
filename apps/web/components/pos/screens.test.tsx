@@ -128,6 +128,16 @@ describe('shareReceiptPdf (task 13.6)', () => {
     expect(open).toHaveBeenCalledWith('blob:receipt');
   });
 
+  it('the share sheet and the new tab open synchronously — before anything is awaited (the gesture holds)', () => {
+    const share = vi.fn(async () => {});
+    void shareReceiptPdf(pdf, 'r.pdf', { canShare: () => true, share }, vi.fn());
+    expect(share).toHaveBeenCalledOnce();
+    const open = vi.fn();
+    URL.createObjectURL = vi.fn(() => 'blob:receipt');
+    void shareReceiptPdf(pdf, 'r.pdf', {}, open);
+    expect(open).toHaveBeenCalledWith('blob:receipt');
+  });
+
   it('the share sheet closed by the user is not an error', async () => {
     const share = vi.fn(async () => {
       throw new DOMException('closed', 'AbortError');

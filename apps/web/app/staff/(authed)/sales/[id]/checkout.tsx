@@ -38,9 +38,10 @@ import { SaleLinesEditor } from './in-progress';
 // The checkout of a COMPLETED visit (AD-POS-07 / 08 / 12 · D-PAY-01 / 02 / 05 · D-VIS-06 ·
 // add-walkin-visit-checkout groups 12 – 13): the total and its breakdown, the lines (a service added now
 // needs "Why was this added?"), the payments with void, then — while money remains — Cash (the whole
-// remaining amount at once), KBZPay (the reference sheet) and Split; below them the Finish step, disabled
-// with its reason until the money is right. A payment carries one Idempotency-Key per tap, kept across
-// its retries; a replay reads "Already saved"; a refusal reloads the sale.
+// remaining amount at once), KBZPay (the reference sheet) and Split; below them the Finish step, its button
+// in the sticky bottom bar, disabled with its reason until the money is right. A payment carries one
+// Idempotency-Key per tap, kept across its retries; a replay reads "Already saved"; a refusal reloads the
+// sale.
 
 interface PaymentBody {
   readonly payment_method_id: string;

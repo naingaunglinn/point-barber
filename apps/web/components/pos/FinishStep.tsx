@@ -32,12 +32,14 @@ import type { CheckoutMoney } from './checkout-money';
 // is restored by FINISH itself, so nothing is asked either. While the lookup runs Finish waits; when it
 // failed the Name is offered (optional — FINISH itself matches the phone), and once FINISH names
 // `customer.name` the Name is shown and required, whatever the lookup said. One primary button carries the
-// total and stays disabled, with the reason under it, while money is missing, a cash excess exists or the
-// change of an over-transfer is above 10,000 Ks (`error.change_too_large` — task 15.6, owner WR1). Where
-// `Sale.actions.finish_needs_reason` is true, Finish asks for the reason first and sends it as
-// `override_reason` (task 13.3). A refusal of FINISH (task 13.4) lands on its field — `phone_invalid` on
-// the phone, `validation` of `customer.name` on the name — and every other one above the button; after
-// `total_changed` the screen reloads the sale, so the new total is on the button.
+// total, in the sticky bottom bar (AD-LAY-04 — above the bottom navigation below 768 px, at the bottom of
+// the screen from 768 px), and stays disabled, with the reason under it, while money is missing, a cash
+// excess exists or the change of an over-transfer is above 10,000 Ks (`error.change_too_large` — task
+// 15.6, owner WR1). Where `Sale.actions.finish_needs_reason` is true, Finish asks for the reason first and
+// sends it as `override_reason` (task 13.3). A refusal of FINISH (task 13.4) lands on its field —
+// `phone_invalid` on the phone, `validation` of `customer.name` on the name — and every other one in the
+// bar above the button, so it is in view wherever the screen is scrolled. After `total_changed` the screen
+// reloads the sale, so the new total is on the button.
 
 /** The screen's lookup of the typed phone (P3.CUS.02). */
 export type CustomerLookupState =
@@ -60,6 +62,11 @@ export interface FinishProblem {
   readonly errors?: readonly { readonly field: string; readonly code: string }[];
   readonly request_id: string;
 }
+
+// The sticky bar sits on the bottom navigation below 768 px: the navigation's items are `min-h-14`, with a
+// 1 px top border and the safe-area inset under them (packages/ui BottomNav); from 768 px there is none.
+const FINISH_BAR =
+  'sticky bottom-[calc(--spacing(14)+1px+env(safe-area-inset-bottom))] z-10 grid gap-2 border-t border-border bg-background py-3 md:bottom-0';
 
 export interface FinishStepProps {
   readonly total: Mmk;
@@ -156,56 +163,59 @@ export function FinishStep({
       : null;
 
   return (
-    <section className="grid gap-4" data-testid="finish-step">
-      {alert !== null && <FormAlert problem={alert} />}
-      <div data-testid="finish-phone">
-        <FormField label={t('phone')} error={phoneError}>
-          {(field) => (
-            <PhoneInput
-              {...field}
-              value={phone}
-              onChange={(value) => {
-                setPhone(value.raw);
-                setNameMissing(false);
-                onPhone(value.e164);
-              }}
-            />
-          )}
-        </FormField>
-      </div>
-      {lookup.kind === 'existing' && (
-        <p data-testid="finish-customer">
-          {lookup.customer.last_visit_at === null
-            ? t('existing', { name: lookup.customer.name })
-            : t('lastVisit', {
-                name: lookup.customer.name,
-                date: formatDate(lookup.customer.last_visit_at as Instant, format),
-              })}
-        </p>
-      )}
-      {lookup.kind === 'new' && <p data-testid="finish-customer">{t('new')}</p>}
-      {nameShown && (
-        <div data-testid="finish-name">
-          <FormField label={t('name')} required={nameRequired} error={nameError}>
+    // `contents`: no box of its own, so the bar's sticky range is the whole checkout, not this step.
+    <section className="contents" data-testid="finish-step">
+      <div className="grid gap-4">
+        <div data-testid="finish-phone">
+          <FormField label={t('phone')} error={phoneError}>
             {(field) => (
-              <TextInput
+              <PhoneInput
                 {...field}
-                value={name}
+                value={phone}
                 onChange={(value) => {
-                  setName(value);
+                  setPhone(value.raw);
                   setNameMissing(false);
+                  onPhone(value.e164);
                 }}
               />
             )}
           </FormField>
         </div>
-      )}
-      <div className="grid gap-2">
+        {lookup.kind === 'existing' && (
+          <p data-testid="finish-customer">
+            {lookup.customer.last_visit_at === null
+              ? t('existing', { name: lookup.customer.name })
+              : t('lastVisit', {
+                  name: lookup.customer.name,
+                  date: formatDate(lookup.customer.last_visit_at as Instant, format),
+                })}
+          </p>
+        )}
+        {lookup.kind === 'new' && <p data-testid="finish-customer">{t('new')}</p>}
+        {nameShown && (
+          <div data-testid="finish-name">
+            <FormField label={t('name')} required={nameRequired} error={nameError}>
+              {(field) => (
+                <TextInput
+                  {...field}
+                  value={name}
+                  onChange={(value) => {
+                    setName(value);
+                    setNameMissing(false);
+                  }}
+                />
+              )}
+            </FormField>
+          </div>
+        )}
         {phone !== '' && (
           <Button variant="ghost" onClick={skip}>
             {t('skip')}
           </Button>
         )}
+      </div>
+      <div className={FINISH_BAR} data-testid="finish-bar">
+        {alert !== null && <FormAlert problem={alert} />}
         <Button
           variant="primary"
           fullWidth

@@ -633,25 +633,86 @@ describe('FINISH and after (group 13)', () => {
     });
   });
 
-  it('a finished sale opened by its link → the receipt from format=json; View / share PDF fetches the file', async () => {
+  const finishedRoutes = (pdf: Route) => ({
+    ...BASE,
+    [SALE]: json(200, FINISHED),
+    [VISIT]: json(200, visitOf({ ...COMPLETED, status: VisitStatus.FINISHED, sale: FINISHED })),
+    [`GET /api/v1/sales/${IDS.SALE}/receipt?format=json`]: json(200, receiptOf()),
+    [`GET /api/v1/sales/${IDS.SALE}/receipt?format=pdf`]: pdf,
+  });
+  const pdfFile = () =>
+    new Response(new Blob(['%PDF']), { headers: { 'Content-Type': 'application/pdf' } });
+  const pdfReads = () =>
+    fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/receipt?format=pdf')).length;
+
+  it('a finished sale opened by its link → the receipt from format=json; the PDF loaded first, opened in the tap itself', async () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     URL.createObjectURL = vi.fn(() => 'blob:receipt');
-    routeFetch(fetchMock, {
-      ...BASE,
-      [SALE]: json(200, FINISHED),
-      [VISIT]: json(200, visitOf({ ...COMPLETED, status: VisitStatus.FINISHED, sale: FINISHED })),
-      [`GET /api/v1/sales/${IDS.SALE}/receipt?format=json`]: json(200, receiptOf()),
-      [`GET /api/v1/sales/${IDS.SALE}/receipt?format=pdf`]: new Response(new Blob(['%PDF']), {
-        headers: { 'Content-Type': 'application/pdf' },
-      }),
-    });
-    renderPos(<SaleScreen id={IDS.SALE} />);
-    fireEvent.click(await screen.findByTestId('finished-share'));
-    await waitFor(() => expect(open).toHaveBeenCalledWith('blob:receipt', '_blank', 'noopener'));
+    const revoke = vi.fn();
+    URL.revokeObjectURL = revoke;
+    routeFetch(fetchMock, finishedRoutes(pdfFile()));
+    const view = renderPos(<SaleScreen id={IDS.SALE} />);
+    const share = (await screen.findByTestId('finished-share')) as HTMLButtonElement;
+    // Busy while the PDF loads; it is loaded before any tap.
+    await waitFor(() => expect(share.disabled).toBe(false));
+    expect(pdfReads()).toBe(1);
+    fireEvent.click(share);
+    // In the tap itself — nothing awaited — so no browser blocks the new tab (task 13.6).
+    expect(open).toHaveBeenCalledWith('blob:receipt', '_blank', 'noopener');
+    expect(pdfReads()).toBe(1);
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/receipt?format=json'))).toBe(
       true,
     );
+    // The blob URL stays while the tab may read it; it is revoked when the screen leaves.
+    expect(revoke).not.toHaveBeenCalled();
+    view.unmount();
+    expect(revoke).toHaveBeenCalledWith('blob:receipt');
+  });
+
+  it('Scenario: PDF on an iPhone — right after FINISH the share sheet opens in the tap, with the file', async () => {
+    const share = vi.fn(async () => {});
+    // jsdom's navigator has no Web Share: the two members are added for this test only.
+    const device = { canShare: () => true, share };
+    for (const [name, value] of Object.entries(device)) {
+      Object.defineProperty(navigator, name, { value, configurable: true });
+    }
+    try {
+      routeFetch(fetchMock, {
+        ...paidRoutes({ [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(200, FINISHED) }),
+        [`GET /api/v1/sales/${IDS.SALE}/receipt?format=pdf`]: pdfFile(),
+      });
+      renderPos(<SaleScreen id={IDS.SALE} />);
+      fireEvent.click(await screen.findByTestId('finish-submit'));
+      const button = (await screen.findByTestId('success-share')) as HTMLButtonElement;
+      await waitFor(() => expect(button.disabled).toBe(false));
+      fireEvent.click(button);
+      expect(share).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'B3-2026-OCT-00001.pdf', files: [expect.any(File)] }),
+      );
+      expect(screen.queryByRole('alert')).toBeNull();
+    } finally {
+      for (const name of Object.keys(device)) Reflect.deleteProperty(navigator, name);
+    }
+  });
+
+  it('the PDF did not load — a tap loads it again (no alert before the tap), a second failure shows the alert', async () => {
+    const open = vi.fn();
+    vi.stubGlobal('open', open);
+    routeFetch(fetchMock, finishedRoutes(json(500, problem(500, 'internal_error'))));
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    const share = (await screen.findByTestId('finished-share')) as HTMLButtonElement;
+    await waitFor(() => expect(pdfReads()).toBe(1));
+    await waitFor(() => expect(share.disabled).toBe(false));
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(share);
+    await waitFor(() => expect(pdfReads()).toBe(2));
+    expect(
+      await screen.findByText(
+        'Something went wrong on the server. Try again; if it happens again, give the error ID to an admin.',
+      ),
+    ).toBeTruthy();
+    expect(open).not.toHaveBeenCalled();
   });
 });
 

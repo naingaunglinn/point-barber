@@ -1,6 +1,10 @@
 // "View / share PDF" (AD-POS-13 · AD-RCPT-02 · AD-PWA-02 · add-walkin-visit-checkout task 13.6): the PDF
 // fetched as a blob (same origin, session cookie) goes to the Web Share sheet when the device can share
-// files, and otherwise opens in a new tab. There is no Print button in this change.
+// files, and otherwise opens in a new tab. There is no Print button in this change. Both need the user's
+// gesture — Safari refuses `navigator.share` after an awaited fetch (`NotAllowedError`) and a late
+// `window.open` can be blocked without a word — so the caller has the blob already and calls this in the
+// tap itself: the share sheet or the tab is opened synchronously, before anything is awaited. The blob URL
+// of a new tab is handed to `open`; its owner revokes it when the screen leaves.
 
 export interface ShareTarget {
   readonly canShare?: (data: { files: File[] }) => boolean;

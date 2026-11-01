@@ -16,7 +16,7 @@ import type {
   VisitDto,
 } from '@point/shared';
 
-import { ApiProblem, api } from '../api/client';
+import { ApiProblem, api, apiBlob } from '../api/client';
 import { posKeys } from './pos.keys';
 
 // The walk-in's server state (add-walkin-visit-checkout design D11 · AD-PERF-03 / 04 · ADR-008): open
@@ -147,6 +147,20 @@ export function useReceipt(saleId: string, enabled: boolean) {
     queryFn: () => api<ReceiptViewDto>(`/sales/${saleId}/receipt?format=json`),
     enabled,
     staleTime: 0,
+  });
+}
+
+/**
+ * P4.RCP.01 `format=pdf` — the receipt file of a FINISHED sale, loaded as soon as the screen shows the
+ * sale, so "View / share PDF" can share or open it in the tap itself (the share sheet and a new tab
+ * need the user's gesture — task 13.6). A finished receipt never changes: loaded once.
+ */
+export function useReceiptPdf(saleId: string) {
+  return useQuery({
+    queryKey: posKeys.receiptPdf(saleId),
+    queryFn: () => apiBlob(`/sales/${saleId}/receipt?format=pdf`),
+    staleTime: Infinity,
+    retry: false,
   });
 }
 

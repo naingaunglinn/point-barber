@@ -16,4 +16,5 @@ export const posKeys = {
     serviceIds: readonly string[] | undefined,
   ) => ['quote', branchId, employeeId, date, serviceIds] as const,
   receipt: (saleId: string) => ['receipt', saleId] as const,
+  receiptPdf: (saleId: string) => ['receipt', saleId, 'pdf'] as const,
 };

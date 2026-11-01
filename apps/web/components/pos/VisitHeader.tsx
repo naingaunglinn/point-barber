@@ -9,6 +9,10 @@ import { minutesSince } from './minutes';
 // The sticky header of a visit (AD-POS-04 · AD-POS-06 · AD-GOAL-02 · add-walkin-visit-checkout task 11.2):
 // the customer or "Walk-in", the performer's chip, the branch, the start time and the minutes since. It
 // stays on the in-progress screen and every checkout step, so the barber never loses who and where.
+// It sticks under the AppShell top bar (sticky, z-20), not behind it. The shell has no height token — the
+// bar's `min-h-14` is only a floor; its height is that of its tallest control, the Button (`h-12`, from
+// 768 px `h-10`), plus `py-2` and the 1 px bottom border: 65 px on a phone, 57 px from 768 px. So the
+// offset is `top-16` / `md:top-14`, and the bar's border covers the header's top pixel.
 
 export interface VisitHeaderProps {
   readonly visit: VisitDto;
@@ -22,7 +26,7 @@ export function VisitHeader({ visit, branchName }: VisitHeaderProps) {
   const now = useNow();
   return (
     <header
-      className="sticky top-0 z-10 grid gap-1 border-b border-border bg-background p-3"
+      className="sticky top-16 z-10 grid gap-1 border-b border-border bg-background p-3 md:top-14"
       data-testid="visit-header"
     >
       <div className="flex items-center justify-between gap-2">

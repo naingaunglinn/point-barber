@@ -179,6 +179,39 @@ const finishedSale = (extra: Partial<SaleDto> = {}) =>
     ...extra,
   }) as unknown as SaleDto;
 
+describe('FinishStep — the sticky bottom bar (task 13.2 · AD-LAY-04 · AD-POS-12)', () => {
+  it('the Finish button and its disabled reason sit in the bar: above the bottom navigation, at the bottom from 768 px', () => {
+    finish({
+      total: moneyFromWire(11000),
+      money: { remaining: moneyFromWire(3000), changeToReturn: null, finishBlocked: 'remaining' },
+    });
+    const bar = screen.getByTestId('finish-bar');
+    expect(within(bar).getByTestId('finish-submit')).toBeTruthy();
+    expect(within(bar).getByText('Take the remaining 3,000 Ks before you finish.')).toBeTruthy();
+    expect(bar.className.split(' ')).toEqual(
+      expect.arrayContaining([
+        'sticky',
+        'bottom-[calc(--spacing(14)+1px+env(safe-area-inset-bottom))]',
+        'md:bottom-0',
+        'bg-background',
+      ]),
+    );
+    // The step has no box of its own, so the bar sticks across the whole checkout.
+    expect(screen.getByTestId('finish-step').className).toBe('contents');
+    expect(within(bar).queryByLabelText('Customer phone (optional)')).toBeNull();
+  });
+
+  it('a FINISH refusal shows in the bar, above the button', () => {
+    finish({ problem: { code: 'day_closed', request_id: 'r' } });
+    const bar = screen.getByTestId('finish-bar');
+    const alert = within(bar).getByRole('alert');
+    expect(
+      alert.compareDocumentPosition(within(bar).getByTestId('finish-submit')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+});
+
 describe('FinishStep — override and refusals (tasks 13.3 / 13.4)', () => {
   it('Scenario: a code holder finishes — the reason dialog first, then override_reason is sent', async () => {
     const { onFinish } = finish({ needsReason: true });

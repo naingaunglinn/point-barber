@@ -44,6 +44,13 @@ describe('VisitHeader (task 11.2)', () => {
     expect(screen.getByTestId('visit-customer').textContent).toBe('Ma Su');
     expect(screen.getByTestId('visit-started').textContent).toContain('စတဲ့အချိန်');
   });
+
+  it('sticks under the AppShell top bar, not behind it — offset by its 65 px / 57 px height', () => {
+    renderStaff(<VisitHeader visit={visit()} branchName="Point 3.0" />);
+    const classes = screen.getByTestId('visit-header').className.split(' ');
+    expect(classes).toEqual(expect.arrayContaining(['sticky', 'top-16', 'md:top-14', 'z-10']));
+    expect(classes).not.toContain('top-0');
+  });
 });
 
 describe('SaleLines (task 11.3)', () => {

@@ -111,12 +111,14 @@ test.describe('14.3 Flow "walk-in cash" — Ko Aung, Haircut 10,000, at most 7 t
       await counter.tap(page.getByTestId('visit-done'));
       await counter.tap(page.getByTestId('pay-CASH'));
       const expected = await nextReceipt(aungApi, 'sale');
+      // The success panel loads the PDF as it shows (task 13.6 — the tap shares it at once), so the
+      // response is awaited from the Finish tap on.
+      const pdf = page.waitForResponse((res) => res.url().includes('/receipt?format=pdf'));
       await counter.tap(page.getByTestId('finish-submit'));
       await expect(page.getByTestId('success-number')).toHaveText(expected);
       expect(counter.count).toBeLessThanOrEqual(7);
-      const pdf = page.waitForResponse((res) => res.url().includes('/receipt?format=pdf'));
-      await page.getByTestId('success-share').click();
       const answer = await pdf;
+      await page.getByTestId('success-share').click();
       expect(answer.status()).toBe(200);
       expect(answer.headers()['content-type']).toContain('application/pdf');
       await context.close();
