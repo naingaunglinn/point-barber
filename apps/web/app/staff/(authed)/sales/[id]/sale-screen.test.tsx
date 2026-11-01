@@ -2,7 +2,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { PaymentMethodKind, SaleStatus, VisitStatus } from '@point/shared';
+import { type PaymentDto, PaymentMethodKind, SaleStatus, VisitStatus } from '@point/shared';
 
 import {
   IDS,
@@ -601,6 +601,214 @@ describe('FINISH and after (group 13)', () => {
     expect(reason?.textContent).toBe('Check the transfer amount.');
     expect(screen.getAllByText('Check the transfer amount.')).toHaveLength(1);
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  // Dev 2's review of 7b5b654 — a FINISH refusal speaks of the payments it was refused on: once they are
+  // put right on the screen (the transfer voided, KBZPay 18,000 taken), it is not shown above an enabled
+  // Finish. Ko Min's Haircut 8,000.
+  const kbzpayRef = {
+    id: IDS.KBZPAY,
+    code: 'KBZPAY',
+    name_mm: 'KBZPay',
+    name_en: 'KBZPay',
+    kind: PaymentMethodKind.MOBILE_WALLET,
+  };
+  const transfer = (id: string, amount: number, reference: string, voided = false) =>
+    paymentOf({
+      id,
+      amount,
+      external_reference: reference,
+      payment_method: kbzpayRef,
+      effective_payment_method: kbzpayRef,
+      ...(voided
+        ? {
+            voided_at: '2026-10-05T10:46:00+06:30',
+            voided_by: { user_id: IDS.AUNG_USER, display_name: 'Ko Aung' },
+            void_reason: 'Wrong amount',
+          }
+        : {}),
+    });
+  const haircut = (
+    payments: PaymentDto[],
+    amounts: { paid: number; remaining: number; change: number },
+  ) =>
+    saleOf({
+      ...PAID,
+      items: [
+        lineOf({ unit_price_amount: 8_000, list_price_amount: 8_000, line_total_amount: 8_000 }),
+      ],
+      subtotal_amount: 8_000,
+      total_amount: 8_000,
+      paid_amount: amounts.paid,
+      remaining_amount: amounts.remaining,
+      change_due_amount: amounts.change,
+      payments,
+    });
+  const FIRST = '0199a3f2-0000-7000-800a-000000000011';
+  const WRONG = '0199a3f2-0000-7000-800a-000000000012';
+  const RIGHT = '0199a3f2-0000-7000-800a-000000000013';
+
+  /** Voids the live transfer through its reason dialog, then takes KBZPay 18,000 through the sheet. */
+  async function voidThenPay18000(paymentId: string, amount: string) {
+    fireEvent.click(screen.getByRole('button', { name: `Void payment KBZPay ${amount} Ks` }));
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.change(within(dialog).getByRole('textbox'), { target: { value: 'Wrong amount' } });
+    fireEvent.click(
+      within(dialog).getAllByRole('button', { name: 'Void payment' }).at(-1) as HTMLElement,
+    );
+    await waitFor(() => expect(posts(`/payments/${paymentId}/void`)).toHaveLength(1));
+    fireEvent.click(await screen.findByTestId('pay-KBZPAY'));
+    fireEvent.change(await screen.findByLabelText(/^Amount/), { target: { value: '18000' } });
+    fireEvent.change(screen.getByLabelText(/^Reference/), { target: { value: 'KBZ0001234593' } });
+    fireEvent.click(screen.getByTestId('payment-submit'));
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/payments`)).toHaveLength(1));
+    expect(bodyOf(posts(`/sales/${IDS.SALE}/payments`)[0])).toStrictEqual({
+      payment_method_id: IDS.KBZPAY,
+      amount: 18_000,
+      external_reference: 'KBZ0001234593',
+    });
+  }
+
+  /** Finish enabled with "Change to return: 10,000 Ks" and no alert anywhere on the checkout. */
+  async function expectRightAgain() {
+    expect((await screen.findByTestId('money-change')).textContent).toBe(
+      'Change to return: 10,000 Ks',
+    );
+    const finish = screen.getByTestId('finish-submit') as HTMLButtonElement;
+    expect(finish.disabled).toBe(false);
+    expect(finish.getAttribute('aria-describedby')).toBeNull();
+    expect(screen.queryByText('Check the transfer amount.')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  }
+
+  it('change_too_large → the reload shows KBZPay 20,000 → void it, KBZPay 18,000: no "Check the transfer amount." above an enabled Finish', async () => {
+    // The screen showed KBZPay 10,000; another device voided it and took 20,000 (change 12,000).
+    const shown = haircut([transfer(FIRST, 10_000, 'KBZ0001234591')], {
+      paid: 10_000,
+      remaining: 0,
+      change: 2_000,
+    });
+    const left = haircut(
+      [transfer(FIRST, 10_000, 'KBZ0001234591', true), transfer(WRONG, 20_000, 'KBZ0001234592')],
+      { paid: 20_000, remaining: 0, change: 12_000 },
+    );
+    const voided = haircut(
+      [
+        transfer(FIRST, 10_000, 'KBZ0001234591', true),
+        transfer(WRONG, 20_000, 'KBZ0001234592', true),
+      ],
+      { paid: 0, remaining: 8_000, change: 0 },
+    );
+    const right = haircut(
+      [
+        transfer(FIRST, 10_000, 'KBZ0001234591', true),
+        transfer(WRONG, 20_000, 'KBZ0001234592', true),
+        transfer(RIGHT, 18_000, 'KBZ0001234593'),
+      ],
+      { paid: 18_000, remaining: 0, change: 10_000 },
+    );
+    let server = shown;
+    routeFetch(fetchMock, {
+      ...paidRoutes(),
+      [SALE]: () => json(200, server),
+      [VISIT]: json(200, visitOf({ ...COMPLETED, sale: shown })),
+      [`POST /api/v1/sales/${IDS.SALE}/finish`]: () => {
+        server = left;
+        return json(
+          422,
+          problem(422, 'change_too_large', {
+            context: { change_due_amount: 12_000, max_change_amount: 10_000 },
+          }),
+        );
+      },
+      [`POST /api/v1/payments/${WRONG}/void`]: () => ((server = voided), json(200, voided)),
+      [`POST /api/v1/sales/${IDS.SALE}/payments`]: () => ((server = right), json(201, right)),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('finish-submit'));
+    // The reload: the button says it, the refusal is not repeated above it.
+    await waitFor(() =>
+      expect(screen.getByTestId('finish-submit').getAttribute('aria-describedby')).not.toBeNull(),
+    );
+    expect(screen.getAllByText('Check the transfer amount.')).toHaveLength(1);
+    await voidThenPay18000(WRONG, '20,000');
+    await expectRightAgain();
+  });
+
+  it('amount_mismatch shown above Finish → void the transfer, KBZPay 18,000: the old refusal is gone', async () => {
+    const shown = haircut([transfer(FIRST, 10_000, 'KBZ0001234591')], {
+      paid: 10_000,
+      remaining: 0,
+      change: 2_000,
+    });
+    const voided = haircut([transfer(FIRST, 10_000, 'KBZ0001234591', true)], {
+      paid: 0,
+      remaining: 8_000,
+      change: 0,
+    });
+    const right = haircut(
+      [transfer(FIRST, 10_000, 'KBZ0001234591', true), transfer(RIGHT, 18_000, 'KBZ0001234593')],
+      { paid: 18_000, remaining: 0, change: 10_000 },
+    );
+    let server = shown;
+    routeFetch(fetchMock, {
+      ...paidRoutes(),
+      [SALE]: () => json(200, server),
+      [VISIT]: json(200, visitOf({ ...COMPLETED, sale: shown })),
+      [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(422, problem(422, 'amount_mismatch')),
+      [`POST /api/v1/payments/${FIRST}/void`]: () => ((server = voided), json(200, voided)),
+      [`POST /api/v1/sales/${IDS.SALE}/payments`]: () => ((server = right), json(201, right)),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    const finish = await screen.findByTestId('finish-submit');
+    const before = saleReads();
+    fireEvent.click(finish);
+    await waitFor(() => expect(saleReads()).toBeGreaterThan(before));
+    // The reload answered the same payments: the refusal stays in view.
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      "The payments don't match the total.",
+    );
+    await voidThenPay18000(FIRST, '10,000');
+    await expectRightAgain();
+  });
+
+  it('total_changed: the reload brings the new total and the refusal stays (the payments did not change)', async () => {
+    const grown = saleOf({
+      ...PAID,
+      items: [
+        lineOf(),
+        lineOf({
+          id: '0199a3f2-0000-7000-8008-000000000002',
+          service_id: IDS.SHAVE,
+          description_en: 'Shave',
+          unit_price_amount: 3_000,
+          list_price_amount: 3_000,
+          line_total_amount: 3_000,
+        }),
+      ],
+      subtotal_amount: 13_000,
+      total_amount: 13_000,
+      remaining_amount: 3_000,
+    });
+    let server = PAID;
+    routeFetch(
+      fetchMock,
+      paidRoutes({
+        [SALE]: () => json(200, server),
+        [`POST /api/v1/sales/${IDS.SALE}/finish`]: () => {
+          server = grown;
+          return json(409, problem(409, 'total_changed', { context: { total_amount: 13_000 } }));
+        },
+      }),
+    );
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('finish-submit'));
+    await waitFor(() =>
+      expect(screen.getByTestId('finish-submit').textContent).toBe('Finish · 13,000 Ks'),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The total has changed. Check it and finish again.',
+    );
   });
 
   it('the phone lookup fails (500) — the Name is offered; FINISH naming customer.name makes it required', async () => {
