@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   agentRules: false,
   transpilePackages: ['@point/i18n', '@point/ui'],
+  // `pnpm dev` behind Caddy (local-setup.md): the browser opens the dev server through the two local
+  // hosts, which Next.js 16 blocks for its dev resources (/_next/hmr) unless they are listed — the page
+  // then never hydrates. Development only; a production build ignores it.
+  allowedDevOrigins: ['app.point.test', 'point.test'],
   experimental: { globalNotFound: true },
 };
 

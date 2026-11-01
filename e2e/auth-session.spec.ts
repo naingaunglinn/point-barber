@@ -30,7 +30,7 @@ test.describe('add-foundation-auth-access · auth · A lost session leads to the
     const context = await signInAs(browser, app, 'aung@point.test');
     const page = await context.newPage();
     await page.goto('/');
-    await page.getByTestId('landing-sign-out').click();
+    await page.getByTestId('user-menu-sign-out').click();
     await expect(page).toHaveURL(/\/login\?reason=1$/);
     await expect(page.getByTestId('login-reason')).toHaveText('You signed out');
     await context.close();
@@ -41,7 +41,7 @@ test.describe('add-foundation-auth-access · auth · A lost session leads to the
     const context = await signInAs(browser, app, 'min@point.test');
     const page = await context.newPage();
     await page.goto('/');
-    await expect(page.getByTestId('landing-name')).toHaveText('Ko Min');
+    await expect(page.getByTestId('user-menu-name')).toHaveText('Ko Min');
     sql(
       `UPDATE user_sessions SET revoked_at = now(), revoke_reason = 3
        WHERE revoked_at IS NULL AND user_id = (SELECT id FROM users WHERE email = 'min@point.test');`,
@@ -61,8 +61,9 @@ test.describe('add-foundation-auth-access · auth · A lost session leads to the
     expect(res?.url()).toBe(`${APP_ORIGIN}/login?return_to=%2F%3Fbranch%3DB3`);
     await expect(page.getByTestId('login-reason')).toHaveCount(0);
     await codeStep(page, 'hnin@point.test'); // Ma Hnin: B3 is in her scope
-    await page.waitForURL(`${APP_ORIGIN}/?branch=B3`);
-    await expect(page.getByTestId('landing-name')).toBeVisible();
+    // `/` opens Today with the query kept (add-walkin-visit-checkout task 10.1).
+    await page.waitForURL(`${APP_ORIGIN}/today?branch=B3`);
+    await expect(page.getByTestId('today')).toBeVisible();
   });
 });
 
@@ -73,23 +74,23 @@ test.describe('add-foundation-auth-access · access · A user sets their own int
   }) => {
     await page.goto('/login');
     await codeStep(page, 'thura@point.test');
-    await expect(page.getByTestId('landing-name')).toHaveText('ကိုသူရ');
+    await expect(page.getByTestId('user-menu-name')).toHaveText('ကိုသူရ');
 
     // Switch to English: saved through PATCH /v1/me.
     await page.getByRole('button', { name: 'English' }).first().click();
-    await expect(page.getByTestId('landing-name')).toHaveText('Ko Thura');
-    await page.getByTestId('landing-sign-out').click();
+    await expect(page.getByTestId('user-menu-name')).toHaveText('Ko Thura');
+    await page.getByTestId('user-menu-sign-out').click();
     await expect(page).toHaveURL(/\/login\?reason=1$/);
 
     // A second code for Ko Thura within 60 seconds would answer 429: a fresh limiter.
     await restartApi(playwright);
     await codeStep(page, 'thura@point.test');
-    await expect(page.getByTestId('landing-name')).toHaveText('Ko Thura');
-    await page.getByTestId('landing-sign-out').click();
+    await expect(page.getByTestId('user-menu-name')).toHaveText('Ko Thura');
+    await page.getByTestId('user-menu-sign-out').click();
 
     // The same browser — cookie point_locale=en — and Ko Zaw, whose ui_language is NULL: Myanmar.
     await codeStep(page, 'zaw@point.test');
-    await expect(page.getByTestId('landing-name')).toHaveText('ကိုဇော်');
+    await expect(page.getByTestId('user-menu-name')).toHaveText('ကိုဇော်');
     const locale = (await page.context().cookies()).find(
       (cookie) => cookie.name === 'point_locale',
     );

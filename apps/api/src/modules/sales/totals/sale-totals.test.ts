@@ -6,7 +6,8 @@ import { type TotalsLine, type TotalsPayment, computeSaleTotals } from './sale-t
 // add-walkin-visit-checkout task 6.1 — the SaleTotals.compute table of design D13 (D8 · P4-RULE-06 ·
 // D-PLT-04 · CG-TEST-03): subtotal over lines without removed_at, no discount / service charge / tax
 // in this change, paid over non-voided payments, remaining and change never negative, and FINISH
-// allowed only when paid ≥ total and the excess is covered by non-cash payments (owner B5).
+// allowed only when paid ≥ total, the excess is covered by non-cash payments (owner B5) and the change
+// is at most MAX_OVER_TRANSFER_CHANGE_AMOUNT (owner WR1 — task 15.3).
 const ks = (amount: number): Mmk => moneyFromWire(amount);
 const line = (unit: number, over: Partial<TotalsLine> = {}): TotalsLine => ({
   unit_price: ks(unit),
@@ -116,6 +117,33 @@ describe('computeSaleTotals (design D8 / D13)', () => {
     expect(wire([line(8000)], [cash(11000)])).toMatchObject({
       change_due: 3000,
       non_cash_paid: 0,
+      finish_allowed: false,
+    });
+  });
+
+  // Task 15.3 — owner sheet WR1 (API Part 4 v1.4 P4-RULE-10 #12): the change is at most 10,000 Ks.
+  it('KBZPay 18,000 on 8,000 → change 10,000, allowed (10,000 ≤ 10,000)', () => {
+    expect(wire([line(8000)], [kbzpay(18000)])).toMatchObject({
+      remaining: 0,
+      change_due: 10000,
+      non_cash_paid: 18000,
+      finish_allowed: true,
+    });
+  });
+
+  it('KBZPay 18,001 on 8,000 → change 10,001 > 10,000, not allowed', () => {
+    expect(wire([line(8000)], [kbzpay(18001)])).toMatchObject({
+      change_due: 10001,
+      non_cash_paid: 18001,
+      finish_allowed: false,
+    });
+  });
+
+  it('KBZPay 20,000 on 8,000 → change 12,000, not allowed', () => {
+    expect(wire([line(8000)], [kbzpay(20000)])).toMatchObject({
+      remaining: 0,
+      change_due: 12000,
+      non_cash_paid: 20000,
       finish_allowed: false,
     });
   });
