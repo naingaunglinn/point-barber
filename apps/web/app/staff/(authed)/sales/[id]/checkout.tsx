@@ -39,8 +39,8 @@ import { SaleLinesEditor } from './in-progress';
 // add-walkin-visit-checkout groups 12 – 13): the total and its breakdown, the lines (a service added now
 // needs "Why was this added?"), the payments with void, then — while money remains — Cash (the whole
 // remaining amount at once), KBZPay (the reference sheet) and Split; below them the Finish step, disabled
-// with its reason until the money is right. A payment carries
-// one Idempotency-Key per tap, kept across its retries; a replay reads "Already saved".
+// with its reason until the money is right. A payment carries one Idempotency-Key per tap, kept across
+// its retries; a replay reads "Already saved"; a refusal reloads the sale.
 
 interface PaymentBody {
   readonly payment_method_id: string;
@@ -87,7 +87,12 @@ export function Checkout({
       setSheet(null);
       toast.success(t('already'));
     },
-    onRefused: (error) => setPayProblem(screenProblem(error)),
+    // A refusal may come from a sale that changed elsewhere (another device paid or voided): the screen
+    // shows it and loads the sale again.
+    onRefused: (error) => {
+      setPayProblem(screenProblem(error));
+      void store.reloadSale(sale.id);
+    },
   });
 
   const submit = (payment: PaymentBody) => {
@@ -123,7 +128,8 @@ export function Checkout({
               ? { kind: 'archived' }
               : { kind: 'new' },
         ),
-      () => setLookup({ kind: 'none' }),
+      // No answer (or a refusal): Finish is not held back, the Name is offered (FinishStep).
+      () => setLookup({ kind: 'failed' }),
     );
   };
 

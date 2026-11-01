@@ -70,6 +70,11 @@ const posts = (path: string) =>
   );
 const bodyOf = (call: Parameters<typeof fetch> | undefined) =>
   JSON.parse(String(call?.[1]?.body)) as Record<string, unknown>;
+/** The GET reads of the sale so far. */
+const saleReads = () =>
+  fetchMock.mock.calls.filter(
+    ([url, init]) => init?.method === 'GET' && String(url) === `/api/v1/sales/${IDS.SALE}`,
+  ).length;
 
 describe('the state router (task 11.1)', () => {
   it('a STARTED visit → in progress: the lines, Add service, "Service done · Take payment"', async () => {
@@ -312,6 +317,29 @@ describe('checkout (group 12)', () => {
   });
 });
 
+describe('checkout — a refused payment (task 12.8 · design D11)', () => {
+  it('a Cash payment refused (amount_exceeds_remaining) → the alert, and the sale is loaded again', async () => {
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: json(200, saleOf()),
+      [VISIT]: json(200, visitOf({ ...COMPLETED })),
+      [`POST /api/v1/sales/${IDS.SALE}/payments`]: json(
+        422,
+        problem(422, 'amount_exceeds_remaining'),
+      ),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    const cash = await screen.findByTestId('pay-CASH');
+    await waitFor(() => expect(saleReads()).toBeGreaterThan(0));
+    const before = saleReads();
+    fireEvent.click(cash);
+    expect(
+      await screen.findByText('This amount is more than the amount left to pay.'),
+    ).toBeTruthy();
+    await waitFor(() => expect(saleReads()).toBeGreaterThan(before));
+  });
+});
+
 const paidRoutes = (extra: Record<string, Route> = {}) => ({
   ...BASE,
   [SALE]: json(200, PAID),
@@ -531,12 +559,57 @@ describe('FINISH and after (group 13)', () => {
     );
     renderPos(<SaleScreen id={IDS.SALE} />);
     fireEvent.click(await screen.findByTestId('finish-submit'));
-    const reads = () =>
-      fetchMock.mock.calls.filter(
-        ([url, init]) => init?.method === 'GET' && String(url) === `/api/v1/sales/${IDS.SALE}`,
-      ).length;
-    const before = reads();
-    await waitFor(() => expect(reads()).toBeGreaterThan(before));
+    const before = saleReads();
+    await waitFor(() => expect(saleReads()).toBeGreaterThan(before));
+  });
+
+  it('the phone lookup fails (500) — the Name is offered; FINISH naming customer.name makes it required', async () => {
+    routeFetch(
+      fetchMock,
+      paidRoutes({
+        'GET /api/v1/customers/lookup?phone=%2B95945001122': json(
+          500,
+          problem(500, 'internal_error'),
+        ),
+        [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(
+          400,
+          problem(400, 'validation', {
+            errors: [{ field: 'customer.name', code: 'invalid_type' }],
+          }),
+        ),
+      }),
+    );
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.change(await screen.findByLabelText('Customer phone (optional)'), {
+      target: { value: '09 4500 1122' },
+    });
+    const name = await screen.findByLabelText(/^Name/);
+    expect(name.getAttribute('aria-required')).toBeNull();
+    fireEvent.click(screen.getByTestId('finish-submit'));
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(1));
+    expect(bodyOf(posts(`/sales/${IDS.SALE}/finish`)[0])).toMatchObject({
+      customer: { phone: '09 4500 1122' },
+    });
+    expect(await screen.findByText('This field is required.')).toBeTruthy();
+    expect(screen.getByLabelText(/^Name/).getAttribute('aria-required')).toBe('true');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('while the phone lookup runs, Finish is disabled and sends nothing', async () => {
+    routeFetch(
+      fetchMock,
+      paidRoutes({
+        'GET /api/v1/customers/lookup?phone=%2B95945001122': () => new Promise<never>(() => {}),
+      }),
+    );
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.change(await screen.findByLabelText('Customer phone (optional)'), {
+      target: { value: '09 4500 1122' },
+    });
+    const finish = screen.getByTestId('finish-submit') as HTMLButtonElement;
+    await waitFor(() => expect(finish.disabled).toBe(true));
+    fireEvent.click(finish);
+    expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(0);
   });
 
   it('Scenario: Finish for an absent barber with a reason — override_reason is sent', async () => {

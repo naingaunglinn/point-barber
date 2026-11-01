@@ -2,17 +2,28 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ApiProblem } from '../../lib/api/client';
 import { problem } from '../../test/render';
 import { SAVED_CHECK_AFTER_MS, useSavedSubmit } from './use-saved-submit';
 
 // add-walkin-visit-checkout tasks 10.9 / 12.8 (the client logic) — visits spec '"Was it saved?" is
 // answered by the client request id' (AD-NET-01 · AD-NET-02 · P4.REQ.01): 15 s without an answer → lookup;
 // found → success without sending again; 404 → Retry with the same key; a refusal frees the key; a double
-// tap sends once.
+// tap sends once; 409 `idempotency_in_progress` on a Retry is no answer — the key stays and the first
+// request's late success still lands (API-IDEM-01).
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 const never = () => new Promise<never>(() => {});
+const later = <T,>() => {
+  let resolve: (value: T) => void = () => {};
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+};
+const inProgress = () =>
+  new ApiProblem(409, problem(409, 'idempotency_in_progress') as never, undefined);
 let keys = 0;
 const newKey = () => `K${(keys += 1)}`;
 
@@ -140,5 +151,83 @@ describe('useSavedSubmit', () => {
       await done;
     });
     expect(sendSpy).toHaveBeenCalledOnce();
+  });
+
+  it('Scenario: Payment still running — Retry answered 409 idempotency_in_progress keeps K1; the late success lands', async () => {
+    keys = 0;
+    const first = later<string>();
+    let n = 0;
+    const { hook, calls, sendSpy } = setup(
+      () => {
+        n += 1;
+        if (n === 1) return first.promise;
+        return n === 2 ? Promise.reject(inProgress()) : Promise.resolve('payment-K2');
+      },
+      async () => null,
+    );
+    let done: Promise<void> | undefined;
+    act(() => {
+      done = hook.result.current.submit();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SAVED_CHECK_AFTER_MS);
+      await done;
+    });
+    expect(hook.result.current.state).toBe('notSaved');
+    await act(() => hook.result.current.retry());
+    // Not a refusal: nothing for the screen to show, the user can still Retry with the same key.
+    expect([calls.refused, calls.sent, hook.result.current.state]).toStrictEqual([
+      [],
+      [],
+      'notSaved',
+    ]);
+    await act(async () => {
+      first.resolve('payment-K1');
+      await first.promise;
+    });
+    expect([calls.sent, hook.result.current.state]).toStrictEqual([['payment-K1'], 'idle']);
+    // The submit is over: the next action gets a new key.
+    await act(() => hook.result.current.submit());
+    expect(sendSpy.mock.calls.map(([k]) => k)).toStrictEqual(['K1', 'K1', 'K2']);
+  });
+
+  it('the late success lands while the lookup after the 409 is still out — it stays idle, not notSaved', async () => {
+    keys = 0;
+    const first = later<string>();
+    const secondLookup = later<string | null>();
+    let sends = 0;
+    let lookups = 0;
+    const { hook, calls } = setup(
+      () => ((sends += 1), sends === 1 ? first.promise : Promise.reject(inProgress())),
+      () => ((lookups += 1), lookups === 1 ? Promise.resolve(null) : secondLookup.promise),
+    );
+    let done: Promise<void> | undefined;
+    act(() => {
+      done = hook.result.current.submit();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SAVED_CHECK_AFTER_MS);
+      await done;
+    });
+    let retried: Promise<void> | undefined;
+    await act(async () => {
+      retried = hook.result.current.retry();
+      await Promise.resolve();
+    });
+    expect([lookups, hook.result.current.state]).toStrictEqual([2, 'checking']);
+    await act(async () => {
+      first.resolve('payment-K1');
+      await first.promise;
+    });
+    expect([calls.sent, hook.result.current.state]).toStrictEqual([['payment-K1'], 'idle']);
+    await act(async () => {
+      secondLookup.resolve(null);
+      await retried;
+    });
+    expect([calls.sent, calls.refused, hook.result.current.state]).toStrictEqual([
+      ['payment-K1'],
+      [],
+      'idle',
+    ]);
   });
 });

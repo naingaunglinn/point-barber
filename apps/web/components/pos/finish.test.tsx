@@ -84,6 +84,33 @@ describe('FinishStep (tasks 13.1 / 13.2)', () => {
     expect(onFinish).toHaveBeenCalledWith({ phone: '09 4500 1122', name: 'Ko Phyo' });
   });
 
+  it('while the lookup runs Finish waits — disabled, a tap sends nothing', () => {
+    const { onFinish } = finish({ lookup: { kind: 'loading' } });
+    fireEvent.change(screen.getByLabelText('Customer phone (optional)'), {
+      target: { value: '09 4500 1122' },
+    });
+    const submit = screen.getByTestId('finish-submit') as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    fireEvent.click(submit);
+    expect(onFinish).not.toHaveBeenCalled();
+  });
+
+  it('a failed lookup offers the Name (optional): empty → the phone alone, typed → sent with it', () => {
+    const { onFinish, view } = finish({ lookup: { kind: 'failed' } });
+    fireEvent.change(screen.getByLabelText('Customer phone (optional)'), {
+      target: { value: '09 4500 1122' },
+    });
+    const field = screen.getByLabelText(/^Name/);
+    expect(field.getAttribute('aria-required')).toBeNull();
+    expect(screen.queryByTestId('finish-customer')).toBeNull();
+    fireEvent.click(screen.getByTestId('finish-submit'));
+    expect(onFinish).toHaveBeenLastCalledWith({ phone: '09 4500 1122' });
+    fireEvent.change(field, { target: { value: 'Ko Phyo' } });
+    fireEvent.click(screen.getByTestId('finish-submit'));
+    expect(onFinish).toHaveBeenLastCalledWith({ phone: '09 4500 1122', name: 'Ko Phyo' });
+    expect(view.container.querySelector('[data-slot="required-mark"]')).toBeNull();
+  });
+
   it('Skip clears the phone and finishes without a customer', () => {
     const { onFinish, onPhone } = finish({ lookup: { kind: 'new' } });
     fireEvent.change(screen.getByLabelText('Customer phone (optional)'), {
@@ -195,6 +222,32 @@ describe('FinishStep — override and refusals (tasks 13.3 / 13.4)', () => {
     });
     expect(screen.getByText('This field is required.')).toBeTruthy();
   });
+
+  it.each([['none'], ['failed']] as const)(
+    'Scenario: New phone without a name, lookup %s — FINISH names customer.name: the Name is shown, required, no alert',
+    (kind) => {
+      const { onFinish } = finish({
+        lookup: { kind },
+        problem: {
+          code: 'validation',
+          errors: [{ field: 'customer.name', code: 'invalid_type' }],
+          request_id: 'r',
+        },
+      });
+      fireEvent.change(screen.getByLabelText('Customer phone (optional)'), {
+        target: { value: '09 4500 1122' },
+      });
+      expect(screen.getByLabelText(/^Name/).getAttribute('aria-required')).toBe('true');
+      expect(screen.getByText('This field is required.')).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+      // Required now: an empty Name is not sent again.
+      fireEvent.click(screen.getByTestId('finish-submit'));
+      expect(onFinish).not.toHaveBeenCalled();
+      fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Ko Phyo' } });
+      fireEvent.click(screen.getByTestId('finish-submit'));
+      expect(onFinish).toHaveBeenCalledWith({ phone: '09 4500 1122', name: 'Ko Phyo' });
+    },
+  );
 
   it('payroll_finalized as an alert', () => {
     finish({ problem: { code: 'payroll_finalized', request_id: 'r' } });

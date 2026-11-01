@@ -2,13 +2,19 @@
 
 import { useCallback, useRef, useState } from 'react';
 
+import { ErrorCode } from '@point/shared';
+
+import { ApiProblem } from '../../lib/api/client';
+
 // One money submit that survives a lost reply (AD-NET-01 · AD-NET-02 · P4.REQ.01 · visits spec "Was it
 // saved?" is answered by the client request id · add-walkin-visit-checkout tasks 10.9 / 12.8): one
 // `Idempotency-Key` per logical submit, kept across its retries and replaced only when the user starts a new
 // action. When the request has had no answer for 15 s — or fails without an answer (no network) — the state
 // is `checking` and the key is looked up: found → the saved record is the success; not found or no answer →
 // `notSaved`, and only the user's Retry sends again, with the same key. A refusal (an answer with a status)
-// ends the submit and frees the key for the next action. A second tap while a submit runs does nothing.
+// ends the submit and frees the key for the next action — except 409 `idempotency_in_progress`: the first
+// request with this key still runs (API-IDEM-01), so it is no answer: the key is kept, the lookup decides,
+// and the late answer of that first request still lands. A second tap while a submit runs does nothing.
 
 export type SavedSubmitState = 'idle' | 'sending' | 'checking' | 'notSaved';
 
@@ -33,6 +39,10 @@ const hasStatus = (error: unknown) =>
   error !== null &&
   typeof (error as { status?: unknown }).status === 'number';
 
+/** 409 `idempotency_in_progress`: the server still runs the first request of this key. */
+const stillRunning = (error: unknown) =>
+  error instanceof ApiProblem && error.problem.code === ErrorCode.IDEMPOTENCY_IN_PROGRESS;
+
 export function useSavedSubmit<T, F>({
   send,
   lookup,
@@ -49,9 +59,12 @@ export function useSavedSubmit<T, F>({
 
   const check = useCallback(
     async (requestKey: string) => {
+      // The submit may already be over (the late answer of its first request landed): nothing to check.
+      if (key.current !== requestKey) return;
       setState('checking');
       try {
         const found = await lookup(requestKey);
+        if (key.current !== requestKey) return;
         if (found !== null) {
           key.current = null;
           setState('idle');
@@ -61,7 +74,7 @@ export function useSavedSubmit<T, F>({
       } catch {
         // No answer from the lookup either: the user decides when to try again.
       }
-      setState('notSaved');
+      if (key.current === requestKey) setState('notSaved');
     },
     [lookup, onFound],
   );
@@ -102,7 +115,7 @@ export function useSavedSubmit<T, F>({
         key.current = null;
         setState('idle');
         onSent(first.result);
-      } else if (answered(first.error)) {
+      } else if (answered(first.error) && !stillRunning(first.error)) {
         key.current = null;
         setState('idle');
         onRefused(first.error);

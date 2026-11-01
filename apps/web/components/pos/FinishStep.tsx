@@ -29,12 +29,14 @@ import type { CheckoutMoney } from './checkout-money';
 // phone" · add-walkin-visit-checkout tasks 13.1 / 13.2): the phone field already open and optional, with
 // "Skip"; as soon as the number is complete the screen looks it up — an existing customer is named ("· last
 // visit <date>" when there is one) and nothing more is asked; a new one needs a Name. An archived customer
-// is restored by FINISH itself, so nothing is asked either. One primary button carries the total and stays
-// disabled, with the reason under it, while money is missing, a cash excess exists or the change of an
-// over-transfer is above 10,000 Ks (`error.change_too_large` — task 15.6, owner WR1). Where
+// is restored by FINISH itself, so nothing is asked either. While the lookup runs Finish waits; when it
+// failed the Name is offered (optional — FINISH itself matches the phone), and once FINISH names
+// `customer.name` the Name is shown and required, whatever the lookup said. One primary button carries the
+// total and stays disabled, with the reason under it, while money is missing, a cash excess exists or the
+// change of an over-transfer is above 10,000 Ks (`error.change_too_large` — task 15.6, owner WR1). Where
 // `Sale.actions.finish_needs_reason` is true, Finish asks for the reason first and sends it as
-// `override_reason` (task 13.3). A refusal of FINISH (task 13.4) lands on its field — `phone_invalid` on the
-// phone, `validation` of `customer.name` on the name — and every other one above the button; after
+// `override_reason` (task 13.3). A refusal of FINISH (task 13.4) lands on its field — `phone_invalid` on
+// the phone, `validation` of `customer.name` on the name — and every other one above the button; after
 // `total_changed` the screen reloads the sale, so the new total is on the button.
 
 /** The screen's lookup of the typed phone (P3.CUS.02). */
@@ -43,7 +45,9 @@ export type CustomerLookupState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'existing'; readonly customer: CustomerLookupDto }
   | { readonly kind: 'new' }
-  | { readonly kind: 'archived' };
+  | { readonly kind: 'archived' }
+  /** The lookup got no answer or a refusal: whether the phone is known is open. */
+  | { readonly kind: 'failed' };
 
 export interface FinishCustomer {
   readonly phone: string;
@@ -116,15 +120,18 @@ export function FinishStep({
     return onFinish(customer);
   };
 
+  // FINISH named `customer.name`: the phone is unknown to the server, whatever the lookup said.
+  const serverAsksName = problem?.errors?.some((item) => item.field === 'customer.name') === true;
+  const nameRequired = lookup.kind === 'new' || serverAsksName;
+  const nameShown = nameRequired || lookup.kind === 'failed';
+
   const finish = () => {
     if (phone.trim() === '') return send(null);
-    if (lookup.kind === 'new') {
-      if (name.trim() === '') {
-        setNameMissing(true);
-        return undefined;
-      }
-      return send({ phone, name: name.trim() });
+    if (nameRequired && name.trim() === '') {
+      setNameMissing(true);
+      return undefined;
     }
+    if (nameShown && name.trim() !== '') return send({ phone, name: name.trim() });
     return send({ phone });
   };
 
@@ -176,24 +183,22 @@ export function FinishStep({
               })}
         </p>
       )}
-      {lookup.kind === 'new' && (
-        <>
-          <p data-testid="finish-customer">{t('new')}</p>
-          <div data-testid="finish-name">
-            <FormField label={t('name')} required error={nameError}>
-              {(field) => (
-                <TextInput
-                  {...field}
-                  value={name}
-                  onChange={(value) => {
-                    setName(value);
-                    setNameMissing(false);
-                  }}
-                />
-              )}
-            </FormField>
-          </div>
-        </>
+      {lookup.kind === 'new' && <p data-testid="finish-customer">{t('new')}</p>}
+      {nameShown && (
+        <div data-testid="finish-name">
+          <FormField label={t('name')} required={nameRequired} error={nameError}>
+            {(field) => (
+              <TextInput
+                {...field}
+                value={name}
+                onChange={(value) => {
+                  setName(value);
+                  setNameMissing(false);
+                }}
+              />
+            )}
+          </FormField>
+        </div>
       )}
       <div className="grid gap-2">
         {phone !== '' && (
@@ -205,7 +210,7 @@ export function FinishStep({
           variant="primary"
           fullWidth
           loading={pending}
-          disabled={blocked !== undefined}
+          disabled={blocked !== undefined || lookup.kind === 'loading'}
           disabledReason={blocked}
           onClick={() => finish()}
           data-testid="finish-submit"
