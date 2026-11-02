@@ -22,6 +22,9 @@ export const DEFAULT_SETTINGS = {
   // add-walkin-visit-checkout — server-only, read by the price quote's block length (P2-RULE-10):
   // home travel time before and after a HOME visit, branch setting, default 30 minutes (D-SCH-03).
   'home_service.travel_minutes': 30,
+  // add-pilot-data-seed — server-only: the radius a new branch gets (P1.BR.02 · Part 5 §17, default
+  // 100 m), read when the pilot branch is created.
+  'attendance.default_radius_meters': 100,
 } as const;
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

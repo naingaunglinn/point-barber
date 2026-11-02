@@ -208,6 +208,11 @@ export type SaleAdjustmentType = (typeof SaleAdjustmentType)[keyof typeof SaleAd
 export const ServicePricingMode = { SIMPLE: 1, OPTIONS: 2 } as const;
 export type ServicePricingMode = (typeof ServicePricingMode)[keyof typeof ServicePricingMode];
 
+/** part2 — service_categories.status. */
+export const ServiceCategoryStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type ServiceCategoryStatus =
+  (typeof ServiceCategoryStatus)[keyof typeof ServiceCategoryStatus];
+
 /** part2 — services.status. */
 export const ServiceStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
