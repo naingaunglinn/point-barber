@@ -72,7 +72,7 @@ describe('StartSheet (task 10.7)', () => {
   it('Start with no service — one tap (a service is optional at START)', () => {
     const onStart = sheet();
     fireEvent.click(screen.getByTestId('start-submit'));
-    expect(onStart).toHaveBeenCalledWith([]);
+    expect(onStart).toHaveBeenCalledWith([], null);
   });
 
   it('chips toggle; Start sends the chosen ids in chip order', () => {
@@ -85,7 +85,7 @@ describe('StartSheet (task 10.7)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Shave' }));
     fireEvent.click(screen.getByRole('button', { name: 'Shave' }));
     fireEvent.click(screen.getByTestId('start-submit'));
-    expect(onStart).toHaveBeenCalledWith([B3_SERVICES[0]?.id, B3_SERVICES[2]?.id]);
+    expect(onStart).toHaveBeenCalledWith([B3_SERVICES[0]?.id, B3_SERVICES[2]?.id], null);
   });
 
   it('while START runs the button is busy and a second tap sends nothing', () => {
@@ -144,5 +144,107 @@ describe('StartSheet (task 10.7)', () => {
     expect(screen.getByRole('alert').textContent).toContain(
       'This person is not assigned to this branch on this date.',
     );
+  });
+});
+
+// add-late-entry tasks 4.1 – 4.3 — the late-entry section of the START sheet (AD-POS-14 · LE-2 ★ ·
+// P4-RULE-13): behind `sale.late_entry`; the five reasons, the note only for OTHER, four required times;
+// on Start the required fields first, then the order of the times — nothing is sent while one fails. The
+// catalogue clock is Monday 05/Oct/2026 10:42 AM; the paper slip is yesterday's.
+const fillTime = (key: string, label: string, time: string, date = '04/Oct/2026') => {
+  const field = screen.getByTestId(`late-entry-${key}`);
+  const input = within(field).getByRole('textbox', { name: `${label} — Date` });
+  fireEvent.change(input, { target: { value: date } });
+  fireEvent.blur(input);
+  fireEvent.change(within(field).getByTestId(`late-entry-${key}-time`), {
+    target: { value: time },
+  });
+};
+const fillAll = (
+  times: Partial<Record<'started' | 'completed' | 'received' | 'finished', string>> = {},
+) => {
+  fillTime('started', 'Actual start time', times.started ?? '15:00');
+  fillTime('completed', 'Completed time', times.completed ?? '15:30');
+  fillTime('received', 'Payment received time', times.received ?? '15:35');
+  fillTime('finished', 'Finish time', times.finished ?? '15:35');
+};
+
+describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
+  it('the link is absent without sale.late_entry (owner B12)', () => {
+    sheet();
+    expect(screen.queryByTestId('late-entry-link')).toBeNull();
+  });
+
+  it('Start with the section open and nothing filled — required under the reason and the four times, nothing sent', () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getAllByText('This field is required.')).toHaveLength(5);
+  });
+
+  it('OTHER shows the note, and it is required', () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    expect(screen.queryByTestId('late-entry-note')).toBeNull();
+    fireEvent.click(screen.getByTestId('late-entry-reason-9'));
+    fillAll();
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getAllByText('This field is required.')).toHaveLength(1);
+  });
+
+  it('a completed time before the start — the order message under Completed time, nothing sent', () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('late-entry-reason-1'));
+    fillAll({ completed: '14:55' });
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).not.toHaveBeenCalled();
+    expect(
+      within(screen.getByTestId('late-entry-completed')).getByRole('alert').textContent,
+    ).toMatch(/must be in order/);
+  });
+
+  it('a finish time after now is refused the same way', () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('late-entry-reason-1'));
+    fillAll();
+    fillTime('finished', 'Finish time', '11:00', '05/Oct/2026');
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).not.toHaveBeenCalled();
+    expect(within(screen.getByTestId('late-entry-finished')).getByRole('alert')).toBeTruthy();
+  });
+
+  it("yesterday's paper slip in order — Start sends the reason and the four MMT times", () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('late-entry-reason-1'));
+    fillAll();
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).toHaveBeenCalledWith([], {
+      reason: 1,
+      started_at: '2026-10-04T15:00:00+06:30',
+      completed_at: '2026-10-04T15:30:00+06:30',
+      received_at: '2026-10-04T15:35:00+06:30',
+      finished_at: '2026-10-04T15:35:00+06:30',
+    });
+  });
+
+  it('the link closes the section again, and Start is a normal START', () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    expect(screen.getByTestId('late-entry-link').textContent).toBe('Not a late entry');
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).toHaveBeenCalledWith([], null);
+  });
+
+  it('my: the link and the field labels are in Myanmar', () => {
+    sheet({ allowLateEntry: true }, 'my');
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    expect(screen.getByText('တကယ် စခဲ့တဲ့ အချိန်')).toBeTruthy();
+    expect(screen.getByText('အင်တာနက် ပြတ်')).toBeTruthy();
   });
 });

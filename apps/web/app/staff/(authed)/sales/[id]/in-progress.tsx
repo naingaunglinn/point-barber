@@ -12,6 +12,7 @@ import {
 } from '@point/shared';
 import { Button, FormAlert } from '@point/ui';
 
+import { useLateEntryStep } from '../../../../../components/pos/LateEntryStep';
 import { SaleLines } from '../../../../../components/pos/SaleLines';
 import { ServicePicker } from '../../../../../components/pos/ServicePicker';
 import { VisitActions } from '../../../../../components/pos/VisitActions';
@@ -112,20 +113,25 @@ export function SaleLinesEditor({
 export function InProgress({ sale, visit }: { readonly sale: SaleDto; readonly visit: VisitDto }) {
   const store = useStore();
   const action = useAction(() => store.reloadSale(sale.id));
+  // A late entry sends its completed time with "Service done" (add-late-entry task 4.5).
+  const completedAt = useLateEntryStep(visit, 'completed_at');
   return (
     <div className="grid gap-4" data-testid="visit-in-progress">
       <SaleLinesEditor sale={sale} visit={visit} />
+      {sale.actions.edit_lines && completedAt.field}
       <VisitActions
         canComplete={sale.actions.edit_lines}
         canMarkIncomplete={sale.actions.mark_incomplete}
         pending={action.pending}
         problem={action.problem}
-        onComplete={() =>
-          action.run(
-            () => api<VisitDto>(`/visits/${visit.id}/complete`, { method: 'POST' }),
+        onComplete={() => {
+          const time = completedAt.take();
+          if (time === null) return undefined;
+          return action.run(
+            () => api<VisitDto>(`/visits/${visit.id}/complete`, { method: 'POST', body: time }),
             store.visit,
-          )
-        }
+          );
+        }}
         onIncomplete={(reason) =>
           action.run(
             () =>
@@ -133,7 +139,10 @@ export function InProgress({ sale, visit }: { readonly sale: SaleDto; readonly v
                 method: 'POST',
                 body: { reason },
               }),
-            store.visit,
+            (next) => {
+              completedAt.forget();
+              store.visit(next);
+            },
           )
         }
       />

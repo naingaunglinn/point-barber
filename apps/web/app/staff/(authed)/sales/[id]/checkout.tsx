@@ -17,6 +17,7 @@ import { FormAlert, toast } from '@point/ui';
 import { CheckoutSummary } from '../../../../../components/pos/CheckoutSummary';
 import { type CustomerLookupState, FinishStep } from '../../../../../components/pos/FinishStep';
 import { MoneyStatus } from '../../../../../components/pos/MoneyStatus';
+import { useLateEntryStep } from '../../../../../components/pos/LateEntryStep';
 import { PaymentButtons } from '../../../../../components/pos/PaymentButtons';
 import { PaymentList } from '../../../../../components/pos/PaymentList';
 import { PaymentSheet, type PaymentSubmit } from '../../../../../components/pos/PaymentSheet';
@@ -47,6 +48,7 @@ interface PaymentBody {
   readonly payment_method_id: string;
   readonly amount: number;
   readonly external_reference?: string;
+  readonly received_at?: string;
 }
 
 export function Checkout({
@@ -69,6 +71,10 @@ export function Checkout({
   const [payProblem, setPayProblem] = useState<ScreenProblem | null>(null);
   const [lookup, setLookup] = useState<CustomerLookupState>({ kind: 'none' });
   const body = useRef<PaymentBody | null>(null);
+  // A late entry sends its received time with each payment (each part of a split the same) and its
+  // finish time with FINISH (add-late-entry task 4.5).
+  const receivedAt = useLateEntryStep(visit, 'received_at');
+  const finishedAt = useLateEntryStep(visit, 'finished_at');
 
   const pay = useSavedSubmit<{ data: SaleDto; replayed: boolean }, RequestLookupDto>({
     send: (key) =>
@@ -97,7 +103,9 @@ export function Checkout({
   });
 
   const submit = (payment: PaymentBody) => {
-    body.current = payment;
+    const time = receivedAt.take();
+    if (time === null) return undefined;
+    body.current = { ...payment, ...time };
     setPayProblem(null);
     return pay.submit();
   };
@@ -157,6 +165,7 @@ export function Checkout({
         <section className="grid gap-3">
           {payProblem !== null && sheet === null && <FormAlert problem={payProblem} />}
           {sheet === null && <SavedCheck state={pay.state} onRetry={pay.retry} />}
+          {receivedAt.field}
           <PaymentButtons
             methods={active}
             remaining={moneyFromWire(sale.remaining_amount)}
@@ -197,6 +206,7 @@ export function Checkout({
       {/* Shown from the start of the checkout: while money is missing (or a cash excess waits for its
           void) the button stays disabled with the reason under it (sales-checkout spec "Finish stays
           disabled while money is missing"). */}
+      {sale.actions.finish && finishedAt.field}
       {sale.actions.finish && (
         <FinishStep
           total={moneyFromWire(sale.total_amount)}
@@ -206,8 +216,10 @@ export function Checkout({
           pending={finishing.pending}
           needsReason={sale.actions.finish_needs_reason}
           problem={finishing.problem}
-          onFinish={(customer, overrideReason) =>
-            finishing.run(
+          onFinish={(customer, overrideReason) => {
+            const time = finishedAt.take();
+            if (time === null) return Promise.resolve(false);
+            return finishing.run(
               () =>
                 api<SaleDto>(`/sales/${sale.id}/finish`, {
                   method: 'POST',
@@ -215,14 +227,16 @@ export function Checkout({
                     expected_total_amount: sale.total_amount,
                     customer,
                     ...(overrideReason === undefined ? {} : { override_reason: overrideReason }),
+                    ...time,
                   },
                 }),
               (finished) => {
+                finishedAt.forget();
                 store.sale(finished);
                 onFinished();
               },
-            )
-          }
+            );
+          }}
         />
       )}
       <VisitActions
@@ -238,7 +252,10 @@ export function Checkout({
                 method: 'POST',
                 body: { reason },
               }),
-            store.visit,
+            (next) => {
+              finishedAt.forget();
+              store.visit(next);
+            },
           )
         }
       />
