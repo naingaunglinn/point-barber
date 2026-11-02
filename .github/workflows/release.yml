@@ -74,6 +74,15 @@ jobs:
           v="$GITHUB_REF_NAME"
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          # A release tag is pushed once: an image already under it is never replaced, so a second run —
+          # or a tag moved to another commit — cannot swap what a deploy or rollback pulls. (Review of
+          # #31 item 6; the tag ruleset on v* is the repository-side guard.)
+          for image in api web backup; do
+            if docker manifest inspect "ghcr.io/$owner/point-$image:$v" >/dev/null 2>&1; then
+              echo "::error::ghcr.io/$owner/point-$image:$v exists already — a release tag is never pushed twice"
+              exit 1
+            fi
+          done
           for image in api web backup; do
             docker tag "point-$image:$v" "ghcr.io/$owner/point-$image:$v"
             docker push "ghcr.io/$owner/point-$image:$v"

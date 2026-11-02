@@ -49,6 +49,14 @@ describe('release, deploy and rollback workflows (task 6.3)', () => {
     expect(text).not.toMatch(/branches:|workflow_dispatch|workflow_run|schedule/);
   });
 
+  it('release.yml never replaces an image already pushed under a release tag', () => {
+    const text = code(read('release.yml'));
+    const check = text.indexOf('docker manifest inspect "ghcr.io/$owner/point-$image:$v"');
+    const push = text.indexOf('docker push');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(push);
+  });
+
   it('rollback.yml starts only by hand', () => {
     const text = code(read('rollback.yml'));
     expect(text).toMatch(/^on:\n {2}workflow_dispatch:\n/m);
