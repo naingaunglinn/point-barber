@@ -6,13 +6,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/common/database/prisma.service.js';
 import { type Tx, TransactionRunner } from '../src/common/database/transaction-runner.js';
 import { Attachments, ReceiptFilesLock } from '../src/modules/platform/index.js';
+import { type FreshDatabase, freshDatabase } from './helpers/databases.js';
 import { createPerson, testCompany } from './helpers/people.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
 // add-walkin-visit-checkout task 3.6 — the generated rows of a receipt (ADR-014 · P4-RULE-18 · design
 // D10): Attachments.storeGenerated writes one row per stored object, findGenerated reads the live
 // rows of an entity, and ReceiptFilesLock (`receipt:<entity_id>`, exclusive, held to commit) lets the
-// job and a GET store exactly one set.
+// job and a GET store exactly one set. On a fresh copy of the migrated database: its person
+// and attachment rows never reach the configured one.
+let db: FreshDatabase;
 let t: TestApp;
 let prisma: PrismaService;
 let runner: TransactionRunner;
@@ -22,7 +25,8 @@ let companyId: string;
 let userId: string;
 
 beforeAll(async () => {
-  t = await startTestApp();
+  db = await freshDatabase();
+  t = await startTestApp({ databaseUrl: db.url });
   prisma = t.app.get(PrismaService);
   runner = t.app.get(TransactionRunner);
   attachments = t.app.get(Attachments);
@@ -30,7 +34,10 @@ beforeAll(async () => {
   companyId = await testCompany(prisma);
   userId = (await createPerson(prisma, companyId)).userId;
 });
-afterAll(() => t.close());
+afterAll(async () => {
+  await t.close();
+  await db.drop();
+});
 
 const file = (saleId: string, ext: 'pdf' | 'png') => ({
   ...attachments.newGeneratedKey(ext),

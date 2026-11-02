@@ -3,6 +3,7 @@
 // so a `status` member is never compared with a bare number (CG-TS-04 · point/no-raw-status). Each
 // change adds the codes its clients read.
 export const HttpStatus = {
+  OK: 200,
   NO_CONTENT: 204,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
