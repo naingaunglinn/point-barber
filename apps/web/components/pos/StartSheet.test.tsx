@@ -191,7 +191,7 @@ describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
     fillAll();
     fireEvent.click(screen.getByTestId('start-submit'));
     expect(onStart).not.toHaveBeenCalled();
-    expect(screen.getAllByText('This field is required.')).toHaveLength(1);
+    expect(screen.getByText('Enter a reason.')).toBeTruthy();
   });
 
   it('a completed time before the start — the order message under Completed time, nothing sent', () => {
@@ -246,5 +246,36 @@ describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
     fireEvent.click(screen.getByTestId('late-entry-link'));
     expect(screen.getByText('တကယ် စခဲ့တဲ့ အချိန်')).toBeTruthy();
     expect(screen.getByText('အင်တာနက် ပြတ်')).toBeTruthy();
+  });
+});
+
+describe('StartSheet — late entry, review of #29', () => {
+  it('a note typed for OTHER is not sent once another reason is chosen', () => {
+    const onStart = sheet({ allowLateEntry: true });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('late-entry-reason-9'));
+    fireEvent.change(screen.getByTestId('late-entry-note'), {
+      target: { value: 'Paper slip' },
+    });
+    fireEvent.click(screen.getByTestId('late-entry-reason-4'));
+    fillAll();
+    fireEvent.click(screen.getByTestId('start-submit'));
+    expect(onStart).toHaveBeenCalledWith(
+      [],
+      expect.not.objectContaining({ note: expect.anything() }),
+    );
+    expect(onStart.mock.calls[0]?.[1]).toMatchObject({ reason: 4 });
+  });
+
+  it('payroll_finalized from START shows its text in the sheet', () => {
+    sheet({
+      allowLateEntry: true,
+      problem: { code: 'payroll_finalized', request_id: 'r1' },
+    });
+    expect(
+      screen.getByText(
+        'Payroll for this period is finalized — ask the admin to add a manual payroll line.',
+      ),
+    ).toBeTruthy();
   });
 });

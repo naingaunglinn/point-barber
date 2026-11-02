@@ -114,7 +114,7 @@ export function InProgress({ sale, visit }: { readonly sale: SaleDto; readonly v
   const store = useStore();
   const action = useAction(() => store.reloadSale(sale.id));
   // A late entry sends its completed time with "Service done" (add-late-entry task 4.5).
-  const completedAt = useLateEntryStep(visit, 'completed_at');
+  const completedAt = useLateEntryStep(visit, 'completed_at', action.problem);
   return (
     <div className="grid gap-4" data-testid="visit-in-progress">
       <SaleLinesEditor sale={sale} visit={visit} />

@@ -130,7 +130,9 @@ export function StartSheet({
     if (!late) return onStart(ordered, null);
     const found: Partial<Record<'reason' | 'note' | TimeKey, string>> = {};
     if (reason === null) found.reason = tError('required');
-    if (reason === LateEntryReason.OTHER && note.trim() === '') found.note = tError('required');
+    if (reason === LateEntryReason.OTHER && note.trim() === '') {
+      found.note = tError('reason_required');
+    }
     for (const key of TIME_KEYS) if (times[key] === null) found[key] = tError('required');
     if (Object.keys(found).length === 0) {
       const violation = lateEntryOrderViolation({
@@ -147,7 +149,8 @@ export function StartSheet({
     if (Object.keys(found).length > 0) return undefined;
     return onStart(ordered, {
       reason: reason as LateEntryReason,
-      ...(note.trim() === '' ? {} : { note: note.trim() }),
+      // The note belongs to OTHER only: one typed for OTHER and left behind is not sent.
+      ...(reason === LateEntryReason.OTHER ? { note: note.trim() } : {}),
       started_at: times.started as string,
       completed_at: times.completed as string,
       received_at: times.received as string,

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import {
+  BARBER_PART4_CODES,
   DailyClosingStatus,
   ErrorCode,
   LateEntryReason,
@@ -61,7 +62,8 @@ describe('add-late-entry · permission (task 2.1 · D-VIS-13 · owner B12)', () 
     await assignRole(prisma, {
       name: 'Barber without late entry',
       employeeId: person.employeeId,
-      codes: ['sale.create'],
+      // A copy of the seed Barber role without the one code (owner B12).
+      codes: BARBER_PART4_CODES.filter((code) => code !== 'sale.late_entry'),
       scope: ScopeType.BRANCHES,
       branchIds: [branches.B3],
     });
@@ -113,6 +115,18 @@ describe('add-late-entry · payload and stored fields (task 2.2 · P4-RULE-13 ·
       business_date: new Date('2026-10-04T00:00:00Z'),
       created_at: new Date(NOW),
     });
+  });
+
+  // CG-TIME-03: 00:00 - 06:29 MMT is the day before in UTC; the business date is still the Myanmar date.
+  it('a start at 5:00 AM MMT on 04/Oct (03/Oct in UTC) lands on 04/Oct', async () => {
+    const res = await post(MIN, lateStart(outage('2026-10-04T05:00:00+06:30')));
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      started_at: '2026-10-04T05:00:00+06:30',
+      business_date: '2026-10-04',
+    });
+    const row = await prisma.visits.findUniqueOrThrow({ where: { id: res.body.id } });
+    expect(row.business_date).toStrictEqual(new Date('2026-10-04T00:00:00Z'));
   });
 
   it('a start sent in UTC is stored as the same instant', async () => {

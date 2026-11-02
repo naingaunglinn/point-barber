@@ -70,9 +70,11 @@ export class VisitsController {
   @Audited({ actions: [VISIT_COMPLETE] })
   async complete(
     @Param('id') id: string,
-    @ZBody(completeRequestSchema) body: CompleteRequest,
+    // P4.VIS.05 `requestBody.required: false`: a COMPLETE without a body (the walk-in web, every tab
+    // still on an older build) is a COMPLETE with no time; a late entry then names completed_at.
+    @ZBody(completeRequestSchema.optional()) body: CompleteRequest | undefined,
   ): Promise<VisitDto> {
-    return this.visits.complete(await this.viewers.current(), id, body);
+    return this.visits.complete(await this.viewers.current(), id, body ?? {});
   }
 
   /** P4.VIS.06 INCOMPLETE — the performer, or `visit.delete` at the visit's branch. */

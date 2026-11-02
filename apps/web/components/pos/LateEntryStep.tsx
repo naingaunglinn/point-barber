@@ -2,7 +2,7 @@
 
 import type { VisitDto } from '@point/shared';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import { LateEntryTimeField } from './LateEntryTimeField';
 import { type LateEntryStepMember, useLateEntryTimes } from './late-entry-times';
@@ -31,14 +31,31 @@ export interface LateEntryStep {
   forget(): void;
 }
 
-export function useLateEntryStep(visit: VisitDto, member: LateEntryStepMember): LateEntryStep {
+/**
+ * `refusal` is the step's last refusal: a 422 `late_entry_time` means the time this step sent is out of
+ * order (design D6 "Errors") — the kept time is set aside and the field shows again, under it the
+ * message, so the time can be corrected.
+ */
+export function useLateEntryStep(
+  visit: VisitDto,
+  member: LateEntryStepMember,
+  refusal?: { readonly code: string } | null,
+): LateEntryStep {
   const t = useTranslations('pos.lateEntry');
   const tError = useTranslations('error');
   const { kept, forget } = useLateEntryTimes(visit.id);
   const [entered, setEntered] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
-  const keptTime = kept?.[member] ?? null;
+  const [refused, setRefused] = useState(false);
   const late = visit.is_late_entry;
+  useEffect(() => {
+    if (late && refusal?.code === 'late_entry_time') {
+      setRefused(true);
+      setEntered(null);
+    }
+  }, [late, refusal]);
+  const keptTime = refused ? null : (kept?.[member] ?? null);
+  const error = missing ? tError('required') : refused ? tError('late_entry_time') : undefined;
 
   const field =
     late && keptTime === null ? (
@@ -48,7 +65,7 @@ export function useLateEntryStep(visit: VisitDto, member: LateEntryStepMember): 
           setEntered(value);
           if (value !== null) setMissing(false);
         }}
-        {...(missing ? { error: tError('required') } : {})}
+        {...(error === undefined ? {} : { error })}
         data-testid={`late-entry-${LABEL[member]}`}
       />
     ) : null;

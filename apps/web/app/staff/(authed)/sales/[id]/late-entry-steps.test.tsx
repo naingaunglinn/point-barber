@@ -18,7 +18,7 @@ import {
   visitOf,
 } from '../../../../../test/pos-fixtures';
 import { type Route, renderPos, routeFetch } from '../../../../../test/pos-render';
-import { json } from '../../../../../test/render';
+import { json, problem } from '../../../../../test/render';
 
 // add-late-entry tasks 4.5 / 4.6 (design D6 · LE-3 ★) — the steps of a late entry on the screen of its
 // sale: "Service done", a payment and Finish send the time kept on this device since START; when it is
@@ -200,5 +200,48 @@ describe('payments and FINISH on a late entry (task 4.5)', () => {
     expect(await screen.findByText('This field is required.')).toBeTruthy();
     expect(screen.getByTestId('late-entry-finished')).toBeTruthy();
     expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(0);
+  });
+});
+
+describe('review of #29 — the payment sheet and a refused kept time', () => {
+  it('KBZPay without the kept received time: the field is in the sheet, required, then sent', async () => {
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: json(200, saleOf()),
+      [VISIT]: json(200, visitOf({ ...LATE, ...COMPLETED })),
+      [`POST /api/v1/sales/${IDS.SALE}/payments`]: json(201, PAID),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('pay-KBZPAY'));
+    const sheet = await screen.findByRole('dialog');
+    expect(within(sheet).getByTestId('late-entry-received')).toBeTruthy();
+    fireEvent.change(within(sheet).getByLabelText(/^Reference/), {
+      target: { value: 'KBZ0001234567' },
+    });
+    fireEvent.click(within(sheet).getByTestId('payment-submit'));
+    expect(await within(sheet).findByText('This field is required.')).toBeTruthy();
+    expect(posts(`/sales/${IDS.SALE}/payments`)).toHaveLength(0);
+    fillTime('received', 'Payment received time', '04/Oct/2026', '15:35');
+    fireEvent.click(within(sheet).getByTestId('payment-submit'));
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/payments`)).toHaveLength(1));
+    expect(bodyOf(posts(`/sales/${IDS.SALE}/payments`)[0])).toMatchObject({
+      payment_method_id: IDS.KBZPAY,
+      external_reference: 'KBZ0001234567',
+      received_at: '2026-10-04T15:35:00+06:30',
+    });
+  });
+
+  it('Finish refused with late_entry_time: the kept finish time is set aside and the field shows with the order message', async () => {
+    keepLateEntryTimes(IDS.VISIT, KEPT);
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: json(200, PAID),
+      [VISIT]: json(200, visitOf({ ...LATE, ...COMPLETED, sale: PAID })),
+      [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(422, problem(422, 'late_entry_time')),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('finish-submit'));
+    const field = await screen.findByTestId('late-entry-finished');
+    expect(within(field).getByRole('alert').textContent).toMatch(/must be in order/);
   });
 });

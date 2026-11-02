@@ -96,6 +96,35 @@ describe('add-late-entry · COMPLETE (task 3.1 · P4-RULE-11 / 13)', () => {
     );
   });
 
+  // P4.VIS.05 `requestBody.required: false` (review of #29): a POST with no body at all — the walk-in web
+  // sends none — is a COMPLETE with no time, never a 400 on the root.
+  const bareComplete = async (who: 'E004' | 'E005', visitId: string) =>
+    s.http.post(`/api/v1/visits/${visitId}/complete`).set('Cookie', await api.cookie(who));
+
+  // Ko Aung, whom no other test here uses: no FINISH, so no B3 receipt number is taken.
+  it('a walk-in COMPLETE with no body at all — 200', async () => {
+    const res = await api.post(
+      'E004',
+      '/visits',
+      { branch_id: branches.B3, items: [{ service_id: services.HAIRCUT }] },
+      randomUUID(),
+    );
+    expect(res.status).toBe(201);
+    const done = await bareComplete('E004', (res.body as VisitDto).id);
+    expect(done.status).toBe(200);
+    expect(done.body.status).toBe(VisitStatus.COMPLETED);
+  });
+
+  it('a late entry COMPLETE with no body at all — 400 naming completed_at', async () => {
+    const visit = await lateVisit(sunday('15:00'));
+    const res = await bareComplete(MIN, visit.id);
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      code: ErrorCode.VALIDATION,
+      errors: [{ field: 'completed_at' }],
+    });
+  });
+
   it('Scenario: 2:55 PM before a 3:00 PM start — 422 late_entry_time', async () => {
     const visit = await lateVisit(sunday('15:00'));
     const res = await complete(visit.id, { completed_at: sunday('14:55') });
@@ -325,6 +354,24 @@ describe('add-late-entry · service-day money (task 3.6 · D-PAY-06 · D-PLT-15 
 });
 
 describe('add-late-entry · reads (task 3.8 · Part 4 §13)', () => {
+  it('GET /v1/sales/{id} of a finished late entry: the entered finish time and its business date', async () => {
+    const visit = await paidLateVisit({
+      started: sunday('16:00'),
+      completed: sunday('16:30'),
+      received: sunday('16:35'),
+    });
+    expect((await finish(visit.sale.id, { finished_at: sunday('16:40') })).status).toBe(200);
+    const read = await api.get(MIN, `/sales/${visit.sale.id}`);
+    expect(read.status).toBe(200);
+    expect(read.body).toMatchObject({
+      status: SaleStatus.FINISHED,
+      finished_at: sunday('16:40'),
+      business_date: '2026-10-04',
+    });
+    expect(read.body.receipt_number).toMatch(/^B3-2026-OCT-\d{5}$/);
+    expect(read.body.payments[0]).toMatchObject({ received_at: sunday('16:35') });
+  });
+
   it('GET /v1/visits/{id} of a late entry: the flag, reason, note and recorded_at', async () => {
     const res = await api.post(
       MIN,
@@ -426,9 +473,10 @@ describe('add-late-entry · closed days and a finalized period (tasks 3.3 / 3.5 
       received: '2026-09-29T15:35:00+06:30',
     });
     const at = new Date('2026-10-02T09:00:00+06:30');
+    const runId = randomUUID();
     await prisma.payroll_runs.create({
       data: {
-        id: randomUUID(),
+        id: runId,
         company_id: (await prisma.companies.findFirstOrThrow()).id,
         period_start: new Date('2026-09-01T00:00:00Z'),
         period_end: new Date('2026-09-30T00:00:00Z'),
@@ -444,6 +492,12 @@ describe('add-late-entry · closed days and a finalized period (tasks 3.3 / 3.5 
     const res = await finish(visit.sale.id, { finished_at: '2026-09-29T15:35:00+06:30' });
     expect(res.status).toBe(423);
     expect(res.body.code).toBe(ErrorCode.PAYROLL_FINALIZED);
+    // CG-TIME-05: the period the finish date falls in, and the run's status (3 FINALIZED).
+    expect(res.body.context).toMatchObject({
+      run_id: runId,
+      period: { start: '2026-09-01', end: '2026-09-30' },
+      status: PayrollRunStatus.FINALIZED,
+    });
     expect(await saleRow(visit.sale.id)).toMatchObject({
       status: SaleStatus.OPEN,
       receipt_number: null,

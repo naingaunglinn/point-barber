@@ -1,6 +1,6 @@
 'use client';
 
-import { type BusinessDate, mmtInstant } from '@point/shared';
+import { type BusinessDate, formatTime, mmtInstant } from '@point/shared';
 import { DateInput } from '@point/ui';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -27,7 +27,8 @@ const TIMES = Array.from({ length: (24 * 60) / 5 }, (_, i) => {
   const hours = Math.floor((i * 5) / 60);
   const minutes = (i * 5) % 60;
   const value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  const label = `${hours % 12 === 0 ? 12 : hours % 12}:${String(minutes).padStart(2, '0')} ${hours < 12 ? 'AM' : 'PM'}`;
+  // Any day: the label is only the time of day, "3:35 PM" (D-PLT-05 — AM / PM in both languages).
+  const label = formatTime(mmtInstant('2026-01-01', value), { locale: 'en' });
   return { value, label };
 });
 

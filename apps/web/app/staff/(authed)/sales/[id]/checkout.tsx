@@ -73,8 +73,8 @@ export function Checkout({
   const body = useRef<PaymentBody | null>(null);
   // A late entry sends its received time with each payment (each part of a split the same) and its
   // finish time with FINISH (add-late-entry task 4.5).
-  const receivedAt = useLateEntryStep(visit, 'received_at');
-  const finishedAt = useLateEntryStep(visit, 'finished_at');
+  const receivedAt = useLateEntryStep(visit, 'received_at', payProblem);
+  const finishedAt = useLateEntryStep(visit, 'finished_at', finishing.problem);
 
   const pay = useSavedSubmit<{ data: SaleDto; replayed: boolean }, RequestLookupDto>({
     send: (key) =>
@@ -165,7 +165,7 @@ export function Checkout({
         <section className="grid gap-3">
           {payProblem !== null && sheet === null && <FormAlert problem={payProblem} />}
           {sheet === null && <SavedCheck state={pay.state} onRetry={pay.retry} />}
-          {receivedAt.field}
+          {sheet === null && receivedAt.field}
           <PaymentButtons
             methods={active}
             remaining={moneyFromWire(sale.remaining_amount)}
@@ -200,6 +200,7 @@ export function Checkout({
             problem={payProblem}
             onSubmit={fromSheet}
             saved={<SavedCheck state={pay.state} onRetry={pay.retry} />}
+            before={receivedAt.field}
           />
         </section>
       )}
