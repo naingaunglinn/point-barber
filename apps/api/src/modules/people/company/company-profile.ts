@@ -10,7 +10,8 @@ import {
   isZawgyi,
   normalizeCompanyUpdate,
   socialLinksSchema,
-  toMmtIso,
+  toDate,
+  toMmtIsoMillis,
 } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
@@ -79,7 +80,8 @@ function toDto(row: CompanyProfileRow): CompanyDto {
     website_url: row.website_url,
     social_links: linksOf(row.social_links),
     status: row.status as CompanyDto['status'],
-    updated_at: toMmtIso(row.updated_at),
+    // With its milliseconds: the value a client echoes as expected_updated_at (API-IDEM-04).
+    updated_at: toMmtIsoMillis(row.updated_at),
   };
 }
 
@@ -138,8 +140,8 @@ export class CompanyProfile {
 
   /**
    * P1.CO.02 — design D3: the Zawgyi stage after the schema (nothing is read or written for a
-   * refusal), then one transaction: lock, the version check under the lock, the diff, the write with
-   * its audit row and website refresh — or nothing at all when no member changes.
+   * refusal), then one transaction: lock, the version check under the lock (to the millisecond), the
+   * diff, the write with its audit row and website refresh — or nothing at all when no member changes.
    */
   async update(input: CompanyUpdate): Promise<CompanyDto> {
     const changes = normalizeCompanyUpdate(input);
@@ -149,9 +151,11 @@ export class CompanyProfile {
     }
     return this.runner.run(async (tx) => {
       const row = await this.repository.lockProfile(tx);
+      // The exact instant, to the millisecond, as `updated_at` is answered — whole seconds would let
+      // an edit from a version written in the same second through (add-branch-management design D6).
       if (
         input.expected_updated_at !== undefined &&
-        toMmtIso(input.expected_updated_at) !== toMmtIso(row.updated_at)
+        toDate(input.expected_updated_at).getTime() !== row.updated_at.getTime()
       ) {
         throw new ProblemException(ErrorCode.CONFLICT, 409);
       }

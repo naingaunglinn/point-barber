@@ -11,3 +11,12 @@ import type { Instant } from './instant.js';
 export function toMmtIso(value: Instant | Date): Instant {
   return format(inMmt(value), "yyyy-MM-dd'T'HH:mm:ssxxx");
 }
+
+/**
+ * The same with milliseconds — `2026-10-05T10:00:00.123+06:30` — for an `updated_at` that a client
+ * echoes as `expected_updated_at`: the stale check compares to the millisecond, so the echo must keep
+ * them (API-IDEM-04 · add-branch-management design D6). Every other instant uses toMmtIso().
+ */
+export function toMmtIsoMillis(value: Instant | Date): Instant {
+  return format(inMmt(value), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+}

@@ -10,9 +10,11 @@ import { type SeededApp, seededApp } from './helpers/seeded.js';
 // "Every signed-in staff member reads the company profile" … "A change of the company queues the website
 // refresh in its transaction" (P1.CO.01 · P1.CO.02 · P1-RULE-10 / 13 · API-PERM-07 · API-IDEM-04 ·
 // API-SHAPE-04 / 05 · API-AUD-01 · API-PUB-03 · CP1 – CP3). Monday 05/Oct/2026 (MMT); the company's
-// `updated_at` is 9:00 AM before the first edit. The contact values are spec-fixtures §1.
+// `updated_at` is 9:00 AM before the first edit. The contact values are spec-fixtures §1. `updated_at`
+// goes out with its milliseconds and the stale check compares that exact instant (the rule of
+// add-branch-management design D6).
 const at = (time: string) => new Date(`2026-10-05T${time}:00+06:30`);
-const iso = (time: string) => `2026-10-05T${time}:00+06:30`;
+const iso = (time: string) => `2026-10-05T${time}:00.000+06:30`;
 const NAME_MM = 'ပွိုင့် ဘာဘာရှော့';
 const NAME_EN = 'Point Barbershop';
 const PHONE = '09 400 000 111';
@@ -450,6 +452,48 @@ describe('add-company-profile · organization · An edit based on an older versi
     );
     expect(res.map((r) => r.status).sort()).toStrictEqual([200, 409]);
     expect({ audits, jobs }).toStrictEqual({ audits: 1, jobs: 1 });
+  });
+});
+
+describe('add-company-profile · organization · An edit based on an older version is refused — to the millisecond', () => {
+  beforeAll(async () => {
+    await freshCompany('09:35');
+    // Written in the same second as a later save could be: a sub-second part, beyond milliseconds too.
+    await t.prisma.$executeRaw`
+      UPDATE companies SET updated_at = '2026-10-05T09:30:00.123456+06:30'::timestamptz
+      WHERE id = ${companyId}::uuid`;
+  });
+
+  it('updated_at is answered with its milliseconds', async () => {
+    const res = await read(kyawZin);
+    expect(res.body.updated_at).toBe('2026-10-05T09:30:00.123+06:30');
+  });
+
+  it.each(['2026-10-05T09:30:00.122+06:30', '2026-10-05T09:30:00.124+06:30', iso('09:30')])(
+    'a version 1 ms off, or the same second without its milliseconds (%s) — 409, nothing written',
+    async (version) => {
+      const { res, audits, jobs } = await counted(() =>
+        patch(kyawZin, { email: EMAIL, expected_updated_at: version }),
+      );
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({ code: 'conflict' });
+      expect((await stored()).email).toBeNull();
+      expect({ audits, jobs }).toStrictEqual({ audits: 0, jobs: 0 });
+    },
+  );
+
+  it('the printed value — 200, and the new updated_at with its milliseconds', async () => {
+    t.clock?.set(new Date('2026-10-05T09:35:00.250+06:30'));
+    const version = (await read(kyawZin)).body.updated_at as string;
+    const res = await patch(kyawZin, { email: EMAIL, expected_updated_at: version });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ email: EMAIL, updated_at: '2026-10-05T09:35:00.250+06:30' });
+    // The same instant written in another offset is the same version.
+    const utc = await patch(kyawZin, {
+      phone: PHONE,
+      expected_updated_at: '2026-10-05T03:05:00.250Z',
+    });
+    expect(utc.status).toBe(200);
   });
 });
 
