@@ -133,7 +133,7 @@ function useReasonChoices(count: number): readonly ChoiceOption[] {
   }));
 }
 
-/** AD-FORM-14: 7 options are a radio group, 8 a searchable list; the log shows what is reported. */
+/** AD-FORM-14: 7 options are a radio group, 8 a searchable combobox; the log shows what is reported. */
 function ChoiceDemo({ count }: { readonly count: number }) {
   const t = useTranslations('devui.inputs');
   const log = useTranslations('devui.log');

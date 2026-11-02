@@ -16,7 +16,7 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // Every action that needs a reason (AD-RSN-01 · AD-RSN-02 · API-DATA-11 · AD-FORM-14 · design D9 /
 // D10): a title made of verb and object, the consequence, the reason control of its source — the
 // admin's master list, a preset code list, or free text — a note, the confirm button with the verb, and
-// "Keep" / "Go back". Up to 7 reasons are a radio group, 8 or more a searchable list (ChoiceGroup,
+// "Keep" / "Go back". Up to 7 reasons are a radio group, 8 or more a searchable combobox (ChoiceGroup,
 // named by the title). Confirming without
 // a reason, or without a note the reason needs, shows `error.reason_required` and keeps the dialog
 // open. The result is the generic `{ reason_id?, reason_code?, note? }`; the calling screen maps it to

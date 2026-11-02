@@ -28,7 +28,7 @@ Changed after generation, and only this (re-apply it when a part is generated ag
   inside the item, because the menu clips its overflow.
 - **Sheet overlay** (`sheet.tsx`): the `backdrop-blur-xs` is removed, so the list beside a drawer stays readable
   under the 10 % dim (AD-CMP-08 "in context", group 10 case "Drawer on desktop and sheet on a phone").
-- **Command search** (`command.tsx`, the searchable reason list): the input group is 48 px tall on a phone and
+- **Command search** (`command.tsx`; since 02/Nov/2026 no shared component uses it — `ChoiceGroup`'s combobox has its own list): the input group is 48 px tall on a phone and
   40 px from 768 px (as `SearchInput`), the input fills its height, and the input's `outline-hidden` is removed, so the 2 px `--focus-outline`
   shows (group 10, checklist items 2 and 3). `input-group.tsx`: the invalid outline colour class had lost its
   `has-[…]:` prefix and is restored.

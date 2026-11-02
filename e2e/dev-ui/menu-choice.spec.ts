@@ -4,9 +4,10 @@ import { expect, test } from './fixtures.js';
 
 // Task 11.32 — ui-foundation "Rare and destructive actions sit behind one kebab menu" (AD-LAY-04 ·
 // AD-LAY-05 · AD-LIST-04 · AD-A11Y-02 · AD-A11Y-05 · AD-VIS-07) and "Up to seven options are a radio
-// group, eight or more a searchable list" (AD-FORM-14 · AD-A11Y-02 · AD-A11Y-05), on the demos of
+// group, eight or more a searchable combobox" (AD-FORM-14 · AD-A11Y-02 · AD-A11Y-05), on the demos of
 // ActionMenu (section Shell) and ChoiceGroup (section Inputs). Runs in my-320, en-320, my-1280, en-1280;
-// the keyboard scenarios at 1280 px (AD-A11Y-02 is the desktop keyboard rule).
+// the keyboard scenarios at 1280 px (AD-A11Y-02 is the desktop keyboard rule). The combobox's popover is
+// portaled to the end of the page, so its search field and options are looked up on the page.
 
 const MIN_TARGET = 44;
 const MIN_GAP = 8;
@@ -15,6 +16,9 @@ const kebab = (page: Page) => page.getByTestId('demo-ActionMenu-kebab');
 const seven = (page: Page) => page.getByTestId('demo-ChoiceGroup-seven');
 const eight = (page: Page) => page.getByTestId('demo-ChoiceGroup-eight');
 const log = (demo: Locator) => demo.locator('[data-slot="handler-log"]');
+const searchName = (lang: string) => (lang === 'en' ? 'Search' : 'ရှာမည်');
+/** The combobox's popover (other demos of the page have search fields of their own). */
+const popover = (page: Page) => page.locator('[data-slot="choice-popover"]');
 const desktop = (page: Page) => (page.viewportSize()?.width ?? 0) >= 1024;
 
 /** The boxes of the given elements, top to bottom: heights and the gaps between neighbours. */
@@ -107,7 +111,7 @@ test.describe('add-shared-ui-components · ui-foundation · Rare and destructive
   });
 });
 
-test.describe('add-shared-ui-components · ui-foundation · Up to seven options are a radio group, eight or more a searchable list', () => {
+test.describe('add-shared-ui-components · ui-foundation · Up to seven options are a radio group, eight or more a searchable combobox', () => {
   test('Scenario: Seven options and eight options', async ({ page, lang, openCatalogue }) => {
     await openCatalogue();
     await expect(seven(page).getByRole('radiogroup').getByRole('radio')).toHaveCount(7);
@@ -115,12 +119,62 @@ test.describe('add-shared-ui-components · ui-foundation · Up to seven options 
     await expect(seven(page).getByRole('combobox')).toHaveCount(0);
 
     await expect(eight(page).getByRole('radio')).toHaveCount(0);
-    const list = eight(page).getByRole('listbox');
+    // Collapsed: one trigger named by the label, without text; no popover, so no search field and no
+    // option yet.
+    const trigger = eight(page).getByRole('combobox');
+    await expect(trigger).toHaveCount(1);
+    if (lang === 'en') await expect(trigger).toHaveAccessibleName('Reason');
+    await expect(trigger).toHaveText('');
+    await expect(popover(page)).toHaveCount(0);
+    await expect(eight(page).getByRole('option')).toHaveCount(0);
+
+    await trigger.click();
+    const list = popover(page).getByRole('listbox');
     await expect(list.getByRole('option')).toHaveCount(8);
-    const search = eight(page).getByRole('combobox');
-    await expect(search).toHaveAttribute('placeholder', lang === 'en' ? 'Search' : 'ရှာမည်');
+    const { heights, gaps } = await rows(list.getByRole('option'));
+    for (const height of heights) expect(height).toBeGreaterThanOrEqual(MIN_TARGET);
+    for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(MIN_GAP);
+    const search = popover(page).getByRole('combobox', { name: searchName(lang) });
+    await expect(search).toHaveAttribute('placeholder', searchName(lang));
+    await expect(search).toBeFocused();
     await search.fill('Other');
     await expect(list.getByRole('option')).toHaveText(['Other']);
+
+    await list.getByRole('option', { name: 'Other' }).click();
+    await expect(popover(page)).toHaveCount(0);
+    await expect(trigger).toHaveText('Other');
+    await expect(trigger).toBeFocused();
+    await expect(log(eight(page))).toContainText('onChange("reason-4")');
+  });
+
+  test('Scenario: Keyboard in the combobox', async ({ page, lang, openCatalogue }) => {
+    test.skip(!desktop(page), 'keyboard at 1280 px');
+    await openCatalogue();
+    const trigger = eight(page).getByRole('combobox');
+    const search = popover(page).getByRole('combobox', { name: searchName(lang) });
+    const options = popover(page).getByRole('listbox').getByRole('option');
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(search).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(popover(page)).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveText('');
+    await expect(log(eight(page))).toHaveText('');
+
+    await page.keyboard.press('Enter');
+    await expect(search).toBeFocused();
+    await expect(options.nth(0)).toHaveAttribute('aria-selected', 'true');
+    if (lang === 'en')
+      await expect(options.nth(0)).toHaveAccessibleName('Customer wants to change');
+    await page.keyboard.press('ArrowDown');
+    await expect(options.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(options.nth(1)).toHaveAccessibleName('Barber မအား');
+    await page.keyboard.press('Enter');
+    await expect(popover(page)).toHaveCount(0);
+    await expect(trigger).toHaveText('Barber မအား');
+    await expect(trigger).toBeFocused();
+    await expect(log(eight(page))).toContainText('onChange("reason-2")');
   });
 
   test('Scenario: Keyboard in the radio group', async ({ page, lang, openCatalogue }) => {

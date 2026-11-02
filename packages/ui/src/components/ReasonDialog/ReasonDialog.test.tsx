@@ -178,7 +178,7 @@ describe('ReasonDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith({ note: 'Customer charged twice' });
   });
 
-  it('Scenario: Seven reasons and eight reasons — a radio group, then a searchable list', () => {
+  it('Scenario: Seven reasons and eight reasons — a radio group, then a searchable combobox', () => {
     const reasons = (n: number): MasterReason[] =>
       Array.from({ length: n }, (_, i) => ({
         id: `m${i}`,
@@ -197,6 +197,8 @@ describe('ReasonDialog', () => {
     renderIntl(<Demo source={{ type: 'master', options: reasons(8) }} onConfirm={onConfirm} />);
     open();
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
+    // The combobox opens its search field and list when pressed.
+    fireEvent.click(screen.getByRole('combobox'));
     expect(screen.getByRole('listbox')).toBeDefined();
     expect(screen.getByPlaceholderText('Search')).toBeDefined();
     fireEvent.click(screen.getByText('Reason 8'));
