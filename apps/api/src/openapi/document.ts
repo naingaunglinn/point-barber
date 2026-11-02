@@ -59,6 +59,19 @@ const PROBLEM_RESPONSE = {
   content: { 'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } } },
 };
 
+const json = (name: string) => ({
+  content: { 'application/json': { schema: { $ref: `#/components/schemas/${name}` } } },
+});
+
+/** Part 1 `components.parameters.XRequestedWith` — the CSRF header of every changing request. */
+const X_REQUESTED_WITH = {
+  name: 'X-Requested-With',
+  in: 'header',
+  required: true,
+  schema: { type: 'string', enum: ['point-app'] },
+  description: 'CSRF guard for cookie-authenticated mutations (API-AUTH-02)',
+};
+
 export function buildOpenApiDocument(version: string): JsonSchema {
   return {
     openapi: '3.1.0',
@@ -96,6 +109,35 @@ export function buildOpenApiDocument(version: string): JsonSchema {
               },
             },
             default: PROBLEM_RESPONSE,
+          },
+        },
+      },
+      // add-company-profile task 2.10 — P1.CO.01 / P1.CO.02 as Part 1 v1.7 lists them.
+      '/company': {
+        get: {
+          tags: ['company'],
+          operationId: 'getCompany',
+          summary: 'Company info (P1.CO.01)',
+          'x-permission': 'any staff',
+          responses: {
+            '200': { description: 'OK', ...json('Company') },
+            '401': PROBLEM_RESPONSE,
+          },
+        },
+        patch: {
+          tags: ['company'],
+          operationId: 'patchCompany',
+          summary: 'Update company info — company.update (P1.CO.02)',
+          'x-permission': 'company.update (company master: company scope)',
+          parameters: [X_REQUESTED_WITH],
+          requestBody: { required: true, ...json('CompanyUpdate') },
+          responses: {
+            '200': { description: 'Updated (enqueues site.content_changed)', ...json('Company') },
+            '400': PROBLEM_RESPONSE,
+            '401': PROBLEM_RESPONSE,
+            '403': PROBLEM_RESPONSE,
+            '409': PROBLEM_RESPONSE,
+            '422': PROBLEM_RESPONSE,
           },
         },
       },

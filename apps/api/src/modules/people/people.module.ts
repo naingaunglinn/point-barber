@@ -7,6 +7,8 @@ import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import { Audit, CodeTables, PlatformModule } from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
+import { CompanyController } from './company/company.controller.js';
+import { CompanyProfile } from './company/company-profile.js';
 import { CurrentCompany } from './company/current-company.js';
 import { Assignments } from './directory/assignments.js';
 import { BranchCodes } from './directory/branch-codes.js';
@@ -37,7 +39,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 // port GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design D11).
 @Module({
   imports: [PlatformModule],
-  controllers: [OrganizationController],
+  controllers: [OrganizationController, CompanyController],
   providers: [
     PeopleRepository,
     AccessRepository,
@@ -57,6 +59,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     BranchCodes,
     BranchHeaders,
     CurrentCompany,
+    CompanyProfile,
     CompanyAdmin,
     PermissionCatalogue,
     SeedRoles,
@@ -73,6 +76,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     BranchCodes,
     BranchHeaders,
     CurrentCompany,
+    CompanyProfile,
     CompanyAdmin,
     PermissionCatalogue,
     BaseSeed,

@@ -1,6 +1,7 @@
 // Public surface of the `people` module (CG-ARCH-01 · ADR-001 rule 1): other modules import only
 // from here.
 export { PermissionCatalogue, type SyncResult } from './catalogue/permission-catalogue.js';
+export { CompanyProfile } from './company/company-profile.js';
 export { CurrentCompany } from './company/current-company.js';
 export { Assignments } from './directory/assignments.js';
 export { BranchCodes } from './directory/branch-codes.js';
