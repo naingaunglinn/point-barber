@@ -25,6 +25,7 @@ export * from './schemas/auth.js';
 export * from './schemas/branches.js';
 export * from './schemas/catalog.js';
 export * from './schemas/catalogue-code.js';
+export * from './schemas/company.js';
 export * from './schemas/customers.js';
 export * from './schemas/health.js';
 export * from './schemas/list-query.js';

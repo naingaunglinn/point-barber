@@ -58,6 +58,10 @@ export const ErrorCode = {
   METHOD_INACTIVE: 'method_inactive',
   // 423 — a write on a finished record that reached the database guard (design D9: no endpoint should).
   LOCKED: 'locked',
+  // add-company-profile — API-ERR-02 · Part 1 v1.7 §11b · design D10 (task 1.2): a stale
+  // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).
+  CONFLICT: 'conflict',
+  ZAWGYI_TEXT: 'zawgyi_text',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -67,6 +71,8 @@ export const FieldIssueCode = {
   TOO_SMALL: 'too_small',
   TOO_BIG: 'too_big',
   INVALID_TYPE: 'invalid_type',
+  // add-company-profile — a failed link pattern or URL check (Part 1 v1.7 §11b · CP2 · design D10).
+  INVALID_FORMAT: 'invalid_format',
 } as const;
 
 export type FieldIssueCode = (typeof FieldIssueCode)[keyof typeof FieldIssueCode];
