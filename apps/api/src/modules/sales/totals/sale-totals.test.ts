@@ -1,7 +1,13 @@
 import { type Mmk, moneyFromWire, moneyToWire } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
-import { type TotalsLine, type TotalsPayment, computeSaleTotals } from './sale-totals.js';
+import {
+  type FinishRefusal,
+  type TotalsLine,
+  type TotalsPayment,
+  computeSaleTotals,
+  finishRefusal,
+} from './sale-totals.js';
 
 // add-walkin-visit-checkout task 6.1 — the SaleTotals.compute table of design D13 (D8 · P4-RULE-06 ·
 // D-PLT-04 · CG-TEST-03): subtotal over lines without removed_at, no discount / service charge / tax
@@ -150,5 +156,34 @@ describe('computeSaleTotals (design D8 / D13)', () => {
 
   it('an empty sale totals 0 and is finishable only by the visit rules, not here', () => {
     expect(wire([], [])).toMatchObject({ total: 0, remaining: 0, finish_allowed: true });
+  });
+});
+
+// The money checks of FINISH step 12 in their order (P4-RULE-10 #12 · owner B5 / WR1): FINISH answers
+// with this code, and `finish_allowed` is "no refusal" — one rule for both.
+describe('finishRefusal (FINISH step 12)', () => {
+  it.each<[string, TotalsLine[], TotalsPayment[], FinishRefusal | null]>([
+    [
+      'Cash 5,000 on 11,000 → money missing',
+      [line(8000), line(3000)],
+      [cash(5000)],
+      'amount_mismatch',
+    ],
+    ['Cash 11,000 on 8,000 → a cash excess', [line(8000)], [cash(11000)], 'amount_mismatch'],
+    // payments spec "A cash excess above the limit still answers amount_mismatch".
+    [
+      'Cash 15,000 + KBZPay 1,000 on 5,000 → excess 11,000 > 1,000 non-cash, before the change limit',
+      [line(10000, { removed: true }), line(3000), line(2000)],
+      [cash(15000), kbzpay(1000)],
+      'amount_mismatch',
+    ],
+    ['Cash 8,000 on 8,000', [line(8000)], [cash(8000)], null],
+    ['KBZPay 18,000 on 8,000 → change 10,000', [line(8000)], [kbzpay(18000)], null],
+    ['KBZPay 18,001 on 8,000 → change 10,001', [line(8000)], [kbzpay(18001)], 'change_too_large'],
+    ['KBZPay 25,000 on 10,000 → change 15,000', [line(10000)], [kbzpay(25000)], 'change_too_large'],
+  ])('%s', (_name, lines, payments, refusal) => {
+    const totals = computeSaleTotals(lines, payments);
+    expect(finishRefusal(totals)).toBe(refusal);
+    expect(totals.finish_allowed).toBe(refusal === null);
   });
 });

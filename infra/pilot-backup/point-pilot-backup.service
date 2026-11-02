@@ -1,0 +1,14 @@
+# The pilot's nightly database dump to the backup bucket (add-staging-deploy design D12 · SD4 = A).
+# Installed by docs/ops/install.md into /etc/systemd/system; started by point-pilot-backup.timer.
+# Read the result: journalctl -t pilot-backup --since yesterday
+[Unit]
+Description=Point pilot backup: pg_dump to the backup bucket
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+Group=docker
+ExecStart=/opt/point/infra/pilot-backup/pilot-backup.sh
+SyslogIdentifier=pilot-backup

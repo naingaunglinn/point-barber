@@ -60,6 +60,18 @@ describe('add-foundation-auth-access · auth · Login screen offers Google and a
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['en', 'Sign in'],
+    ['my', 'ဝင်ရောက်ရန်'],
+  ] as const)(
+    'the page has one title in %s (WCAG 2.4.2 — axe document-title)',
+    async (locale, title) => {
+      renderStaff(<LoginScreen />, { locale });
+      await waitFor(() => expect(document.title).toBe(title));
+      expect(document.head.querySelectorAll('title')).toHaveLength(1);
+    },
+  );
+
   it('Continue with Google opens the start of the Google flow with the page to come back to', () => {
     renderStaff(<LoginScreen returnTo="/?branch=B3" />);
     fireEvent.click(byTestId('login-google'));

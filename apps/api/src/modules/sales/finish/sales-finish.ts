@@ -31,6 +31,7 @@ import { RECEIPT_RENDER, type ReceiptRenderData } from '../receipts/receipt-rend
 import { PaymentMethodsRepository } from '../repositories/payment-methods.repository.js';
 import { RefundsRepository } from '../repositories/refunds.repository.js';
 import { SalesRepository } from '../repositories/sales.repository.js';
+import { finishRefusal } from '../totals/sale-totals.js';
 import { type SaleViewer, SaleView } from '../view/sale-view.js';
 import { ReceiptNumbers } from './receipt-numbers.js';
 
@@ -136,14 +137,16 @@ export class SalesFinish {
         });
       // 12. Payments FOR UPDATE; three checks in this order (P4-RULE-10 #12, API Part 4 v1.4): full
       // payment and an excess only up to the non-cash payments (amount_mismatch), then the change at most
-      // MAX_OVER_TRANSFER_CHANGE_AMOUNT for every caller, the override holder too (owner WR1). A refusal
-      // rolls back before step 13, so it takes no receipt or RF number.
+      // MAX_OVER_TRANSFER_CHANGE_AMOUNT for every caller, the override holder too (owner WR1) — the one
+      // rule `finishRefusal`, which `SaleTotals.finish_allowed` reads too. A refusal rolls back before
+      // step 13, so it takes no receipt or RF number.
       await this.sales.lockPayments(tx, sale.id);
-      if (totals.paid < totals.total || totals.change_due > totals.non_cash_paid)
+      const refusal = finishRefusal(totals);
+      if (refusal === ErrorCode.AMOUNT_MISMATCH)
         throw new ProblemException(ErrorCode.AMOUNT_MISMATCH, 422, {
           context: { remaining_amount: wire(totals.remaining) },
         });
-      if (totals.change_due > MAX_OVER_TRANSFER_CHANGE_AMOUNT)
+      if (refusal === ErrorCode.CHANGE_TOO_LARGE)
         throw new ProblemException(ErrorCode.CHANGE_TOO_LARGE, 422, {
           context: {
             change_due_amount: wire(totals.change_due),

@@ -28,6 +28,7 @@ import { CompanyAdmin } from './roles/company-admin.js';
 import { FirstAdmin } from './roles/first-admin.js';
 import { SeedRoles } from './roles/seed-roles.js';
 import { BaseSeed } from './seed/base-seed.js';
+import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 
 // Bounded context `people` (ADR-001 · docs/engineering/module-map.md): company, branches, employees,
 // branch assignments, roles and permissions. It builds on platform (audit writer, jobs); what platform
@@ -61,6 +62,8 @@ import { BaseSeed } from './seed/base-seed.js';
     SeedRoles,
     BaseSeed,
     FirstAdmin,
+    PeopleSeedLock,
+    PilotPeople,
   ],
   exports: [
     GrantSource,
@@ -74,6 +77,8 @@ import { BaseSeed } from './seed/base-seed.js';
     PermissionCatalogue,
     BaseSeed,
     FirstAdmin,
+    PeopleSeedLock,
+    PilotPeople,
   ],
 })
 export class PeopleModule implements OnModuleInit {
