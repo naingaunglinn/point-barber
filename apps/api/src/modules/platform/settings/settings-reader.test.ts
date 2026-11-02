@@ -28,6 +28,8 @@ describe('DefaultsSettingsReader (task 2.12)', () => {
       'dashboard.show_own_earnings_all': false, // P1-RULE-06 — not client-readable
       // add-walkin-visit-checkout — D-SCH-03, server-only (the quote's block length).
       'home_service.travel_minutes': 30,
+      // add-pilot-data-seed — P1.BR.02 / Part 5 §17, server-only (a new branch's radius).
+      'attendance.default_radius_meters': 100,
     });
   });
 
@@ -36,7 +38,9 @@ describe('DefaultsSettingsReader (task 2.12)', () => {
       Object.keys(DEFAULT_SETTINGS)
         .filter(
           (key) =>
-            key !== 'dashboard.show_own_earnings_all' && key !== 'home_service.travel_minutes',
+            key !== 'dashboard.show_own_earnings_all' &&
+            key !== 'home_service.travel_minutes' &&
+            key !== 'attendance.default_radius_meters',
         )
         .sort(),
     );
