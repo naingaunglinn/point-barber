@@ -57,8 +57,8 @@ export function setLanguage(email: string, language: 'my' | 'en'): void {
 
 /**
  * The content-security-policy violations of every page `pageAs` opened in the running test
- * (add-staging-deploy · the fixture's own context is recorded by fixtures.ts). walkin.spec.ts empties it
- * before each test and expects it empty after.
+ * (add-staging-deploy · the fixture's own context is recorded by fixtures.ts). walkin.spec.ts expects it
+ * empty after each test, then empties it.
  */
 export const walkinViolations: PolicyViolation[] = [];
 

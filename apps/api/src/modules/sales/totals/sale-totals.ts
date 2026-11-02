@@ -1,4 +1,5 @@
 import {
+  ErrorCode,
   MAX_OVER_TRANSFER_CHANGE_AMOUNT,
   type Mmk,
   maxMoney,
@@ -40,12 +41,30 @@ export interface SaleTotals {
   readonly non_cash_paid: Mmk;
   /**
    * paid ≥ total, the excess is covered by non-cash payments (owner B5 — cash is never overpaid) and the
-   * change is at most MAX_OVER_TRANSFER_CHANGE_AMOUNT (owner WR1 — API Part 4 v1.4 P4-RULE-10 #12).
+   * change is at most MAX_OVER_TRANSFER_CHANGE_AMOUNT (owner WR1 — API Part 4 v1.4 P4-RULE-10 #12):
+   * `finishRefusal` finds nothing.
    */
   readonly finish_allowed: boolean;
 }
 
 const ZERO = moneyFromWire(0);
+
+/** Why FINISH refuses these totals, or null when it may finish (the one source of `finish_allowed`). */
+export type FinishRefusal = typeof ErrorCode.AMOUNT_MISMATCH | typeof ErrorCode.CHANGE_TOO_LARGE;
+
+/**
+ * The money checks of FINISH step 12, in their order (P4-RULE-10 #12, API Part 4 v1.4): money missing or an
+ * excess larger than the non-cash payments (owner B5) → `amount_mismatch`; only then a change above
+ * MAX_OVER_TRANSFER_CHANGE_AMOUNT (owner WR1) → `change_too_large`.
+ */
+export function finishRefusal(
+  totals: Pick<SaleTotals, 'total' | 'paid' | 'change_due' | 'non_cash_paid'>,
+): FinishRefusal | null {
+  if (totals.paid < totals.total || totals.change_due > totals.non_cash_paid)
+    return ErrorCode.AMOUNT_MISMATCH;
+  if (totals.change_due > MAX_OVER_TRANSFER_CHANGE_AMOUNT) return ErrorCode.CHANGE_TOO_LARGE;
+  return null;
+}
 
 export function computeSaleTotals(
   lines: readonly TotalsLine[],
@@ -77,6 +96,6 @@ export function computeSaleTotals(
     change_due: changeDue,
     non_cash_paid: nonCashPaid,
     finish_allowed:
-      paid >= total && changeDue <= nonCashPaid && changeDue <= MAX_OVER_TRANSFER_CHANGE_AMOUNT,
+      finishRefusal({ total, paid, change_due: changeDue, non_cash_paid: nonCashPaid }) === null,
   };
 }
