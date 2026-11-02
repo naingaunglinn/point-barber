@@ -72,6 +72,9 @@ export function LoginScreen({ signedOut, googleNotLinked = false, returnTo }: Lo
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-4">
+      {/* The page title (WCAG 2.4.2 — axe document-title); React hoists it into <head>, and it
+          follows the language switch. */}
+      <title>{t('login.title')}</title>
       <header className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-lg font-bold">{t('login.shopName')}</p>

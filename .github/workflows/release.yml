@@ -1,0 +1,119 @@
+# Release and deploy to the pilot server (add-staging-deploy design D4 / D5 · ADR-001 action item 4 ·
+# ADR-016 Amendment 1). Started only by pushing a release tag on main — never by a pull request, so
+# the `pilot` environment's secrets never reach a fork (spec "Only a release tag on main whose CI
+# passed is published"; tools/test/release-workflows.test.mjs).
+#   check   → the tag is on main and CI passed for its commit (infra/deploy/check-release.mjs)
+#   images  → build api, web and backup with APP_VERSION = the tag, run the CI image checks, push to
+#             ghcr.io/<owner>/point-<name>:<tag>
+#   deploy  → environment `pilot` (the other developer approves), then the server's forced command
+#             `deploy <tag>` over SSH (infra/deploy/entry.sh → deploy.sh)
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      commit: ${{ steps.commit.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # The commit the tag points to (an annotated tag is an object of its own).
+      - name: Commit of the tag
+        id: commit
+        run: echo "commit=$(git rev-parse "${GITHUB_REF_NAME}^{commit}")" >> "$GITHUB_OUTPUT"
+
+      - name: The tag is on main and its CI passed
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COMMIT: ${{ steps.commit.outputs.commit }}
+        run: node infra/deploy/check-release.mjs "$GITHUB_REF_NAME" "$COMMIT"
+
+  images:
+    name: images
+    needs: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build api, web and backup with the tag as APP_VERSION
+        run: |
+          set -euo pipefail
+          v="$GITHUB_REF_NAME"
+          docker build -f apps/api/Dockerfile --build-arg APP_VERSION="$v" -t "point-api:$v" .
+          docker build -f apps/web/Dockerfile --build-arg APP_VERSION="$v" -t "point-web:$v" .
+          docker build --build-arg APP_VERSION="$v" -t "point-backup:$v" infra/backup
+
+      - name: Image checks (the same as CI job images)
+        run: bash tools/ci/check-images.sh "$GITHUB_REF_NAME"
+
+      - name: Push to ghcr.io
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          v="$GITHUB_REF_NAME"
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          # A release tag is pushed once: an image already under it is never replaced, so a second run —
+          # or a tag moved to another commit — cannot swap what a deploy or rollback pulls. (Review of
+          # #31 item 6; the tag ruleset on v* is the repository-side guard.)
+          for image in api web backup; do
+            if docker manifest inspect "ghcr.io/$owner/point-$image:$v" >/dev/null 2>&1; then
+              echo "::error::ghcr.io/$owner/point-$image:$v exists already — a release tag is never pushed twice"
+              exit 1
+            fi
+          done
+          for image in api web backup; do
+            docker tag "point-$image:$v" "ghcr.io/$owner/point-$image:$v"
+            docker push "ghcr.io/$owner/point-$image:$v"
+          done
+          docker logout ghcr.io
+
+  deploy:
+    name: deploy
+    needs: images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Required reviewers: both developers, "prevent self-review" on (CG-GIT-05 · task 1.7).
+    environment: pilot
+    # On the job, not the workflow, so building images never blocks a rollback. One deploy or rollback
+    # runs at a time; GitHub keeps one more waiting, and a newer one replaces a waiting one — never
+    # the running one. A deploy waiting for its approval may hold the group (docs/ops/rollback.md).
+    concurrency:
+      group: pilot-deploy
+      cancel-in-progress: false
+    steps:
+      - name: deploy <tag> through the server's forced command
+        env:
+          PILOT_SSH_HOST: ${{ secrets.PILOT_SSH_HOST }}
+          PILOT_SSH_KEY: ${{ secrets.PILOT_SSH_KEY }}
+          PILOT_SSH_KNOWN_HOSTS: ${{ secrets.PILOT_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PILOT_SSH_KEY" > ~/.ssh/pilot
+          printf '%s\n' "$PILOT_SSH_KNOWN_HOSTS" > ~/.ssh/pilot_known_hosts
+          chmod 600 ~/.ssh/pilot ~/.ssh/pilot_known_hosts
+          ssh -i ~/.ssh/pilot -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/pilot_known_hosts -o BatchMode=yes \
+            "deploy@$PILOT_SSH_HOST" "deploy $GITHUB_REF_NAME"

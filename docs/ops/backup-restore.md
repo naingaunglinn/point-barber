@@ -63,3 +63,50 @@ docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES
   - Step 2 was skipped: run it.
   - The dump was restored without `--create`, so the database setting is gone: repeat steps 3–4.
 - **`pg_restore` reports missing roles:** step 2 was skipped. Run it, then repeat steps 3–4.
+
+## Pilot (until `add-backup-restore`)
+
+The pilot server runs a stopgap (add-staging-deploy design D12 · SD4 = A, owner 16/Oct/2026).
+
+**What runs.**
+
+- `point-pilot-backup.timer` starts `infra/pilot-backup/pilot-backup.sh` every night at 03:00 MMT.
+  It is installed by `install.md` step 7.
+- The script streams `pg_dump -Fc` straight into the owner's backup bucket as
+  `pilot/daily/point-<YYYY-MM-DD>.dump`. Nothing is written to the server's disk.
+- The bucket deletes the dumps after 30 days (its lifecycle rule).
+- If the server was off at 03:00, the timer runs the missed night once it is back.
+
+**Not covered** (the owner was told, SD4): weekly copies kept a year, the automatic monthly restore
+test, `backup_runs`, and a failure notification. Those come with `add-backup-restore`.
+
+**The morning check** (the operator, each day of the pilot, before opening):
+
+```sh
+journalctl -t pilot-backup --since yesterday
+```
+
+- `pilot-backup ok pilot/daily/point-<today>.dump <bytes>`: done. The size grows slowly from day to
+  day.
+- `pilot-backup FAILED dump|upload|move`, or no line at all:
+  1. take a dump by hand today (Steps → Backup, above);
+  2. keep it off the server;
+  3. run `sudo systemctl start point-pilot-backup.service` once the cause is fixed.
+
+  The common causes:
+  - `upload`: the bucket key, or the provider;
+  - `dump`: the `postgres` container is down.
+
+**The restore drill** (once before the pilot starts, and after any change to the script). It streams
+the dump from the bucket into a scratch database, so it never touches the real one and, like the
+backup, never writes the dump to the server's disk (CG-SEC-11):
+
+```sh
+sudo -u deploy /opt/point/infra/pilot-backup/restore-check.sh <YYYY-MM-DD>   # e.g. last night's date
+```
+
+It prints `restore-check ok pilot/daily/point-<date>.dump: users <n> in the dump, <m> now`, and it
+drops the scratch database. The two counts match, or differ only by users created since 03:00.
+`restore-check FAILED read …` means the object is missing or the key cannot read it; `FAILED
+restore …` means the dump does not restore — treat that as a failed backup. Write the date and the
+result in `install.md`'s install record. CI job `deploy-script` runs the same script.

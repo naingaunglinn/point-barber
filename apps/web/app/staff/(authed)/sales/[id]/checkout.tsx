@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   type E164,
@@ -65,6 +65,18 @@ export function Checkout({
   // Finish step on its fields or above its button — never twice.
   const action = useAction(() => store.reloadSale(sale.id));
   const finishing = useAction(() => store.reloadSale(sale.id));
+  // A FINISH refusal speaks of the payments it was refused on (`amount_mismatch`, `change_too_large`):
+  // once the live payments change — a void or a payment here, or another device's, reloaded — it no
+  // longer holds and is cleared, so it is not shown above an enabled Finish. Not keyed on the total:
+  // after `total_changed` the reload brings the new total and the refusal stays.
+  const livePayments = sale.payments
+    .filter((payment) => payment.voided_at === null)
+    .map((payment) => `${payment.id}:${payment.effective_payment_method.id}`)
+    .join();
+  const clearFinishing = finishing.clear;
+  useEffect(() => {
+    clearFinishing();
+  }, [livePayments, clearFinishing]);
   const [sheet, setSheet] = useState<{ readonly method?: PaymentMethodDto } | null>(null);
   const [payProblem, setPayProblem] = useState<ScreenProblem | null>(null);
   const [lookup, setLookup] = useState<CustomerLookupState>({ kind: 'none' });
