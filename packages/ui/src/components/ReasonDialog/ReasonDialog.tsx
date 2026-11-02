@@ -5,17 +5,9 @@ import { useId, useState } from 'react';
 
 import { localized } from '@point/shared';
 
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '../../primitives/command';
-import { RadioGroup, RadioGroupItem } from '../../primitives/radio-group';
 import { useFormat } from '../../providers/format';
 import { Button } from '../Button/Button';
-import { DataText } from '../DataText/DataText';
+import { ChoiceGroup } from '../ChoiceGroup/ChoiceGroup';
 import { Dialog } from '../Dialog/Dialog';
 import { FormField } from '../FormField/FormField';
 import { TextInput } from '../TextInput/TextInput';
@@ -24,7 +16,8 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // Every action that needs a reason (AD-RSN-01 · AD-RSN-02 · API-DATA-11 · AD-FORM-14 · design D9 /
 // D10): a title made of verb and object, the consequence, the reason control of its source — the
 // admin's master list, a preset code list, or free text — a note, the confirm button with the verb, and
-// "Keep" / "Go back". Up to 7 reasons are a radio group, 8 or more a searchable list. Confirming without
+// "Keep" / "Go back". Up to 7 reasons are a radio group, 8 or more a searchable list (ChoiceGroup,
+// named by the title). Confirming without
 // a reason, or without a note the reason needs, shows `error.reason_required` and keeps the dialog
 // open. The result is the generic `{ reason_id?, reason_code?, note? }`; the calling screen maps it to
 // the field its endpoint defines (API Part 4: `reason`, `added_reason`, `override_reason` …).
@@ -76,9 +69,6 @@ export interface ReasonDialogProps {
   readonly onConfirm: (result: ReasonResult) => void | Promise<unknown>;
   readonly onCancel: () => void;
 }
-
-/** Above this many reasons the list is searchable (AD-FORM-14: ≤ 7 → radio group). */
-const RADIO_LIMIT = 7;
 
 export function ReasonDialog({
   open,
@@ -180,56 +170,15 @@ export function ReasonDialog({
       }
     >
       <div className="flex flex-col gap-4 pb-2">
-        {options.length > 0 && options.length <= RADIO_LIMIT ? (
-          <RadioGroup
-            value={chosen ?? ''}
-            onValueChange={(value) => setChosen(value)}
+        {options.length > 0 ? (
+          <ChoiceGroup
             aria-label={title}
-            aria-invalid={reasonError || undefined}
-            aria-describedby={reasonError ? reasonErrorId : undefined}
-            // 44 px rows 8 px apart (AD-A11Y-05).
-            className="flex flex-col gap-2"
-          >
-            {options.map((option) => {
-              const id = `${ids}-${option.value}`;
-              return (
-                <label
-                  key={option.value}
-                  htmlFor={id}
-                  className="flex min-h-11 items-center gap-3 rounded-md px-1 hover:bg-muted"
-                >
-                  <RadioGroupItem id={id} value={option.value} />
-                  <DataText>{option.label}</DataText>
-                </label>
-              );
-            })}
-          </RadioGroup>
-        ) : null}
-        {options.length > RADIO_LIMIT ? (
-          <Command className="rounded-md border border-border" aria-label={title}>
-            <CommandInput
-              placeholder={t('common.search.placeholder')}
-              aria-label={t('common.search.placeholder')}
-              className="text-base"
-            />
-            <CommandList role="listbox" aria-invalid={reasonError || undefined}>
-              <CommandEmpty />
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={`${option.label} ${option.value}`}
-                  data-checked={chosen === option.value}
-                  aria-selected={chosen === option.value}
-                  onSelect={() => setChosen(option.value)}
-                  className="min-h-11 text-base"
-                >
-                  <DataText>{option.label}</DataText>
-                </CommandItem>
-              ))}
-            </CommandList>
-          </Command>
-        ) : null}
-        {reasonError ? (
+            options={options}
+            value={chosen}
+            onChange={setChosen}
+            error={reasonError ? { code: 'reason_required' } : undefined}
+          />
+        ) : reasonError ? (
           <FieldMessage id={reasonErrorId}>{t('error.reason_required')}</FieldMessage>
         ) : null}
         {noteShown ? (

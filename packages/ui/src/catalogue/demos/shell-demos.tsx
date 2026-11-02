@@ -18,6 +18,7 @@ import { useState } from 'react';
 
 import { formatDate, localized, todayMmt } from '@point/shared';
 
+import { ActionMenu } from '../../components/ActionMenu/ActionMenu';
 import { AppShell, type ShellModule } from '../../components/AppShell/AppShell';
 import { BottomNav, type NavLinkItem } from '../../components/BottomNav/BottomNav';
 import { ALL_BRANCHES, BranchSwitcher } from '../../components/BranchSwitcher/BranchSwitcher';
@@ -27,6 +28,7 @@ import { NotificationBell } from '../../components/NotificationBell/Notification
 import { Button } from '../../components/Button/Button';
 import { Sheet } from '../../components/Drawer/Drawer';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
+import { ReasonDialog } from '../../components/ReasonDialog/ReasonDialog';
 import { SearchInput } from '../../components/SearchInput/SearchInput';
 import type { Action } from '../../components/types';
 import {
@@ -40,7 +42,8 @@ import { useFormat } from '../../providers/format';
 import { useCataloguePersona } from '../catalogue-providers';
 import { HandlerLog } from '../demo-frame';
 import { useFixtureCan, useFixtureMe } from '../fixture-grants';
-import { PEOPLE } from '../fixtures';
+import { CUSTOMERS, PEOPLE } from '../fixtures';
+import { SEED_REASONS } from './dialog-demos';
 import { useCatalogueParam } from './frame-controls';
 import { useFixtureNotifications } from './notification-demos';
 
@@ -343,3 +346,58 @@ function PageHeaderDemo({ four }: { readonly four: boolean }) {
 
 export const PageHeaderFourDemo = () => <PageHeaderDemo four />;
 export const PageHeaderTwoDemo = () => <PageHeaderDemo four={false} />;
+
+/**
+ * The kebab (task 11.31 · AD-LAY-04 · AD-LAY-05): two plain actions and the destructive "Cancel booking",
+ * which opens the reason dialog of Ma Su's booking — the menu itself asks nothing, and the log stays
+ * empty until the dialog is confirmed.
+ */
+export function ActionMenuDemo() {
+  const t = useTranslations('devui.shell');
+  const reasons = useTranslations('devui.reasons');
+  const log = useTranslations('devui.log');
+  const { locale } = useFormat('ActionMenu demo');
+  const [asking, setAsking] = useState(false);
+  const [reported, setReported] = useState('');
+  const plain = (key: 'print' | 'export'): Action => ({
+    label: t(key),
+    onPress: () => setReported(log('pressed', { label: t(key) })),
+  });
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <ActionMenu
+          data-testid="kebab-more"
+          actions={[
+            plain('print'),
+            plain('export'),
+            {
+              label: reasons('cancel.verb'),
+              destructive: true,
+              onPress: () => setAsking(true),
+              testId: 'kebab-cancel-booking',
+            },
+          ]}
+        />
+      </div>
+      <ReasonDialog
+        open={asking}
+        title={reasons('cancel.verb')}
+        consequence={reasons('cancel.consequence', {
+          customer: CUSTOMERS.maSu.name,
+          barber: localized(PEOPLE.aung, 'name', locale),
+        })}
+        source={{ type: 'master', options: SEED_REASONS }}
+        confirmLabel={reasons('cancel.verb')}
+        note="optional"
+        destructive
+        onConfirm={(value) => {
+          setReported(log('result', { text: JSON.stringify(value) }));
+          setAsking(false);
+        }}
+        onCancel={() => setAsking(false)}
+      />
+      <HandlerLog label={log('label')} value={reported} />
+    </div>
+  );
+}
