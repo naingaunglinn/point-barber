@@ -1,7 +1,7 @@
 'use client';
 
 import { type VisitDto, formatDuration, formatTime } from '@point/shared';
-import { EmployeeChip, useNow } from '@point/ui';
+import { EmployeeChip, FlagChip, useNow } from '@point/ui';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { minutesSince } from './minutes';
@@ -38,6 +38,7 @@ export function VisitHeader({ visit, branchName }: VisitHeaderProps) {
       </div>
       <div className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
         <span>{branchName}</span>
+        {visit.is_late_entry && <FlagChip flag="late_entry" />}
         <span data-testid="visit-started">
           {t('started', {
             time: formatTime(visit.started_at, { locale }),

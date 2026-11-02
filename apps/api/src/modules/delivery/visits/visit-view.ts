@@ -21,6 +21,9 @@ export function visitForSale(visit: VisitRow): VisitForSale {
     started_by_user_id: visit.started_by_user_id,
     business_date: isoDate(visit.business_date),
     location_type: visit.location_type,
+    is_late_entry: visit.is_late_entry,
+    started_at: visit.started_at,
+    completed_at: visit.completed_at,
   };
 }
 
