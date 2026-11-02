@@ -15,6 +15,8 @@ export const NAMESPACES = [
   'auth',
   'today',
   'pos',
+  // add-branch-management (task 1.9 — design D10).
+  'branch',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

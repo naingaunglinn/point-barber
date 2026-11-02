@@ -62,6 +62,11 @@ export const ErrorCode = {
   // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).
   CONFLICT: 'conflict',
   ZAWGYI_TEXT: 'zawgyi_text',
+  // add-branch-management — API-ERR-02 · Part 1 §11b (v1.7) (task 1.1): a branch code the company
+  // already has (P1.BR.02), and a deactivation while the branch is in use (P1-RULE-09 · owner BR2).
+  // already_exists is shared with the catalogue changes (first merge declares it — design D10).
+  ALREADY_EXISTS: 'already_exists',
+  BRANCH_IN_USE: 'branch_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

@@ -52,5 +52,7 @@
   "method_inactive": "This payment method is switched off.",
   "locked": "This record is finished and can no longer be changed.",
   "conflict": "Someone saved this just now. Reload to see the latest version.",
-  "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode."
+  "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode.",
+  "already_exists": "This already exists. Check the value and try again.",
+  "branch_in_use": "This branch still has {active_assignments} assigned staff, {open_bookings} open bookings and {open_sales} open sales."
 }

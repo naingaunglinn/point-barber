@@ -100,6 +100,14 @@ describe('fieldMessageKey — the table of design D9', () => {
     });
   });
 
+  // add-branch-management task 1.2 — a failed code pattern or link address (API-ERR-03 · design D4).
+  it('invalid_format → error.invalid_format', () => {
+    expect(fieldMessageKey({ code: 'invalid_format' }, 'b4')).toEqual({
+      key: 'error.invalid_format',
+      params: {},
+    });
+  });
+
   it('an unknown code → error.unknown', () => {
     expect(fieldMessageKey({ code: 'zz_unknown' }, 'x')).toEqual({
       key: 'error.unknown',

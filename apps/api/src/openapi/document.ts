@@ -1,6 +1,11 @@
 import {
   branchAssignmentSchema,
+  branchCreateSchema,
+  branchInUseContextSchema,
+  branchSchema,
+  branchStatusSchema,
   branchSummarySchema,
+  branchUpdateSchema,
   commissionEstimateSchema,
   companySchema,
   companyUpdateSchema,
@@ -137,6 +142,12 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         UpcomingBooking: schema(upcomingBookingSchema),
         Visit: schema(visitSchema),
         Warning: schema(warningSchema),
+        // add-branch-management tasks 1.7 / 3.12 — P1.BR.02 – 05 (Part 1 v1.7 · owner BR1 – BR3).
+        Branch: schema(branchSchema),
+        BranchCreate: schema(branchCreateSchema),
+        BranchUpdate: schema(branchUpdateSchema),
+        BranchStatusRequest: schema(branchStatusSchema),
+        BranchInUseContext: schema(branchInUseContextSchema),
       },
     },
   };

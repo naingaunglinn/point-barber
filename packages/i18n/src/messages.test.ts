@@ -22,6 +22,7 @@ describe('language files', () => {
       'auth',
       'today',
       'pos',
+      'branch',
     ]);
   });
 
