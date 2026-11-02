@@ -11,7 +11,11 @@ export interface BranchHeaderRow {
   readonly address_mm: string | null;
   readonly address_en: string | null;
   readonly phone: string | null;
-  readonly companies: { readonly name_mm: string; readonly name_en: string | null };
+  readonly companies: {
+    readonly name_mm: string;
+    readonly name_en: string | null;
+    readonly logo_url: string | null;
+  };
 }
 
 @Injectable()
@@ -26,7 +30,7 @@ export class BranchHeaderRepository {
         address_mm: true,
         address_en: true,
         phone: true,
-        companies: { select: { name_mm: true, name_en: true } },
+        companies: { select: { name_mm: true, name_en: true, logo_url: true } },
       },
     });
   }

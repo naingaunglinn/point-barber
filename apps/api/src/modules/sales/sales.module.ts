@@ -16,6 +16,7 @@ import { SaleLines } from './lines/sale-lines.js';
 import { Sales } from './lines/sales.js';
 import { Payments } from './payments/payments.js';
 import { ReceiptFiles } from './receipts/receipt-files.js';
+import { ReceiptLogo } from './receipts/receipt-logo.js';
 import { ReceiptReads } from './receipts/receipt-reads.js';
 import { ReceiptRenderHandler } from './receipts/receipt-render.handler.js';
 import { RECEIPT_RENDER, type ReceiptRenderData } from './receipts/receipt-render.job.js';
@@ -64,6 +65,7 @@ import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
     ReceiptNumbers,
     SalesFinish,
     ReceiptFiles,
+    ReceiptLogo,
     ReceiptViews,
     ReceiptRenderHandler,
     ReceiptReads,

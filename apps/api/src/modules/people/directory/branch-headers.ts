@@ -8,6 +8,8 @@ import { BranchHeaderRepository } from '../repositories/branch-header.repository
 export interface BranchHeader {
   readonly company_id: string;
   readonly company_name: string;
+  /** The company logo's stable path (P8-RULE-04), null without a logo (add-company-profile D7). */
+  readonly company_logo_url: string | null;
   readonly name: string;
   readonly address: string | null;
   readonly phone: string | null;
@@ -28,6 +30,7 @@ export class BranchHeaders {
     return {
       company_id: row.company_id,
       company_name: english(row.companies.name_en, row.companies.name_mm),
+      company_logo_url: row.companies.logo_url,
       name: english(row.name_en, row.name_mm),
       address: englishOrNull(row.address_en, row.address_mm),
       phone: present(row.phone) ? row.phone : null,
