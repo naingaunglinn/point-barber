@@ -3,6 +3,7 @@ import { ServicePricingMode, ServiceStatus, type ServiceListItemDto } from '@poi
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { chooseTime } from '../../test/late-entry';
 import { renderStaff } from '../../test/render';
 import { StartSheet } from './StartSheet';
 
@@ -156,9 +157,7 @@ const fillTime = (key: string, label: string, time: string, date = '04/Oct/2026'
   const input = within(field).getByRole('textbox', { name: `${label} — Date` });
   fireEvent.change(input, { target: { value: date } });
   fireEvent.blur(input);
-  fireEvent.change(within(field).getByTestId(`late-entry-${key}-time`), {
-    target: { value: time },
-  });
+  chooseTime(key, time);
 };
 const fillAll = (
   times: Partial<Record<'started' | 'completed' | 'received' | 'finished', string>> = {},

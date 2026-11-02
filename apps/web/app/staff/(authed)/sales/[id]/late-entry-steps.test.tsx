@@ -17,6 +17,7 @@ import {
   serviceOf,
   visitOf,
 } from '../../../../../test/pos-fixtures';
+import { chooseTime } from '../../../../../test/late-entry';
 import { type Route, renderPos, routeFetch } from '../../../../../test/pos-render';
 import { json, problem } from '../../../../../test/render';
 
@@ -81,9 +82,7 @@ const fillTime = (key: string, label: string, date: string, time: string) => {
   const input = within(field).getByRole('textbox', { name: `${label} — Date` });
   fireEvent.change(input, { target: { value: date } });
   fireEvent.blur(input);
-  fireEvent.change(within(field).getByTestId(`late-entry-${key}-time`), {
-    target: { value: time },
-  });
+  chooseTime(key, time);
 };
 
 describe('"Service done" on a late entry (task 4.5)', () => {

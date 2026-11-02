@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { VisitStatus } from '@point/shared';
 
+import { chooseTime } from '../../../../../test/late-entry';
 import { IDS, meOf, saleOf, serviceOf, visitOf } from '../../../../../test/pos-fixtures';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
 import { json, problem } from '../../../../../test/render';
@@ -241,9 +242,7 @@ describe('late entry on START (add-late-entry)', () => {
       const input = within(field).getByRole('textbox', { name: `${label} — Date` });
       fireEvent.change(input, { target: { value: '04/Oct/2026' } });
       fireEvent.blur(input);
-      fireEvent.change(within(field).getByTestId(`late-entry-${key}-time`), {
-        target: { value: time },
-      });
+      chooseTime(key, time);
     };
     fill('started', 'Actual start time', '15:00');
     fill('completed', 'Completed time', '15:30');
