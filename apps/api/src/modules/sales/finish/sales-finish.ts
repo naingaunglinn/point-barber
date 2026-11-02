@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   ErrorCode,
   type FinishRequest,
+  MAX_OVER_TRANSFER_CHANGE_AMOUNT,
   type Mmk,
   ReceiptCounterKind,
   RefundKind,
@@ -155,12 +156,22 @@ export class SalesFinish {
         throw new ProblemException(ErrorCode.TOTAL_CHANGED, 409, {
           context: { total_amount: wire(totals.total) },
         });
-      // 12. Payments FOR UPDATE; full payment, and an excess only up to the non-cash payments.
+      // 12. Payments FOR UPDATE; three checks in this order (P4-RULE-10 #12, API Part 4 v1.4): full
+      // payment and an excess only up to the non-cash payments (amount_mismatch), then the change at most
+      // MAX_OVER_TRANSFER_CHANGE_AMOUNT for every caller, the override holder too (owner WR1). A refusal
+      // rolls back before step 13, so it takes no receipt or RF number.
       await this.sales.lockPayments(tx, sale.id);
       if (late) finishOrder(visit, await this.sales.receivedAts(tx, sale.id), finishedAt, now);
-      if (!totals.finish_allowed)
+      if (totals.paid < totals.total || totals.change_due > totals.non_cash_paid)
         throw new ProblemException(ErrorCode.AMOUNT_MISMATCH, 422, {
           context: { remaining_amount: wire(totals.remaining) },
+        });
+      if (totals.change_due > MAX_OVER_TRANSFER_CHANGE_AMOUNT)
+        throw new ProblemException(ErrorCode.CHANGE_TOO_LARGE, 422, {
+          context: {
+            change_due_amount: wire(totals.change_due),
+            max_change_amount: wire(MAX_OVER_TRANSFER_CHANGE_AMOUNT),
+          },
         });
       // 13. The receipt number — the counter row is locked until commit.
       const receipt = await this.numbers.next(

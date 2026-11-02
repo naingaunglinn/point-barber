@@ -35,6 +35,7 @@
   "visit_not_completed": "Tap Service done first.",
   "payments_exist": "This sale has payments — void them first.",
   "amount_mismatch": "The payments don't match the total.",
+  "change_too_large": "Check the transfer amount.",
   "amount_exceeds_remaining": "This amount is more than the amount left to pay.",
   "reference_required": "Enter the reference number.",
   "reference_format": "This reference number is not in the right format.",
