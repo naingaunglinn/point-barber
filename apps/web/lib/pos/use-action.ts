@@ -48,5 +48,8 @@ export function useAction(onStale: () => unknown) {
     [onStale],
   );
 
-  return { pending, problem, run, clear: () => setProblem(null) };
+  // Stable, so a screen can clear the refusal from an effect (checkout.tsx).
+  const clear = useCallback(() => setProblem(null), []);
+
+  return { pending, problem, run, clear };
 }

@@ -41,12 +41,15 @@ test.beforeAll(async ({ playwright }) => {
   minApi = await apiAs(playwright, min);
 });
 // Every walk-in screen works under the content-security policy of add-staging-deploy: no
-// securitypolicyviolation in any context pageAs opened (fixtures.ts checks only its own context).
-test.beforeEach(() => {
-  walkinViolations.length = 0;
-});
+// securitypolicyviolation in any context pageAs opened (fixtures.ts checks only its own context). The
+// list is emptied only after its check, so nothing recorded before a test is lost; a failed check still
+// empties it, so the next test is judged on its own events.
 test.afterEach(() => {
-  expect(walkinViolations, 'securitypolicyviolation events').toStrictEqual([]);
+  try {
+    expect(walkinViolations, 'securitypolicyviolation events').toStrictEqual([]);
+  } finally {
+    walkinViolations.length = 0;
+  }
 });
 
 test.afterAll(async () => {
