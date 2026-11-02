@@ -27,11 +27,12 @@ import { HealthController } from './system/health.controller.js';
 import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
 import { OpeningHours } from './website/opening-hours.js';
+import { SiteContent } from './website/site-content.js';
 
 // Bounded context `platform` (ADR-001 · docs/engineering/module-map.md): system health and status,
 // the audit writer, idempotency, the rate limiter, background jobs, mail, error reporting, the settings
-// seams and file storage, the document renderer, opening hours; the settings store, notifications and
-// uploads with later changes.
+// seams and file storage, the document renderer, opening hours, the website refresh; the settings
+// store, notifications and uploads with later changes.
 /**
  * The local MinIO's bucket, created when missing (development and test). MinIO may still be starting
  * when the API starts in the same stack, so a few tries one second apart; then a warning, never a stop.
@@ -66,6 +67,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     IdempotentInterceptor,
     OpeningHoursRepository,
     OpeningHours,
+    SiteContent,
     RateLimiter,
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
@@ -98,6 +100,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     Idempotency,
     IdempotentInterceptor,
     OpeningHours,
+    SiteContent,
     RateLimiter,
     SettingsReader,
     MaintenanceGate,
