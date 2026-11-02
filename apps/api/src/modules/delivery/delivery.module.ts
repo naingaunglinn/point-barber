@@ -3,6 +3,7 @@ import { Module, type OnModuleInit } from '@nestjs/common';
 import { OrSelfResolvers, TargetResolvers } from '../../common/access/resolvers.js';
 
 import { CashClosingModule } from '../cash-closing/index.js';
+import { PayrollModule } from '../payroll/index.js';
 import { PeopleModule } from '../people/index.js';
 import { PlatformModule } from '../platform/index.js';
 import { SalesModule, VisitsRegistry } from '../sales/index.js';
@@ -18,7 +19,7 @@ import { Visits } from './visits/visits.js';
 // VisitsPort, registered at start-up, so there is no import cycle (design D1). Its entity loaders and
 // actor sets join the access registries the same way (design D2).
 @Module({
-  imports: [PlatformModule, PeopleModule, CashClosingModule, SalesModule],
+  imports: [PlatformModule, PeopleModule, CashClosingModule, PayrollModule, SalesModule],
   controllers: [VisitsController],
   providers: [VisitsRepository, VisitView, Visits, DeliveryVisitsPort, VisitAccess],
   exports: [Visits],

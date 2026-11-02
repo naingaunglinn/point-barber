@@ -57,6 +57,8 @@ export interface PaymentSheetProps {
   readonly onSubmit: (payment: PaymentSubmit) => void | Promise<unknown>;
   /** The saved check of a payment without an answer (`SavedCheck`), shown inside the sheet. */
   readonly saved?: ReactNode;
+  /** A field the payment needs first — the received time of a late entry (add-late-entry LE-3). */
+  readonly before?: ReactNode;
 }
 
 const REFERENCE_CODES = new Set(['reference_required', 'reference_format', 'duplicate_reference']);
@@ -85,6 +87,9 @@ export function PaymentSheet(props: PaymentSheetProps) {
       }
     >
       {props.saved !== undefined && <div className="mb-4">{props.saved}</div>}
+      {props.before !== undefined && props.before !== null && (
+        <div className="mb-4">{props.before}</div>
+      )}
       {/* The sheet's content unmounts when it closes, so every opening starts from the preset. */}
       <PaymentForm {...props} formId={formId} />
     </Sheet>
