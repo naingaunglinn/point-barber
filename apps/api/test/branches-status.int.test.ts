@@ -77,6 +77,29 @@ describe('add-branch-management · the BranchUsage counters (task 3.5)', () => {
   });
 });
 
+describe('add-branch-management · organization · A branch is deactivated or re-activated only with branch.delete held at company scope', () => {
+  it('Scenario: The admin deactivates an unused branch', async () => {
+    at('2026-10-05T11:00:00+06:30');
+    const res = await setStatus(b4, { status: 0, reason: 'Not opening this year' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ code: 'B4', status: 0 });
+    const inactive = await t.http.get('/api/v1/branches?status=0').set('Cookie', kyawZin.cookie);
+    expect((inactive.body as { items: { code: string }[] }).items.map((b) => b.code)).toStrictEqual(
+      ['B4'],
+    );
+  });
+});
+
+describe('add-branch-management · organization · Re-activation has no guard and a repeated status changes nothing — re-activating', () => {
+  it('Scenario: Re-activating a branch', async () => {
+    const res = await setStatus(b4, { status: 1 });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: 1 });
+    const inactive = await t.http.get('/api/v1/branches?status=0').set('Cookie', kyawZin.cookie);
+    expect(inactive.body).toStrictEqual({ items: [] });
+  });
+});
+
 describe('add-branch-management · organization · A branch that is still in use cannot be deactivated', () => {
   it('Scenario: A fixture branch is in use', async () => {
     const res = await setStatus(B.B3, { status: 0 });
@@ -99,14 +122,8 @@ describe('add-branch-management · organization · A branch that is still in use
     const second = await setStatus(b4, { status: 0 });
     expect(second.status).toBe(200);
     expect(second.body).toMatchObject({ status: 0 });
-  });
-
-  it('Scenario: Re-activating a branch (Re-activation has no guard)', async () => {
-    const res = await setStatus(b4, { status: 1 });
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ status: 1 });
-    const inactive = await t.http.get('/api/v1/branches?status=0').set('Cookie', kyawZin.cookie);
-    expect(inactive.body).toStrictEqual({ items: [] });
+    // Active again for the next scenario.
+    expect((await setStatus(b4, { status: 1 })).status).toBe(200);
   });
 
   it('Scenario: An open sale', async () => {
