@@ -43,7 +43,8 @@ const barberPriceSchema = z.strictObject({ employee_code: text(100), price: amou
 const serviceSchema = z.strictObject({
   name_mm: text(200),
   name_en: text(200).optional(),
-  duration_minutes: z.int().min(1),
+  // The catalogue's limit (add-service-catalogue), so the edit form accepts every seeded duration.
+  duration_minutes: z.int().min(1).max(1440),
   price: amount,
   barber_prices: z.array(barberPriceSchema).optional(),
 });

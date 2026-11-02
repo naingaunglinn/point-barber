@@ -54,6 +54,8 @@ describe('PilotDataSchema (task 1.1 · brief S5)', () => {
   it.each([
     [1, []],
     [0, ['categories.0.services.0.duration_minutes']],
+    [1440, []],
+    [1441, ['categories.0.services.0.duration_minutes']],
   ])('duration %d', (minutes, paths) => {
     expect(refused(edit((d) => (cut(d).duration_minutes = minutes)))).toStrictEqual(paths);
   });

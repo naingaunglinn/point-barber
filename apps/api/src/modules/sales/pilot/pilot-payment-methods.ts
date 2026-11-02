@@ -39,7 +39,9 @@ export class PilotPaymentMethods {
       select: { reference_regex: true },
     });
     if (row === null || row.reference_regex === null || row.reference_regex === regex) return [];
-    return [changedValue('payment_methods', 'KBZPAY', 'reference_regex', row.reference_regex, regex)];
+    return [
+      changedValue('payment_methods', 'KBZPAY', 'reference_regex', row.reference_regex, regex),
+    ];
   }
 
   /** NULL → set; equal → unchanged; another stored pattern → refused (PD3 ★). */

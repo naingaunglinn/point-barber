@@ -600,12 +600,28 @@ describe('add-pilot-data-seed · organization · A re-run adds only what is new 
   const cut = (d: any) => d.categories[0].services[0];
   it.each([
     ['branches', 'a branch English name', (d: any) => (d.branch.name_en = 'Example Branch Two')],
-    ['branches', 'a branch phone the database does not hold', (d: any) => (d.branch.phone = '09123')],
+    [
+      'branches',
+      'a branch phone the database does not hold',
+      (d: any) => (d.branch.phone = '09123'),
+    ],
     ['branches', 'a branch address', (d: any) => (d.branch.address_en = 'No. 2, Example Road')],
     ['employees', 'an employee name', (d: any) => (d.people[0].name_mm = 'နမူနာ ဘာဘာ')],
-    ['employees', 'an employee English name left out (NULL)', (d: any) => delete d.people[0].name_en],
-    ['employees', 'a join date the database does not hold', (d: any) => (d.people[1].join_date = '2026-09-01')],
-    ['service_categories', 'a category English name', (d: any) => (d.categories[0].name_en = 'Services')],
+    [
+      'employees',
+      'an employee English name left out (NULL)',
+      (d: any) => delete d.people[0].name_en,
+    ],
+    [
+      'employees',
+      'a join date the database does not hold',
+      (d: any) => (d.people[1].join_date = '2026-09-01'),
+    ],
+    [
+      'service_categories',
+      'a category English name',
+      (d: any) => (d.categories[0].name_en = 'Services'),
+    ],
     ['services', 'a service English name', (d: any) => (cut(d).name_en = 'Example Haircut')],
     ['branch_services', 'a duration', (d: any) => (cut(d).duration_minutes = 35)],
     ['service_prices', 'a barber price', (d: any) => (cut(d).barber_prices[0].price = 6500)],
@@ -660,7 +676,8 @@ describe('add-pilot-data-seed · payments · The KBZPay reference pattern is wri
     const result = await apply(file((d) => delete d.kbzpay));
     expect(result.status).toBe(0);
     expect(
-      (await prisma.payment_methods.findFirstOrThrow({ where: { code: 'KBZPAY' } })).reference_regex,
+      (await prisma.payment_methods.findFirstOrThrow({ where: { code: 'KBZPAY' } }))
+        .reference_regex,
     ).toBeNull();
     const rows = await auditOf(result);
     expect(rows.filter((row) => row.action === 'payment_method.update')).toStrictEqual([]);

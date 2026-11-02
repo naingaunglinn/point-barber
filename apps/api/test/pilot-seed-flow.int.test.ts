@@ -154,7 +154,12 @@ describe('add-pilot-data-seed · task 4.1 · what START and the quote show (revi
         name_mm: 'နမူနာ စောင့်ရှောက်မှု',
         name_en: 'Example Care',
         services: [
-          { name_mm: 'နမူနာ ခေါင်းလျှော်', name_en: 'Example Wash', duration_minutes: 20, price: 1500 },
+          {
+            name_mm: 'နမူနာ ခေါင်းလျှော်',
+            name_en: 'Example Wash',
+            duration_minutes: 20,
+            price: 1500,
+          },
         ],
       }),
     );
