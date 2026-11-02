@@ -9,6 +9,7 @@
   "too_small": "This value is too short or too small — minimum {minimum}.",
   "too_big": "This value is too long or too large — maximum {maximum}.",
   "invalid_type": "This value has the wrong format.",
+  "invalid_format": "This format isn't valid.",
   "validation": "Check the marked fields.",
   "forbidden": "You don't have access to this page. Ask an admin if you need it.",
   "not_found": "This item doesn't exist or was archived.",
@@ -49,5 +50,7 @@
   "outside_window": "This date is too far ahead.",
   "not_assigned_to_branch": "This person is not assigned to this branch on this date.",
   "method_inactive": "This payment method is switched off.",
-  "locked": "This record is finished and can no longer be changed."
+  "locked": "This record is finished and can no longer be changed.",
+  "conflict": "Someone saved this just now. Reload to see the latest version.",
+  "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode."
 }

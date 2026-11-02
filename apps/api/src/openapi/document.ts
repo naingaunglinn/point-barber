@@ -2,6 +2,8 @@ import {
   branchAssignmentSchema,
   branchSummarySchema,
   commissionEstimateSchema,
+  companySchema,
+  companyUpdateSchema,
   customerLookupSchema,
   discountRequestSchema,
   durationRangeSchema,
@@ -24,6 +26,7 @@ import {
   saleSchema,
   serviceCategorySchema,
   serviceListItemSchema,
+  socialLinksSchema,
   systemStatusSchema,
   upcomingBookingSchema,
   visitSchema,
@@ -106,6 +109,10 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         MeResponse: schema(meResponseSchema),
         Problem: schema(problemSchema),
         SystemStatus: schema(systemStatusSchema),
+        // add-company-profile tasks 1.5 / 2.10 — P1.CO.01 / P1.CO.02.
+        Company: schema(companySchema),
+        CompanyUpdate: schema(companyUpdateSchema),
+        SocialLinks: schema(socialLinksSchema),
         // add-walkin-visit-checkout tasks 2.2 – 2.5 — the response DTOs of Parts 2 / 3 / 4; their
         // endpoints are added with the controllers of this change.
         CommissionEstimate: schema(commissionEstimateSchema),
