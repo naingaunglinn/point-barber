@@ -81,6 +81,11 @@ export class SalesRepository {
     return db.sales.findUnique({ where: { visit_id: visitId }, select: SALE });
   }
 
+  /** The OPEN sales of a branch (P1-RULE-09 · owner BR2 — add-branch-management design D1). */
+  openAt(tx: Tx, branchId: string): Promise<number> {
+    return tx.sales.count({ where: { branch_id: branchId, status: SaleStatus.OPEN } });
+  }
+
   /** The sale row, locked FOR UPDATE until commit (design D4); null when there is none. */
   async lockForUpdate(tx: Tx, id: string): Promise<SaleRow | null> {
     const locked = await tx.$queryRaw<{ id: string }[]>`
