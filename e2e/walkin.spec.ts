@@ -122,6 +122,9 @@ test.describe('14.3 Flow "walk-in cash" — Ko Aung, Haircut 10,000, at most 7 t
       await counter.tap(page.getByTestId('start-chips').getByRole('button').first());
       await counter.tap(page.getByTestId('start-submit'));
       await counter.tap(page.getByTestId('visit-done'));
+      // The breakdown toggle is a 44 px target like every other control (AD-A11Y-05 · task 12.9).
+      const toggle = await page.getByTestId('checkout-breakdown').locator('summary').boundingBox();
+      expect(toggle?.height ?? 0).toBeGreaterThanOrEqual(44);
       await counter.tap(page.getByTestId('pay-CASH'));
       const expected = await nextReceipt(aungApi, 'sale');
       // The success panel loads the PDF as it shows (task 13.6 — the tap shares it at once), so the

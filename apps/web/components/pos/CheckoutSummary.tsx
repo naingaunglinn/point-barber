@@ -34,7 +34,7 @@ export function CheckoutSummary({ sale }: { readonly sale: SaleDto }) {
           <MoneyText amount={moneyFromWire(sale.total_amount)} />
         </span>
         <details className="text-sm" data-testid="checkout-breakdown">
-          <summary className="cursor-pointer">{t('howCalculated')}</summary>
+          <summary className="min-h-11 cursor-pointer py-3">{t('howCalculated')}</summary>
           <dl className="mt-2 grid gap-1">
             {sale.items
               .filter((item) => item.removed_at === null)
