@@ -68,7 +68,7 @@ All as `deploy` in `/opt/point`, with
 Exit status 1 means **nothing was written**: the whole run is one transaction. Standard error says
 why, one line per problem.
 
-| Message starts with                                   | Meaning                                                                                                              | What to do                                                                                          |
+| After `pilot-seed: `                                  | Meaning                                                                                                              | What to do                                                                                          |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | a JSON path, e.g. `people[1].email: …`                | The file breaks a rule: format, duplicate, unknown key, a `.test` address, a sample that does not match the pattern. | Fix the file.                                                                                       |
 | `users: the database holds .test addresses`           | The database was filled by the development fixture. It is not the pilot database.                                    | Stop. Check which server you are on.                                                                |

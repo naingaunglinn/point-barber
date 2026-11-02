@@ -31,6 +31,17 @@ export class PilotPaymentMethods {
     }
   }
 
+  /** D4.6 (PD3 ★): a stored KBZPay pattern other than the file's — read before any write. */
+  async changedValues(tx: Tx, regex: string | undefined): Promise<string[]> {
+    if (regex === undefined) return [];
+    const row = await tx.payment_methods.findFirst({
+      where: { code: 'KBZPAY' },
+      select: { reference_regex: true },
+    });
+    if (row === null || row.reference_regex === null || row.reference_regex === regex) return [];
+    return [changedValue('payment_methods', 'KBZPAY', 'reference_regex', row.reference_regex, regex)];
+  }
+
   /** NULL → set; equal → unchanged; another stored pattern → refused (PD3 ★). */
   async setReferenceRegex(
     tx: Tx,

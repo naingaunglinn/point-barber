@@ -146,3 +146,54 @@ describe('add-pilot-data-seed · task 4.1 · the pilot flow on seeded data (brie
     });
   });
 });
+
+describe('add-pilot-data-seed · task 4.1 · what START and the quote show (review of #33, item 7)', () => {
+  it('Scenario: Two categories keep the file order — the START list (SIMPLE services at PX1) is Cut, Shave, Wash', async () => {
+    const ids = await seeded((d) =>
+      d.categories.push({
+        name_mm: 'နမူနာ စောင့်ရှောက်မှု',
+        name_en: 'Example Care',
+        services: [
+          { name_mm: 'နမူနာ ခေါင်းလျှော်', name_en: 'Example Wash', duration_minutes: 20, price: 1500 },
+        ],
+      }),
+    );
+    const one = await signIn('barber.one@example.com');
+    const list = await t.http
+      .get(`${API}/services?branch_id=${ids.branch}&pricing_mode=1&limit=100`)
+      .set('Cookie', one);
+    expect(list.status).toBe(200);
+    expect(list.body.items.map((item: { name_en: string }) => item.name_en)).toStrictEqual([
+      'Example Cut',
+      'Example Shave',
+      'Example Wash',
+    ]);
+  });
+
+  it('the quote: X01 Example Cut 6,000 from the barber price (2), X02 5,000 from the branch price (1)', async () => {
+    const ids = await seeded();
+    const one = await signIn('barber.one@example.com');
+    const employees = await prisma.employees.findMany({
+      where: { employee_code: { in: ['X01', 'X02'] } },
+      select: { id: true, employee_code: true },
+    });
+    const idOf = (code: string) => employees.find((e) => e.employee_code === code)?.id;
+    for (const [code, price, source] of [
+      ['X01', 6_000, 2],
+      ['X02', 5_000, 1],
+    ] as const) {
+      const quote = await t.http
+        .post(`${API}/prices/quote`)
+        .set('Cookie', one)
+        .send({
+          branch_id: ids.branch,
+          location_type: 1,
+          date: '2026-10-05',
+          employee_id: idOf(code),
+          items: [{ service_id: ids.cut }],
+        });
+      expect(quote.status).toBe(200);
+      expect(quote.body.items[0]).toMatchObject({ unit_price_amount: price, price_source: source });
+    }
+  });
+});

@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type { PilotData } from '@point/shared';
+import {
+  LocationType,
+  type PilotData,
+  ServiceCategoryStatus,
+  ServicePricingMode,
+  ServiceStatus,
+} from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
-import {
-  PilotRefused,
-  type PilotRunContext,
-  changedValue,
-  dbDate,
-} from '../../../common/pilot/pilot-run.js';
+import { type PilotRunContext, changedValue, dbDate } from '../../../common/pilot/pilot-run.js';
 import { Audit } from '../../platform/index.js';
 
 // The `catalog` surface of the pilot data seed — the module's first write surface (add-pilot-data-seed
@@ -18,8 +19,15 @@ import { Audit } from '../../platform/index.js';
 // different stored value refused. Nothing is ended or archived. add-service-catalogue,
 // add-service-prices and add-service-eligibility build the real write services (design D10).
 
-const LOCATION_BRANCH = 1;
-const PRICING_SIMPLE = 1;
+/** What the D4.6 comparison knows before any write: the branch and the people that exist already. */
+export interface PilotCatalogueExisting {
+  readonly companyId: string;
+  /** The pilot branch's id, or null while it does not exist (nothing of it can differ then). */
+  readonly branchId: string | null;
+  readonly branchCode: string;
+  /** Employee id by code, for the people of the file who exist already. */
+  readonly employeeIds: ReadonlyMap<string, string>;
+}
 
 export interface PilotCatalogueKeys {
   readonly companyId: string;
@@ -46,33 +54,45 @@ export class PilotCatalogue {
     ctx: PilotRunContext,
   ): Promise<void> {
     const day = dbDate(ctx.businessDate);
-    await this.refuseChanged(tx, data, keys, day);
-
     const serviceIds = new Map<string, string>();
+    // Categories 1, 2, …; services counted across the whole file, not restarted per category: START
+    // lists services by services.sort_order across categories (spec "Categories and services are
+    // SIMPLE company services in the order of the file").
+    let serviceOrder = 0;
     for (const [c, category] of data.categories.entries()) {
       const categoryId = await this.category(tx, keys.companyId, category, c + 1, ctx);
-      for (const [s, service] of category.services.entries()) {
+      for (const service of category.services) {
+        serviceOrder += 1;
         serviceIds.set(
           service.name_mm,
-          await this.service(tx, keys.companyId, categoryId, service, s + 1, ctx),
+          await this.service(tx, keys.companyId, categoryId, service, serviceOrder, ctx),
         );
       }
     }
+    const idOf = (name: string): string => {
+      const id = serviceIds.get(name);
+      if (id === undefined) throw new Error(`pilot-seed: no service id for ${name}`);
+      return id;
+    };
     for (const service of data.categories.flatMap((category) => category.services)) {
-      const serviceId = serviceIds.get(service.name_mm) ?? '';
+      const serviceId = idOf(service.name_mm);
       await this.branchSale(tx, keys, serviceId, service, ctx);
       await this.prices(tx, keys, serviceId, service, day, ctx);
     }
-    await this.eligibility(tx, data, keys, serviceIds, day, ctx);
+    await this.eligibility(tx, data, keys, idOf, day, ctx);
   }
 
-  /** Every stored value that differs from the file, before anything is written (D4.6 · PD3 ★). */
-  private async refuseChanged(
+  /**
+   * D4.6 (PD3 ★): every stored category, service, duration or price that differs from the file, one
+   * line each — read before any write. A value the file leaves out counts as NULL.
+   */
+  async changedValues(
     tx: Tx,
     data: PilotData,
-    keys: PilotCatalogueKeys,
-    day: Date,
-  ): Promise<void> {
+    keys: PilotCatalogueExisting,
+    businessDate: string,
+  ): Promise<string[]> {
+    const day = dbDate(businessDate);
     const problems: string[] = [];
     for (const category of data.categories) {
       const row = await this.findCategory(tx, keys.companyId, category.name_mm);
@@ -95,6 +115,8 @@ export class PilotCatalogue {
             changedValue('services', named(service), 'name_en', stored.name_en, service.name_en),
           );
         }
+        // A branch that does not exist yet sells nothing and has no price.
+        if (keys.branchId === null) continue;
         const sale = await tx.branch_services.findFirst({
           where: { branch_id: keys.branchId, service_id: stored.id },
           select: { duration_minutes: true },
@@ -110,8 +132,12 @@ export class PilotCatalogue {
             ),
           );
         }
-        for (const cell of this.cells(service, keys)) {
-          const price = await this.findPrice(tx, keys.branchId, stored.id, cell.employeeId, day);
+        for (const cell of this.cells(service)) {
+          // A barber price of a person who does not exist yet cannot be stored.
+          const employeeId =
+            cell.employeeCode === null ? null : keys.employeeIds.get(cell.employeeCode);
+          if (employeeId === undefined) continue;
+          const price = await this.findPrice(tx, keys.branchId, stored.id, employeeId, day);
           if (price !== null && price.price_amount !== BigInt(cell.price)) {
             problems.push(
               changedValue(
@@ -126,7 +152,7 @@ export class PilotCatalogue {
         }
       }
     }
-    if (problems.length > 0) throw new PilotRefused(problems);
+    return problems;
   }
 
   private findCategory(tx: Tx, companyId: string, nameMm: string) {
@@ -156,7 +182,7 @@ export class PilotCatalogue {
         branch_id: branchId,
         service_id: serviceId,
         service_variant_id: null,
-        location_type: LOCATION_BRANCH,
+        location_type: LocationType.BRANCH,
         employee_id: employeeId,
         archived_at: null,
         effective_from: { lte: day },
@@ -166,16 +192,25 @@ export class PilotCatalogue {
     });
   }
 
-  /** The branch price and the barber prices of a service. */
-  private cells(service: Service, keys: PilotCatalogueKeys) {
+  /** The branch price (no employee) and the barber prices of a service. */
+  private cells(service: Service) {
     return [
-      { employeeId: null, price: service.price, label: 'branch price' },
+      { employeeCode: null, price: service.price, label: 'branch price' },
       ...(service.barber_prices ?? []).map((cell) => ({
-        employeeId: keys.employeeIds.get(cell.employee_code) ?? null,
+        employeeCode: cell.employee_code,
         price: cell.price,
         label: `barber price ${cell.employee_code}`,
       })),
     ];
+  }
+
+  /** The employee of a barber price; every person of the file exists once people.apply has run. */
+  private employeeOf(keys: PilotCatalogueKeys, code: string | null): string | null {
+    if (code === null) return null;
+    const id = keys.employeeIds.get(code);
+    // A barber price must never become a branch price (NULL employee).
+    if (id === undefined) throw new Error(`pilot-seed: no employee id for ${code}`);
+    return id;
   }
 
   private async category(
@@ -195,7 +230,7 @@ export class PilotCatalogue {
       name_mm: category.name_mm,
       name_en: category.name_en ?? null,
       sort_order: sortOrder,
-      status: 1,
+      status: ServiceCategoryStatus.ACTIVE,
     };
     await tx.service_categories.create({
       data: { id, company_id: companyId, ...values, created_at: ctx.now, updated_at: ctx.now },
@@ -230,9 +265,9 @@ export class PilotCatalogue {
       category_id: categoryId,
       name_mm: service.name_mm,
       name_en: service.name_en ?? null,
-      pricing_mode: PRICING_SIMPLE,
+      pricing_mode: ServicePricingMode.SIMPLE,
       sort_order: sortOrder,
-      status: 1,
+      status: ServiceStatus.ACTIVE,
     };
     await tx.services.create({
       data: { id, company_id: companyId, ...values, created_at: ctx.now, updated_at: ctx.now },
@@ -270,7 +305,7 @@ export class PilotCatalogue {
         branch_id: keys.branchId,
         service_id: serviceId,
         duration_minutes: service.duration_minutes,
-        status: 1,
+        status: ServiceStatus.ACTIVE,
         created_at: ctx.now,
         updated_at: ctx.now,
       },
@@ -298,8 +333,9 @@ export class PilotCatalogue {
     ctx: PilotRunContext,
   ): Promise<void> {
     const written: { employee_id: string | null; price_amount: number }[] = [];
-    for (const cell of this.cells(service, keys)) {
-      if ((await this.findPrice(tx, keys.branchId, serviceId, cell.employeeId, day)) !== null) {
+    for (const cell of this.cells(service)) {
+      const employeeId = this.employeeOf(keys, cell.employeeCode);
+      if ((await this.findPrice(tx, keys.branchId, serviceId, employeeId, day)) !== null) {
         ctx.plan.unchanged('service_prices');
         continue;
       }
@@ -308,8 +344,8 @@ export class PilotCatalogue {
           id: uuidV7(ctx.now.getTime()),
           branch_id: keys.branchId,
           service_id: serviceId,
-          location_type: LOCATION_BRANCH,
-          employee_id: cell.employeeId,
+          location_type: LocationType.BRANCH,
+          employee_id: employeeId,
           price_amount: BigInt(cell.price),
           effective_from: day,
           created_at: ctx.now,
@@ -317,7 +353,7 @@ export class PilotCatalogue {
         },
       });
       ctx.plan.created('service_prices');
-      written.push({ employee_id: cell.employeeId, price_amount: cell.price });
+      written.push({ employee_id: employeeId, price_amount: cell.price });
     }
     if (written.length === 0) return;
     this.audit.emitSystem({
@@ -326,7 +362,7 @@ export class PilotCatalogue {
       entity_id: serviceId,
       branch_id: keys.branchId,
       after: {
-        location_type: LOCATION_BRANCH,
+        location_type: LocationType.BRANCH,
         effective_from: ctx.businessDate,
         cells: written,
         operator: ctx.operator,
@@ -339,16 +375,16 @@ export class PilotCatalogue {
     tx: Tx,
     data: PilotData,
     keys: PilotCatalogueKeys,
-    serviceIds: ReadonlyMap<string, string>,
+    serviceIdOf: (name: string) => string,
     day: Date,
     ctx: PilotRunContext,
   ): Promise<void> {
     const all = data.categories.flatMap((category) => category.services.map((s) => s.name_mm));
     const written: { employee_id: string; service_id: string }[] = [];
     for (const person of data.people) {
-      const employeeId = keys.employeeIds.get(person.employee_code) ?? '';
+      const employeeId = this.employeeOf(keys, person.employee_code) as string;
       for (const name of person.services ?? all) {
-        const serviceId = serviceIds.get(name) ?? '';
+        const serviceId = serviceIdOf(name);
         const open = await tx.employee_service_eligibilities.findFirst({
           where: {
             employee_id: employeeId,

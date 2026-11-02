@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { emailSchema } from '../schemas/auth.js';
+import { wireAmount } from '../schemas/wire.js';
 
 // The pilot data file of add-pilot-data-seed (design D1 · owner answer S16 · P1.BR.02 · D-PLT-04 ·
 // P4-RULE-19): the owner's branch, people, services, prices and KBZPay reference pattern, read by the
@@ -9,8 +10,8 @@ import { emailSchema } from '../schemas/auth.js';
 // reserved `.test` domain is the development fixture's signature (D-PLT-11 · design D4.1).
 
 const text = (max: number) => z.string().trim().min(1).max(max);
-/** A whole amount in kyat, 0 allowed (a free service). */
-const amount = z.int().min(0);
+/** A whole amount in kyat, 0 allowed (a free service) — the API's wire amount. */
+const amount = wireAmount;
 
 const pilotEmail = emailSchema.refine((email) => !email.endsWith('.test'), {
   message: 'a .test address is the development fixture (D-PLT-11)',

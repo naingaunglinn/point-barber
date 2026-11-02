@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { EmployeeStatus, type PilotData, ScopeType, UserStatus } from '@point/shared';
+import {
+  BranchStatus,
+  EmployeeStatus,
+  type PilotData,
+  RoleStatus,
+  ScopeType,
+  UserStatus,
+} from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
@@ -128,15 +135,18 @@ export class PilotPeople {
     if (problems.length > 0) throw new PilotRefused(problems);
   }
 
-  async apply(tx: Tx, data: PilotData, ctx: PilotRunContext): Promise<PilotPeopleResult> {
+  /**
+   * D4.6 (PD3 ★): every stored branch or employee value that differs from the file, one line each —
+   * read before any write, with the catalogue's and KBZPay's, so one run reports them all. A value the
+   * file leaves out counts as NULL (spec "A re-run adds only what is new").
+   */
+  async changedValues(tx: Tx, data: PilotData): Promise<string[]> {
     const companyId = await this.companies.companyId(tx);
-    if (companyId === null) throw new PilotRefused(['companies: no company row']);
-
-    // First pass: every stored value that differs from the file, before anything is written (D4.6).
+    if (companyId === null) return [];
+    const problems: string[] = [];
     const branch = await tx.branches.findFirst({
       where: { company_id: companyId, code: data.branch.code },
     });
-    const problems: string[] = [];
     if (branch !== null) {
       for (const column of ['name_mm', 'name_en', 'phone', 'address_mm', 'address_en'] as const) {
         const file = data.branch[column] ?? null;
@@ -145,30 +155,53 @@ export class PilotPeople {
         }
       }
     }
+    for (const person of data.people) {
+      const employee = await tx.employees.findFirst({
+        where: { company_id: companyId, employee_code: person.employee_code },
+        select: { name_mm: true, name_en: true, join_date: true },
+      });
+      if (employee === null) continue;
+      const key = person.employee_code;
+      const joined = employee.join_date?.toISOString().slice(0, 10) ?? null;
+      for (const [column, stored, file] of [
+        ['name_mm', employee.name_mm, person.name_mm],
+        ['name_en', employee.name_en, person.name_en ?? null],
+        ['join_date', joined, person.join_date ?? null],
+      ] as const) {
+        if (stored !== file) problems.push(changedValue('employees', key, column, stored, file));
+      }
+    }
+    return problems;
+  }
+
+  /** Employee id by code of the people of the file who exist already (barber prices, D4.6). */
+  async existingEmployees(tx: Tx, data: PilotData): Promise<Map<string, string>> {
+    const rows = await tx.employees.findMany({
+      where: { employee_code: { in: data.people.map((person) => person.employee_code) } },
+      select: { id: true, employee_code: true },
+    });
+    return new Map(rows.map((row) => [row.employee_code, row.id]));
+  }
+
+  /** The writes, in the order of design D6 — after every refusal of D4 has passed. */
+  async apply(tx: Tx, data: PilotData, ctx: PilotRunContext): Promise<PilotPeopleResult> {
+    const companyId = await this.companies.companyId(tx);
+    if (companyId === null) throw new PilotRefused(['companies: no company row']);
+    const branch = await tx.branches.findFirst({
+      where: { company_id: companyId, code: data.branch.code },
+      select: { id: true },
+    });
     const found = new Map<string, Found>();
     for (const person of data.people) {
       const employee = await tx.employees.findFirst({
         where: { company_id: companyId, employee_code: person.employee_code },
-        select: { id: true, user_id: true, name_mm: true, name_en: true, join_date: true },
+        select: { id: true, user_id: true },
       });
-      if (employee === null) continue;
-      found.set(person.employee_code, { userId: employee.user_id, employeeId: employee.id });
-      const key = person.employee_code;
-      if (employee.name_mm !== person.name_mm) {
-        problems.push(changedValue('employees', key, 'name_mm', employee.name_mm, person.name_mm));
-      }
-      // The optional values are compared only when the file gives them.
-      if (person.name_en !== undefined && employee.name_en !== person.name_en) {
-        problems.push(changedValue('employees', key, 'name_en', employee.name_en, person.name_en));
-      }
-      const joined = employee.join_date?.toISOString().slice(0, 10) ?? null;
-      if (person.join_date !== undefined && joined !== person.join_date) {
-        problems.push(changedValue('employees', key, 'join_date', joined, person.join_date));
+      if (employee !== null) {
+        found.set(person.employee_code, { userId: employee.user_id, employeeId: employee.id });
       }
     }
-    if (problems.length > 0) throw new PilotRefused(problems);
 
-    // Second pass: the writes, in the order of design D6.
     const branchId = branch?.id ?? (await this.createBranch(tx, companyId, data, ctx));
     if (branch !== null) ctx.plan.unchanged('branches');
 
@@ -178,6 +211,11 @@ export class PilotPeople {
       if (role === null) throw new PilotRefused([`roles: no active role named ${name}`]);
       roles.set(name, role.id);
     }
+    const roleOf = (name: string): string => {
+      const id = roles.get(name);
+      if (id === undefined) throw new Error(`pilot-seed: no role id for ${name}`);
+      return id;
+    };
 
     const employeeIds = new Map<string, string>();
     for (const person of data.people) {
@@ -190,7 +228,7 @@ export class PilotPeople {
       }
       employeeIds.set(person.employee_code, employeeId);
       await this.assignBranch(tx, employeeId, branchId, ctx);
-      await this.assignRole(tx, employeeId, roles.get(person.role) ?? '', branchId, ctx);
+      await this.assignRole(tx, employeeId, roleOf(person.role), branchId, ctx);
     }
     return { companyId, branchId, employeeIds };
   }
@@ -200,7 +238,7 @@ export class PilotPeople {
     nameEn: string,
   ): Promise<{ id: string; codes: Set<string> } | null> {
     const role = await tx.roles.findFirst({
-      where: { name_en: nameEn, archived_at: null, status: 1 },
+      where: { name_en: nameEn, archived_at: null, status: RoleStatus.ACTIVE },
       orderBy: { created_at: 'asc' },
       select: {
         id: true,
@@ -260,7 +298,7 @@ export class PilotPeople {
       address_mm: data.branch.address_mm ?? null,
       address_en: data.branch.address_en ?? null,
       location_radius_meters: radius,
-      status: 1,
+      status: BranchStatus.ACTIVE,
     };
     await tx.branches.create({ data: { ...row, created_at: ctx.now, updated_at: ctx.now } });
     ctx.plan.created('branches');

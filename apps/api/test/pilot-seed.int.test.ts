@@ -546,3 +546,145 @@ describe('add-pilot-data-seed · organization · A re-run adds only what is new 
     expect(await counts()).toStrictEqual(before);
   });
 });
+
+// Review of #33 (Dev 1): the order of services across categories (item 1), the fixture check on its own
+// (4), every PD3 column group and all problems in one run (2, 5, 8), KBZPAY's other columns and rows
+// (task 2.3), no pattern in the file (6) and the dry run's whole plan (7).
+const SECOND_CATEGORY = {
+  name_mm: 'နမူနာ စောင့်ရှောက်မှု',
+  name_en: 'Example Care',
+  services: [
+    { name_mm: 'နမူနာ ခေါင်းလျှော်', name_en: 'Example Wash', duration_minutes: 20, price: 1500 },
+  ],
+};
+
+describe('add-pilot-data-seed · services-pricing · Categories and services in the order of the file', () => {
+  it('Scenario: Two categories keep the file order — services 1, 2, 3 across the categories', async () => {
+    await pilotDatabase();
+    expect((await apply(file((d) => d.categories.push(SECOND_CATEGORY)))).status).toBe(0);
+    const categories = await prisma.service_categories.findMany({
+      orderBy: { sort_order: 'asc' },
+      select: { name_en: true, sort_order: true },
+    });
+    expect(categories).toStrictEqual([
+      { name_en: 'Example Services', sort_order: 1 },
+      { name_en: 'Example Care', sort_order: 2 },
+    ]);
+    const services = await prisma.services.findMany({
+      orderBy: { sort_order: 'asc' },
+      select: { name_en: true, sort_order: true },
+    });
+    expect(services).toStrictEqual([
+      { name_en: 'Example Cut', sort_order: 1 },
+      { name_en: 'Example Shave', sort_order: 2 },
+      { name_en: 'Example Wash', sort_order: 3 },
+    ]);
+  });
+});
+
+describe('add-pilot-data-seed · organization · Fixture data is refused — the users check alone', () => {
+  it('one .test user on the pilot database is refused, naming users', async () => {
+    await pilotDatabase();
+    await prisma.users.create({
+      data: { id: '0199a3f2-0000-7000-8000-0000000000f1', email: 'someone@point.test', status: 2 },
+    });
+    const before = await counts();
+    const result = await apply();
+    expect(result.status).toBe(1);
+    expect(result.stderr.join('\n')).toContain('users:');
+    expect(await counts()).toStrictEqual(before);
+  });
+});
+
+describe('add-pilot-data-seed · organization · A re-run adds only what is new — every PD3 column group', () => {
+  const cut = (d: any) => d.categories[0].services[0];
+  it.each([
+    ['branches', 'a branch English name', (d: any) => (d.branch.name_en = 'Example Branch Two')],
+    ['branches', 'a branch phone the database does not hold', (d: any) => (d.branch.phone = '09123')],
+    ['branches', 'a branch address', (d: any) => (d.branch.address_en = 'No. 2, Example Road')],
+    ['employees', 'an employee name', (d: any) => (d.people[0].name_mm = 'နမူနာ ဘာဘာ')],
+    ['employees', 'an employee English name left out (NULL)', (d: any) => delete d.people[0].name_en],
+    ['employees', 'a join date the database does not hold', (d: any) => (d.people[1].join_date = '2026-09-01')],
+    ['service_categories', 'a category English name', (d: any) => (d.categories[0].name_en = 'Services')],
+    ['services', 'a service English name', (d: any) => (cut(d).name_en = 'Example Haircut')],
+    ['branch_services', 'a duration', (d: any) => (cut(d).duration_minutes = 35)],
+    ['service_prices', 'a barber price', (d: any) => (cut(d).barber_prices[0].price = 6500)],
+  ])('%s: %s is refused, nothing changed', async (table, _what, change) => {
+    await pilotDatabase();
+    await apply();
+    const before = await counts();
+    const result = await apply(file(change));
+    expect(result.status).toBe(1);
+    expect(result.stderr.join('\n')).toContain(table);
+    expect(await counts()).toStrictEqual(before);
+  });
+
+  it('every changed value of one run is named at once, nothing written first (D4.6)', async () => {
+    await pilotDatabase();
+    await apply();
+    const before = await counts();
+    const result = await apply(
+      file((d) => {
+        d.people[0].name_mm = 'နမူနာ ဘာဘာ';
+        d.categories[0].services[0].price = 5500;
+        d.kbzpay.reference_regex = '^EX[0-9]{9}$';
+        d.kbzpay.examples = ['EX123456789'];
+      }),
+    );
+    expect(result.status).toBe(1);
+    const stderr = result.stderr.join('\n');
+    for (const table of ['employees', 'service_prices', 'payment_methods']) {
+      expect(stderr).toContain(table);
+    }
+    expect(await counts()).toStrictEqual(before);
+  });
+});
+
+describe('add-pilot-data-seed · payments · The KBZPay reference pattern is written to the KBZPAY payment method', () => {
+  it('task 2.3: only reference_regex of KBZPAY changes; its other columns and the other rows stay', async () => {
+    await pilotDatabase();
+    const snapshot = async () =>
+      (await prisma.payment_methods.findMany({ orderBy: { code: 'asc' } })).map(
+        ({ updated_at: _updated, reference_regex: regex, ...row }) => ({
+          ...row,
+          reference_regex: row.code === 'KBZPAY' ? null : regex,
+        }),
+      );
+    const before = await snapshot();
+    await apply();
+    expect(await snapshot()).toStrictEqual(before);
+  });
+
+  it('Scenario: No pattern in the file — reference_regex stays NULL, no payment_method.update row', async () => {
+    await pilotDatabase();
+    const result = await apply(file((d) => delete d.kbzpay));
+    expect(result.status).toBe(0);
+    expect(
+      (await prisma.payment_methods.findFirstOrThrow({ where: { code: 'KBZPAY' } })).reference_regex,
+    ).toBeNull();
+    const rows = await auditOf(result);
+    expect(rows.filter((row) => row.action === 'payment_method.update')).toStrictEqual([]);
+  });
+});
+
+describe('add-pilot-data-seed · organization · Without --apply the command changes nothing — the whole plan', () => {
+  it('the dry run of the example file prints every table of the plan', async () => {
+    await pilotDatabase();
+    const result = await run(file());
+    expect(result.status).toBe(0);
+    expect(result.stdout.slice(1, 13)).toStrictEqual([
+      'branches: create 1, unchanged 0',
+      'users: create 3, unchanged 0',
+      'employees: create 3, unchanged 0',
+      'employee_branches: create 3, unchanged 0',
+      'employee_roles: create 3, unchanged 0',
+      'employee_role_branches: create 3, unchanged 0',
+      'service_categories: create 1, unchanged 0',
+      'services: create 2, unchanged 0',
+      'branch_services: create 2, unchanged 0',
+      'service_prices: create 3, unchanged 0',
+      'employee_service_eligibilities: create 6, unchanged 0',
+      'payment_methods: create 0, unchanged 0, update 1',
+    ]);
+  });
+});

@@ -31,6 +31,7 @@ import {
   SaleStatus,
   ScopeType,
   ServicePricingMode,
+  ServiceCategoryStatus,
   ServiceStatus,
   UiLanguage,
   UserStatus,
@@ -128,6 +129,8 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['SaleAdjustmentType', SaleAdjustmentType, 'sale_adjustments', 'adjustment_type'],
     ['ServicePricingMode', ServicePricingMode, 'services', 'pricing_mode'],
     ['ServiceStatus', ServiceStatus, 'services', 'status'],
+    // add-pilot-data-seed (the categories the pilot seed writes)
+    ['ServiceCategoryStatus', ServiceCategoryStatus, 'service_categories', 'status'],
     ['CustomerStatus', CustomerStatus, 'customers', 'status'],
     // task 3.6 — the receipt files
     ['AttachmentKind', AttachmentKind, 'attachments', 'kind'],

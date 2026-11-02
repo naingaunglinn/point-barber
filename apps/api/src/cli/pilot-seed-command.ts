@@ -103,10 +103,39 @@ export async function pilotSeed(
         await people.refuseFixture(tx);
         await paymentMethods.refuseWithoutSystemRows(tx);
         await people.preflight(tx, data);
+        // D4.6: every stored value that differs from the file, from all three modules, before the
+        // first write — so one run names them all.
+        const catalogue = app.get(PilotCatalogue);
+        const existing = await people.existingEmployees(tx, data);
+        const branch = await tx.branches.findFirst({
+          where: { code: data.branch.code },
+          select: { id: true, company_id: true },
+        });
+        const changed = [
+          ...(await people.changedValues(tx, data)),
+          ...(branch === null
+            ? []
+            : await catalogue.changedValues(
+                tx,
+                data,
+                {
+                  companyId: branch.company_id,
+                  branchId: branch.id,
+                  branchCode: data.branch.code,
+                  employeeIds: existing,
+                },
+                ctx.businessDate,
+              )),
+          ...(await paymentMethods.changedValues(tx, data.kbzpay?.reference_regex)),
+        ];
+        if (changed.length > 0) throw new PilotRefused(changed);
         const { companyId, branchId, employeeIds } = await people.apply(tx, data, ctx);
-        await app
-          .get(PilotCatalogue)
-          .apply(tx, data, { companyId, branchId, branchCode: data.branch.code, employeeIds }, ctx);
+        await catalogue.apply(
+          tx,
+          data,
+          { companyId, branchId, branchCode: data.branch.code, employeeIds },
+          ctx,
+        );
         if (data.kbzpay !== undefined) {
           await paymentMethods.setReferenceRegex(tx, 'KBZPAY', data.kbzpay.reference_regex, ctx);
         }
