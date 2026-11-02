@@ -116,3 +116,22 @@ describe('TodayList (tasks 10.3 / 10.4)', () => {
     expect(screen.queryByText('No customer in progress')).toBeNull();
   });
 });
+
+describe('the Late entry flag (add-late-entry task 4.6)', () => {
+  it('a late entry carries the flag; a live walk-in has no chip', () => {
+    const late = {
+      ...visit('l', VisitStatus.STARTED, '2026-10-04T15:00:00+06:30', [HAIRCUT]),
+      is_late_entry: true,
+    };
+    const live = {
+      ...visit('w', VisitStatus.STARTED, '2026-10-05T10:30:00+06:30', [SHAVE]),
+      is_late_entry: false,
+    };
+    renderStaff(
+      <TodayList visits={[late, live] as VisitDto[]} onOpen={() => {}} onStart={() => {}} />,
+    );
+    const [first, second] = screen.getAllByRole('listitem');
+    expect(within(first as HTMLElement).getByText('Late entry')).toBeTruthy();
+    expect((second as HTMLElement).querySelector('[data-slot="flag-chip"]')).toBeNull();
+  });
+});

@@ -36,6 +36,10 @@ const person = (
   viewer: {
     actor: { user_id: users[code], employee_id: employees[code] },
     rightsAt: (branchId) => (scope === 'all' || scope.includes(branchId) ? rights : NONE),
+    // Every fixture person holds sale.late_entry at their branches (seed Barber / Manager, company
+    // admin); no other code is asked through can().
+    can: (code, branchId) =>
+      code === 'sale.late_entry' && (scope === 'all' || scope.includes(branchId)),
   },
   scope,
 });

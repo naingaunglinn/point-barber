@@ -6,6 +6,7 @@ import {
   EmptyState,
   ErrorState,
   type ErrorProblem,
+  FlagChip,
   StatusBadge,
   useNow,
 } from '@point/ui';
@@ -68,6 +69,7 @@ export function TodayList({ visits, error, onRetry, onOpen, onStart }: TodayList
               .join(', '),
             <span key="status" className="flex items-center gap-2">
               <StatusBadge table="visits" code={visit.status} />
+              {visit.is_late_entry && <FlagChip flag="late_entry" />}
               <span>{formatDuration(minutesSince(visit.started_at, now), { locale })}</span>
             </span>,
           ],

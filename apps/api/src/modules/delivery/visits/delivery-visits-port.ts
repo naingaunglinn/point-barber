@@ -23,7 +23,7 @@ export class DeliveryVisitsPort implements VisitsPort {
     return visitForSale(visit);
   }
 
-  markFinished(tx: Tx, visitId: string, finishedAt: Date): Promise<void> {
-    return this.visits.markFinished(tx, visitId, finishedAt);
+  markFinished(tx: Tx, visitId: string, finishedAt: Date, recordedAt: Date): Promise<void> {
+    return this.visits.markFinished(tx, visitId, finishedAt, recordedAt);
   }
 }

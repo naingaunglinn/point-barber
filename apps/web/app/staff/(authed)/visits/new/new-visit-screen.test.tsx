@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { VisitStatus } from '@point/shared';
 
-import { IDS, saleOf, serviceOf, visitOf } from '../../../../../test/pos-fixtures';
+import { IDS, meOf, saleOf, serviceOf, visitOf } from '../../../../../test/pos-fixtures';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
 import { json, problem } from '../../../../../test/render';
 
@@ -211,5 +211,57 @@ describe('the page title (task 13.8 · WCAG 2.4.2)', () => {
     renderPos(<NewVisitScreen />, { locale });
     await waitFor(() => expect(document.title).toBe(title));
     expect(document.head.querySelectorAll('title')).toHaveLength(1);
+  });
+});
+
+// add-late-entry tasks 4.2 – 4.4 on the screen: START of yesterday's paper slip sends the reason and the
+// start time (P4.VIS.03 `late_entry`); the three later times stay on this device for the steps.
+describe('late entry on START (add-late-entry)', () => {
+  const lateMe = () =>
+    meOf({
+      grants: [{ code: 'sale.late_entry', scope_type: 2, branch_ids: [IDS.B3] }],
+    });
+
+  it('without sale.late_entry at the branch there is no link', async () => {
+    routeFetch(fetchMock, { [SERVICES]: services });
+    await openSheet();
+    expect(screen.queryByTestId('late-entry-link')).toBeNull();
+  });
+
+  it('START sends late_entry with the reason and the start time, and keeps the later times by visit', async () => {
+    localStorage.clear();
+    routeFetch(fetchMock, { [SERVICES]: services, [START]: json(201, visitOf()) });
+    renderPos(<NewVisitScreen />, { me: lateMe() });
+    fireEvent.click(screen.getByRole('button', { name: 'Walk-in' }));
+    await screen.findByRole('button', { name: 'Haircut' });
+    fireEvent.click(screen.getByTestId('late-entry-link'));
+    fireEvent.click(screen.getByTestId('late-entry-reason-1'));
+    const fill = (key: string, label: string, time: string) => {
+      const field = screen.getByTestId(`late-entry-${key}`);
+      const input = within(field).getByRole('textbox', { name: `${label} — Date` });
+      fireEvent.change(input, { target: { value: '04/Oct/2026' } });
+      fireEvent.blur(input);
+      fireEvent.change(within(field).getByTestId(`late-entry-${key}-time`), {
+        target: { value: time },
+      });
+    };
+    fill('started', 'Actual start time', '15:00');
+    fill('completed', 'Completed time', '15:30');
+    fill('received', 'Payment received time', '15:35');
+    fill('finished', 'Finish time', '15:35');
+    fireEvent.click(screen.getByTestId('start-submit'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/sales/${IDS.SALE}`));
+    expect(JSON.parse(String(starts()[0]?.[1]?.body))).toStrictEqual({
+      branch_id: IDS.B3,
+      items: [],
+      late_entry: { reason: 1, started_at: '2026-10-04T15:00:00+06:30' },
+    });
+    expect(
+      JSON.parse(localStorage.getItem(`point.lateEntry.${IDS.VISIT}`) ?? 'null'),
+    ).toStrictEqual({
+      completed_at: '2026-10-04T15:30:00+06:30',
+      received_at: '2026-10-04T15:35:00+06:30',
+      finished_at: '2026-10-04T15:35:00+06:30',
+    });
   });
 });

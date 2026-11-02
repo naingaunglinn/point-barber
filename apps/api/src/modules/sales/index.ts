@@ -6,6 +6,7 @@ export { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
 export { type ActionRights, saleActions } from './actions/sale-actions.js';
 export { SaleLines } from './lines/sale-lines.js';
 export { SALE_ITEM_ADD, SALE_ITEM_REMOVE, Sales, assertSaleOpen } from './lines/sales.js';
+export { assertLateEntryOrder, enteredTime } from './late-entry/late-entry-times.js';
 export type { VisitForSale, VisitsPort } from './ports/visits-port.js';
 export { VisitsRegistry } from './ports/visits-registry.js';
 export type { SaleRow } from './repositories/sales.repository.js';
