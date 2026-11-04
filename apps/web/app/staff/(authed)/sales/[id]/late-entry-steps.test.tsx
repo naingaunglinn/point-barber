@@ -249,4 +249,70 @@ describe('review of #29 — the payment sheet and a refused kept time', { timeou
     const field = await screen.findByTestId('late-entry-finished');
     expect(within(field).getByRole('alert').textContent).toMatch(/must be in order/);
   });
+
+  it('a refused time entered on this device is cleared from its field, and Finish asks for a new one', async () => {
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: json(200, PAID),
+      [VISIT]: json(200, visitOf({ ...LATE, ...COMPLETED, sale: PAID })),
+      [`POST /api/v1/sales/${IDS.SALE}/finish`]: json(422, problem(422, 'late_entry_time')),
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    await screen.findByTestId('late-entry-finished');
+    fillTime('finished', 'Finish time', '04/Oct/2026', '15:35');
+    fireEvent.click(screen.getByTestId('finish-submit'));
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(1));
+    // The refusal gives the step a new field: queried again, not the one filled above.
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('late-entry-finished')).getByRole('alert').textContent,
+      ).toMatch(/must be in order/),
+    );
+    const field = screen.getByTestId('late-entry-finished');
+    // The refused date and time are not shown again.
+    const date = within(field).getByRole('textbox', { name: 'Finish time — Date' });
+    expect((date as HTMLInputElement).value).toBe('');
+    expect(screen.getByTestId('late-entry-finished-time').textContent).not.toContain('3:35 PM');
+    fireEvent.click(screen.getByTestId('finish-submit'));
+    expect(await screen.findByText('This field is required.')).toBeTruthy();
+    expect(posts(`/sales/${IDS.SALE}/finish`)).toHaveLength(1);
+  });
+
+  it('a split on another device: the second part shows the received time it sends', async () => {
+    const PART = saleOf({ paid_amount: 4_000, remaining_amount: 6_000, payments: [paymentOf()] });
+    let paid = 0;
+    routeFetch(fetchMock, {
+      ...BASE,
+      [SALE]: json(200, saleOf()),
+      [VISIT]: json(200, visitOf({ ...LATE, ...COMPLETED })),
+      [`POST /api/v1/sales/${IDS.SALE}/payments`]: () => {
+        paid += 1;
+        return json(201, paid === 1 ? PART : PAID);
+      },
+    });
+    renderPos(<SaleScreen id={IDS.SALE} />);
+    fireEvent.click(await screen.findByTestId('pay-KBZPAY'));
+    const sheet = await screen.findByRole('dialog');
+    fireEvent.change(within(within(sheet).getByTestId('payment-amount')).getByRole('textbox'), {
+      target: { value: '4000' },
+    });
+    fireEvent.change(within(sheet).getByLabelText(/^Reference/), {
+      target: { value: 'KBZ0001234567' },
+    });
+    fillTime('received', 'Payment received time', '04/Oct/2026', '15:35');
+    fireEvent.click(within(sheet).getByTestId('payment-submit'));
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/payments`)).toHaveLength(1));
+    // Back on the checkout, the field shows the time the next part will send.
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    const field = await screen.findByTestId('late-entry-received');
+    const date = within(field).getByRole('textbox', { name: 'Payment received time — Date' });
+    expect((date as HTMLInputElement).value).toBe('04/Oct/2026');
+    expect(screen.getByTestId('late-entry-received-time').textContent).toContain('3:35 PM');
+    fireEvent.click(screen.getByTestId('pay-CASH'));
+    await waitFor(() => expect(posts(`/sales/${IDS.SALE}/payments`)).toHaveLength(2));
+    expect(bodyOf(posts(`/sales/${IDS.SALE}/payments`)[1])).toMatchObject({
+      payment_method_id: IDS.CASH,
+      received_at: '2026-10-04T15:35:00+06:30',
+    });
+  });
 });

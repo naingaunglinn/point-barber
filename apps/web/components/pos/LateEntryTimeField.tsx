@@ -1,13 +1,20 @@
 'use client';
 
-import { type BusinessDate, formatTime, mmtInstant } from '@point/shared';
+import {
+  type BusinessDate,
+  businessDateOf,
+  formatTime,
+  mmtInstant,
+  mmtTimeOfDay,
+} from '@point/shared';
 import { ChoiceGroup, DateInput } from '@point/ui';
 import { useTranslations } from 'next-intl';
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 // One time of a late entry (AD-POS-14 · AD-FORM-15 · add-late-entry design D6 · task 4.1): a date
 // (`DateInput`, opening on today) and a time of day in 5-minute steps, shown 12-hour ("3:35 PM" —
-// D-PLT-05). Empty by default; the value is the instant in Myanmar time (`mmtInstant`) once both are
+// D-PLT-05). Empty by default, or showing `initial` (a time this step already holds, when the field
+// appears in another place); the value is the instant in Myanmar time (`mmtInstant`) once both are
 // chosen, null otherwise. The error of the field — required, or the order of the times — sits under it.
 // The time is a `ChoiceGroup` (AD-FORM-14 — 288 times, so its searchable combobox), named by the
 // field's label and "Time"; its trigger's test id is `<field test id>-time` and each time's
@@ -16,6 +23,8 @@ import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 export interface LateEntryTimeFieldProps {
   readonly label: string;
   readonly onChange: (instant: string | null) => void;
+  /** The instant the field shows when it appears, or none (empty). Later changes are ignored. */
+  readonly initial?: string | null;
   /** The message under the field, or undefined. */
   readonly error?: string;
   readonly 'data-testid'?: string;
@@ -36,13 +45,18 @@ const TIMES = Array.from({ length: (24 * 60) / 5 }, (_, i) => {
 export function LateEntryTimeField({
   label,
   onChange,
+  initial = null,
   error,
   'data-testid': testId,
 }: LateEntryTimeFieldProps) {
   const t = useTranslations('pos.lateEntry');
   const id = useId();
-  const [date, setDate] = useState<BusinessDate | null>(null);
-  const [time, setTime] = useState<string | null>(null);
+  const [date, setDate] = useState<BusinessDate | null>(() =>
+    initial === null ? null : businessDateOf(initial),
+  );
+  const [time, setTime] = useState<string | null>(() =>
+    initial === null ? null : mmtTimeOfDay(initial),
+  );
   const emit = (nextDate: BusinessDate | null, nextTime: string | null) =>
     onChange(nextDate === null || nextTime === null ? null : mmtInstant(nextDate, nextTime));
   // 288 options: the combobox renders again only when its own name, value or test ids change, not on
