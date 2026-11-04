@@ -59,7 +59,9 @@ function editor(overrides: Partial<Parameters<typeof PriceGridEditor>[0]> = {}) 
 
 const price = (label: string) => screen.getByRole('textbox', { name: label }) as HTMLInputElement;
 
-describe('PriceGridEditor', () => {
+// The grid renders every cell of a branch × location × barber table: one test reached 5.3 s in a full
+// `pnpm test` on 8 cores against the 5 s default, so this suite gets 10 s (measured on #18, 02/Nov/2026).
+describe('PriceGridEditor', { timeout: 10_000 }, () => {
   it('lays out Colour as rows and Length as columns with branch and Shop / Home tabs', () => {
     editor();
     expect(screen.getAllByRole('columnheader').map((th) => th.textContent)).toEqual([

@@ -168,7 +168,9 @@ const fillAll = (
   fillTime('finished', 'Finish time', times.finished ?? '15:35');
 };
 
-describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', { timeout: 10_000 }, () => {
   it('the link is absent without sale.late_entry (owner B12)', () => {
     sheet();
     expect(screen.queryByTestId('late-entry-link')).toBeNull();
@@ -248,7 +250,9 @@ describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
   });
 });
 
-describe('StartSheet — late entry, review of #29', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('StartSheet — late entry, review of #29', { timeout: 10_000 }, () => {
   it('a note typed for OTHER is not sent once another reason is chosen', () => {
     const onStart = sheet({ allowLateEntry: true });
     fireEvent.click(screen.getByTestId('late-entry-link'));

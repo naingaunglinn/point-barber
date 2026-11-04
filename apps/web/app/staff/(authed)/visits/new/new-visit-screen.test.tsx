@@ -217,7 +217,9 @@ describe('the page title (task 13.8 · WCAG 2.4.2)', () => {
 
 // add-late-entry tasks 4.2 – 4.4 on the screen: START of yesterday's paper slip sends the reason and the
 // start time (P4.VIS.03 `late_entry`); the three later times stay on this device for the steps.
-describe('late entry on START (add-late-entry)', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('late entry on START (add-late-entry)', { timeout: 10_000 }, () => {
   const lateMe = () =>
     meOf({
       grants: [{ code: 'sale.late_entry', scope_type: 2, branch_ids: [IDS.B3] }],

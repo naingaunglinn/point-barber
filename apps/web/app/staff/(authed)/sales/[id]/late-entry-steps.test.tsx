@@ -85,7 +85,9 @@ const fillTime = (key: string, label: string, date: string, time: string) => {
   chooseTime(key, time);
 };
 
-describe('"Service done" on a late entry (task 4.5)', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('"Service done" on a late entry (task 4.5)', { timeout: 10_000 }, () => {
   it('sends the completed time kept on this device; the header shows the Late entry flag', async () => {
     keepLateEntryTimes(IDS.VISIT, KEPT);
     routeFetch(fetchMock, {
@@ -138,7 +140,9 @@ describe('"Service done" on a late entry (task 4.5)', () => {
   });
 });
 
-describe('payments and FINISH on a late entry (task 4.5)', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('payments and FINISH on a late entry (task 4.5)', { timeout: 10_000 }, () => {
   it('Cash sends the kept received time', async () => {
     keepLateEntryTimes(IDS.VISIT, KEPT);
     routeFetch(fetchMock, {
@@ -202,7 +206,9 @@ describe('payments and FINISH on a late entry (task 4.5)', () => {
   });
 });
 
-describe('review of #29 — the payment sheet and a refused kept time', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('review of #29 — the payment sheet and a refused kept time', { timeout: 10_000 }, () => {
   it('KBZPay without the kept received time: the field is in the sheet, required, then sent', async () => {
     routeFetch(fetchMock, {
       ...BASE,
