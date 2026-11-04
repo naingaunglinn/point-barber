@@ -55,6 +55,8 @@ export function LateEntryTimeField({
     };
   });
   const timeName = `${label} — ${t('time')}`;
+  // The field's one message marks the time control too: red outline and aria-invalid (AD-FORM-02).
+  const invalid = Boolean(error);
   const timeList = useMemo(
     () => (
       <ChoiceGroup
@@ -66,11 +68,12 @@ export function LateEntryTimeField({
             : TIMES.map((option) => ({ ...option, testId: `${testId}-time-${option.value}` }))
         }
         value={time}
+        {...(invalid ? { invalidBy: `${id}-error` } : {})}
         onChange={(next) => pickTime.current(next)}
         {...(testId === undefined ? {} : { 'data-testid': `${testId}-time` })}
       />
     ),
-    [timeName, time, testId],
+    [timeName, time, testId, invalid, id],
   );
 
   return (

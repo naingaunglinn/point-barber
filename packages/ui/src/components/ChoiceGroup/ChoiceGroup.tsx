@@ -25,7 +25,9 @@ import type { FieldError } from '../FormField/FormField';
 // (`aria-activedescendant`), not cmdk: cmdk registers every item in a store and costs about six times a
 // plain row to mount and to unmount, and the late-entry START sheet opens lists of 288 times. Choosing or
 // Esc closes it and the focus returns to the trigger. `required` adds the asterisk; `error` puts the
-// message of `error.<code>` under the options and links it with `aria-describedby`. An option's `testId`
+// message of `error.<code>` under the options and links it with `aria-describedby`; `invalidBy` marks the
+// group invalid by a message outside it (a composite field's one message), without a message of its own
+// (AD-FORM-02). An option's `testId`
 // lands on the element with its role, so a test can `check()` it; the group's `data-testid` lands on the
 // combobox's trigger, which a test presses, else on the wrapper.
 
@@ -43,6 +45,11 @@ interface ChoiceGroupBase<V extends string> {
   readonly onChange: (value: V) => void;
   readonly required?: boolean;
   readonly error?: FieldError;
+  /**
+   * The id of a message outside the group that makes it invalid — a field of several controls with one
+   * message (AD-FORM-02): `aria-invalid` and the red outline, `aria-describedby` that id, no message here.
+   */
+  readonly invalidBy?: string;
   /** Set on the combobox's trigger (8 or more options), else on the group's wrapper. */
   readonly 'data-testid'?: string;
 }
@@ -79,7 +86,15 @@ const matches = (label: string, search: string) =>
   label.toLowerCase().includes(search.trim().toLowerCase());
 
 export function ChoiceGroup<V extends string = string>(props: ChoiceGroupProps<V>) {
-  const { options, value, onChange, required = false, error, 'data-testid': testId } = props;
+  const {
+    options,
+    value,
+    onChange,
+    required = false,
+    error,
+    invalidBy,
+    'data-testid': testId,
+  } = props;
   const t = useTranslations();
   const id = useId();
   const labelId = `${id}-label`;
@@ -89,8 +104,8 @@ export function ChoiceGroup<V extends string = string>(props: ChoiceGroupProps<V
   const named: GroupName =
     visibleLabel === undefined ? { 'aria-label': hiddenName } : { 'aria-labelledby': labelId };
   const state = {
-    'aria-invalid': error ? true : undefined,
-    'aria-describedby': error ? errorId : undefined,
+    'aria-invalid': error || invalidBy !== undefined ? true : undefined,
+    'aria-describedby': error ? errorId : invalidBy,
     'aria-required': required || undefined,
   } as const;
   const choose = (next: string) => {

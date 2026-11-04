@@ -182,6 +182,13 @@ describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', { timeo
     fireEvent.click(screen.getByTestId('start-submit'));
     expect(onStart).not.toHaveBeenCalled();
     expect(screen.getAllByText('This field is required.')).toHaveLength(5);
+    // Each time control is marked with its field's message (AD-FORM-02), not only the date.
+    for (const key of ['started', 'completed', 'received', 'finished']) {
+      const trigger = screen.getByTestId(`late-entry-${key}-time`);
+      expect(trigger.getAttribute('aria-invalid')).toBe('true');
+      const message = within(screen.getByTestId(`late-entry-${key}`)).getByRole('alert');
+      expect(trigger.getAttribute('aria-describedby')).toBe(message.id);
+    }
   });
 
   it('OTHER shows the note, and it is required', () => {

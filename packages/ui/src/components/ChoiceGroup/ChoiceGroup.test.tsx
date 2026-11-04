@@ -287,6 +287,25 @@ describe('ChoiceGroup', () => {
     expect(trigger.contains(message)).toBe(false);
   });
 
+  it('invalidBy marks the combobox invalid by a message outside it, with no message of its own (AD-FORM-02)', () => {
+    renderIntl(
+      <>
+        <ChoiceGroup
+          aria-label={REASON}
+          invalidBy="outside-error"
+          options={options(8)}
+          value={null}
+          onChange={() => {}}
+        />
+        <p id="outside-error">This field is required.</p>
+      </>,
+    );
+    const trigger = screen.getByRole('combobox', { name: REASON });
+    expect(trigger.getAttribute('aria-invalid')).toBe('true');
+    expect(trigger.getAttribute('aria-describedby')).toBe('outside-error');
+    expect(screen.getAllByText('This field is required.')).toHaveLength(1);
+  });
+
   it('is named by aria-label where a visible title already names it — no visible label', () => {
     renderIntl(
       <ChoiceGroup
