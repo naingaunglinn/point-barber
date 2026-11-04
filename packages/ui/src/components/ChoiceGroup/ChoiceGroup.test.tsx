@@ -297,13 +297,14 @@ describe('ChoiceGroup', () => {
           value={null}
           onChange={() => {}}
         />
-        <p id="outside-error">This field is required.</p>
+        <p id="outside-error" />
       </>,
     );
     const trigger = screen.getByRole('combobox', { name: REASON });
     expect(trigger.getAttribute('aria-invalid')).toBe('true');
     expect(trigger.getAttribute('aria-describedby')).toBe('outside-error');
-    expect(screen.getAllByText('This field is required.')).toHaveLength(1);
+    // The group prints no message of its own.
+    expect(screen.queryByText('This field is required.')).toBeNull();
   });
 
   it('is named by aria-label where a visible title already names it — no visible label', () => {
