@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderIntl } from '../../test/intl';
@@ -94,6 +94,38 @@ describe('BilingualInput', () => {
     fireEvent.blur(mm(), { relatedTarget: outside() });
     expect(onValue).toHaveBeenLastCalledWith({ mm: UNICODE, en: null });
     expect(document.querySelector('[data-slot="zawgyi-notice"]')).toBeNull();
+  });
+});
+
+describe('BilingualInput in a form (add-company-profile design D8)', () => {
+  it('names the two inputs by test id, hands each to its ref and passes the leaving blur on', () => {
+    const mmRef = createRef<HTMLInputElement>();
+    const enRef = createRef<HTMLInputElement>();
+    const onBlur = vi.fn();
+    renderIntl(
+      <>
+        <BilingualInput
+          value={{ mm: HAIRCUT_MM, en: HAIRCUT_EN }}
+          onChange={() => undefined}
+          ref={mmRef}
+          enRef={enRef}
+          testIds={{ mm: 'name-mm', en: 'name-en' }}
+          onBlur={onBlur}
+        />
+        <button type="button">{NOTE}</button>
+      </>,
+    );
+    expect(screen.getByTestId('name-mm')).toBe(mm());
+    expect(screen.getByTestId('name-en')).toBe(en());
+    expect(mmRef.current).toBe(mm());
+    expect(enRef.current).toBe(en());
+    fireEvent.blur(mm(), { relatedTarget: en() }); // inside the pair: not a leave
+    expect(onBlur).not.toHaveBeenCalled();
+    fireEvent.blur(en(), { relatedTarget: outside() });
+    expect(onBlur).toHaveBeenCalledTimes(1);
+    const [event] = onBlur.mock.calls[0] as [{ target: EventTarget; relatedTarget: EventTarget }];
+    expect(event.target).toBe(en());
+    expect(event.relatedTarget).toBe(outside());
   });
 });
 
