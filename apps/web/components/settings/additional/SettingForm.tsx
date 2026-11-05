@@ -23,6 +23,7 @@ import {
 } from '@point/ui';
 
 import { ApiProblem } from '../../../lib/api/client';
+import { screenProblem } from '../../../lib/pos/problem';
 import { useSaveSetting } from '../../../lib/settings/queries';
 import {
   type DraftValue,
@@ -40,7 +41,8 @@ import {
 // design D10 · tasks 5.5, 5.6, 5.9): the control of the key's type, the API's value schema on blur and on
 // Save (a refused value is not sent), the server's field errors on the field and any other refusal
 // inline, a success toast. A key with an impact note asks first: the confirm step names the typed value
-// and the note, and Cancel sends nothing; any other key saves at once (AD-CONF-01).
+// and the note, and Cancel sends nothing; any other key saves at once (AD-CONF-01). A Save that gets no
+// answer (no network) shows the error inline too, and the confirm step closes (CG-ERR-01).
 
 const DIGITS = 'numeric';
 
@@ -100,8 +102,11 @@ export function SettingForm({
       });
       toast.success(tSettings('toast.saved'));
     } catch (failure) {
-      if (!(failure instanceof ApiProblem)) throw failure;
-      setAlert(applyProblem(form, failure.problem));
+      setAlert(
+        failure instanceof ApiProblem
+          ? applyProblem(form, failure.problem)
+          : screenProblem(failure),
+      );
     }
   };
   const submit = form.handleSubmit(async ({ value }) => {
@@ -237,8 +242,11 @@ export function SettingForm({
           consequence={t(entry.impact_key)}
           confirmLabel={tSettings('action.save')}
           onConfirm={async () => {
-            if (pending !== undefined) await commit(pending.value);
-            setPending(undefined);
+            try {
+              if (pending !== undefined) await commit(pending.value);
+            } finally {
+              setPending(undefined);
+            }
           }}
           onCancel={() => setPending(undefined)}
         />

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { formatTime, mmtInstant, type SystemStatus } from '@point/shared';
 
+import { settingsKeys } from '../../../../../lib/settings/settings.keys';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
-import { json } from '../../../../../test/render';
+import { json, problem } from '../../../../../test/render';
 import { kyawZinMe, maHninMe } from '../../../../../test/settings-fixtures';
 
 // add-settings-store task 6.1 — settings spec "The Maintenance mode screen and the admin banner"
@@ -152,5 +153,68 @@ describe('add-settings-store · settings · The Maintenance mode screen and the 
     fireEvent.click(screen.getByTestId('maintenance-save'));
     expect(await screen.findByText('This field is required.')).toBeTruthy();
     expect(sent()).toStrictEqual([]);
+  });
+});
+
+// Review of #48: a failed background refetch keeps the form; a Save with no answer (no network) is
+// shown (CG-ERR-01); OFF sends only `{ enabled: false }`, so the expected end and the messages are not
+// checked then.
+describe('Maintenance mode: a failed load in the background, a Save with no answer, OFF', () => {
+  it('a failed load in the background (window focus) keeps the form and what was typed', async () => {
+    let loads = 0;
+    routeFetch(fetchMock, {
+      [STATUS]: () => {
+        loads += 1;
+        return loads === 1 ? json(200, status()) : json(500, problem(500, 'internal_error'));
+      },
+    });
+    const { client } = renderPos(<MaintenanceScreen />, { me: kyawZinMe() });
+    await screen.findByRole('switch', { name: 'Maintenance mode' });
+    fireEvent.change(screen.getByRole('textbox', { name: /English/ }), {
+      target: { value: 'Server update' },
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() =>
+      expect(client.getQueryState(settingsKeys.systemStatus)?.status).toBe('error'),
+    );
+    expect(loads).toBe(2);
+    expect((screen.getByRole('textbox', { name: /English/ }) as HTMLInputElement).value).toBe(
+      'Server update',
+    );
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('a Save with no answer shows the error', async () => {
+    routeFetch(fetchMock, {
+      [STATUS]: json(200, status()),
+      [SET]: () => Promise.reject(new TypeError('Failed to fetch')),
+    });
+    renderPos(<MaintenanceScreen />, { me: kyawZinMe() });
+    fireEvent.click(await screen.findByRole('switch', { name: 'Maintenance mode' }));
+    fireEvent.click(screen.getByTestId('maintenance-save'));
+    const form = within(screen.getByTestId('maintenance-form'));
+    expect((await form.findByRole('alert')).textContent).toContain(
+      'Something went wrong. Try again.',
+    );
+  });
+
+  it('OFF with a date and no time and a long message sends { enabled: false } — neither is checked', async () => {
+    routeFetch(fetchMock, { [STATUS]: json(200, status()), [SET]: json(200, status()) });
+    renderPos(<MaintenanceScreen />, { me: kyawZinMe() });
+    await screen.findByRole('switch', { name: 'Maintenance mode' });
+    const input = within(screen.getByTestId('maintenance-until')).getByRole('textbox', {
+      name: 'Expected end — Date',
+    });
+    fireEvent.change(input, { target: { value: '05/Oct/2026' } });
+    fireEvent.blur(input);
+    fireEvent.change(screen.getByRole('textbox', { name: /English/ }), {
+      target: { value: 'e'.repeat(201) },
+    });
+    fireEvent.click(screen.getByTestId('maintenance-save'));
+    await waitFor(() => expect(sent()).toStrictEqual([{ enabled: false }]));
+    expect(screen.queryByText('This field is required.')).toBeNull();
   });
 });

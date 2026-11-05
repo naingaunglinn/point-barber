@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 
 import { type SettingKey, formatDateTime } from '@point/shared';
-import { Button, Drawer, ErrorState, Skeleton, useFormat } from '@point/ui';
+import { Button, Drawer, ErrorState, FormAlert, Skeleton, useFormat } from '@point/ui';
 
 import { screenProblem } from '../../../lib/pos/problem';
 import { useSettingHistory } from '../../../lib/settings/queries';
@@ -12,7 +12,8 @@ import { type Translate, formatSettingValue } from './setting-values';
 // The history of one value (AD-SET-03 "who, when, old → new" · P1.SET.05 · API-DATA-08 · design D10 ·
 // task 5.10): the company value, or one branch's override, newest first — "U Kyaw Zin · 05/Oct/2026 9:05
 // AM · 30 min → 15 min", values formatted by type and `—` for none — 25 lines a page and "Load more" for
-// the next. Loaded only while the drawer is open.
+// the next. Loaded only while the drawer is open; a failed load in the background keeps the lines shown,
+// and a failed "Load more" says so above the button.
 
 export function HistoryDrawer({
   settingKey,
@@ -38,12 +39,14 @@ export function HistoryDrawer({
     <Drawer open={open} onOpenChange={onOpenChange} title={t('action.history')}>
       <div className="flex flex-col gap-3" data-testid={`setting-${settingKey}-history`}>
         <p className="font-semibold">{label}</p>
-        {history.isError ? (
-          <ErrorState problem={screenProblem(history.error)} onRetry={() => history.refetch()} />
-        ) : history.data === undefined ? (
-          <div aria-busy="true">
-            <Skeleton shape="text" />
-          </div>
+        {history.data === undefined ? (
+          history.isError ? (
+            <ErrorState problem={screenProblem(history.error)} onRetry={() => history.refetch()} />
+          ) : (
+            <div aria-busy="true">
+              <Skeleton shape="text" />
+            </div>
+          )
         ) : lines.length === 0 ? (
           <p className="text-muted-foreground" data-testid="setting-history-empty">
             {t('history.empty')}
@@ -65,6 +68,7 @@ export function HistoryDrawer({
             ))}
           </ol>
         )}
+        {history.isFetchNextPageError ? <FormAlert problem={screenProblem(history.error)} /> : null}
         {history.hasNextPage ? (
           <div>
             <Button

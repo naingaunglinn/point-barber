@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MeResponse, SettingView } from '@point/shared';
 
+import { settingsKeys } from '../../../../../lib/settings/settings.keys';
 import { renderPos, routeFetch, type Route } from '../../../../../test/pos-render';
-import { json } from '../../../../../test/render';
+import { json, problem } from '../../../../../test/render';
 import {
   KYAW_ZIN_REF,
   SETTINGS_IDS,
@@ -273,5 +274,114 @@ describe('add-settings-store · settings · The impact note before saving, and t
     expect((await screen.findByTestId('setting-history-empty')).textContent).toBe(
       'No changes yet.',
     );
+  });
+});
+
+// Review of #48: a failed background refetch keeps what is shown (the error state only while nothing was
+// loaded), and a request with no answer at all (no network) is shown (CG-ERR-01).
+describe('the drawers: a failed load in the background, and a request with no answer', () => {
+  const NO_ANSWER = 'Something went wrong. Try again.';
+  const companyRead = json(
+    200,
+    listOf({ only: ROWS, editable: false, items: fee(2000, 'company') }),
+  );
+
+  it("a failed load of a branch in the background keeps the branch's form and what was typed", async () => {
+    let loads = 0;
+    const { client } = open(maHninMe(), {
+      'GET /api/v1/settings': companyRead,
+      [`GET /api/v1/settings?branch_id=${B3}`]: () => {
+        loads += 1;
+        return loads === 1
+          ? json(200, branchList(2000, 'company', true))
+          : json(500, problem(500, 'internal_error'));
+      },
+    });
+    fireEvent.click(await screen.findByTestId(`setting-${FEE}-overrides-open`));
+    const input = within(await screen.findByTestId(`setting-${FEE}-branch-${B3}`)).getByRole(
+      'textbox',
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '3000' } });
+    const typed = input.value;
+    await act(async () => {
+      window.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() => expect(client.getQueryState(settingsKeys.list(B3))?.status).toBe('error'));
+    expect(loads).toBe(2);
+    const b3 = within(screen.getByTestId(`setting-${FEE}-branch-${B3}`));
+    expect((b3.getByRole('textbox') as HTMLInputElement).value).toBe(typed);
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('"Reset to company value" with no answer shows the error in the branch', async () => {
+    open(maHninMe(), {
+      'GET /api/v1/settings': companyRead,
+      [`GET /api/v1/settings?branch_id=${B3}`]: json(200, branchList(3000, 'branch', true)),
+      [`POST /api/v1/settings/${FEE}/reset`]: () =>
+        Promise.reject(new TypeError('Failed to fetch')),
+    });
+    fireEvent.click(await screen.findByTestId(`setting-${FEE}-overrides-open`));
+    fireEvent.click(await screen.findByTestId(`setting-${FEE}-branch-${B3}-reset`));
+    const b3 = within(screen.getByTestId(`setting-${FEE}-branch-${B3}`));
+    expect((await b3.findByRole('alert')).textContent).toContain(NO_ANSWER);
+  });
+
+  const HISTORY = '/api/v1/settings/booking.slot_interval_minutes/history';
+  const historyPage = (next_cursor: string | null) => ({
+    items: [
+      {
+        id: '0199a3f2-0000-7000-8010-000000000002',
+        branch_id: null,
+        old_value: 30,
+        new_value: 15,
+        changed_at: '2026-10-05T09:05:00+06:30',
+        changed_by: KYAW_ZIN_REF,
+      },
+    ],
+    next_cursor,
+  });
+
+  it('a failed load of the history in the background keeps its lines', async () => {
+    let loads = 0;
+    const { client } = open(kyawZinMe(), {
+      [`GET ${HISTORY}`]: () => {
+        loads += 1;
+        return loads === 1
+          ? json(200, historyPage(null))
+          : json(500, problem(500, 'internal_error'));
+      },
+    });
+    fireEvent.click(
+      await screen.findByTestId('setting-booking.slot_interval_minutes-history-open'),
+    );
+    await screen.findAllByTestId('setting-history-line');
+    await act(async () => {
+      window.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() =>
+      expect(
+        client.getQueryState(settingsKeys.history('booking.slot_interval_minutes', undefined))
+          ?.status,
+      ).toBe('error'),
+    );
+    expect(screen.getAllByTestId('setting-history-line')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('a failed "Load more" says so above the button and keeps the lines', async () => {
+    open(kyawZinMe(), {
+      [`GET ${HISTORY}`]: json(200, historyPage('NEXT')),
+      [`GET ${HISTORY}?cursor=NEXT`]: json(500, problem(500, 'internal_error')),
+    });
+    fireEvent.click(
+      await screen.findByTestId('setting-booking.slot_interval_minutes-history-open'),
+    );
+    await screen.findAllByTestId('setting-history-line');
+    fireEvent.click(screen.getByTestId('setting-history-more'));
+    const drawer = within(screen.getByTestId('setting-booking.slot_interval_minutes-history'));
+    expect(await drawer.findByRole('alert')).toBeTruthy();
+    expect(screen.getAllByTestId('setting-history-line')).toHaveLength(1);
   });
 });

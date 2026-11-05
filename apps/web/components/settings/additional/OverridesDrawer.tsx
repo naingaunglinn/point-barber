@@ -39,19 +39,23 @@ function BranchOverride({
       await reset.mutateAsync({ key: settingKey, branchId });
       toast.success(t('toast.saved'));
     } catch (failure) {
-      if (!(failure instanceof ApiProblem)) throw failure;
-      setAlert(failure.problem);
+      // No answer at all (no network) is not an ApiProblem: the alert says so (CG-ERR-01).
+      setAlert(failure instanceof ApiProblem ? failure.problem : screenProblem(failure));
     }
   };
-  if (list.isError) {
-    return <ErrorState problem={screenProblem(list.error)} onRetry={() => list.refetch()} />;
-  }
+  // A failed load in the background (window focus) keeps the branch shown and what was typed.
   const view = list.data?.items.find((item) => item.key === settingKey);
   if (view === undefined) {
     return (
-      <div aria-busy="true">
-        <Skeleton shape="text" />
-      </div>
+      <li className="py-3">
+        {list.data === undefined && list.isError ? (
+          <ErrorState problem={screenProblem(list.error)} onRetry={() => list.refetch()} />
+        ) : (
+          <div aria-busy="true">
+            <Skeleton shape="text" />
+          </div>
+        )}
+      </li>
     );
   }
   return (

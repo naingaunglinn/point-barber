@@ -14,8 +14,9 @@ import { useSettings } from '../../../../../lib/settings/queries';
 // Settings › Additional settings (AD-SET-01 · AD-STATE-01 – 03 · AD-PERM-02 · design D10 · task 5.4): the
 // company values of every key, grouped by module in the order Booking, Sales & payments, Closing,
 // Dashboard, System — the order of settings.json — each row with its control or its value as text. A user
-// without any `settings.*` code gets the no-access page and no value is loaded. The page title is the
-// screen's name (WCAG 2.4.2 · AD-A11Y-01).
+// without any `settings.*` code gets the no-access page and no value is loaded. A failed first load shows
+// the error state; a failed load in the background (window focus) keeps the rows already shown, so what
+// was typed into them stays. The page title is the screen's name (WCAG 2.4.2 · AD-A11Y-01).
 
 type Module = 'booking' | 'sales' | 'closing' | 'dashboard' | 'system';
 
@@ -41,14 +42,16 @@ export function AdditionalSettingsScreen() {
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="additional-settings">
       <title>{t('nav.additional')}</title>
       <PageHeader title={t('nav.additional')} />
-      {list.isError ? (
-        <ErrorState problem={screenProblem(list.error)} onRetry={() => list.refetch()} />
-      ) : list.data === undefined ? (
-        <div aria-busy="true" className="grid gap-3" data-testid="additional-settings-loading">
-          <Skeleton shape="text" />
-          <Skeleton shape="text" />
-          <Skeleton shape="text" />
-        </div>
+      {list.data === undefined ? (
+        list.isError ? (
+          <ErrorState problem={screenProblem(list.error)} onRetry={() => list.refetch()} />
+        ) : (
+          <div aria-busy="true" className="grid gap-3" data-testid="additional-settings-loading">
+            <Skeleton shape="text" />
+            <Skeleton shape="text" />
+            <Skeleton shape="text" />
+          </div>
+        )
       ) : (
         groupsOf(list.data.items).map((group) => (
           <section

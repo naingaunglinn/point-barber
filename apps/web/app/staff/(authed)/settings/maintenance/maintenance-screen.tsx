@@ -40,7 +40,9 @@ import { useSetMaintenance, useSystemStatus } from '../../../../../lib/settings/
 // switch, an optional expected end (date and time) and optional Myanmar and English messages of at most
 // 200 characters, sent with `PUT /v1/system/maintenance` and checked first by the API's body schema; a
 // toast for ON and for OFF. Only for company-scope settings.update; anyone else gets the no-access page and
-// nothing is loaded. The page title is the screen's name (WCAG 2.4.2).
+// nothing is loaded. A failed load in the background (window focus) keeps the form and what was typed; a
+// Save that gets no answer (no network) shows the error inline. The page title is the screen's name
+// (WCAG 2.4.2).
 
 const REQUIRED = catalogueCode('required').error;
 
@@ -53,21 +55,28 @@ const formSchema = z
     message: z.object({ mm: z.string(), en: z.string().nullable() }),
   })
   .superRefine((form, ctx) => {
+    // OFF sends only `{ enabled: false }`, so the expected end and the messages are not checked then.
+    if (!form.enabled) return;
     // One part of the expected end without the other: ask for the missing one.
     if (form.until_date !== null && form.until_time === null)
       ctx.addIssue({ code: 'custom', path: ['until'], message: REQUIRED });
     if (form.until_date === null && form.until_time !== null)
       ctx.addIssue({ code: 'custom', path: ['until'], message: REQUIRED });
   })
-  .transform((form): MaintenanceBody => ({
-    enabled: form.enabled,
-    until:
-      form.until_date !== null && form.until_time !== null
-        ? mmtInstant(form.until_date, form.until_time)
-        : null,
-    message_mm: form.message.mm,
-    message_en: form.message.en,
-  }))
+  // OFF ends the window: the expected end and the messages go with it (P1.SYS.03 "Turn it off").
+  .transform((form): MaintenanceBody =>
+    form.enabled
+      ? {
+          enabled: true,
+          until:
+            form.until_date !== null && form.until_time !== null
+              ? mmtInstant(form.until_date, form.until_time)
+              : null,
+          message_mm: form.message.mm,
+          message_en: form.message.en,
+        }
+      : { enabled: false },
+  )
   .pipe(maintenanceBodySchema);
 
 type FormInput = z.input<typeof formSchema>;
@@ -96,12 +105,15 @@ function MaintenanceForm({ status }: Readonly<{ status: SystemStatus }>) {
   const submit = form.handleSubmit(async (body) => {
     setAlert(null);
     try {
-      // OFF ends the window: the expected end and the messages go with it (P1.SYS.03 "Turn it off").
       const answer = await save.mutateAsync(body.enabled ? body : { enabled: false });
       toast.success(answer.maintenance ? t('saved_on') : t('saved_off'));
     } catch (failure) {
-      if (!(failure instanceof ApiProblem)) throw failure;
-      setAlert(applyProblem(form, failure.problem));
+      // No answer at all (no network) is not an ApiProblem: the alert says so (CG-ERR-01).
+      setAlert(
+        failure instanceof ApiProblem
+          ? applyProblem(form, failure.problem)
+          : screenProblem(failure),
+      );
     }
   });
   const set = <K extends keyof FormInput>(name: K, value: FormInput[K]) =>
@@ -170,12 +182,14 @@ export function MaintenanceScreen() {
       <title>{tNav('maintenance')}</title>
       <PageHeader title={tNav('maintenance')} />
       <p>{t('intro')}</p>
-      {status.isError ? (
-        <ErrorState problem={screenProblem(status.error)} onRetry={() => status.refetch()} />
-      ) : status.data === undefined ? (
-        <div aria-busy="true">
-          <Skeleton shape="text" />
-        </div>
+      {status.data === undefined ? (
+        status.isError ? (
+          <ErrorState problem={screenProblem(status.error)} onRetry={() => status.refetch()} />
+        ) : (
+          <div aria-busy="true">
+            <Skeleton shape="text" />
+          </div>
+        )
       ) : (
         <MaintenanceForm
           // The form shows the stored values: after a save (an OFF clears the expected end and the

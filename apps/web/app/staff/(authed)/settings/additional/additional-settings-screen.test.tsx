@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Locale } from '@point/i18n';
 import type { MeResponse } from '@point/shared';
 
+import { settingsKeys } from '../../../../../lib/settings/settings.keys';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
 import { json, problem } from '../../../../../test/render';
 import {
@@ -360,5 +361,58 @@ describe('add-settings-store · settings · The impact note before saving, and t
     expect(
       await screen.findByText('Applies to closings from now; closed days keep their result.'),
     ).toBeTruthy();
+  });
+});
+
+// Review of #48: TanStack Query keeps `data` when a background refetch fails but sets `isError`, so the
+// error state comes only while nothing was loaded; and a Save that gets no answer at all (no network —
+// not an ApiProblem) is shown, and closes the impact step (CG-ERR-01).
+describe('a failed load in the background, and a Save with no answer', () => {
+  const NO_ANSWER = 'Something went wrong. Try again.';
+  const offline = () => Promise.reject(new TypeError('Failed to fetch'));
+
+  it('a failed load in the background (window focus) keeps the rows and what was typed', async () => {
+    let loads = 0;
+    const { client } = open(kyawZinMe(), listOf({ only: SOME }), 'en', {
+      [LIST]: () => {
+        loads += 1;
+        return loads === 1
+          ? json(200, listOf({ only: SOME }))
+          : json(500, problem(500, 'internal_error'));
+      },
+    });
+    const advance = within(await screen.findByTestId('setting-booking.advance_window_days-row'));
+    fireEvent.change(advance.getByRole('textbox'), { target: { value: '7' } });
+    await act(async () => {
+      window.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() =>
+      expect(client.getQueryState(settingsKeys.list(undefined))?.status).toBe('error'),
+    );
+    expect(loads).toBe(2);
+    expect(
+      (within(row('booking.advance_window_days')).getByRole('textbox') as HTMLInputElement).value,
+    ).toBe('7');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('a Save with no answer shows the error, and the impact step closes', async () => {
+    open(kyawZinMe(), listOf({ only: SOME }), 'en', {
+      'PUT /api/v1/settings/home_service.transport_fee_amount': offline,
+      'PUT /api/v1/settings/receipt.auto_print': offline,
+    });
+    const fee = within(await screen.findByTestId('setting-home_service.transport_fee_amount-row'));
+    fireEvent.change(fee.getByRole('textbox'), { target: { value: '2000' } });
+    fireEvent.click(fee.getByRole('button', { name: 'Save' }));
+    const dialog = await confirmStep('Change to 2,000 Ks?');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect((await fee.findByRole('alert')).textContent).toContain(NO_ANSWER);
+    await waitFor(noConfirmStep);
+    // A key without an impact note says it too.
+    const autoPrint = within(row('receipt.auto_print'));
+    fireEvent.click(autoPrint.getByRole('switch'));
+    fireEvent.click(autoPrint.getByRole('button', { name: 'Save' }));
+    expect((await autoPrint.findByRole('alert')).textContent).toContain(NO_ANSWER);
   });
 });
