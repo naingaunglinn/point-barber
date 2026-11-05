@@ -28,13 +28,13 @@ overrides:
   # Transitive versions of the lint plugins added by add-ci-lint-rules (CG-DEP-05): the newest release at
   # least 7 days old on 05/Nov/2026. unrs-resolver 1.13.0 (31/Oct) and its native bindings, napi-postinstall
   # 0.3.8, electron-to-chromium 1.5.475, baseline-browser-mapping 2.11.35, builtin-modules 5.5.0 and
-  # node-releases 2.0.62 / .63 and @napi-rs/wasm-runtime 1.2.7 were younger; drop an entry when its newest release has aged.
+  # node-releases 2.0.61 / .62 / .63 and @napi-rs/wasm-runtime 1.2.7 were younger; drop an entry when its newest release has aged.
   unrs-resolver: 1.12.2
   napi-postinstall: 0.3.7
   electron-to-chromium: 1.5.467
   baseline-browser-mapping: 2.11.34
   builtin-modules: 5.4.0
-  node-releases: 2.0.61
+  node-releases: 2.0.60
   '@napi-rs/wasm-runtime': 1.2.6
   # One typescript-eslint version (CG-DEP-03): @vitest/eslint-plugin and eslint-plugin-import-x ask for
   # @typescript-eslint/utils, scope-manager and types ^8, which would otherwise resolve to 8.72.1 beside the pinned 8.71.0.
