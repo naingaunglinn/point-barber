@@ -88,7 +88,7 @@ export function CompanyForm({ company, reload }: CompanyFormProps) {
   const submit = form.handleSubmit(async (parsed) => {
     setAlert(null);
     setConflict(false);
-    const body = companyPatch(parsed, form.formState.dirtyFields, loaded.updated_at);
+    const body = companyPatch(parsed, form.getValues(), loaded);
     try {
       const answer = await save.mutateAsync(body);
       startFrom(answer);

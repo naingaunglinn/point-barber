@@ -9,9 +9,10 @@ import type { z } from 'zod';
 // The company form's values and the body of its Save (add-company-profile design D8 · tasks 4.1 / 4.5 ·
 // CG-API-06): the inputs hold text — a stored null is the empty string, so an untouched field is never
 // "changed" — and their names are the members of the API, so the schema's issues and the API's
-// `errors[].field` land on them as they are. Save sends the members the user changed, as the schema
-// parsed them (trimmed, blank → null), and `expected_updated_at` = the `updated_at` the form loaded.
-// `social_links` is replaced as a whole (P1.CO.02), so a change of any link sends all of them.
+// `errors[].field` land on them as they are. Save sends the members whose input differs from the values
+// the form loaded, as the schema parsed them (trimmed, blank → null), and `expected_updated_at` = the
+// `updated_at` the form loaded. `social_links` is replaced as a whole (P1.CO.02), so a change of any link
+// — one added, removed, edited or moved — sends all of them.
 
 /** The form's input: the request schema's input (members by their API names). */
 export type CompanyFormInput = z.input<typeof companyUpdateSchema>;
@@ -70,28 +71,40 @@ export function valuesOf(company: CompanyDto): CompanyFormValues {
   };
 }
 
-/** React Hook Form's `dirtyFields`: true where an input differs from the values the form started from. */
-export type DirtyTree =
-  boolean | undefined | readonly DirtyTree[] | { readonly [member: string]: DirtyTree };
-
-/** Whether anything under this node of `dirtyFields` changed. */
-export function anyDirty(node: DirtyTree): boolean {
-  if (node === undefined || typeof node === 'boolean') return node === true;
-  return Object.values(node).some(anyDirty);
+/** Whether the links are the ones loaded: each link member, and the other links in the same order. */
+function sameLinks(
+  current: CompanyFormInput['social_links'],
+  loaded: CompanyFormValues['social_links'],
+): boolean {
+  const other = current?.other ?? [];
+  return (
+    LINK_MEMBERS.every((member) => current?.[member] === loaded[member]) &&
+    other.length === loaded.other.length &&
+    other.every(
+      (link, index) =>
+        link.label === loaded.other[index]?.label && link.url === loaded.other[index]?.url,
+    )
+  );
 }
 
-/** The body of Save: the changed members as parsed, and the loaded `updated_at`. */
+/**
+ * The body of Save: the members whose input differs from the values of the company the form loaded, as
+ * parsed, and that company's `updated_at`. The inputs are compared with the loaded values rather than
+ * read from React Hook Form's `dirtyFields`, which a field array's remove or move updates only while
+ * `dirtyFields` is subscribed to — a removed link would not be sent.
+ */
 export function companyPatch(
   parsed: CompanyUpdate,
-  dirty: { readonly [member: string]: DirtyTree },
-  expectedUpdatedAt: string,
+  current: CompanyFormInput,
+  loaded: CompanyDto,
 ): CompanyUpdate {
+  const start = valuesOf(loaded);
   const body: { -readonly [K in keyof CompanyUpdate]?: CompanyUpdate[K] } = {};
   const copy = <K extends keyof CompanyUpdate>(member: K) => {
     body[member] = parsed[member];
   };
-  for (const member of TEXT_MEMBERS) if (anyDirty(dirty[member])) copy(member);
-  if (anyDirty(dirty.social_links))
+  for (const member of TEXT_MEMBERS) if (current[member] !== start[member]) copy(member);
+  if (!sameLinks(current.social_links, start.social_links))
     body.social_links = normalizeSocialLinks(parsed.social_links ?? {});
-  return { ...body, expected_updated_at: expectedUpdatedAt };
+  return { ...body, expected_updated_at: loaded.updated_at };
 }

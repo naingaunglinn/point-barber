@@ -42,6 +42,9 @@ const AT_9 = '2026-10-05T09:00:00.000+06:30';
 const AT_930 = '2026-10-05T09:30:00.000+06:30';
 const NAME_MM = 'ပွိုင့် ဘာဘာရှော့';
 const ADDRESS_MM = 'အမှတ် ၁၂၊ စမ်းသပ်လမ်း၊ ရန်ကုန်';
+const FACEBOOK = 'https://www.facebook.com/point.test';
+const MAP_1 = { label: 'Branch map 1', url: 'https://point.test/map/1' };
+const MAP_2 = { label: 'Branch map 2', url: 'https://point.test/map/2' };
 
 function companyOf(overrides: Partial<CompanyDto> = {}): CompanyDto {
   return companySchema.parse({
@@ -367,6 +370,69 @@ describe('Settings › Company — Save and its answers (task 4.5)', () => {
         tiktok: 'https://www.tiktok.com/@point.test',
         viber: '09 400 000 111',
       },
+      expected_updated_at: AT_9,
+    });
+  });
+
+  it('a stored other link removed and saved — social_links is sent without it (task 4.4 remove)', async () => {
+    renderScreen(KYAW_ZIN, {
+      [COMPANY]: json(
+        200,
+        companyOf({ social_links: { facebook: FACEBOOK, other: [MAP_1, MAP_2] } }),
+      ),
+      [PATCH]: json(
+        200,
+        companyOf({ social_links: { facebook: FACEBOOK, other: [MAP_2] }, updated_at: AT_930 }),
+      ),
+    });
+    await form();
+    fireEvent.click(screen.getByTestId('company-other-0-remove'));
+    save();
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Company saved'));
+    expect(sentBody()).toStrictEqual({
+      social_links: { facebook: FACEBOOK, other: [MAP_2] },
+      expected_updated_at: AT_9,
+    });
+    expect(input('company-other-0-label').value).toBe('Branch map 2');
+    expect(screen.queryByTestId('company-other-1')).toBeNull();
+  });
+
+  it('the only stored other link removed while the phone is edited — both are sent', async () => {
+    renderScreen(KYAW_ZIN, {
+      [COMPANY]: json(200, companyOf({ social_links: { other: [MAP_1] } })),
+      [PATCH]: json(200, companyOf({ phone: '09 400 000 111', updated_at: AT_930 })),
+    });
+    await form();
+    // The phone first: a later change of a text field would recompute every dirty member.
+    type('company-phone', '09 400 000 111');
+    fireEvent.click(screen.getByTestId('company-other-0-remove'));
+    save();
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Company saved'));
+    // An empty `other` list is left out (proposal reading 8): no links at all.
+    expect(sentBody()).toStrictEqual({
+      phone: '09 400 000 111',
+      social_links: {},
+      expected_updated_at: AT_9,
+    });
+    expect(screen.queryByTestId('company-other-0')).toBeNull();
+  });
+
+  it('an other link added and saved — social_links is sent with it (task 4.4 add)', async () => {
+    renderScreen(KYAW_ZIN, {
+      [COMPANY]: json(200, companyOf({ social_links: { facebook: FACEBOOK } })),
+      [PATCH]: json(
+        200,
+        companyOf({ social_links: { facebook: FACEBOOK, other: [MAP_1] }, updated_at: AT_930 }),
+      ),
+    });
+    await form();
+    fireEvent.click(screen.getByTestId('company-other-add'));
+    type('company-other-0-label', MAP_1.label);
+    type('company-other-0-url', MAP_1.url);
+    save();
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Company saved'));
+    expect(sentBody()).toStrictEqual({
+      social_links: { facebook: FACEBOOK, other: [MAP_1] },
       expected_updated_at: AT_9,
     });
   });
