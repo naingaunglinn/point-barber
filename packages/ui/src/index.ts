@@ -194,6 +194,7 @@ export {
   movesToSubmit,
   registerField,
   useAppForm,
+  useFieldArray,
   useTextField,
   type AppFormProps,
 } from './forms/use-app-form';

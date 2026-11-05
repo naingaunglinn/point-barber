@@ -48,14 +48,18 @@ export interface ReadOnlyField {
   readonly value: ReactNode;
 }
 
-/** The fields of a locked form as text (AD-DET-03: inputs are replaced by text, not disabled). */
+/**
+ * The fields of a locked form as text (AD-DET-03: inputs are replaced by text, not disabled). A long
+ * value without a space — a link of 1,000 characters — wraps inside its column instead of widening the
+ * page (AD-LAY-03).
+ */
 export function ReadOnlyFields({ fields }: Readonly<{ fields: readonly ReadOnlyField[] }>) {
   return (
     <dl className="grid gap-x-6 gap-y-3 md:grid-cols-2" data-slot="read-only-fields">
       {fields.map((field) => (
-        <div key={field.label} className="flex flex-col gap-0.5">
+        <div key={field.label} className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-sm text-muted-foreground">{field.label}</dt>
-          <dd className="font-semibold">
+          <dd className="min-w-0 font-semibold [overflow-wrap:anywhere]">
             {typeof field.value === 'string' ? <DataText>{field.value}</DataText> : field.value}
           </dd>
         </div>

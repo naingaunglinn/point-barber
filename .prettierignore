@@ -8,6 +8,9 @@ openspec/config.yaml
 .claude/commands/opsx/
 .claude/skills/openspec-*/
 
+# Lint fixtures whose scenarios state line numbers (add-ci-lint-rules): the layout is part of the test
+tools/eslint/fixtures/typescript/
+
 # Lockfile and build output
 pnpm-lock.yaml
 node_modules/

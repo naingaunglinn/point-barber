@@ -195,29 +195,64 @@ async function grey(png: Buffer) {
   return sharp(png).greyscale().raw().toBuffer({ resolveWithObject: true });
 }
 
+/**
+ * The PNG against its golden image: same size, at most 0.5 % of the pixels differ. A missing golden is
+ * written outside CI (and with `UPDATE_GOLDEN=1`) — look at it before committing.
+ */
+async function expectGolden(png: Buffer, name: string): Promise<void> {
+  const file = new URL(name, GOLDEN);
+  if (process.env.UPDATE_GOLDEN === '1' || !existsSync(file)) {
+    if (process.env.CI !== undefined) throw new Error(`golden image ${file.pathname} is missing`);
+    mkdirSync(GOLDEN, { recursive: true });
+    writeFileSync(file, png);
+  }
+  const actual = await grey(png);
+  const expected = await grey(readFileSync(file));
+  expect([actual.info.width, actual.info.height]).toStrictEqual([
+    expected.info.width,
+    expected.info.height,
+  ]);
+  let differing = 0;
+  for (let i = 0; i < actual.data.length; i += 1) {
+    if (actual.data[i] !== expected.data[i]) differing += 1;
+  }
+  expect(differing / actual.data.length).toBeLessThanOrEqual(0.005);
+}
+
 describe('Golden images — the receipt with Myanmar shaping (task 9.8)', () => {
   it.each([58, 80] as const)(
     '%i mm',
     async (paper) => {
       const png = await renderer.renderPng(receipt(paper), PRINTER_WIDTH_PX[paper]);
-      const file = new URL(`receipt-${paper}mm.png`, GOLDEN);
-      if (process.env.UPDATE_GOLDEN === '1' || !existsSync(file)) {
-        if (process.env.CI !== undefined)
-          throw new Error(`golden image ${file.pathname} is missing`);
-        mkdirSync(GOLDEN, { recursive: true });
-        writeFileSync(file, png);
-      }
-      const actual = await grey(png);
-      const expected = await grey(readFileSync(file));
-      expect([actual.info.width, actual.info.height]).toStrictEqual([
-        expected.info.width,
-        expected.info.height,
-      ]);
-      let differing = 0;
-      for (let i = 0; i < actual.data.length; i += 1) {
-        if (actual.data[i] !== expected.data[i]) differing += 1;
-      }
-      expect(differing / actual.data.length).toBeLessThanOrEqual(0.005);
+      await expectGolden(png, `receipt-${paper}mm.png`);
+    },
+    30_000,
+  );
+});
+
+// add-company-profile task 3.4 — sales-checkout spec "The receipt is English with fixed content",
+// scenario "The company logo above the name" (AD-RCPT-01 item 1 · AD-RCPT-02 · ADR-013 · design D7):
+// the fixture logo A (600 × 600, black-and-white test pattern) as ReceiptLogo passes it — its webp,
+// inline — centred above "Point Barbershop", no wider than the paper, and the print image in two
+// colours only. The goldens without a logo above stay as they are.
+const LOGO_A = new URL('./fixtures/logo-a.png', import.meta.url);
+
+describe('Golden images — the receipt with the company logo (add-company-profile task 3.4)', () => {
+  it.each([58, 80] as const)(
+    '%i mm',
+    async (paper) => {
+      const webp = await sharp(readFileSync(LOGO_A)).webp({ lossless: true }).toBuffer();
+      const logo = { dataUri: `data:image/webp;base64,${webp.toString('base64')}` };
+      const html = receiptHtml({ view: receiptView, company: 'Point Barbershop', paper, logo });
+      const png = await renderer.renderPng(html, PRINTER_WIDTH_PX[paper]);
+      const { data, info } = await grey(png);
+      expect(info.width).toBe(PRINTER_WIDTH_PX[paper]);
+      expect(new Set(data).size).toBeLessThanOrEqual(2);
+      // The logo is drawn: the receipt is up to 120 px taller than the one without it.
+      const without = await grey(await renderer.renderPng(receipt(paper), PRINTER_WIDTH_PX[paper]));
+      expect(info.height - without.info.height).toBeGreaterThan(100);
+      expect(info.height - without.info.height).toBeLessThanOrEqual(130);
+      await expectGolden(png, `receipt-${paper}mm-logo.png`);
     },
     30_000,
   );

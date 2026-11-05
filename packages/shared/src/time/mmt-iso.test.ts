@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { toMmtIso } from './mmt-iso.js';
+import { toMmtIso, toMmtIsoMillis } from './mmt-iso.js';
 
 // add-walkin-visit-checkout task 3.8 — the one serializer of the instants the API returns
 // (API-DATA-03 · D-PLT-15 · CG-TIME-04 / 05): ISO 8601, second precision, the offset of Asia/Yangon
@@ -30,5 +30,22 @@ describe('toMmtIso', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2030-01-01T00:00:00Z'));
     expect(toMmtIso(new Date('2026-10-04T17:30:00Z'))).toBe('2026-10-05T00:00:00+06:30');
+  });
+});
+
+// add-branch-management task 3.3 — design D6: `updated_at` keeps its milliseconds on the wire, so the
+// echoed `expected_updated_at` can be compared with the stored value to the millisecond.
+describe('toMmtIsoMillis', () => {
+  it.each([
+    ['2026-10-05T03:30:00.123Z', '2026-10-05T10:00:00.123+06:30'],
+    ['2026-10-05T03:30:00Z', '2026-10-05T10:00:00.000+06:30'],
+    ['2026-10-04T17:29:59.999Z', '2026-10-04T23:59:59.999+06:30'],
+  ])('%s → %s', (instant, expected) => {
+    expect(toMmtIsoMillis(new Date(instant))).toBe(expected);
+  });
+
+  it('round-trips: the printed value is the same instant to the millisecond', () => {
+    const stored = new Date('2026-10-05T03:30:00.123Z');
+    expect(new Date(toMmtIsoMillis(stored)).getTime()).toBe(stored.getTime());
   });
 });

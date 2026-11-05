@@ -60,6 +60,10 @@ export const ErrorCode = {
   LOCKED: 'locked',
   // add-late-entry — P4-RULE-13 · LE-1: the four late-entry times out of order or later than now.
   LATE_ENTRY_TIME: 'late_entry_time',
+  // add-company-profile — API-ERR-02 · Part 1 v1.7 §11b · design D10 (task 1.2): a stale
+  // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).
+  CONFLICT: 'conflict',
+  ZAWGYI_TEXT: 'zawgyi_text',
   // add-settings-store — API-ERR-02 · Part 1 §11b · P1-RULE-08 · API-AUTH-06 (task 1.8): a write of a
   // read-only key or a branch override of a company-only key; maintenance mode for a caller who may not
   // pass (texts owner-approved 05/Nov/2026, S18).
@@ -74,6 +78,8 @@ export const FieldIssueCode = {
   TOO_SMALL: 'too_small',
   TOO_BIG: 'too_big',
   INVALID_TYPE: 'invalid_type',
+  // add-company-profile — a failed link pattern or URL check (Part 1 v1.7 §11b · CP2 · design D10).
+  INVALID_FORMAT: 'invalid_format',
   // add-settings-store — a value that is not one of the listed choices (Zod 4 `invalid_value`).
   INVALID_VALUE: 'invalid_value',
 } as const;
