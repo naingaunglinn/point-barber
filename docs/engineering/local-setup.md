@@ -188,7 +188,9 @@ To work on the API or the web app with reload, run them on your machine and leav
 4. Once per clone, create `apps/web/.env.development.local` as described in
    [`next dev` (host-run)](#next-dev-host-run). Without it, every page answers
    `500 Invalid web app environment: …`.
-5. Run `pnpm dev`, which starts:
+5. **In a fresh clone or worktree, build once first:** `pnpm exec turbo run build --filter=api`, which builds the
+   packages the API imports. `pnpm dev` builds only the API itself.
+6. Run `pnpm dev`, which starts:
    - **the API on port 3101:** builds once, then runs `tsc --watch` and `node --watch`. It reads the
      root `.env`, with `API_PORT` forced to 3101;
    - **the web app on port 3100:** `next dev`, with the file of step 4.
