@@ -6,6 +6,7 @@ import type { Messages } from '@point/i18n';
 
 import { BRANCH_CODES } from '../../lib/branches/access';
 import { useCan } from '../../lib/session/grants';
+import { seesCompany } from './company-access';
 
 // The Settings menu (AD-NAV-02 · AD-NAV-03 · add-company-profile design D8 and "Shared pieces" — the
 // first Dev 1 wave-1 change to merge creates it, the others add their screen): one list of screens,
@@ -28,6 +29,8 @@ interface SettingsScreenEntry {
 
 /** The screens of Settings, in AD-NAV-02 order. Each change adds its own entry here. */
 const SCREENS: readonly SettingsScreenEntry[] = [
+  // add-company-profile — any `company.*` code (AD-NAV-02 · design D8).
+  { key: 'company', href: '/settings/company', visible: seesCompany },
   // add-branch-management — Settings › Branches for a holder of any branch.* code at any scope
   // (branch.view⁺ — AD-PERM-03 · design D9).
   {

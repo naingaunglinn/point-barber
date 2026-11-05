@@ -6,6 +6,7 @@ export {
   type BranchUsageKey,
 } from './branches/branch-usage.js';
 export { PermissionCatalogue, type SyncResult } from './catalogue/permission-catalogue.js';
+export { CompanyProfile } from './company/company-profile.js';
 export { CurrentCompany } from './company/current-company.js';
 export { Assignments } from './directory/assignments.js';
 export { BranchCodes } from './directory/branch-codes.js';

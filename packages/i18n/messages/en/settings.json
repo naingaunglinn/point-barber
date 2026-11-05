@@ -1,9 +1,41 @@
 {
   "nav": {
     "title": "Settings",
+    "company": "Company",
     "additional": "Additional settings",
     "maintenance": "Maintenance mode",
     "branches": "Branches"
+  },
+  "company": {
+    "title": "Company",
+    "section": {
+      "name": "Name",
+      "contact": "Contact",
+      "address": "Address",
+      "links": "Website and social links"
+    },
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "link": {
+      "help": "Starts with https://",
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "viber": "Viber",
+      "instagram": "Instagram",
+      "youtube": "YouTube"
+    },
+    "viber": {
+      "help": "A viber:// link or a phone number"
+    },
+    "other": {
+      "title": "Other links",
+      "label": "Label",
+      "url": "Link",
+      "add": "Add link"
+    },
+    "saved": "Company saved",
+    "reload": "Reload"
   },
   "group": {
     "booking": "Booking",

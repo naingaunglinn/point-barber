@@ -10,12 +10,12 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // first and required, English second and optional — empty English is reported as `null`, and the
 // English screens then show the Myanmar text. Both inputs convert Zawgyi on blur (TextInput). Leaving
 // the pair with an empty Myanmar name shows `error.required` under the Myanmar input, unless the form
-// already marks the field. A form binds the two members to the two inputs: `ref` / `enRef` are the
-// elements it focuses on an error, `onBlur` gets the event of leaving the pair, `testIds` names them.
-// `required={false}` makes the Myanmar text optional too — a pair such as an address (add-branch-
-// management) or the thank-you text and the maintenance messages (add-settings-store): no asterisk, no
-// `aria-required` and no message for an empty pair. `hint` replaces the default hint under the pair
-// with a translated text of the screen (add-settings-store).
+// already marks the field. `required={false}` makes the Myanmar text optional too — a pair such as an
+// address (add-branch-management) or the thank-you text and the maintenance messages (add-settings-store):
+// no asterisk, no `aria-required` and no message for an empty pair. `hint` replaces the default hint under
+// the pair with a translated text of the screen (add-settings-store). A form binds the two members to the
+// two inputs: `ref` / `enRef` are the elements it focuses on an error, `onBlur` gets the event of leaving
+// the pair, `testIds` names them.
 
 export interface Bilingual {
   readonly mm: string;

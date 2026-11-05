@@ -63,13 +63,14 @@ const document = buildOpenApiDocument('0.1.0');
 const schemas = (document.components as { schemas: Record<string, Schema> }).schemas;
 
 describe('generated OpenAPI document (task 4.20 · design D5)', () => {
-  it('serves under /api/v1 with the two paths of this change', () => {
+  it('serves under /api/v1 with the two paths of this change and the company of add-company-profile', () => {
     expect(document.servers).toStrictEqual([{ url: '/api/v1' }]);
     expect(Object.keys(document.paths as object).sort()).toStrictEqual([
       // add-branch-management task 3.12 — P1.BR.02 – 05.
       '/branches',
       '/branches/{id}',
       '/branches/{id}/status',
+      '/company',
       '/health',
       // add-settings-store task 3.12 — P1.SET.01 – 05.
       '/settings',
@@ -90,6 +91,41 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
     expect(paths['/branches/{id}']?.get?.operationId).toBe('getBranch');
     expect(paths['/branches/{id}']?.patch?.operationId).toBe('patchBranch');
     expect(paths['/branches/{id}/status']?.post?.operationId).toBe('setBranchStatus');
+  });
+
+  // add-company-profile task 2.10 — copied from Part 1 v1.7 (OpenAPI 1.7.0) `paths./company`.
+  it('P1.CO.01 / P1.CO.02 have the tag, permission, header, body and responses of Part 1 v1.7', () => {
+    const company = (document.paths as Record<string, Record<string, Schema>>)['/company'] ?? {};
+    const { get, patch } = company as { get: Schema; patch: Schema };
+    expect(get).toMatchObject({
+      tags: ['company'],
+      operationId: 'getCompany',
+      'x-permission': 'any staff',
+    });
+    expect(Object.keys(get.responses as object).sort()).toStrictEqual(['200', '401']);
+    expect(get.responses).toMatchObject({
+      '200': {
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/Company' } } },
+      },
+    });
+    expect(patch).toMatchObject({
+      tags: ['company'],
+      operationId: 'patchCompany',
+      'x-permission': 'company.update (company master: company scope)',
+      parameters: [{ name: 'X-Requested-With', in: 'header', required: true }],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/CompanyUpdate' } } },
+      },
+    });
+    expect(Object.keys(patch.responses as object).sort()).toStrictEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '409',
+      '422',
+    ]);
   });
 
   it.each(Object.entries(PART1))(

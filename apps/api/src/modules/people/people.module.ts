@@ -18,6 +18,8 @@ import { BranchUsage } from './branches/branch-usage.js';
 import { BranchesController } from './branches/branches.controller.js';
 import { Branches } from './branches/branches.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
+import { CompanyController } from './company/company.controller.js';
+import { CompanyProfile } from './company/company-profile.js';
 import { CurrentCompany } from './company/current-company.js';
 import { Assignments } from './directory/assignments.js';
 import { BranchCodes } from './directory/branch-codes.js';
@@ -51,7 +53,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 // D11).
 @Module({
   imports: [PlatformModule],
-  controllers: [OrganizationController, BranchesController],
+  controllers: [OrganizationController, CompanyController, BranchesController],
   providers: [
     PeopleRepository,
     AccessRepository,
@@ -71,6 +73,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     BranchCodes,
     BranchHeaders,
     CurrentCompany,
+    CompanyProfile,
     CompanyAdmin,
     PermissionCatalogue,
     SeedRoles,
@@ -91,6 +94,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     BranchCodes,
     BranchHeaders,
     CurrentCompany,
+    CompanyProfile,
     CompanyAdmin,
     PermissionCatalogue,
     BaseSeed,
