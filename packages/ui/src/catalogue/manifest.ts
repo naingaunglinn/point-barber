@@ -33,6 +33,7 @@ import {
   MoneyInputDemo,
   MoneyTextDemo,
   PhoneInputDemo,
+  SwitchDemo,
   TextInputDemo,
 } from './demos/input-demos';
 import {
@@ -160,6 +161,13 @@ export const MANIFEST: readonly ManifestEntry[] = [
       { id: 'seven', title: 'choiceSeven', Demo: ChoiceSevenDemo },
       { id: 'eight', title: 'choiceEight', Demo: ChoiceEightDemo },
     ],
+  },
+  // add-settings-store task 5.1 — the switch of Additional settings (AD-SET-01).
+  {
+    name: 'Switch',
+    section: 'inputs',
+    rules: ['AD-SET-01', 'D-UX-02', 'AD-A11Y-05'],
+    demos: [{ id: 'auto-print', title: 'switch', Demo: SwitchDemo }],
   },
   {
     name: 'DateInput',
