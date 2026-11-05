@@ -9,6 +9,7 @@ import {
 } from '@point/shared';
 import {
   Button,
+  ChoiceGroup,
   type FieldError,
   FormAlert,
   FormField,
@@ -25,10 +26,11 @@ import { referenceHint } from './reference-hint';
 
 // The payment sheets of the checkout (AD-POS-08 · AD-FORM-11 · AD-FORM-12 · AD-FORM-04 · add-walkin-
 // visit-checkout tasks 12.3, 12.4, 12.7): the KBZPay sheet opens with its method fixed and the amount preset
-// to the remaining amount; "Split" adds the method choice. The amount stays editable (a non-cash transfer may
-// exceed it — the server answers `amount_exceeds_remaining` for cash); a method that requires a reference
-// asks for it, with the expected format as helper text, and nothing is sent without it. A cash amount shows
-// the optional "Customer gave" helper. The server's refusals appear on their field; the rest above the form.
+// to the remaining amount; "Split" adds the method choice (`ChoiceGroup`). The amount stays editable (a
+// non-cash transfer may exceed it — the server answers `amount_exceeds_remaining` for cash); a method that
+// requires a reference asks for it, with the expected format as helper text, and nothing is sent without
+// it. A cash amount shows the optional "Customer gave" helper. The server's refusals appear on their
+// field; the rest above the form.
 
 export interface PaymentProblem {
   readonly code: string;
@@ -185,22 +187,16 @@ function PaymentForm({
     >
       {other !== null && <FormAlert problem={other} />}
       {method === undefined && (
-        <fieldset className="grid gap-2">
-          <legend className="mb-1 text-sm text-muted-foreground">{t('method')}</legend>
-          {choices.map((item) => (
-            <label key={item.id} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="payment-method"
-                value={item.id}
-                checked={methodId === item.id}
-                onChange={() => setMethodId(item.id)}
-                data-testid={`payment-method-${item.code}`}
-              />
-              {localized(item, 'name', locale)}
-            </label>
-          ))}
-        </fieldset>
+        <ChoiceGroup
+          label={t('method')}
+          options={choices.map((item) => ({
+            value: item.id,
+            label: localized(item, 'name', locale),
+            testId: `payment-method-${item.code}`,
+          }))}
+          value={methodId}
+          onChange={setMethodId}
+        />
       )}
       <div data-testid="payment-amount">
         <FormField label={t('amount')} required error={amountError}>

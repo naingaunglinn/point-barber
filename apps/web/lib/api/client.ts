@@ -1,4 +1,4 @@
-import type { Problem } from '@point/shared';
+import { HttpStatus, type Problem } from '@point/shared';
 
 import { PUBLIC_API_BASE } from '../../env';
 
@@ -50,7 +50,12 @@ const fallbackProblem = (status: number): Problem => ({
   type: 'about:blank',
   title: '',
   status,
-  code: status === 401 ? 'unauthenticated' : status === 404 ? 'not_found' : 'internal_error',
+  code:
+    status === HttpStatus.UNAUTHORIZED
+      ? 'unauthenticated'
+      : status === HttpStatus.NOT_FOUND
+        ? 'not_found'
+        : 'internal_error',
   request_id: '',
 });
 
@@ -93,7 +98,7 @@ async function send<T>(
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  if (response.status === 204) return { data: undefined as T, response };
+  if (response.status === HttpStatus.NO_CONTENT) return { data: undefined as T, response };
   if (response.ok && read === 'blob') return { data: (await response.blob()) as T, response };
   const data: unknown = await response.json().catch(() => null);
   if (response.ok) return { data: data as T, response };
@@ -108,7 +113,7 @@ async function send<T>(
     problem,
     date === null ? undefined : Date.parse(date),
   );
-  if (!signIn && response.status === 401) handlers.onUnauthorized?.(problem);
-  if (!signIn && response.status === 403) handlers.onForbidden?.(problem);
+  if (!signIn && response.status === HttpStatus.UNAUTHORIZED) handlers.onUnauthorized?.(problem);
+  if (!signIn && response.status === HttpStatus.FORBIDDEN) handlers.onForbidden?.(problem);
   throw failure;
 }

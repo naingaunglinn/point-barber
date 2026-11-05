@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { CalendarDays, House, Settings, ShoppingBag } from 'lucide-react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DESKTOP, TABLET } from '../../hooks/use-min-width';
 import { AppShell, type ShellModule } from './AppShell';
@@ -61,6 +61,41 @@ function renderShell() {
 
 const slot = (name: string) => document.querySelector(`[data-slot="${name}"]`) as HTMLElement;
 const classes = (name: string) => slot(name).className.split(/\s+/);
+
+// jsdom has no layout: the top bar's height is stubbed and the ResizeObserver callback fired by hand.
+function stubTopBar(initial: number) {
+  const state = { height: initial, resize: (): void => undefined, disconnected: false };
+  const measure = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    return this.dataset.slot === 'top-bar'
+      ? ({ height: state.height } as DOMRect)
+      : measure.call(this);
+  });
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        if ((target as HTMLElement).dataset.slot !== 'top-bar') return;
+        state.resize = () => {
+          this.callback([], this as unknown as ResizeObserver);
+        };
+      }
+      unobserve() {}
+      disconnect() {
+        state.disconnected = true;
+      }
+    },
+  );
+  return state;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('AppShell', () => {
   it('md and lg are 768 and 1024 px: tokens.css does not change the Tailwind breakpoints', () => {
@@ -176,6 +211,18 @@ describe('AppShell', () => {
       </AppShell>,
     );
     expect(classes('app-shell')).toContain('min-h-full');
+  });
+
+  it('sets --shell-top on its root to the top bar height, on mount and on resize', () => {
+    const topBar = stubTopBar(65);
+    const { unmount } = renderShell();
+    const shellTop = () => slot('app-shell').style.getPropertyValue('--shell-top');
+    expect(shellTop()).toBe('65px');
+    topBar.height = 63;
+    act(() => topBar.resize());
+    expect(shellTop()).toBe('63px');
+    unmount();
+    expect(topBar.disconnected).toBe(true);
   });
 
   it('a module without screens has no sub-navigation', () => {

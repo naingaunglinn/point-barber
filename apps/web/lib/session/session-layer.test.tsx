@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { MeResponse } from '@point/shared';
+import { BranchStatus, EmployeeStatus, UserStatus, type MeResponse } from '@point/shared';
 
 import { json, problem, renderStaff } from '../../test/render';
 
@@ -34,7 +34,7 @@ function meOf(overrides: Partial<MeResponse> = {}): MeResponse {
     user: {
       id: '0199a3f2-0000-7000-8002-00000000e004',
       email: 'aung@point.test',
-      status: 1,
+      status: UserStatus.ACTIVE,
       ui_language: null,
       last_login_at: '2026-10-05T09:02:00+06:30',
     },
@@ -44,7 +44,7 @@ function meOf(overrides: Partial<MeResponse> = {}): MeResponse {
       name_mm: 'ကိုအောင်',
       name_en: 'Ko Aung',
       photo_url: null,
-      status: 1,
+      status: EmployeeStatus.ACTIVE,
     },
     grants: [],
     branches_in_scope: [
@@ -54,7 +54,7 @@ function meOf(overrides: Partial<MeResponse> = {}): MeResponse {
         name_mm: 'ပွိုင့် ၃.၀',
         name_en: 'Point 3.0',
         phone: null,
-        status: 1,
+        status: BranchStatus.ACTIVE,
         is_public: true,
       },
     ],
