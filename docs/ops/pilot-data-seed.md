@@ -8,7 +8,9 @@ what, and the KBZPay reference pattern (add-pilot-data-seed · owner answer S16)
 
 ## When
 
-- Once before the pilot starts, after the first company admin exists.
+- Once before the pilot starts, after the first company admin exists, and **at least one day before the pilot's
+  first day**. The barbers' branch assignments start on the run date, so a paper slip from an earlier day cannot be
+  entered as a late entry: START answers `not_assigned_to_branch`.
 - Again during the pilot when a barber or a service is added (step 7).
 
 It refuses as soon as the database holds a second branch, so it can never touch a multi-branch
@@ -17,11 +19,13 @@ database. It is deleted when the real screens and the import arrive.
 ## Before you start
 
 - A release with `add-walkin-visit-checkout` and `add-pilot-data-seed` is deployed (`deploy.md`), and
-  the API has started once (the base seed).
+  the base seed job has **finished**, not only started: `dc logs api | grep -c 'sync.code_tables step done'`
+  prints `3`. Before that the payment methods and roles may still be missing, and the command refuses.
 - The first company admin exists (`install.md` step 9). The command never creates an admin.
 - **The owner's values**, given to the operator directly, never in GitHub, an issue, a pull request
   or a saved chat:
-  - the branch: code, names, address and phone;
+  - the branch: code, names, address and phone. The phone is optional in the file, but the example file has none,
+    and a branch without one prints no phone on its receipts, so ask the owner for it;
   - each person: Google address, names, employee code, and Barber or Manager;
   - the services: names, minutes and prices, plus any barber price;
   - the KBZPay pattern with two real sample references.
@@ -43,7 +47,8 @@ All as `deploy` in `/opt/point`, with
    ```sh
    dc exec -T api node dist/cli/pilot-seed.js < ~/pilot-data.json
    ```
-   It prints one line per table: `<table>: create <n>, unchanged <m>`.
+   It prints one line per table: `<table>: create <n>, unchanged <m>`, and `, update <k>` on a table where a
+   stored value changes (the KBZPay pattern).
 3. **Send the owner a summary and wait for the OK (PD5):** the branch, each person with their role,
    and each service with its price. No addresses go in a saved chat.
 4. **Apply**, before the shop opens:
@@ -51,7 +56,7 @@ All as `deploy` in `/opt/point`, with
    dc exec -T api node dist/cli/pilot-seed.js --apply < ~/pilot-data.json
    ```
    It prints `applied on <date> — request_id <id>`, then the plan.
-5. **Check:** run the dry run once more. Every table must show `create 0`.
+5. **Check:** run the dry run once more. Every table must show `create 0`, and no table an `update` other than 0.
 6. Each barber signs in with Google in the phone's browser. No invitation e-mail is sent.
 7. **A new barber or service during the pilot:** add it to the file, then repeat steps 2–5. Only what
    is new is written.
@@ -59,7 +64,7 @@ All as `deploy` in `/opt/point`, with
 
 ## Check
 
-- The second dry run shows `create 0` in every table.
+- The second dry run shows `create 0`, and `update 0` where the column appears, in every table.
 - The first barber's sign-in reaches the start page, with the pilot branch.
 - Record in the pilot sheet: the run's `request_id` and the row counts. No names.
 

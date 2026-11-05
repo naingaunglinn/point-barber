@@ -65,7 +65,9 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
         // `/` opens Today with the query kept (add-walkin-visit-checkout task 10.1); the event's URL
         // has no query string.
         await page.goto('/?branch=B3');
-        await expect(page.getByTestId('today')).toBeVisible();
+        // The first page of the web container recreated just now: on a busy runner Today has taken
+        // more than the 5 s default (CI run 41759867794), so this one wait gets 20 s.
+        await expect(page.getByTestId('today')).toBeVisible({ timeout: 20_000 });
         await expect(page.locator('html')).toHaveAttribute('data-error-reporting', 'ready');
         await throwUncaught(page);
         await expect.poll(() => envelopes.length).toBe(1);
