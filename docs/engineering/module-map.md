@@ -41,6 +41,7 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `sales`        | `sales`, `sale_items`, `receipt_counters`, `payment_methods`, `payments`, `refunds`                                         | `add-walkin-visit-checkout` |
 | `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout` |
 | `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout` |
+| `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`        |
 | `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
@@ -98,8 +99,9 @@ What enforces them at build time (design D10):
 
 What crosses the two modules of `add-foundation-auth-access` without an import cycle: `people`
 registers into `platform` at start-up (the audit writer's primary-branch rule, the steps of
-`sync.code_tables`, the `employee` target of the access guard) and supplies the access guard's port
-`GrantSource`; `auth` reads people only through `PeopleDirectory`.
+`sync.code_tables`, the `employee` target of the access guard; with `add-settings-store` the settings
+store's ports `CompanyOfSettings`, `UserNames` and `SettingBranches`) and supplies the access guard's
+port `GrantSource`; `auth` reads people only through `PeopleDirectory`.
 
 Lint cannot see which tables a repository writes. Rule 1's "own tables only" is kept by review; the
 table-ownership guard comes with `add-ci-guard-rails`.

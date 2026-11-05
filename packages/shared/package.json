@@ -22,6 +22,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "permissions:generate": "node scripts/generate-permissions.mjs",
+    "settings:generate": "node scripts/generate-settings.mjs",
     "typecheck": "tsc --noEmit",
     "test:zones": "node ../../tools/test-zones.mjs packages/shared/src/time packages/shared/src/format"
   },

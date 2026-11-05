@@ -55,5 +55,8 @@
   "conflict": "တခြားတစ်ယောက်က ခုနက သိမ်းလိုက်ပါတယ်။ နောက်ဆုံး အချက်အလက် ကြည့်ဖို့ ပြန်ဖွင့်ပါ။",
   "zawgyi_text": "ဒီစာက Zawgyi ဖြစ်နေပါတယ်။ Unicode နဲ့ ရိုက်ပေးပါ။",
   "already_exists": "ဒါ ရှိပြီးသားပါ။ တန်ဖိုးကို စစ်ပြီး ထပ်လုပ်ပါ။",
-  "branch_in_use": "ဒီဆိုင်ခွဲမှာ assign ထားတဲ့ ဝန်ထမ်း {active_assignments} ယောက်၊ မပြီးသေးတဲ့ booking {open_bookings} ခု၊ ငွေမရှင်းရသေးတဲ့ sale {open_sales} ခု ကျန်နေပါသေးတယ်။"
+  "branch_in_use": "ဒီဆိုင်ခွဲမှာ assign ထားတဲ့ ဝန်ထမ်း {active_assignments} ယောက်၊ မပြီးသေးတဲ့ booking {open_bookings} ခု၊ ငွေမရှင်းရသေးတဲ့ sale {open_sales} ခု ကျန်နေပါသေးတယ်။",
+  "setting_scope": "ဒီ setting ကို ဒီနေရာမှာ ပြင်လို့ မရပါ။",
+  "maintenance": "စနစ်ကို ပြင်ဆင်နေပါတယ်။ ခဏနေမှ ပြန်ကြိုးစားပါ။",
+  "invalid_value": "ပြထားတဲ့ထဲက တစ်ခုကို ရွေးပါ။"
 }

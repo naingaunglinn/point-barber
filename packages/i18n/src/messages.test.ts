@@ -22,8 +22,10 @@ describe('language files', () => {
       'auth',
       'today',
       'pos',
+      // add-settings-store task 1.8 — owner-approved copy of 05/Nov/2026 (S18).
       'settings',
       'branch',
+      'maintenance',
     ]);
   });
 

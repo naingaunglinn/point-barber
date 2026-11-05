@@ -106,7 +106,8 @@ sudo -u deploy /opt/point/infra/pilot-backup/restore-check.sh <YYYY-MM-DD>   # e
 ```
 
 It prints `restore-check ok pilot/daily/point-<date>.dump: users <n> in the dump, <m> now`, and it
-drops the scratch database. The two counts match, or differ only by users created since 03:00.
+drops the scratch database. Before that line it also prints `NOTICE: database "restore_check" does not
+exist, skipping` and an rclone `NOTICE`; neither is a failure. The two counts match, or differ only by users created since 03:00.
 `restore-check FAILED read …` means the object is missing or the key cannot read it; `FAILED
 restore …` means the dump does not restore — treat that as a failed backup. Write the date and the
 result in `install.md`'s install record. CI job `deploy-script` runs the same script.

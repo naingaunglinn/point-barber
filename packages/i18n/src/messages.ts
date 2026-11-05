@@ -4,6 +4,7 @@ import branchEn from '../messages/en/branch.json';
 import commonEn from '../messages/en/common.json';
 import devuiEn from '../messages/en/devui.json';
 import errorEn from '../messages/en/error.json';
+import maintenanceEn from '../messages/en/maintenance.json';
 import posEn from '../messages/en/pos.json';
 import reasonEn from '../messages/en/reason.json';
 import receiptEn from '../messages/en/receipt.json';
@@ -15,6 +16,7 @@ import branchMy from '../messages/my/branch.json';
 import commonMy from '../messages/my/common.json';
 import devuiMy from '../messages/my/devui.json';
 import errorMy from '../messages/my/error.json';
+import maintenanceMy from '../messages/my/maintenance.json';
 import posMy from '../messages/my/pos.json';
 import reasonMy from '../messages/my/reason.json';
 import receiptMy from '../messages/my/receipt.json';
@@ -37,6 +39,7 @@ const MESSAGES = {
     pos: posEn,
     settings: settingsEn,
     branch: branchEn,
+    maintenance: maintenanceEn,
   },
   my: {
     common: commonMy,
@@ -50,6 +53,7 @@ const MESSAGES = {
     pos: posMy,
     settings: settingsMy,
     branch: branchMy,
+    maintenance: maintenanceMy,
   },
 } as const;
 

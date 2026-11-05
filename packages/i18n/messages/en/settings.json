@@ -1,6 +1,149 @@
 {
   "nav": {
     "title": "Settings",
+    "additional": "Additional settings",
+    "maintenance": "Maintenance mode",
     "branches": "Branches"
+  },
+  "group": {
+    "booking": "Booking",
+    "sales": "Sales & payments",
+    "closing": "Closing",
+    "dashboard": "Dashboard",
+    "system": "System"
+  },
+  "booking": {
+    "slot_interval_minutes": {
+      "label": "Slot interval",
+      "help": "Booking start times are offered at this step, e.g. 15 min: 10:00 AM, 10:15 AM.",
+      "impact": "Applies to new bookings from now; existing bookings keep their times"
+    },
+    "advance_window_days": {
+      "label": "Advance window",
+      "help": "How many days ahead customers and staff can book. 0 = today only.",
+      "impact": "Applies to new bookings from now; existing bookings stay, even outside the new window."
+    }
+  },
+  "home_service": {
+    "transport_fee_amount": {
+      "label": "Home-service transport fee",
+      "help": "Charged to the customer on each home-service visit. 0 = the shop pays.",
+      "impact": "Applies to new home-service bookings and visits from now; existing bookings keep their transport fee."
+    },
+    "travel_minutes": {
+      "label": "Home-service travel time",
+      "help": "Blocks the barber this long before and after a home-service visit, for travel."
+    }
+  },
+  "sales": {
+    "tax_enabled": {
+      "label": "Tax",
+      "help": "Adds tax to sales. Stays off until tax calculation is added."
+    },
+    "service_charge_enabled": {
+      "label": "Service charge",
+      "help": "Adds a service charge to sales. Stays off until its calculation is added."
+    }
+  },
+  "receipt": {
+    "printer_width_mm": {
+      "label": "Receipt printer width",
+      "help": "Paper width of the branch's receipt printer."
+    },
+    "auto_print": {
+      "label": "Print receipts automatically",
+      "help": "Prints the receipt after Finish on an Android phone with a printer."
+    },
+    "thank_you_text": {
+      "label": "Thank-you text on receipts",
+      "help": "Printed at the bottom of every receipt."
+    }
+  },
+  "thank_you": {
+    "helper": "Only the English text is printed on receipts. Leave English empty for no line."
+  },
+  "closing": {
+    "cash_difference_tolerance_amount": {
+      "label": "Cash difference tolerance",
+      "help": "At day closing, a cash difference above this is flagged and the admin is notified. 0 = any difference.",
+      "impact": "Applies to closings from now; closed days keep their result."
+    }
+  },
+  "dashboard": {
+    "show_own_earnings_all": {
+      "label": "Show barbers their own earnings",
+      "help": "Each barber sees only their own sales and commission estimate. A per-barber setting overrides this."
+    }
+  },
+  "system": {
+    "default_language": {
+      "label": "Default language",
+      "help": "Used for staff who haven't chosen a language, and for their sign-in code e-mails."
+    },
+    "upload_max_mb": {
+      "label": "Upload size limit",
+      "help": "Largest file staff can upload, 1–10 MB."
+    },
+    "maintenance": {
+      "label": "Maintenance mode",
+      "help": "Shown here only. Turn it on or off on its own screen."
+    }
+  },
+  "choice": {
+    "booking": {
+      "slot_interval_minutes": {
+        "5": "5 min",
+        "10": "10 min",
+        "15": "15 min",
+        "30": "30 min"
+      }
+    },
+    "receipt": {
+      "printer_width_mm": {
+        "58": "58 mm",
+        "80": "80 mm"
+      }
+    },
+    "system": {
+      "default_language": {
+        "1": "Myanmar",
+        "2": "English"
+      }
+    }
+  },
+  "unit": {
+    "MMK": "Ks",
+    "minutes": "min",
+    "days": "days",
+    "MB": "MB",
+    "mm": "mm"
+  },
+  "source": {
+    "default": "Default",
+    "company": "Company",
+    "branch": "Branch override"
+  },
+  "action": {
+    "save": "Save",
+    "reset_default": "Reset to default",
+    "reset_company": "Reset to company value",
+    "override": "Override for a branch",
+    "history": "History",
+    "load_more": "Load more"
+  },
+  "toast": {
+    "saved": "Setting saved"
+  },
+  "impact": {
+    "title": "Change to {value}?"
+  },
+  "value": {
+    "on": "On",
+    "off": "Off",
+    "none": "—"
+  },
+  "history": {
+    "line": "{name} · {datetime} · {old} → {new}",
+    "empty": "No changes yet."
   }
 }
