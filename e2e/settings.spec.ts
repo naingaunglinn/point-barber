@@ -154,7 +154,9 @@ test('7.2 Flow "impact note and history" — the slot interval 15 → 30 and its
     await page.getByTestId(`setting-${SLOT}-history-open`).click();
     const first = page.getByTestId('setting-history-line').first();
     await expect(first).toContainText('U Kyaw Zin');
-    await expect(first).toContainText('15 min → 30 min');
+    // The first change of a value that came from the default: the history row's old value is null
+    // (spec "Set a company value", design D10: `—` for none), so the line reads "— → 30 min".
+    await expect(first).toContainText('— → 30 min');
     await context.close();
   } finally {
     await reset(SLOT);
