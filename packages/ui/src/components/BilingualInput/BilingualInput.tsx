@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useId, useState, type FocusEvent } from 'react';
+import { useId, useState, type FocusEvent, type Ref } from 'react';
 
 import { TextInput } from '../TextInput/TextInput';
 import { FieldMessage } from '../FormField/FieldMessage';
@@ -10,7 +10,8 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // first and required, English second and optional — empty English is reported as `null`, and the
 // English screens then show the Myanmar text. Both inputs convert Zawgyi on blur (TextInput). Leaving
 // the pair with an empty Myanmar name shows `error.required` under the Myanmar input, unless the form
-// already marks the field.
+// already marks the field. A form binds the two members to the two inputs: `ref` / `enRef` are the
+// elements it focuses on an error, `onBlur` gets the event of leaving the pair, `testIds` names them.
 
 export interface Bilingual {
   readonly mm: string;
@@ -25,10 +26,17 @@ export interface BilingualInputProps {
   readonly disabled?: boolean;
   /** From FormField: these go to the Myanmar input, the required one. */
   readonly id?: string;
-  readonly onBlur?: () => void;
+  /** Leaving the pair: the blur of the input the focus left, to an element outside the pair. */
+  readonly onBlur?: (event: FocusEvent<HTMLDivElement>) => void;
   readonly 'aria-invalid'?: true;
   readonly 'aria-describedby'?: string;
   readonly 'aria-required'?: true;
+  /** The Myanmar input — the element a form focuses on an error of the Myanmar member. */
+  readonly ref?: Ref<HTMLInputElement>;
+  /** The English input — the element a form focuses on an error of the English member. */
+  readonly enRef?: Ref<HTMLInputElement>;
+  /** Test ids of the two inputs (CG-TEST-06). */
+  readonly testIds?: { readonly mm: string; readonly en: string };
 }
 
 const REQUIRED_MARK = '*';
@@ -43,6 +51,9 @@ export function BilingualInput({
   onBlur,
   'aria-invalid': ariaInvalid,
   'aria-describedby': describedBy,
+  ref,
+  enRef,
+  testIds,
 }: BilingualInputProps) {
   const t = useTranslations();
   const ownId = useId();
@@ -56,7 +67,7 @@ export function BilingualInput({
   const leave = (event: FocusEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) return; // still inside the pair
     setMissing(value.mm.trim() === '');
-    onBlur?.();
+    onBlur?.(event);
   };
 
   return (
@@ -70,6 +81,8 @@ export function BilingualInput({
         </label>
         <TextInput
           id={mmId}
+          ref={ref}
+          data-testid={testIds?.mm}
           lang="my"
           value={value.mm}
           multiline={multiline}
@@ -93,6 +106,8 @@ export function BilingualInput({
         </label>
         <TextInput
           id={enId}
+          ref={enRef}
+          data-testid={testIds?.en}
           lang="en"
           value={value.en ?? ''}
           multiline={multiline}
