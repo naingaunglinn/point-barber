@@ -129,27 +129,41 @@ describe('add-settings-store · settings · Branch overrides on the screen', () 
     fireEvent.click(await screen.findByTestId(`setting-${FEE}-branch-${B3}-reset`));
     await waitFor(() => expect(branchLine(B3)).toBe('Point 3.02,000 KsCompany'));
     expect(sent('POST')).toStrictEqual([[`/api/v1/settings/${FEE}/reset`, { branch_id: B3 }]]);
+    // The field shows the value it now has, not the 3,000 it held before the reset.
+    const b3 = screen.getByTestId(`setting-${FEE}-branch-${B3}`);
+    expect((within(b3).getByRole('textbox') as HTMLInputElement).value).toBe('2,000');
   });
 
   it('"Reset to default" on a company value whose source is Company', async () => {
+    let reset = false;
     open(kyawZinMe(), {
-      'GET /api/v1/settings': json(
-        200,
-        listOf({
-          only: ROWS,
-          items: {
-            'booking.slot_interval_minutes': {
-              company_value: 30,
-              effective: 30,
-              source: 'company',
-              updated_by: KYAW_ZIN_REF,
-              updated_at: '2026-10-05T09:00:00+06:30',
-            },
-          },
-        }),
-      ),
-      'POST /api/v1/settings/booking.slot_interval_minutes/reset': json(200, {}),
+      'GET /api/v1/settings': () =>
+        json(
+          200,
+          listOf({
+            only: ROWS,
+            items: reset
+              ? { 'booking.slot_interval_minutes': { company_value: 15, effective: 15 } }
+              : {
+                  'booking.slot_interval_minutes': {
+                    company_value: 30,
+                    effective: 30,
+                    source: 'company',
+                    updated_by: KYAW_ZIN_REF,
+                    updated_at: '2026-10-05T09:00:00+06:30',
+                  },
+                },
+          }),
+        ),
+      'POST /api/v1/settings/booking.slot_interval_minutes/reset': () => {
+        reset = true;
+        return json(200, {});
+      },
     });
+    const slot = await screen.findByTestId('setting-booking.slot_interval_minutes-row');
+    expect(within(slot).getByRole('radio', { name: '30 min' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
     fireEvent.click(
       await screen.findByTestId('setting-booking.slot_interval_minutes-reset-default'),
     );
@@ -158,8 +172,17 @@ describe('add-settings-store · settings · Branch overrides on the screen', () 
         ['/api/v1/settings/booking.slot_interval_minutes/reset', {}],
       ]),
     );
+    // The control shows the default it now has: 15 min, not the 30 it held before.
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('setting-booking.slot_interval_minutes-row'))
+          .getByRole('radio', { name: '15 min' })
+          .getAttribute('aria-checked'),
+      ).toBe('true'),
+    );
     // A value at its default offers no reset.
     expect(screen.queryByTestId('setting-booking.advance_window_days-reset-default')).toBeNull();
+    expect(screen.queryByTestId('setting-booking.slot_interval_minutes-reset-default')).toBeNull();
   });
 });
 

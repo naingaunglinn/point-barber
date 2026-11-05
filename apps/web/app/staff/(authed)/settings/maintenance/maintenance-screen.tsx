@@ -177,7 +177,17 @@ export function MaintenanceScreen() {
           <Skeleton shape="text" />
         </div>
       ) : (
-        <MaintenanceForm status={status.data} />
+        <MaintenanceForm
+          // The form shows the stored values: after a save (an OFF clears the expected end and the
+          // messages) or another admin's change it starts again from them.
+          key={JSON.stringify([
+            status.data.maintenance,
+            status.data.until,
+            status.data.message_mm,
+            status.data.message_en,
+          ])}
+          status={status.data}
+        />
       )}
     </div>
   );

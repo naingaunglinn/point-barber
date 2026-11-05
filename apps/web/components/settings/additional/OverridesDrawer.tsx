@@ -68,6 +68,7 @@ function BranchOverride({
       {alert === null ? null : <FormAlert problem={alert} />}
       {view.editable ? (
         <SettingForm
+          key={JSON.stringify(view.effective)}
           settingKey={settingKey}
           view={view}
           branchId={branchId}

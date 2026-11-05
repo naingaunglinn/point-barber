@@ -37,6 +37,9 @@ export function SettingRow({ view }: Readonly<{ view: SettingView }>) {
         <div className="min-w-0 flex-1">
           {view.editable ? (
             <SettingForm
+              // A new stored value (a reset, another device's save) gives the control that value; a
+              // refetch with the same value keeps what the user is typing.
+              key={JSON.stringify(view.effective)}
               settingKey={key}
               view={view}
               label={label}

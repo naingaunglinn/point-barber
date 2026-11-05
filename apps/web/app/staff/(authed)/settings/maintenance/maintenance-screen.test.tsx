@@ -117,6 +117,13 @@ describe('add-settings-store · settings · The Maintenance mode screen and the 
     fireEvent.click(toggle);
     fireEvent.click(screen.getByTestId('maintenance-save'));
     await waitFor(() => expect(sent()).toStrictEqual([{ enabled: false }]));
+    // The form starts again from the stored values: OFF, and the message the save cleared is gone.
+    await waitFor(() =>
+      expect((screen.getByRole('textbox', { name: /English/ }) as HTMLInputElement).value).toBe(''),
+    );
+    expect(
+      screen.getByRole('switch', { name: 'Maintenance mode' }).getAttribute('aria-checked'),
+    ).toBe('false');
   });
 
   it('a message of 201 characters is refused before sending (owner SS2)', async () => {
