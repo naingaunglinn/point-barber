@@ -227,6 +227,7 @@ export function BranchForm<B extends BranchBody>({
             helper={t('branch.field.codeHelp')}
             maxLength={BranchLimits.CODE_MAX}
             message={codeMessage}
+            autoCapitalize="characters"
           />
         ) : (
           <BranchCode code={branch.code} />
@@ -290,7 +291,7 @@ export function BranchForm<B extends BranchBody>({
           name="map_url"
           label={t('branch.field.mapUrl')}
           helper={t('branch.field.mapUrlHelp')}
-          inputMode="url"
+          link
           maxLength={BranchLimits.LINK_MAX}
         />
       </BranchSection>
@@ -301,7 +302,7 @@ export function BranchForm<B extends BranchBody>({
           form={form}
           name="website_url"
           label={t('branch.field.websiteUrl')}
-          inputMode="url"
+          link
           maxLength={BranchLimits.LINK_MAX}
         />
         <SocialLinksEditor form={form} />

@@ -12,14 +12,16 @@ import { type BranchBody, type BranchForm, BranchTextField } from './BranchField
 // their limits" · P1.BR.02 · design D4 · D9): Facebook, TikTok, Instagram and YouTube as web addresses
 // (`http(s)` only — a `javascript:` link is refused under its field), Viber as text (a `viber://` link or
 // a phone), and up to 10 *Other* rows of a label and a link, added and removed here. The object replaces
-// the stored one whole; blank links are left out (design D4).
+// the stored one whole; blank links are left out (design D4). Each web address opens the phone's url
+// keyboard without a capital letter; Viber keeps the text keyboard.
 
-const KEYBOARD: Readonly<Record<SocialLinkKey, 'url' | 'text'>> = {
-  facebook: 'url',
-  tiktok: 'url',
-  instagram: 'url',
-  youtube: 'url',
-  viber: 'text',
+/** The members that are `http(s)` addresses — every one but Viber. */
+const LINK: Readonly<Record<SocialLinkKey, boolean>> = {
+  facebook: true,
+  tiktok: true,
+  instagram: true,
+  youtube: true,
+  viber: false,
 };
 
 export function SocialLinksEditor<B extends BranchBody>({
@@ -35,7 +37,7 @@ export function SocialLinksEditor<B extends BranchBody>({
           form={form}
           name={`social_links.${key}`}
           label={t(key)}
-          inputMode={KEYBOARD[key]}
+          link={LINK[key]}
           maxLength={COMPANY_LIMITS.LINK}
         />
       ))}
@@ -59,7 +61,7 @@ export function SocialLinksEditor<B extends BranchBody>({
               name={`social_links.other.${index}.url`}
               label={t('url')}
               required
-              inputMode="url"
+              link
               maxLength={COMPANY_LIMITS.LINK}
             />
             <Button

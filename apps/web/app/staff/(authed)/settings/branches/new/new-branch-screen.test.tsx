@@ -94,6 +94,37 @@ describe('New branch — the form', () => {
     expect(field('address_mm').textContent).not.toContain('*');
   });
 
+  it('the code asks for capitals; the http address fields: the url keyboard, no capital letter, no correction — Viber, phone, e-mail and a link label as before', () => {
+    renderPos(<NewBranchScreen />, { me: PEOPLE.kyawZin });
+    fireEvent.click(screen.getByTestId('branch-social-add'));
+    // The code takes capital letters and digits only (P1.BR.02), and the server keeps its case.
+    expect(input('code').getAttribute('autocapitalize')).toBe('characters');
+    expect(input('code').getAttribute('inputmode')).toBeNull();
+    expect(input('code').getAttribute('autocorrect')).toBeNull();
+    for (const member of [
+      'map_url',
+      'website_url',
+      'social_links.facebook',
+      'social_links.tiktok',
+      'social_links.instagram',
+      'social_links.youtube',
+      'social_links.other.0.url',
+    ]) {
+      expect(input(member).getAttribute('inputmode'), member).toBe('url');
+      expect(input(member).getAttribute('autocapitalize'), member).toBe('none');
+      expect(input(member).getAttribute('autocorrect'), member).toBe('off');
+    }
+    // Viber is free text — a `viber://` link or a phone.
+    for (const member of ['social_links.viber', 'social_links.other.0.label', 'phone', 'email']) {
+      expect(input(member).getAttribute('autocapitalize'), member).toBeNull();
+      expect(input(member).getAttribute('autocorrect'), member).toBeNull();
+    }
+    expect(input('social_links.viber').getAttribute('inputmode')).toBeNull();
+    expect(input('social_links.other.0.label').getAttribute('inputmode')).toBeNull();
+    expect(input('phone').getAttribute('inputmode')).toBe('tel');
+    expect(input('email').getAttribute('inputmode')).toBe('email');
+  });
+
   it('Scenario: The admin creates B4 — the toast "Branch saved" and the new branch opens', async () => {
     const saved = vi.spyOn(toast, 'success');
     routeFetch(fetchMock, { [CREATE]: json(201, B4) });

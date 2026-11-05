@@ -8,7 +8,9 @@ import { FormField, TextInput, fieldErrorOf, useAppForm, useTextField } from '@p
 import type { BranchFormValues } from '../../lib/branches/form-values';
 
 // The parts of the branch form (add-branch-management design D9): its titled sections (AD-FORM-05) and
-// a text input bound to one member, under the wrapper `branch-field-<member>` (CG-TEST-06).
+// a text input bound to one member, under the wrapper `branch-field-<member>` (CG-TEST-06). An `http(s)`
+// address opens the phone's url keyboard without a capital letter or a correction, as on Settings ›
+// Company.
 
 export type BranchBody = BranchCreateBody | BranchUpdateBody;
 export type BranchForm<B extends BranchBody> = ReturnType<typeof useAppForm<BranchFormValues, B>>;
@@ -54,6 +56,8 @@ export function BranchTextField<B extends BranchBody>({
   type,
   maxLength,
   message,
+  link = false,
+  autoCapitalize,
 }: Readonly<{
   form: BranchForm<B>;
   name: BranchTextName;
@@ -65,6 +69,10 @@ export function BranchTextField<B extends BranchBody>({
   maxLength?: number;
   /** The field's own wording of a code (`already_exists` under *Code*). */
   message?: (code: string) => string | undefined;
+  /** An `http(s)` address: the url keyboard, no capital letter and no correction. */
+  link?: boolean;
+  /** `characters` for the code, which takes only capital letters and digits. */
+  autoCapitalize?: 'characters';
 }>) {
   const field = useTextField(form, name);
   const error = fieldErrorOf(form.formState.errors, name);
@@ -85,6 +93,14 @@ export function BranchTextField<B extends BranchBody>({
             {...(inputMode === undefined ? {} : { inputMode })}
             {...(type === undefined ? {} : { type })}
             {...(maxLength === undefined ? {} : { maxLength })}
+            {...(autoCapitalize === undefined ? {} : { autoCapitalize })}
+            {...(link
+              ? {
+                  inputMode: 'url' as const,
+                  autoCapitalize: 'none' as const,
+                  autoCorrect: 'off' as const,
+                }
+              : {})}
           />
         )}
       </FormField>
