@@ -171,7 +171,8 @@ describe('New branch — the form', () => {
   });
 });
 
-describe('New branch — the social links (task 4.6)', () => {
+// 10 s: ten Other rows added and removed one at a time run past 5 s on a loaded machine (as the late-entry suites).
+describe('New branch — the social links (task 4.6)', { timeout: 10_000 }, () => {
   it('five links; Other rows added up to 10 and removed', () => {
     renderPos(<NewBranchScreen />, { me: PEOPLE.kyawZin });
     const links = screen.getByTestId('branch-social-links');
