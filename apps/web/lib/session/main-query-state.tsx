@@ -18,18 +18,24 @@ export function MainQueryState({
   error,
   children,
 }: Readonly<{ error: unknown; children: ReactNode }>) {
-  const t = useTranslations('auth.landing');
   if (
     !(error instanceof ApiProblem) ||
     (error.status !== HttpStatus.FORBIDDEN && error.status !== HttpStatus.NOT_FOUND)
   ) {
     return <>{children}</>;
   }
+  return <RefusedPage code={error.status === HttpStatus.FORBIDDEN ? 'forbidden' : 'not_found'} />;
+}
+
+/**
+ * The 403 or 404 page itself, with its link Home — also for a screen the user's grants do not reach,
+ * decided before any request (add-company-profile: Settings › Company without a `company.*` code).
+ */
+export function RefusedPage({ code }: Readonly<{ code: 'forbidden' | 'not_found' }>) {
+  const t = useTranslations('auth.landing');
   return (
-    <div className="flex flex-col items-center gap-3 p-4">
-      <ErrorState
-        problem={{ code: error.status === HttpStatus.FORBIDDEN ? 'forbidden' : 'not_found' }}
-      />
+    <div className="flex flex-col items-center gap-3 p-4" data-testid="refused-page">
+      <ErrorState problem={{ code }} />
       <Link href="/" className="font-semibold text-primary underline">
         {t('home')}
       </Link>

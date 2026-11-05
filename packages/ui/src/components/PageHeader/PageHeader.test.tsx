@@ -89,4 +89,22 @@ describe('PageHeader', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
     expect(screen.getByTestId('filters')).toBeDefined();
   });
+
+  // add-branch-management (design D9 test ids): an action's testId lands on its button or menu item.
+  it("puts each action's testId on its button or its menu item", () => {
+    renderIntl(
+      <PageHeader
+        title={POINT_3}
+        primary={action(NEW_BOOKING, { testId: 'primary' })}
+        secondary={[
+          action(EXPORT, { testId: 'export' }),
+          action('Delete branch', { destructive: true, testId: 'delete' }),
+        ]}
+      />,
+    );
+    expect(screen.getByTestId('primary').textContent).toBe(NEW_BOOKING);
+    expect(screen.getByTestId('export').textContent).toBe(EXPORT);
+    openMenu();
+    expect(screen.getByTestId('delete').getAttribute('role')).toBe('menuitem');
+  });
 });

@@ -77,4 +77,12 @@ describe('EmptyState', () => {
     );
     expect(screen.queryByRole('button', { name: NEW_BOOKING })).toBeNull();
   });
+
+  // add-branch-management — a filtered list says it in the title alone (branch.list.emptyFiltered).
+  it('shows the title alone when there is no body', () => {
+    renderIntl(<EmptyState title={NO_BOOKINGS} />);
+    const empty = document.querySelector('[data-slot="empty-state"]');
+    expect(empty?.textContent).toBe(NO_BOOKINGS);
+    expect(empty?.querySelectorAll('p')).toHaveLength(1);
+  });
 });

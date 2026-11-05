@@ -54,12 +54,17 @@ export function PageHeader({
           <div className="flex flex-wrap items-center gap-2" data-slot="page-actions">
             <ActionMenu actions={menu} />
             {visible.map((action) => (
-              <Button key={action.label} variant="secondary" onClick={action.onPress}>
+              <Button
+                key={action.label}
+                variant="secondary"
+                onClick={action.onPress}
+                data-testid={action.testId}
+              >
                 {action.label}
               </Button>
             ))}
             {showPrimary ? (
-              <Button variant="primary" onClick={primary.onPress}>
+              <Button variant="primary" onClick={primary.onPress} data-testid={primary.testId}>
                 {primary.label}
               </Button>
             ) : null}

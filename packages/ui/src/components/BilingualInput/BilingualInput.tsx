@@ -12,6 +12,8 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // the pair with an empty Myanmar name shows `error.required` under the Myanmar input, unless the form
 // already marks the field. A form binds the two members to the two inputs: `ref` / `enRef` are the
 // elements it focuses on an error, `onBlur` gets the event of leaving the pair, `testIds` names them.
+// `required={false}` makes the Myanmar text optional too — a pair such as an address (add-branch-
+// management): no asterisk, no `aria-required` and no message for an empty pair.
 
 export interface Bilingual {
   readonly mm: string;
@@ -23,6 +25,8 @@ export interface BilingualInputProps {
   readonly onChange: (value: Bilingual) => void;
   readonly multiline?: boolean;
   readonly maxLength?: number;
+  /** Default true: the Myanmar text is required (AD-FORM-09); false for an optional pair. */
+  readonly required?: boolean;
   readonly disabled?: boolean;
   /** From FormField: these go to the Myanmar input, the required one. */
   readonly id?: string;
@@ -46,6 +50,7 @@ export function BilingualInput({
   onChange,
   multiline,
   maxLength,
+  required = true,
   disabled,
   id,
   onBlur,
@@ -66,7 +71,7 @@ export function BilingualInput({
 
   const leave = (event: FocusEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) return; // still inside the pair
-    setMissing(value.mm.trim() === '');
+    setMissing(required && value.mm.trim() === '');
     onBlur?.(event);
   };
 
@@ -75,9 +80,11 @@ export function BilingualInput({
       <div className="flex flex-col gap-1">
         <label htmlFor={mmId} className="text-sm">
           <span>{t('common.bilingual.mm')}</span>
-          <span aria-hidden className="ms-1 text-destructive">
-            {REQUIRED_MARK}
-          </span>
+          {required ? (
+            <span aria-hidden className="ms-1 text-destructive">
+              {REQUIRED_MARK}
+            </span>
+          ) : null}
         </label>
         <TextInput
           id={mmId}
@@ -88,7 +95,7 @@ export function BilingualInput({
           multiline={multiline}
           maxLength={maxLength}
           disabled={disabled}
-          aria-required
+          aria-required={required || undefined}
           aria-invalid={ariaInvalid ?? (showMissing || undefined)}
           aria-describedby={[describedBy, showMissing ? messageId : null, hintId]
             .filter(Boolean)
