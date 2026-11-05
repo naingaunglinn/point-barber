@@ -154,6 +154,7 @@ function StaffShell({
       <AppShell
         nav={rail.nav}
         {...(rail.activeKey === undefined ? {} : { activeKey: rail.activeKey })}
+        {...(rail.activeItemKey === undefined ? {} : { activeItemKey: rail.activeItemKey })}
         bottomNav={<StaffBottomNav />}
         branchSwitcher={
           me.branches_in_scope.length > 0 ? (
