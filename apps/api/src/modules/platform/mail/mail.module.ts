@@ -3,6 +3,7 @@ import { Module, type OnModuleInit } from '@nestjs/common';
 import { AppConfig } from '../../../common/config/config.js';
 import { Jobs } from '../jobs/jobs.service.js';
 import { JobsModule } from '../jobs/jobs.module.js';
+import { SettingsModule } from '../settings/settings.module.js';
 import { EmailSendJob, type EmailSendData } from './email-send.job.js';
 import { EMAIL_SEND, Mail } from './mail.service.js';
 import { MailTemplates } from './mail-templates.js';
@@ -19,7 +20,7 @@ export function mailTransportFor(config: AppConfig): MailTransport {
 }
 
 @Module({
-  imports: [JobsModule],
+  imports: [JobsModule, SettingsModule],
   providers: [
     { provide: MailTransport, inject: [AppConfig], useFactory: mailTransportFor },
     MailTemplates,

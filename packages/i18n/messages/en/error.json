@@ -53,5 +53,8 @@
   "locked": "This record is finished and can no longer be changed.",
   "late_entry_time": "The times must be in order — started, completed, paid, finished — and not later than now.",
   "conflict": "Someone saved this just now. Reload to see the latest version.",
-  "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode."
+  "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode.",
+  "setting_scope": "This setting can't be changed here.",
+  "maintenance": "The system is under maintenance. Please try again later.",
+  "invalid_value": "Choose one of the listed values."
 }

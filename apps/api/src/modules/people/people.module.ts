@@ -4,7 +4,15 @@ import { PERMISSIONS } from '@point/shared';
 import { GrantSource } from '../../common/access/grant-set.js';
 import { EMPLOYEE_TARGET, TargetResolvers } from '../../common/access/resolvers.js';
 import { TransactionRunner } from '../../common/database/transaction-runner.js';
-import { Audit, CodeTables, PlatformModule } from '../platform/index.js';
+import {
+  Audit,
+  CodeTables,
+  CompanyOfSettings,
+  PlatformModule,
+  RegisteredGrantSource,
+  SettingBranches,
+  UserNames,
+} from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CompanyController } from './company/company.controller.js';
@@ -34,9 +42,11 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 
 // Bounded context `people` (ADR-001 · docs/engineering/module-map.md): company, branches, employees,
 // branch assignments, roles and permissions. It builds on platform (audit writer, jobs); what platform
-// needs from people — the primary-branch rule of the audit writer, the steps of sync.code_tables —
-// is registered here at start-up, so the two modules never import each other. The access guard's
-// port GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design D11).
+// needs from people — the primary-branch rule of the audit writer, the steps of sync.code_tables, the
+// company, user names, branches and grant rows of the settings store (add-settings-store design D1 /
+// D9) — is registered here at start-up, so the two modules never import each other. The access
+// guard's port GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design
+// D11).
 @Module({
   imports: [PlatformModule],
   controllers: [OrganizationController, CompanyController],
@@ -94,11 +104,27 @@ export class PeopleModule implements OnModuleInit {
     private readonly catalogue: PermissionCatalogue,
     private readonly baseSeed: BaseSeed,
     private readonly targets: TargetResolvers,
+    private readonly companies: CompanyRepository,
+    private readonly names: DisplayNameRepository,
+    private readonly companyOfSettings: CompanyOfSettings,
+    private readonly userNames: UserNames,
+    private readonly settingBranches: SettingBranches,
+    private readonly gateGrants: RegisteredGrantSource,
+    private readonly grantSource: GrantSource,
   ) {}
 
   onModuleInit(): void {
     this.audit.usePrimaryBranchOf((employeeId) => this.directory.primaryBranchId(employeeId));
     this.targets.register(EMPLOYEE_TARGET, (id) => this.directory.employeeTarget(id));
+    // The settings store: the one company (null before the base seed), the names behind a value
+    // or a history line, and whether a branch exists (add-settings-store design D1).
+    this.companyOfSettings.use(() => this.companies.companyId());
+    this.userNames.use((userIds) => this.names.namesOfUsers(userIds));
+    this.settingBranches.use(
+      async (branchId) => (await this.directory.branchSummaries([branchId])).length === 1,
+    );
+    // The maintenance gate decides on the same grant rows as the access guard (design D9).
+    this.gateGrants.use(this.grantSource);
     // sync.code_tables (design D10): the catalogue first, then the base seed that reads it.
     this.codeTables.contribute('permission catalogue', 10, async () => {
       await this.runner.run((tx) => this.catalogue.sync(tx, PERMISSIONS));

@@ -21,6 +21,12 @@ export { PlatformModule } from './platform.module.js';
 export { RateLimiter, type RateLimitResult } from './rate-limit/rate-limiter.js';
 export { MaintenanceGate } from './settings/maintenance-gate.js';
 export {
+  CompanyOfSettings,
+  RegisteredGrantSource,
+  SettingBranches,
+  UserNames,
+} from './settings/ports.js';
+export {
   CLIENT_READABLE_KEYS,
   type SettingKey,
   SettingsReader,
