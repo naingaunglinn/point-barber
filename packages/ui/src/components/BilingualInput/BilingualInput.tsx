@@ -10,8 +10,12 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // first and required, English second and optional — empty English is reported as `null`, and the
 // English screens then show the Myanmar text. Both inputs convert Zawgyi on blur (TextInput). Leaving
 // the pair with an empty Myanmar name shows `error.required` under the Myanmar input, unless the form
-// already marks the field. A form binds the two members to the two inputs: `ref` / `enRef` are the
-// elements it focuses on an error, `onBlur` gets the event of leaving the pair, `testIds` names them.
+// already marks the field. `required={false}` makes the Myanmar text optional too — a pair such as an
+// address (add-branch-management) or the thank-you text and the maintenance messages (add-settings-store):
+// no asterisk, no `aria-required` and no message for an empty pair. `hint` replaces the default hint under
+// the pair with a translated text of the screen (add-settings-store). A form binds the two members to the
+// two inputs: `ref` / `enRef` are the elements it focuses on an error, `onBlur` gets the event of leaving
+// the pair, `testIds` names them.
 
 export interface Bilingual {
   readonly mm: string;
@@ -23,6 +27,10 @@ export interface BilingualInputProps {
   readonly onChange: (value: Bilingual) => void;
   readonly multiline?: boolean;
   readonly maxLength?: number;
+  /** Default true: the Myanmar text is required (AD-FORM-09); false for an optional pair. */
+  readonly required?: boolean;
+  /** Translated text under the pair in place of `common.bilingual.hint`. */
+  readonly hint?: string;
   readonly disabled?: boolean;
   /** From FormField: these go to the Myanmar input, the required one. */
   readonly id?: string;
@@ -46,6 +54,8 @@ export function BilingualInput({
   onChange,
   multiline,
   maxLength,
+  required = true,
+  hint,
   disabled,
   id,
   onBlur,
@@ -66,7 +76,7 @@ export function BilingualInput({
 
   const leave = (event: FocusEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) return; // still inside the pair
-    setMissing(value.mm.trim() === '');
+    setMissing(required && value.mm.trim() === '');
     onBlur?.(event);
   };
 
@@ -75,9 +85,11 @@ export function BilingualInput({
       <div className="flex flex-col gap-1">
         <label htmlFor={mmId} className="text-sm">
           <span>{t('common.bilingual.mm')}</span>
-          <span aria-hidden className="ms-1 text-destructive">
-            {REQUIRED_MARK}
-          </span>
+          {required ? (
+            <span aria-hidden className="ms-1 text-destructive">
+              {REQUIRED_MARK}
+            </span>
+          ) : null}
         </label>
         <TextInput
           id={mmId}
@@ -88,7 +100,7 @@ export function BilingualInput({
           multiline={multiline}
           maxLength={maxLength}
           disabled={disabled}
-          aria-required
+          aria-required={required || undefined}
           aria-invalid={ariaInvalid ?? (showMissing || undefined)}
           aria-describedby={[describedBy, showMissing ? messageId : null, hintId]
             .filter(Boolean)
@@ -118,7 +130,7 @@ export function BilingualInput({
         />
       </div>
       <p id={hintId} className="text-sm text-muted-foreground">
-        {t('common.bilingual.hint')}
+        {hint ?? t('common.bilingual.hint')}
       </p>
     </div>
   );

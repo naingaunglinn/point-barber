@@ -257,3 +257,23 @@ describe('Golden images — the receipt with the company logo (add-company-profi
     30_000,
   );
 });
+
+// add-settings-store task 7.4 (PDF part) — settings spec "The receipt thank-you text" (AD-RCPT-01 · owner
+// SS1): the English text of `receipt.thank_you_text` in the receipt's footer is in the PDF's text; the
+// e2e flow checks the receipt JSON of a finished walk-in, as Playwright cannot read a PDF's text.
+describe('add-settings-store · settings · The receipt thank-you text', () => {
+  it('Scenario: The English text is printed — "Thank you!" reads back from the PDF', async () => {
+    const html = receiptHtml({
+      view: { ...receiptView, footer: { ...receiptView.footer, thank_you: 'Thank you!' } },
+      company: 'Point Barbershop',
+      paper: 58,
+    });
+    const { text } = await pdfText(await renderer.renderPdf(html, { widthMm: 58 }));
+    expect(text).toContain('Thank you!');
+  }, 30_000);
+
+  it('Scenario: No text by default — no thank-you line in the PDF', async () => {
+    const { text } = await pdfText(await renderer.renderPdf(receipt(58), { widthMm: 58 }));
+    expect(text).not.toContain('Thank you');
+  }, 30_000);
+});

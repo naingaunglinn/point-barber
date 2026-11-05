@@ -106,6 +106,7 @@
     "choiceSeven": "Seven options — radio group",
     "choiceEight": "Eight options — searchable list",
     "languageSwitch": "Language switch (keeps what the demos hold)",
+    "switch": "Print receipts automatically",
     "moneyInput": "Price in whole kyats",
     "moneyText": "Amounts of the four B3 sales",
     "phoneInput": "Phone typed as the customer says it",

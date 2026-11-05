@@ -30,6 +30,18 @@ interface SettingsScreenEntry {
 const SCREENS: readonly SettingsScreenEntry[] = [
   // add-company-profile — any `company.*` code (AD-NAV-02 · design D8).
   { key: 'company', href: '/settings/company', visible: seesCompany },
+  // add-settings-store — Additional settings for any `settings.*` code (settings.view⁺, mixed — design
+  // D10); Maintenance mode for company-scope settings.update only (P1.SYS.03 · AD-NAV-08), last.
+  {
+    key: 'additional',
+    href: '/settings/additional',
+    visible: (can) => can('settings.view') || can('settings.update'),
+  },
+  {
+    key: 'maintenance',
+    href: '/settings/maintenance',
+    visible: (can) => can('settings.update', { level: 'company' }),
+  },
 ];
 
 export interface SettingsScreen {
