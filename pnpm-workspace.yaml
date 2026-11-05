@@ -9,6 +9,9 @@ allowBuilds:
   '@prisma/engines': true
   '@swc/core': false
   prisma: true
+  # unrs-resolver 1.12.2 (held back by overrides, CG-DEP-05) has a postinstall that only checks the native
+  # binding, which pnpm installs as an optional dependency; no script is run.
+  unrs-resolver: false
 minimumReleaseAgeExclude:
   - '@turbo/darwin-64@2.11.7'
   - '@turbo/darwin-arm64@2.11.7'
@@ -22,5 +25,21 @@ overrides:
   # eslint-plugin-jsx-a11y asks for axe-core ^4.10.0; 4.14.0 was published 05/Oct/2026 17:43 UTC, under the
   # 7 days of CG-DEP-05 on 12/Oct. 4.13.0 is also the version @axe-core/playwright 4.13.0 uses.
   axe-core: 4.13.0
+  # Transitive versions of the lint plugins added by add-ci-lint-rules (CG-DEP-05): the newest release at
+  # least 7 days old on 05/Nov/2026. unrs-resolver 1.13.0 (31/Oct) and its native bindings, napi-postinstall
+  # 0.3.8, electron-to-chromium 1.5.475, baseline-browser-mapping 2.11.35, builtin-modules 5.5.0 and
+  # node-releases 2.0.61 / .62 / .63 and @napi-rs/wasm-runtime 1.2.7 were younger; drop an entry when its newest release has aged.
+  unrs-resolver: 1.12.2
+  napi-postinstall: 0.3.7
+  electron-to-chromium: 1.5.467
+  baseline-browser-mapping: 2.11.34
+  builtin-modules: 5.4.0
+  node-releases: 2.0.60
+  '@napi-rs/wasm-runtime': 1.2.6
+  # One typescript-eslint version (CG-DEP-03): @vitest/eslint-plugin and eslint-plugin-import-x ask for
+  # @typescript-eslint/utils, scope-manager and types ^8, which would otherwise resolve to 8.72.1 beside the pinned 8.71.0.
+  '@typescript-eslint/utils': 8.71.0
+  '@typescript-eslint/scope-manager': 8.71.0
+  '@typescript-eslint/types': 8.71.0
 patchedDependencies:
   '@prisma/adapter-pg@7.10.0': patches/@prisma__adapter-pg@7.10.0.patch
