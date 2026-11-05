@@ -18,20 +18,25 @@ import { Observability } from './observability/observability.js';
 import { RateLimiter } from './rate-limit/rate-limiter.js';
 import { AttachmentsRepository } from './repositories/attachments.repository.js';
 import { OpeningHoursRepository } from './repositories/opening-hours.repository.js';
-import { MaintenanceGate, OpenMaintenanceGate } from './settings/maintenance-gate.js';
-import { DefaultsSettingsReader, SettingsReader } from './settings/settings-reader.js';
+import { MaintenanceGate, StoreMaintenanceGate } from './settings/maintenance-gate.js';
+import { SettingsModule } from './settings/settings.module.js';
+import { SettingsCommands } from './settings/settings-commands.js';
+import { SettingsWriteController } from './settings/settings-write.controller.js';
+import { SettingsWrites } from './settings/settings-writes.js';
 import { NoTodayBranch, TodayBranch } from './settings/today-branch.js';
 import { S3StorageService } from './storage/s3-storage.service.js';
 import { StorageService } from './storage/storage.service.js';
 import { HealthController } from './system/health.controller.js';
+import { MaintenanceController } from './system/maintenance.controller.js';
+import { MaintenanceMode } from './system/maintenance-mode.js';
 import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
 import { OpeningHours } from './website/opening-hours.js';
 
 // Bounded context `platform` (ADR-001 · docs/engineering/module-map.md): system health and status,
 // the audit writer, idempotency, the rate limiter, background jobs, mail, error reporting, the settings
-// seams and file storage, the document renderer, opening hours; the settings store, notifications and
-// uploads with later changes.
+// store (add-settings-store) and the remaining seams, file storage, the document renderer, opening
+// hours; notifications and uploads with later changes.
 /**
  * The local MinIO's bucket, created when missing (development and test). MinIO may still be starting
  * when the API starts in the same stack, so a few tries one second apart; then a warning, never a stop.
@@ -52,10 +57,14 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
 }
 
 @Module({
-  imports: [JobsModule, MailModule],
-  controllers: [HealthController, StatusController],
+  imports: [JobsModule, MailModule, SettingsModule],
+  controllers: [HealthController, StatusController, MaintenanceController, SettingsWriteController],
   providers: [
     SystemService,
+    // add-settings-store — the store's write path beside the audit writer, P1.SET.03 / 04, P1.SYS.03.
+    SettingsWrites,
+    SettingsCommands,
+    MaintenanceMode,
     AttachmentsRepository,
     Attachments,
     ReceiptFilesLock,
@@ -70,9 +79,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
     { provide: DocumentRenderer, useClass: ChromiumDocumentRenderer },
-    // The seams of design D13: add-settings-store, scheduling and attendance replace them.
-    { provide: SettingsReader, useClass: DefaultsSettingsReader },
-    { provide: MaintenanceGate, useClass: OpenMaintenanceGate },
+    // The seams of design D13: the maintenance gate on the store (add-settings-store design D9);
+    // scheduling and attendance replace TodayBranch.
+    { provide: MaintenanceGate, useClass: StoreMaintenanceGate },
     { provide: TodayBranch, useClass: NoTodayBranch },
     // ADR-014: the bucket of generated documents (add-walkin-visit-checkout design D10). In development
     // and test the local MinIO's bucket is created when missing; a failure is a warning, never a stop.
@@ -99,7 +108,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     IdempotentInterceptor,
     OpeningHours,
     RateLimiter,
-    SettingsReader,
+    SettingsModule,
     MaintenanceGate,
     TodayBranch,
     StorageService,

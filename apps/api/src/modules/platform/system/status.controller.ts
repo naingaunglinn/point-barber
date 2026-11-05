@@ -11,7 +11,7 @@ export class StatusController {
   /** P1.SYS.02 */
   @Get('status')
   @Public()
-  status(): SystemStatus {
+  status(): Promise<SystemStatus> {
     return this.system.status();
   }
 }
