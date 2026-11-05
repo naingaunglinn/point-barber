@@ -120,10 +120,12 @@ export async function nextReceipt(
   api: APIRequestContext,
   kind: 'sale' | 'refund',
   branchCode = 'B3',
+  /** The business date of the sale (a late entry); the server's today when absent. */
+  on?: string,
 ): Promise<string> {
   const me = (await (await api.get('/api/v1/me')).json()) as { system: { server_time: string } };
   // server_time is written in +06:30, so its date part is the Myanmar calendar date (D-PLT-15).
-  const [year, month] = me.system.server_time.slice(0, 7).split('-').map(Number) as [
+  const [year, month] = (on ?? me.system.server_time).slice(0, 7).split('-').map(Number) as [
     number,
     number,
   ];

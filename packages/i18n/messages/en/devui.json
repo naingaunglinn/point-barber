@@ -98,10 +98,13 @@
     "branchPersona": "Branches in the persona's scope",
     "headerFour": "One primary and four secondary actions",
     "headerTwo": "One primary and two secondary actions",
+    "actionMenu": "Kebab with a destructive action",
     "buttonVariants": "Variants, icon-only, blocked with a reason",
     "buttonLoading": "Loading — a double tap calls once",
     "form": "Form — Save validates; the buttons answer as the server",
     "textInput": "Multi-line note (Zawgyi is converted)",
+    "choiceSeven": "Seven options — radio group",
+    "choiceEight": "Eight options — searchable list",
     "languageSwitch": "Language switch (keeps what the demos hold)",
     "moneyInput": "Price in whole kyats",
     "moneyText": "Amounts of the four B3 sales",
@@ -160,6 +163,7 @@
     "cancelBooking": "Cancel booking pressed",
     "start": "centre.onPress()",
     "branch": "onChange(\"{choice}\")",
+    "chosen": "onChange(\"{value}\")",
     "pressed": "{label} pressed",
     "reported": "Reported value:",
     "sort": "onSortChange(\"{sort}\")",
@@ -268,7 +272,8 @@
     "phone": "Customer phone",
     "serviceName": "Service name",
     "note": "Note",
-    "visitDate": "Visit date"
+    "visitDate": "Visit date",
+    "reason": "Reason"
   },
   "lists": {
     "receiptNo": "Receipt no.",

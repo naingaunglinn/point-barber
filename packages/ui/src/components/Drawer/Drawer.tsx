@@ -78,10 +78,15 @@ interface PanelProps {
   readonly className: string;
   readonly style?: CSSProperties;
   readonly side: 'right' | 'bottom';
+  /** On open, the first field of the body takes the focus instead of the close button. */
+  readonly focusFirstField?: boolean;
 }
 
+const FIELD = 'input:not([type=hidden]), textarea, select, [contenteditable="true"]';
+
 /** The common frame: sticky header with the close button, scrolling body, sticky action bar. */
-function Panel({ open, onClose, title, children, footer, className, style, side }: PanelProps) {
+function Panel(props: PanelProps) {
+  const { open, onClose, title, children, footer, className, style, side, focusFirstField } = props;
   const t = useTranslations('common');
   const returnFocus = useReturnFocus(open);
   return (
@@ -91,6 +96,17 @@ function Panel({ open, onClose, title, children, footer, className, style, side 
         showCloseButton={false}
         aria-describedby={undefined}
         onCloseAutoFocus={returnFocus}
+        onOpenAutoFocus={(event) => {
+          if (!focusFirstField) return;
+          const content = event.currentTarget as HTMLElement | null;
+          const field = content?.querySelector<HTMLElement>(
+            `[data-slot="panel-body"] :is(${FIELD})`,
+          );
+          if (field) {
+            event.preventDefault();
+            field.focus();
+          }
+        }}
         style={style}
         className={cn(
           'gap-0 bg-background p-0 text-base text-foreground',
@@ -214,15 +230,19 @@ export interface SheetProps {
   readonly footer?: ReactNode;
   /** `full`: the whole screen (a drawer on a phone); `bottom`: from the bottom edge (a dialog on a phone). */
   readonly side?: 'full' | 'bottom';
+  /** On open, the first field takes the focus — a search sheet the user opened to type in. */
+  readonly focusFirstField?: boolean;
 }
 
-export function Sheet({ open, onOpenChange, title, children, footer, side = 'full' }: SheetProps) {
+export function Sheet(props: SheetProps) {
+  const { open, onOpenChange, title, children, footer, side = 'full', focusFirstField } = props;
   return (
     <Panel
       open={open}
       onClose={() => onOpenChange(false)}
       title={title}
       footer={footer}
+      focusFirstField={focusFirstField}
       side={side === 'full' ? 'right' : 'bottom'}
       className={
         side === 'full'

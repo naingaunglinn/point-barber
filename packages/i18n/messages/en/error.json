@@ -51,6 +51,7 @@
   "not_assigned_to_branch": "This person is not assigned to this branch on this date.",
   "method_inactive": "This payment method is switched off.",
   "locked": "This record is finished and can no longer be changed.",
+  "late_entry_time": "The times must be in order — started, completed, paid, finished — and not later than now.",
   "conflict": "Someone saved this just now. Reload to see the latest version.",
   "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode.",
   "already_exists": "This already exists. Check the value and try again.",

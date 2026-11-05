@@ -1,4 +1,4 @@
-import { scrubEvent } from '@point/shared';
+import { HttpStatus, scrubEvent } from '@point/shared';
 
 import type { WebEnv } from '../../env';
 import { ApiProblem } from '../api/client';
@@ -27,7 +27,11 @@ export function reportingOf(
 
 /** An API answer from 400 to 429 — the caller's request was refused, nothing broke. */
 export function isRefusal(error: unknown): boolean {
-  return error instanceof ApiProblem && error.status >= 400 && error.status <= 429;
+  return (
+    error instanceof ApiProblem &&
+    error.status >= HttpStatus.BAD_REQUEST &&
+    error.status <= HttpStatus.TOO_MANY_REQUESTS
+  );
 }
 
 /** The `Sentry.init` options both runtimes share; each adds its own integrations. */

@@ -58,6 +58,8 @@ export const ErrorCode = {
   METHOD_INACTIVE: 'method_inactive',
   // 423 — a write on a finished record that reached the database guard (design D9: no endpoint should).
   LOCKED: 'locked',
+  // add-late-entry — P4-RULE-13 · LE-1: the four late-entry times out of order or later than now.
+  LATE_ENTRY_TIME: 'late_entry_time',
   // add-company-profile — API-ERR-02 · Part 1 v1.7 §11b · design D10 (task 1.2): a stale
   // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).
   CONFLICT: 'conflict',

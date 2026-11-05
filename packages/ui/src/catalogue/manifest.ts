@@ -26,6 +26,8 @@ import { ButtonLoadingDemo, ButtonVariantsDemo, FormDemo } from './demos/form-de
 import { LanguageSwitchDemo } from './demos/frame-controls';
 import {
   BilingualInputDemo,
+  ChoiceEightDemo,
+  ChoiceSevenDemo,
   DateInputDemo,
   DateTextDemo,
   MoneyInputDemo,
@@ -57,6 +59,7 @@ import {
   TimeSlotDemo,
 } from './demos/picker-demos';
 import {
+  ActionMenuDemo,
   BottomNavCentreDemo,
   BottomNavPlainDemo,
   BranchSwitcherDemo,
@@ -148,6 +151,15 @@ export const MANIFEST: readonly ManifestEntry[] = [
     section: 'inputs',
     rules: ['D-DB-04', 'AD-FORM-09', 'AD-FORM-13'],
     demos: [{ id: 'service-name', title: 'bilingualInput', Demo: BilingualInputDemo }],
+  },
+  {
+    name: 'ChoiceGroup',
+    section: 'inputs',
+    rules: ['AD-FORM-14', 'AD-A11Y-04', 'AD-A11Y-05', 'D-UI-01'],
+    demos: [
+      { id: 'seven', title: 'choiceSeven', Demo: ChoiceSevenDemo },
+      { id: 'eight', title: 'choiceEight', Demo: ChoiceEightDemo },
+    ],
   },
   {
     name: 'DateInput',
@@ -340,6 +352,12 @@ export const MANIFEST: readonly ManifestEntry[] = [
       { id: 'four-secondary', title: 'headerFour', Demo: PageHeaderFourDemo },
       { id: 'two-secondary', title: 'headerTwo', Demo: PageHeaderTwoDemo },
     ],
+  },
+  {
+    name: 'ActionMenu',
+    section: 'shell',
+    rules: ['AD-LAY-04', 'AD-LAY-05', 'AD-LIST-04', 'AD-A11Y-02', 'AD-A11Y-05'],
+    demos: [{ id: 'kebab', title: 'actionMenu', Demo: ActionMenuDemo }],
   },
   // Charts and KPI
   {

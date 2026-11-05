@@ -5,6 +5,15 @@ import { type RenderOptions, type RenderResult, render } from '@testing-library/
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactElement } from 'react';
 
+// A browser API that jsdom lacks and the AppShell calls (it measures its top bar), as in
+// packages/ui/vitest.setup.ts.
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub;
+
 // Renders a staff screen inside the providers of the staff layout (design D17): the language, a fresh
 // query cache, the money / date formats of that language and a fixed clock (05/Oct/2026 10:42 AM in
 // Yangon, the fixture day of the walk-in specs). Component tests only (jsdom).
