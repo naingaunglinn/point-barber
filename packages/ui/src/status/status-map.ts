@@ -56,7 +56,11 @@ const danger: StatusStyle = { tone: 'danger' };
 const muted: StatusStyle = { tone: 'muted' };
 const locked = (tone: Tone): StatusStyle => ({ tone, icons: ['lock'] });
 
-/** The 71 (table, status constant) pairs of AD-CMP-05; names as in constants/status.ts. */
+/**
+ * The 71 (table, status constant) pairs of AD-CMP-05 and the 2 of branches.status (add-branch-management
+ * design D9); names as in constants/status.ts. AD-CMP-05's master-data row gives INACTIVE its tone
+ * (muted); ACTIVE takes the tone of the other ACTIVE statuses of the map (employees, users — success).
+ */
 export const STATUS_MAP = {
   bookings: { BOOKED: neutral, STARTED: info, COMPLETED: success, CANCELLED: muted },
   visits: { STARTED: info, COMPLETED: warning, FINISHED: success, INCOMPLETE: muted },
@@ -102,6 +106,7 @@ export const STATUS_MAP = {
     SKIPPED: muted,
   },
   backup_runs: { RUNNING: info, SUCCESS: success, FAILED: danger },
+  branches: { ACTIVE: success, INACTIVE: muted },
 } as const satisfies Record<string, Record<string, StatusStyle>>;
 
 /**

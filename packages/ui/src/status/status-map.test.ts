@@ -16,13 +16,13 @@ const tones = (table: Record<string, { tone: string }>) =>
   Object.fromEntries(Object.entries(table).map(([name, style]) => [name, style.tone]));
 
 describe('STATUS_MAP', () => {
-  it('has exactly the 71 pairs of the status constants', () => {
+  it('has exactly the 73 pairs of the status constants (71 of AD-CMP-05, 2 of branches)', () => {
     const pairs = (map: Record<string, Record<string, unknown>>) =>
       Object.entries(map)
         .flatMap(([table, names]) => Object.keys(names).map((name) => `${table}.${name}`))
         .sort();
     expect(pairs(STATUS_MAP)).toEqual(pairs(STATUS_BY_TABLE));
-    expect(pairs(STATUS_MAP)).toHaveLength(71);
+    expect(pairs(STATUS_MAP)).toHaveLength(73);
   });
 
   it('gives every pair the tone of AD-CMP-05', () => {
@@ -78,6 +78,8 @@ describe('STATUS_MAP', () => {
         SKIPPED: 'muted',
       },
       backup_runs: { RUNNING: 'info', SUCCESS: 'success', FAILED: 'danger' },
+      // add-branch-management — INACTIVE muted (AD-CMP-05 master data), ACTIVE as employees / users.
+      branches: { ACTIVE: 'success', INACTIVE: 'muted' },
     });
   });
 

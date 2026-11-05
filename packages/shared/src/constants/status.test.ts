@@ -63,18 +63,20 @@ describe('status constants', () => {
       import_jobs: { CANCELLED: 0, UPLOADED: 1, VALIDATED: 2, CONFIRMED: 3, FAILED: 4 },
       import_job_rows: { PENDING: 1, VALID: 2, ERROR: 3, IMPORTED: 4, SKIPPED: 5 },
       backup_runs: { RUNNING: 1, SUCCESS: 2, FAILED: 3 },
+      branches: { INACTIVE: 0, ACTIVE: 1 },
     });
   });
 
-  it('pins branches.status (part1 — not a badge of AD-CMP-05)', () => {
+  // add-branch-management — branches.status is the badge of the branch list and detail (design D9).
+  it('pins branches.status (part1) and holds it as the badge table `branches`', () => {
     expect(BranchStatus).toEqual({ INACTIVE: 0, ACTIVE: 1 });
-    expect(Object.values(STATUS_BY_TABLE)).not.toContain(BranchStatus);
+    expect(STATUS_BY_TABLE.branches).toBe(BranchStatus);
   });
 
-  it('holds the 71 (table, code) pairs of AD-CMP-05, codes unique per table', () => {
+  it('holds the 71 (table, code) pairs of AD-CMP-05 and the 2 of branches, codes unique per table', () => {
     const tables = Object.values(STATUS_BY_TABLE);
-    expect(tables).toHaveLength(19);
-    expect(tables.reduce((sum, codes) => sum + Object.keys(codes).length, 0)).toBe(71);
+    expect(tables).toHaveLength(20);
+    expect(tables.reduce((sum, codes) => sum + Object.keys(codes).length, 0)).toBe(73);
     for (const codes of tables) {
       const values = Object.values(codes);
       expect(new Set(values).size).toBe(values.length);
