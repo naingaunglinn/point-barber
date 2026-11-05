@@ -45,6 +45,10 @@ export interface TextInputProps {
   readonly inputMode?: 'text' | 'email' | 'numeric' | 'tel' | 'decimal' | 'url';
   /** The browser's autofill hint, e.g. `email` or `one-time-code`. */
   readonly autoComplete?: string;
+  /** `none` for a link: the phone's keyboard does not capitalise the first letter. */
+  readonly autoCapitalize?: 'none';
+  /** `off` for a link: the phone's keyboard does not correct the text (Safari). */
+  readonly autoCorrect?: 'off';
   /** The single-line input — the element a form focuses on its first error (useTextField). */
   readonly ref?: Ref<HTMLInputElement>;
   readonly 'data-testid'?: string;

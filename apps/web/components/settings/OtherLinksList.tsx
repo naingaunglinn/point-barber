@@ -47,6 +47,7 @@ export function OtherLinksList({ form }: { readonly form: CompanyForm }) {
             label={t('url')}
             testId={`company-other-${index}-url`}
             required
+            link
           />
           <Button
             variant="ghost"

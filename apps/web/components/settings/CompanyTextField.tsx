@@ -28,6 +28,8 @@ export interface CompanyTextFieldProps {
   readonly multiline?: boolean;
   readonly lang?: 'my' | 'en';
   readonly type?: 'text' | 'email';
+  /** An `http(s)` address: the url keyboard, no capital letter and no correction. */
+  readonly link?: boolean;
 }
 
 export function CompanyTextField({
@@ -40,6 +42,7 @@ export function CompanyTextField({
   multiline,
   lang,
   type,
+  link = false,
 }: CompanyTextFieldProps) {
   const field = useTextField(form, name);
   return (
@@ -58,6 +61,13 @@ export function CompanyTextField({
           lang={lang}
           type={type}
           {...(type === 'email' ? { inputMode: 'email' as const, autoComplete: 'email' } : {})}
+          {...(link
+            ? {
+                inputMode: 'url' as const,
+                autoCapitalize: 'none' as const,
+                autoCorrect: 'off' as const,
+              }
+            : {})}
         />
       )}
     </FormField>

@@ -253,6 +253,32 @@ describe('Settings › Company — the form and its bounds (task 4.4)', () => {
     expect(input('company-address-mm').tagName).toBe('TEXTAREA');
   });
 
+  it('the http address fields: the url keyboard, no capital letter, no correction — Viber, phone, e-mail and the label as before', async () => {
+    renderScreen(KYAW_ZIN, {
+      [COMPANY]: json(200, companyOf({ social_links: { other: [MAP_1] } })),
+    });
+    await form();
+    for (const id of [
+      'company-website',
+      'company-link-facebook',
+      'company-link-tiktok',
+      'company-link-instagram',
+      'company-link-youtube',
+      'company-other-0-url',
+    ]) {
+      expect(input(id).getAttribute('inputmode'), id).toBe('url');
+      expect(input(id).getAttribute('autocapitalize'), id).toBe('none');
+      expect(input(id).getAttribute('autocorrect'), id).toBe('off');
+    }
+    // Viber is free text — a `viber://` link or a phone.
+    for (const id of ['company-link-viber', 'company-phone', 'company-other-0-label']) {
+      expect(input(id).getAttribute('inputmode'), id).toBeNull();
+      expect(input(id).getAttribute('autocapitalize'), id).toBeNull();
+      expect(input(id).getAttribute('autocorrect'), id).toBeNull();
+    }
+    expect(input('company-email').getAttribute('inputmode')).toBe('email');
+  });
+
   it('the Myanmar name cannot be emptied: "This field is required." under the pair', async () => {
     renderScreen(KYAW_ZIN);
     await form();

@@ -10,7 +10,7 @@ import { OtherLinksList } from './OtherLinksList';
 // The section "Website and social links" of the company form (D-WEB-03 · CP1 · CP2 · add-company-profile
 // design D8): the website, Facebook, TikTok, Viber, Instagram and YouTube — every one but Viber an
 // `http(s)` address, Viber a `viber://` link or a phone — and the other links. Each address field says
-// "Starts with https://" under it.
+// "Starts with https://" under it and opens the phone's url keyboard without a capital letter.
 
 export function SocialLinksFields({
   form,
@@ -32,6 +32,7 @@ export function SocialLinksFields({
         label={t('website')}
         helper={t('link.help')}
         testId="company-website"
+        link
       />
       {LINK_MEMBERS.map((member) => (
         <CompanyTextField
@@ -41,6 +42,7 @@ export function SocialLinksFields({
           label={t(`link.${member}`)}
           helper={member === 'viber' ? t('viber.help') : t('link.help')}
           testId={`company-link-${member}`}
+          link={member !== 'viber'}
         />
       ))}
       <OtherLinksList form={form} />
