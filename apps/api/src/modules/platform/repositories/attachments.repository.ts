@@ -73,6 +73,15 @@ export class AttachmentsRepository {
     return rows.map((row) => ({ ...row, size_bytes: Number(row.size_bytes) }));
   }
 
+  /** One live (not deleted) row by id; null when there is none (add-company-profile design D7). */
+  async liveById(id: string): Promise<AttachmentRow | null> {
+    const row = await this.db.attachments.findFirst({
+      where: { id, deleted_at: null },
+      select: SELECT,
+    });
+    return row === null ? null : { ...row, size_bytes: Number(row.size_bytes) };
+  }
+
   /** `receipt:<entity_id>` — exclusive, held to commit (CG-DB-08 · design D10). */
   async lockReceiptFiles(tx: Tx, entityId: string): Promise<void> {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`receipt:${entityId}`}, 0))`;

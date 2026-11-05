@@ -4,6 +4,7 @@ import { toNestErrors } from '@hookform/resolvers';
 import {
   get,
   useController,
+  useFieldArray,
   useForm,
   type FieldError as FormError,
   type FieldErrors,
@@ -158,6 +159,12 @@ export function useTextField<Input extends FieldValues, Output>(
     },
   };
 }
+
+/**
+ * A list member of a form (`social_links.other`): its rows with stable keys, `append` and `remove`. React
+ * Hook Form's own hook — the forms of the system import it from here, with the form it belongs to.
+ */
+export { useFieldArray };
 
 /** The error of a field for `FormField` (`{ code, params }`), or undefined. */
 export function fieldErrorOf(errors: FieldErrors, name: string): FieldError | undefined {

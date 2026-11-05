@@ -45,6 +45,12 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
+| `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
+
+The website refresh (API-PUB-03 · ADR-006) has one owner: `platform/website` — `SiteContent.touch(tx,
+tags)`, which every writer of website data calls inside its write transaction; it raises
+`site.content_changed` and queues `site.revalidate` (no table of its own). Added by
+`add-company-profile`, whose company edit is its first caller.
 
 ## Advisory lock keys
 
