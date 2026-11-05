@@ -1,5 +1,5 @@
 import { SETTING_ENTRIES } from './settings.generated.js';
-import type { MaintenanceSetting, TextMmEn } from './values.js';
+import { type MaintenanceSetting, type TextMmEn, valueSchema } from './values.js';
 
 // The setting catalogue (D-PLT-16 "typo = build error" · add-settings-store design D2). API and web
 // code name a key only through SettingKey, so a key that is not in definitions/settings.json fails
@@ -48,15 +48,27 @@ export function isSettingKey(key: string): key is SettingKey {
   return BY_KEY.has(key);
 }
 
+/** True when `value` passes the value schema of the entry (a default always does: definitions.test.ts). */
+const isValueOf = <K extends SettingKey>(
+  value: unknown,
+  entry: EntryOf<K>,
+): value is SettingValue<K> => valueSchema(entry).safeParse(value).success;
+
+const isEntryOf = <K extends SettingKey>(entry: Entry, key: K): entry is EntryOf<K> =>
+  entry.key === key;
+
 /** The entry of a key. */
 export function settingEntry<K extends SettingKey>(key: K): EntryOf<K> {
   const entry = BY_KEY.get(key);
-  if (entry === undefined) throw new Error(`unknown setting ${key}`);
-  return entry as EntryOf<K>;
+  if (entry === undefined || !isEntryOf(entry, key)) throw new Error(`unknown setting ${key}`);
+  return entry;
 }
 
 /** The default of a key — its effective value while no row exists (P1-RULE-08); a copy. */
 export function settingDefault<K extends SettingKey>(key: K): SettingValue<K> {
+  const entry = settingEntry(key);
   // The defaults are plain JSON (settings.json), so a JSON round trip is a full copy.
-  return JSON.parse(JSON.stringify(settingEntry(key).default)) as SettingValue<K>;
+  const copy: unknown = JSON.parse(JSON.stringify(entry.default));
+  if (!isValueOf<K>(copy, entry)) throw new Error(`the default of ${key} fails its own schema`);
+  return copy;
 }
