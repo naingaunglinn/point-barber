@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type Branch, BranchStatus, ScopeType } from '@point/shared';
 import { toast } from '@point/ui';
 
+import { branchKeys } from '../../../../../../lib/branches/branches.keys';
 import { BRANCH_IDS, PEOPLE, branchOf } from '../../../../../../test/branch-fixtures';
 import { renderPos, routeFetch, type Route } from '../../../../../../test/pos-render';
 import { json, problem } from '../../../../../../test/render';
@@ -73,6 +74,24 @@ const bodyOf = (method: string) => {
   const call = fetchMock.mock.calls.filter(([, init]) => init?.method === method).at(-1);
   return JSON.parse(String(call?.[1]?.body)) as unknown;
 };
+/** P1.BR.03 answers the branch the first time and 500 after it; `loads()` counts the GETs. */
+function failAfterFirst(branch: Branch, routes: Record<string, Route> = {}) {
+  let loads = 0;
+  routeFetch(fetchMock, {
+    ...routes,
+    [`GET ${url(branch)}`]: () => {
+      loads += 1;
+      return loads === 1 ? json(200, branch) : json(500, problem(500, 'internal_error'));
+    },
+  });
+  return { loads: () => loads };
+}
+/** The window gets the focus back (another app was in front): the live queries load again. */
+const refocus = () =>
+  act(async () => {
+    window.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('focus'));
+  });
 const openMenu = () =>
   fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), {
     button: 0,
@@ -151,6 +170,38 @@ describe('A branch — the header and the form', () => {
     await flush();
     expect(input('phone').value).toBe('09 7700 0003');
     expect(screen.queryByTestId('branch-conflict-banner')).toBeNull();
+  });
+
+  it('a failed load in the background (window focus) keeps the form and what was typed', async () => {
+    const get = failAfterFirst(B3);
+    const { client } = renderPos(<BranchDetailScreen id={B3.id} />, { me: PEOPLE.kyawZin });
+    await screen.findByTestId('branch-form');
+    type(input('phone'), '09 7700 0003');
+    type(input('address_mm', 1), 'No. 3, Example Road');
+    await refocus();
+    await waitFor(() =>
+      expect(client.getQueryState(branchKeys.detail(B3.id))?.status).toBe('error'),
+    );
+    expect(get.loads()).toBe(2);
+    expect(screen.getByTestId('branch-form')).toBeTruthy();
+    expect(input('phone').value).toBe('09 7700 0003');
+    expect(input('address_mm', 1).value).toBe('No. 3, Example Road');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('a Reload that fails after a stale save keeps the input and the banner with Reload', async () => {
+    const get = failAfterFirst(B3, { [`PATCH ${url(B3)}`]: json(409, problem(409, 'conflict')) });
+    renderPos(<BranchDetailScreen id={B3.id} />, { me: PEOPLE.kyawZin });
+    await screen.findByTestId('branch-form');
+    type(input('address_mm', 1), 'No. 3, Example Road');
+    await save();
+    const banner = screen.getByTestId('branch-conflict-banner');
+    fireEvent.click(within(banner).getByRole('button', { name: 'Reload' }));
+    await waitFor(() => expect(get.loads()).toBe(2));
+    await flush();
+    expect(screen.getByTestId('branch-conflict-banner')).toBeTruthy();
+    expect(input('address_mm', 1).value).toBe('No. 3, Example Road');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
   it('leaving with an unsaved edit asks "Discard changes?"; Keep editing keeps it', async () => {

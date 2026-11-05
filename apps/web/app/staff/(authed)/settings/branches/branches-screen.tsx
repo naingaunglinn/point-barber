@@ -33,7 +33,8 @@ import { useMe } from '../../../../../lib/session/use-me';
 // Status (the muted badge of an INACTIVE branch; an ACTIVE one has none — AD-CMP-05 master data) —
 // below it one card per branch; the status chips Active / Inactive (none = every status, kept
 // in the address); New branch only with company-scope branch.create. Without a branch code the
-// forbidden page. The page title is the screen's name (WCAG 2.4.2).
+// forbidden page. A failed first load shows the error state with Retry; a failed load in the background
+// (window focus) keeps the rows already shown. The page title is the screen's name (WCAG 2.4.2).
 
 const STATUS_CODES = [BranchStatus.ACTIVE, BranchStatus.INACTIVE];
 
@@ -106,7 +107,7 @@ export function BranchesScreen() {
   ];
 
   let content;
-  if (branches.isError) {
+  if (branches.data === undefined && branches.isError) {
     const { code, request_id } = screenProblem(branches.error);
     content = (
       <MainQueryState error={branches.error}>

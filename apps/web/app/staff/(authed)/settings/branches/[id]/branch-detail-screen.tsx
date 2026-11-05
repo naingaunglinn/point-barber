@@ -25,7 +25,9 @@ import { MainQueryState, RefusedPage } from '../../../../../../lib/session/main-
 // AD-CMP-05 master data) and the staff assigned today, and the status action for company-scope
 // branch.delete (Deactivate behind the ⋮, Re-activate a visible button). With branch.update for the branch the form edits it — Save sends only
 // the changed members and the `updated_at` it loaded (API-IDEM-04); otherwise every value is text.
-// Without a branch code the forbidden page; a branch outside the read scope is the API's 404.
+// Without a branch code the forbidden page; a branch outside the read scope is the API's 404. A failed
+// first load shows the error state with Retry; a failed load in the background (window focus) keeps the
+// branch already shown, so the form and what was typed into it stay.
 
 /**
  * The form of a branch the user may change. It edits the branch as it was opened — the header follows
@@ -108,7 +110,7 @@ export function BranchDetailScreen({ id }: { readonly id: string }) {
   const access = useBranchAccess();
   const branch = useBranch(id);
   if (!access.any) return <RefusedPage code="forbidden" />;
-  if (branch.isError) {
+  if (branch.data === undefined && branch.isError) {
     const { code, request_id } = screenProblem(branch.error);
     return (
       <MainQueryState error={branch.error}>
@@ -126,5 +128,11 @@ export function BranchDetailScreen({ id }: { readonly id: string }) {
       </div>
     );
   }
-  return <Detail branch={branch.data} reload={async () => (await branch.refetch()).data} />;
+  // A failed load keeps the cached branch in `data` (TanStack Query v5), so it is read from the result's
+  // status: the form then keeps its input and the conflict banner its Reload.
+  const reload = async () => {
+    const result = await branch.refetch();
+    return result.isError ? undefined : result.data;
+  };
+  return <Detail branch={branch.data} reload={reload} />;
 }

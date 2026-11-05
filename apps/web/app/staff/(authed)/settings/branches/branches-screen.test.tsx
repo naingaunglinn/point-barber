@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
-import { fireEvent, screen, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type BranchSummary, BranchStatus } from '@point/shared';
 
+import { branchKeys } from '../../../../../lib/branches/branches.keys';
 import { BRANCH_IDS, PEOPLE, SUMMARIES } from '../../../../../test/branch-fixtures';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
-import { json } from '../../../../../test/render';
+import { json, problem } from '../../../../../test/render';
 import { mockViewport } from '../../../../../test/viewport';
 
 // add-branch-management tasks 4.2 / 4.3 — organization "The branch list shows the branches the user's
@@ -140,6 +141,26 @@ describe('Settings › Branches — the list', () => {
     expect(document.querySelector('[data-slot="empty-state"]')?.textContent).toBe(
       'No branches match this filter.',
     );
+  });
+
+  it('a failed load in the background (window focus) keeps the rows; no error state', async () => {
+    let loads = 0;
+    routeFetch(fetchMock, {
+      'GET /api/v1/branches': () => {
+        loads += 1;
+        return loads === 1 ? json(200, { items: ALL }) : json(500, problem(500, 'internal_error'));
+      },
+    });
+    const { client } = renderPos(<BranchesScreen />, { me: PEOPLE.kyawZin });
+    await screen.findByTestId('branch-row-B1');
+    await act(async () => {
+      window.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() => expect(client.getQueryState(branchKeys.list)?.status).toBe('error'));
+    expect(loads).toBe(2);
+    expect(codes()).toStrictEqual(['B1', 'B2', 'B3']);
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
   it('a row opens the branch', async () => {
