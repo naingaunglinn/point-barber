@@ -152,6 +152,7 @@ export function receiptHtml(props: ReceiptProps & { readonly paper: PaperWidthMm
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        {/* cg-exception CG-SEC-04: `css` is the constant template CSS plus the paper width, never user input; React would escape the quotes and > of a <style> text and break the CSS. */}
         <style dangerouslySetInnerHTML={{ __html: css }} />
       </head>
       <body>

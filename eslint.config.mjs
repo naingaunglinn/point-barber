@@ -42,8 +42,8 @@ export default tseslint.config(
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        // Root config files belong to no workspace tsconfig.
-        projectService: { allowDefaultProject: ['prisma.config.ts'] },
+        // prisma.config.ts belongs to the root tsconfig.json (which gives it the Node types).
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },

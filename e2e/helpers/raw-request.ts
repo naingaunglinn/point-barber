@@ -38,7 +38,8 @@ function dechunk(body: string): string {
 /** Parses a complete HTTP/1.1 response as received on the socket. */
 export function parseRawResponse(text: string): RawResponse {
   const status = /^HTTP\/1\.[01] (\d{3})/.exec(text);
-  if (!status) throw new Error(`not an HTTP response: ${JSON.stringify(text.slice(0, 40))}`);
+  if (status === null)
+    throw new Error(`not an HTTP response: ${JSON.stringify(text.slice(0, 40))}`);
   const split = text.indexOf('\r\n\r\n');
   const head = split === -1 ? text : text.slice(0, split);
   const rawBody = split === -1 ? '' : text.slice(split + 4);

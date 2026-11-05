@@ -58,6 +58,12 @@ const sale = (overrides: Partial<ReceiptViewDto> = {}): ReceiptViewDto => ({
 
 /** One element per line, so a snapshot diff names the line that changed. */
 const pretty = (html: string) => html.replaceAll('><', '>\n<');
+/** One line of the sample sale; throws when the sample has fewer lines. */
+const lineAt = (index: number) => {
+  const line = sale().lines[index];
+  if (line === undefined) throw new Error(`The sample sale has no line ${index}`);
+  return line;
+};
 const markup = (view: ReceiptViewDto) => receiptMarkup({ view, company: COMPANY });
 
 describe('receipt template (task 9.2)', () => {
@@ -88,8 +94,7 @@ describe('receipt template (task 9.2)', () => {
   });
 
   it('Scenario: Service without an English name — the Myanmar description', () => {
-    const [first, second] = sale().lines;
-    const html = markup(sale({ lines: [{ ...first!, description_en: null }, second!] }));
+    const html = markup(sale({ lines: [{ ...lineAt(0), description_en: null }, lineAt(1)] }));
     expect(html).toContain('ဆံပင်ညှပ်');
     expect(pretty(html)).toMatchSnapshot();
   });
@@ -127,7 +132,7 @@ describe('receipt template (task 9.2)', () => {
     const html = markup(
       sale({
         number: 'B3-2026-OCT-00003',
-        lines: [sale().lines[0]!],
+        lines: [lineAt(0)],
         subtotal_amount: 8000,
         total_amount: 8000,
         payments: [{ method: 'KBZPay', amount: 10000, reference: 'KBZ0009990000' }],
@@ -146,11 +151,11 @@ describe('receipt template (task 9.2)', () => {
   });
 
   it('two performers: the barber per item, no barber line under the number', () => {
-    const [haircut, shave] = sale().lines;
+    const [haircut, shave] = [lineAt(0), lineAt(1)];
     const html = markup(
       sale({
         barbers: ['Ko Aung', 'Ko Min'],
-        lines: [haircut!, { ...shave!, performer: 'Ko Aung' }],
+        lines: [haircut, { ...shave, performer: 'Ko Aung' }],
       }),
     );
     expect(html.match(/>Barber</g)).toHaveLength(2);
