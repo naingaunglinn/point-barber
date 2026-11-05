@@ -6,6 +6,7 @@ import errorEn from '../messages/en/error.json';
 import posEn from '../messages/en/pos.json';
 import reasonEn from '../messages/en/reason.json';
 import receiptEn from '../messages/en/receipt.json';
+import settingsEn from '../messages/en/settings.json';
 import statusEn from '../messages/en/status.json';
 import todayEn from '../messages/en/today.json';
 import authMy from '../messages/my/auth.json';
@@ -15,6 +16,7 @@ import errorMy from '../messages/my/error.json';
 import posMy from '../messages/my/pos.json';
 import reasonMy from '../messages/my/reason.json';
 import receiptMy from '../messages/my/receipt.json';
+import settingsMy from '../messages/my/settings.json';
 import statusMy from '../messages/my/status.json';
 import todayMy from '../messages/my/today.json';
 
@@ -31,6 +33,7 @@ const MESSAGES = {
     auth: authEn,
     today: todayEn,
     pos: posEn,
+    settings: settingsEn,
   },
   my: {
     common: commonMy,
@@ -42,6 +45,7 @@ const MESSAGES = {
     auth: authMy,
     today: todayMy,
     pos: posMy,
+    settings: settingsMy,
   },
 } as const;
 
