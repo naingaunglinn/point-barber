@@ -16,7 +16,8 @@ import { BRANCHES, CUSTOMERS, PEOPLE, SERVICES } from '../fixtures';
 
 // Badges and chips demos (task 9.4 · AD-CMP-05 · AD-CMP-06 · AD-CMP-09 · AD-VIS-12 v1.8 · AD-L10N-03 ·
 // design D8 / D12): every (table, status) pair of the one map and its derived states, every flag, the
-// employee chip with and without a photo, and DataText marking Myanmar text.
+// employee chip with and without a photo, and DataText marking Myanmar text. A status with no badge
+// (an ACTIVE branch, AD-CMP-05) has no map entry and is left out.
 
 const TABLES = Object.keys(STATUS_MAP) as StatusTable[];
 
@@ -29,9 +30,11 @@ export function StatusMapDemo() {
             {table}
           </code>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(STATUS_BY_TABLE[table]).map(([name, code]) => (
-              <StatusBadge key={name} {...({ table, code } as StatusBadgeProps)} />
-            ))}
+            {Object.entries(STATUS_BY_TABLE[table])
+              .filter(([name]) => name in STATUS_MAP[table as keyof typeof STATUS_MAP])
+              .map(([name, code]) => (
+                <StatusBadge key={name} {...({ table, code } as StatusBadgeProps)} />
+              ))}
             {table in DERIVED_STATES
               ? Object.keys(DERIVED_STATES[table as keyof typeof DERIVED_STATES]).map((state) => (
                   <StatusBadge key={state} {...({ table, state } as StatusBadgeProps)} />
