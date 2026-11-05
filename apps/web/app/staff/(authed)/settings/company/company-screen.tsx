@@ -16,8 +16,10 @@ import { useCompany } from '../../../../../lib/settings/company';
 // company code and editable only with company scope" · AD-PERM-02 / 03 · AD-STATE-01 / 03 / 04 ·
 // add-company-profile design D8 · proposal reading 13 · task 4.3): without a `company.*` code the "no
 // access" page with a link Home; with company-scope `company.update` the form; with any other `company.*`
-// grant the values as text. A slow load shows the skeleton after 400 ms; a failed one the error state
-// with Retry and the short error ID. The page title is the screen's name (WCAG 2.4.2).
+// grant the values as text. A slow load shows the skeleton after 400 ms; a failed first load the error
+// state with Retry and the short error ID. A failed load in the background (window focus) keeps the
+// company already shown, so the form and what was typed into it stay. The page title is the screen's
+// name (WCAG 2.4.2).
 export function CompanyScreen() {
   const t = useTranslations('settings.company');
   const can = useCan();
@@ -26,7 +28,7 @@ export function CompanyScreen() {
   if (!sees) return <RefusedPage code="forbidden" />;
 
   let content;
-  if (company.isError) {
+  if (company.data === undefined && company.isError) {
     const { code, request_id } = screenProblem(company.error);
     content = (
       <MainQueryState error={company.error}>

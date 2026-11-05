@@ -11,6 +11,7 @@ import {
   companySchema,
 } from '@point/shared';
 
+import { settingsKeys } from '../../../../../lib/settings/settings.keys';
 import { IDS, meOf } from '../../../../../test/pos-fixtures';
 import { type Route, routeFetch } from '../../../../../test/pos-render';
 import { json, problem, renderStaff } from '../../../../../test/render';
@@ -202,6 +203,27 @@ describe('Settings › Company — who sees what (task 4.3)', () => {
     expect(within(state).getByText('Error ID: 0199a3f2')).toBeTruthy();
     fireEvent.click(within(state).getByRole('button', { name: 'Retry' }));
     await form();
+  });
+
+  it('a failed load in the background (window focus) keeps the form and what was typed', async () => {
+    let loads = 0;
+    const { client } = renderScreen(KYAW_ZIN, {
+      [COMPANY]: () => {
+        loads += 1;
+        return loads === 1 ? json(200, companyOf()) : json(500, problem(500, 'internal_error'));
+      },
+    });
+    await form();
+    type('company-phone', '09 400 000 111');
+    await act(async () => {
+      window.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await waitFor(() => expect(client.getQueryState(settingsKeys.company)?.status).toBe('error'));
+    expect(loads).toBe(2);
+    expect(screen.getByTestId('company-form')).toBeTruthy();
+    expect(input('company-phone').value).toBe('09 400 000 111');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 });
 
