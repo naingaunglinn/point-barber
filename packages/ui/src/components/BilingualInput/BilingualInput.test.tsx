@@ -160,4 +160,28 @@ describe('TextInput', () => {
     fireEvent.change(note, { target: { value: `${UNICODE} ` } });
     expect(document.querySelector('[data-slot="zawgyi-notice"]')).toBeNull();
   });
+
+  // add-settings-store tasks 5.5 / 6.1 — the thank-you text and the maintenance messages: both members
+  // optional (an empty pair means "no text"), and the screen's own helper under the pair.
+  it('required={false}: no asterisk, no aria-required, and no message when the pair is left empty', () => {
+    const HELPER = 'Only the English text is printed on receipts. Leave English empty for no line.';
+    function Optional() {
+      const [value, setValue] = useState<Bilingual>({ mm: '', en: null });
+      return (
+        <>
+          <BilingualInput value={value} onChange={setValue} required={false} hint={HELPER} />
+          <button type="button">{NOTE}</button>
+        </>
+      );
+    }
+    renderIntl(<Optional />);
+    expect(mm().getAttribute('aria-required')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Myanmar' })).toBe(mm());
+    fireEvent.focus(mm());
+    fireEvent.blur(mm(), { relatedTarget: outside() });
+    expect(mm().getAttribute('aria-invalid')).toBeNull();
+    expect(screen.queryByText('This field is required.')).toBeNull();
+    expect(screen.getByText(HELPER)).toBeTruthy();
+    expect(screen.queryByText('Leave English empty to show the Myanmar text')).toBeNull();
+  });
 });

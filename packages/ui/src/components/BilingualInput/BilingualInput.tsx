@@ -13,7 +13,9 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // already marks the field. A form binds the two members to the two inputs: `ref` / `enRef` are the
 // elements it focuses on an error, `onBlur` gets the event of leaving the pair, `testIds` names them.
 // `required={false}` makes the Myanmar text optional too — a pair such as an address (add-branch-
-// management): no asterisk, no `aria-required` and no message for an empty pair.
+// management) or the thank-you text and the maintenance messages (add-settings-store): no asterisk, no
+// `aria-required` and no message for an empty pair. `hint` replaces the default hint under the pair
+// with a translated text of the screen (add-settings-store).
 
 export interface Bilingual {
   readonly mm: string;
@@ -27,6 +29,8 @@ export interface BilingualInputProps {
   readonly maxLength?: number;
   /** Default true: the Myanmar text is required (AD-FORM-09); false for an optional pair. */
   readonly required?: boolean;
+  /** Translated text under the pair in place of `common.bilingual.hint`. */
+  readonly hint?: string;
   readonly disabled?: boolean;
   /** From FormField: these go to the Myanmar input, the required one. */
   readonly id?: string;
@@ -51,6 +55,7 @@ export function BilingualInput({
   multiline,
   maxLength,
   required = true,
+  hint,
   disabled,
   id,
   onBlur,
@@ -125,7 +130,7 @@ export function BilingualInput({
         />
       </div>
       <p id={hintId} className="text-sm text-muted-foreground">
-        {t('common.bilingual.hint')}
+        {hint ?? t('common.bilingual.hint')}
       </p>
     </div>
   );
