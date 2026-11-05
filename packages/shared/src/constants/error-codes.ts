@@ -60,6 +60,11 @@ export const ErrorCode = {
   LOCKED: 'locked',
   // add-late-entry — P4-RULE-13 · LE-1: the four late-entry times out of order or later than now.
   LATE_ENTRY_TIME: 'late_entry_time',
+  // add-settings-store — API-ERR-02 · Part 1 §11b · P1-RULE-08 · API-AUTH-06 (task 1.8): a write of a
+  // read-only key or a branch override of a company-only key; maintenance mode for a caller who may not
+  // pass (texts owner-approved 05/Nov/2026, S18).
+  SETTING_SCOPE: 'setting_scope',
+  MAINTENANCE: 'maintenance',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
