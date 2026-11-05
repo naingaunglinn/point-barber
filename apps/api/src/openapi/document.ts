@@ -7,6 +7,7 @@ import {
   durationRangeSchema,
   grantSchema,
   healthSchema,
+  maintenanceBodySchema,
   meResponseSchema,
   paymentMethodSchema,
   paymentSchema,
@@ -42,9 +43,9 @@ import { z } from 'zod';
 
 type JsonSchema = Record<string, unknown>;
 
-const schema = (zodSchema: z.ZodType): JsonSchema => {
+const schema = (zodSchema: z.ZodType, io: 'input' | 'output' = 'output'): JsonSchema => {
   const { $schema: _dialect, ...rest } = z.toJSONSchema(zodSchema, {
-    io: 'output',
+    io,
     // Zod writes a number literal as `number`; the smallint codes are `integer` in Part 1 (D-DB-03).
     override: ({ zodSchema: source, jsonSchema }) => {
       const def = source._zod.def;
@@ -160,6 +161,30 @@ const SETTINGS_PATHS = {
       },
     },
   },
+  // P1.SYS.03 — the request body is the input side of maintenanceBodySchema (trimmed, empty → null).
+  '/system/maintenance': {
+    put: {
+      tags: ['system'],
+      operationId: 'setMaintenance',
+      summary: 'Turn maintenance mode on / off — settings.update (P1.SYS.03)',
+      'x-permission': 'settings.update (company master: company scope)',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': { schema: { $ref: '#/components/schemas/MaintenanceRequest' } },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/SystemStatus' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
 };
 
 export function buildOpenApiDocument(version: string): JsonSchema {
@@ -217,6 +242,8 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         SettingDefinition: schema(settingDefinitionSchema),
         SettingHistoryItem: schema(settingHistoryItemSchema),
         SettingView: schema(settingViewSchema),
+        // add-settings-store task 4.1 — the inline body of setMaintenance (P1.SYS.03).
+        MaintenanceRequest: schema(maintenanceBodySchema, 'input'),
         // add-walkin-visit-checkout tasks 2.2 – 2.5 — the response DTOs of Parts 2 / 3 / 4; their
         // endpoints are added with the controllers of this change.
         CommissionEstimate: schema(commissionEstimateSchema),

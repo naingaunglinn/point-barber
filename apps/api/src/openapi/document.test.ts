@@ -71,6 +71,8 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
       '/settings',
       '/settings/effective',
       '/settings/{key}/history',
+      // add-settings-store task 4.1 — P1.SYS.03.
+      '/system/maintenance',
       '/system/status',
     ]);
   });

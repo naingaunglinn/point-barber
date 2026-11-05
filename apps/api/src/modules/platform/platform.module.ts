@@ -20,10 +20,13 @@ import { AttachmentsRepository } from './repositories/attachments.repository.js'
 import { OpeningHoursRepository } from './repositories/opening-hours.repository.js';
 import { MaintenanceGate, OpenMaintenanceGate } from './settings/maintenance-gate.js';
 import { SettingsModule } from './settings/settings.module.js';
+import { SettingsWrites } from './settings/settings-writes.js';
 import { NoTodayBranch, TodayBranch } from './settings/today-branch.js';
 import { S3StorageService } from './storage/s3-storage.service.js';
 import { StorageService } from './storage/storage.service.js';
 import { HealthController } from './system/health.controller.js';
+import { MaintenanceController } from './system/maintenance.controller.js';
+import { MaintenanceMode } from './system/maintenance-mode.js';
 import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
 import { OpeningHours } from './website/opening-hours.js';
@@ -53,9 +56,12 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
 
 @Module({
   imports: [JobsModule, MailModule, SettingsModule],
-  controllers: [HealthController, StatusController],
+  controllers: [HealthController, StatusController, MaintenanceController],
   providers: [
     SystemService,
+    // add-settings-store — the store's write path beside the audit writer, and P1.SYS.03.
+    SettingsWrites,
+    MaintenanceMode,
     AttachmentsRepository,
     Attachments,
     ReceiptFilesLock,

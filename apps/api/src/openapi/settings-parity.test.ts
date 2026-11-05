@@ -198,3 +198,38 @@ describe('the settings read paths = OpenAPI Part 1 v1.7 (add-settings-store task
     });
   });
 });
+
+// add-settings-store task 4.1 — setMaintenance (P1.SYS.03) as Part 1 v1.7 writes it: the inline request
+// body (owner SS2 — messages ≤ 200) and SystemStatus as the answer.
+describe('the maintenance path = OpenAPI Part 1 v1.7 (add-settings-store task 4.1)', () => {
+  const MAINTENANCE_REQUEST: Schema = {
+    type: 'object',
+    required: ['enabled'],
+    properties: {
+      enabled: { type: 'boolean' },
+      until: { type: ['string', 'null'], format: 'date-time' },
+      message_mm: { type: ['string', 'null'] },
+      message_en: { type: ['string', 'null'] },
+    },
+  };
+
+  it('setMaintenance takes the Part 1 body and answers SystemStatus', () => {
+    const put = paths['/system/maintenance']?.put as Schema;
+    expect(put.operationId).toBe('setMaintenance');
+    expect(
+      ((put.responses as Record<string, Schema>)['200']?.content as Record<string, Schema>)[
+        'application/json'
+      ]?.schema,
+    ).toStrictEqual({ $ref: '#/components/schemas/SystemStatus' });
+    expectParity(MAINTENANCE_REQUEST, generated.MaintenanceRequest as Schema, 'MaintenanceRequest');
+  });
+
+  it('each message is at most 200 characters (maxLength — owner SS2)', () => {
+    const members = (generated.MaintenanceRequest as Schema).properties as Record<string, Schema>;
+    const maxLength = (member: Schema): unknown =>
+      member.maxLength ??
+      (member.anyOf as Schema[] | undefined)?.map(maxLength).find((value) => value !== undefined);
+    expect(maxLength(members.message_mm as Schema)).toBe(200);
+    expect(maxLength(members.message_en as Schema)).toBe(200);
+  });
+});

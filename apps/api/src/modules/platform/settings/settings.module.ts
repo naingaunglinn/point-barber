@@ -24,6 +24,13 @@ import { UnknownSettingKeys } from './unknown-keys.js';
     SettingsStore,
     UnknownSettingKeys,
   ],
-  exports: [SettingsReader, CompanyOfSettings, UserNames, SettingBranches, SettingsStore],
+  exports: [
+    SettingsReader,
+    SettingsRepository,
+    CompanyOfSettings,
+    UserNames,
+    SettingBranches,
+    SettingsStore,
+  ],
 })
 export class SettingsModule {}

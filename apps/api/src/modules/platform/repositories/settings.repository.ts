@@ -16,6 +16,7 @@ const NO_BRANCH = Prisma.sql`'00000000-0000-0000-0000-000000000000'::uuid`;
 
 const writtenRowSchema = z.object({ id: z.uuid(), inserted: z.boolean() });
 const idRowSchema = z.object({ id: z.uuid() });
+const lockedRowSchema = z.object({ id: z.uuid(), value: z.unknown() });
 const historyRowSchema = z.object({
   id: z.uuid(),
   branch_id: z.uuid().nullable(),
@@ -75,6 +76,25 @@ export class SettingsRepository {
         updated_by_user_id: true,
       },
     });
+  }
+
+  /**
+   * The stored row of `key` for the company (`branchId` null) or one branch, locked FOR UPDATE until
+   * commit — the old value of the audit row (API-AUD-01). The row lock is the only lock a settings
+   * write takes (design: lock order); null when no row exists yet.
+   */
+  async lockRow(
+    tx: Tx,
+    companyId: string,
+    key: string,
+    branchId: string | null,
+  ): Promise<{ id: string; value: unknown } | null> {
+    const rows = await tx.$queryRaw<unknown[]>`
+      SELECT id, value FROM settings
+      WHERE company_id = ${companyId}::uuid AND key = ${key}
+        AND branch_id IS NOT DISTINCT FROM ${branchId}::uuid
+      FOR UPDATE`;
+    return rows[0] === undefined ? null : lockedRowSchema.parse(rows[0]);
   }
 
   /**
