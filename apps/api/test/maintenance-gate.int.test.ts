@@ -1,11 +1,11 @@
 import { FIXTURE_IDS } from '@point/shared/testing';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { BackgroundTasks } from '../src/common/http/background-tasks.js';
-import { SettingsRepository } from '../src/modules/platform/repositories/settings.repository.js';
 import { RateLimiter } from '../src/modules/platform/index.js';
 import { type FixturePerson, type SeededApp, seededApp } from './helpers/seeded.js';
 import { requestCode } from './helpers/sign-in.js';
+import { statementsOf } from './helpers/statements.js';
 
 // add-settings-store tasks 4.3 and 4.5 — spec "While maintenance is on, only company-scope
 // settings.update holders reach the staff API" (D-PLT-08 · API-AUTH-06 · P1-RULE-04 · AD-NAV-08 · design
@@ -48,17 +48,30 @@ const maintenance = async (body: object) => {
   return res;
 };
 
+/** The tables a statement reads or writes — FROM, JOIN, INTO and UPDATE targets, quoted or not. */
+const tablesOf = (sql: string): string[] =>
+  [...sql.matchAll(/\b(?:FROM|JOIN|INTO|UPDATE)\s+(?:"public"\.)?"?([a-z_]+)"?/giu)].map(
+    (match) => match[1] ?? '',
+  );
+
 describe('while maintenance is off (task 4.3)', () => {
-  it('a staff request reads settings exactly once (the gate) and /me says maintenance false', async () => {
-    const reads = vi.spyOn(s.app.get(SettingsRepository), 'rowsOf');
-    try {
-      const res = await s.http.get(STAFF).set('Cookie', (await session('E004')).cookie);
-      expect(res.status).toBe(200);
-      expect(reads).toHaveBeenCalledTimes(1);
-      expect(reads.mock.calls[0]?.[1]).toStrictEqual(['system.maintenance']);
-    } finally {
-      reads.mockRestore();
-    }
+  it('a staff request sends one settings read (the gate) and no company read once the company is known; /me says maintenance false', async () => {
+    const { cookie } = await session('E004');
+    // The first staff request of the application also looks the company up; the id is kept after it.
+    const first = await statementsOf(async () => {
+      expect((await s.http.get(STAFF).set('Cookie', cookie)).status).toBe(200);
+    });
+    expect(first.filter((sql) => tablesOf(sql).includes('companies'))).toHaveLength(1);
+    // Every statement of the next one: the session lookup, the gate's one read of `settings`, then
+    // the two reads of the grant rows the access guard decides on — no company read.
+    const sent = await statementsOf(async () => {
+      expect((await s.http.get(STAFF).set('Cookie', cookie)).status).toBe(200);
+      await s.app.get(BackgroundTasks).drain();
+    });
+    expect(sent).toHaveLength(4);
+    expect(tablesOf(sent[0] ?? '')).toContain('user_sessions');
+    expect(sent.filter((sql) => tablesOf(sql).includes('settings'))).toStrictEqual([sent[1]]);
+    expect(sent.filter((sql) => tablesOf(sql).includes('companies'))).toStrictEqual([]);
     expect((await get('E004', '/me')).body.system.maintenance).toBe(false);
   });
 });
@@ -147,5 +160,45 @@ describe('add-settings-store · settings · While maintenance is on, only compan
     const res = await get('E004', '/me');
     expect(res.status).toBe(200);
     expect(res.body.system.maintenance).toBe(false);
+  });
+});
+
+// Review of PR #45: the restore runbook writes `system.maintenance` by SQL while the API is stopped
+// (P8.BAK.03). A value P1.SYS.03 would refuse — here JSON null — is ignored: maintenance reads as off
+// on the staff API and on the public status, and the error log names the key, not the value.
+describe('a malformed stored maintenance value', () => {
+  it('reads as off on the staff API and the public status; each read logs the key and the issue', async () => {
+    at('2026-10-05T22:20:00');
+    await s.prisma.$executeRaw`
+      UPDATE settings SET value = 'null'::jsonb WHERE key = 'system.maintenance' AND branch_id IS NULL`;
+    const logged = s.logs.length;
+    const staff = await get('E004', '/me');
+    expect([staff.status, staff.body.system.maintenance]).toStrictEqual([200, false]);
+    const status = await s.http.get(`${API}/system/status`);
+    expect([status.status, status.body.maintenance]).toStrictEqual([200, false]);
+    const errors = s.logs
+      .slice(logged)
+      .filter((line) => line.key === 'system.maintenance' && line.issues !== undefined);
+    expect(errors.length).toBeGreaterThanOrEqual(2);
+    expect(errors[0]).toMatchObject({
+      level: 50,
+      key: 'system.maintenance',
+      issues: [{ path: [], code: 'invalid_type' }],
+    });
+    expect(Object.keys(errors[0] ?? {})).not.toContain('value');
+  });
+
+  it('the settings list (P1.SET.01) ignores the row as the reader does: the default, from no row', async () => {
+    const list = await get('E001', '/settings?module=system');
+    expect(list.status).toBe(200);
+    const item = (list.body.items as { key: string }[]).find(
+      ({ key }) => key === 'system.maintenance',
+    );
+    expect(item).toMatchObject({
+      company_value: null,
+      effective: { enabled: false },
+      source: 'default',
+      updated_at: null,
+    });
   });
 });

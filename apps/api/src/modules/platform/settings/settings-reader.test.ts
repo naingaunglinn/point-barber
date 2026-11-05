@@ -1,6 +1,8 @@
 import { FIXTURE_IDS } from '@point/shared/testing';
+import type { Logger } from 'pino';
 import { describe, expect, it } from 'vitest';
 
+import { TransactionScope } from '../../../common/database/transaction-scope.js';
 import type { SettingsRepository } from '../repositories/settings.repository.js';
 import { CompanyOfSettings } from './ports.js';
 import type { StoredSetting } from './resolve.js';
@@ -20,8 +22,17 @@ interface Call {
   readonly branchId: string | null;
 }
 
+interface LoggedError {
+  readonly fields: unknown;
+  readonly message: string;
+}
+
 function readerWith(rows: StoredSetting[], companyId: string | null = COMPANY) {
   const calls: Call[] = [];
+  const errors: LoggedError[] = [];
+  const log = {
+    error: (fields: unknown, message: string) => errors.push({ fields, message }),
+  } as unknown as Logger;
   const repository = {
     rowsOf: (id: string, keys: readonly string[], branchId: string | null) => {
       calls.push({ companyId: id, keys, branchId });
@@ -34,8 +45,8 @@ function readerWith(rows: StoredSetting[], companyId: string | null = COMPANY) {
   } as unknown as SettingsRepository;
   const company = new CompanyOfSettings();
   company.use(() => Promise.resolve(companyId));
-  const reader: SettingsReader = new StoreSettingsReader(repository, company);
-  return { reader, calls };
+  const reader: SettingsReader = new StoreSettingsReader(repository, company, log);
+  return { reader, calls, errors };
 }
 
 const row = (key: string, branchId: string | null, value: unknown): StoredSetting => ({
@@ -121,6 +132,33 @@ describe('StoreSettingsReader (task 2.5)', () => {
     });
   });
 
+  it('keeps the company id once it is known, but never the null from before the base seed', async () => {
+    const repository = { rowsOf: () => Promise.resolve([]) } as unknown as SettingsRepository;
+    const ids: (string | null)[] = [null, COMPANY, 'another-company'];
+    let lookups = 0;
+    const company = new CompanyOfSettings();
+    company.use(() => Promise.resolve(ids[lookups++] ?? null));
+    const log = { error: () => undefined } as unknown as Logger;
+    const reader = new StoreSettingsReader(repository, company, log);
+    for (let read = 0; read < 4; read += 1) await reader.effective(['receipt.auto_print']);
+    // null (no company yet) → looked up again → the company → kept for every later read.
+    expect(lookups).toBe(2);
+    expect(await company.id()).toBe(COMPANY);
+  });
+
+  it('does not keep a company id read inside a transaction, which might still roll back', async () => {
+    let lookups = 0;
+    const company = new CompanyOfSettings();
+    company.use(() => {
+      lookups += 1;
+      return Promise.resolve(COMPANY);
+    });
+    await TransactionScope.run(TransactionScope.create(), () => company.id());
+    await company.id();
+    await company.id();
+    expect(lookups).toBe(2);
+  });
+
   it('the client-readable list of P1.SET.02 is the ten keys of settings.json, in file order', () => {
     expect(CLIENT_READABLE_KEYS).toStrictEqual([
       'booking.advance_window_days',
@@ -134,6 +172,60 @@ describe('StoreSettingsReader (task 2.5)', () => {
       'system.default_language',
       'system.upload_max_mb',
     ]);
+  });
+});
+
+// Review of PR #45: a row written by SQL (the restore runbook writes `system.maintenance` while the
+// API is stopped — P8.BAK.03) is not checked by the write path. A value its key's schema refuses is
+// ignored, as if the row were absent, and logged with the key and the issue — never the value.
+describe('StoreSettingsReader — a stored value its key does not accept', () => {
+  const ignored =
+    'settings row with a value its key does not accept — ignored, the parent value applies';
+
+  it('a malformed company value reads as the default; the log names the key and the issue only', async () => {
+    const { reader, errors } = readerWith([
+      row('receipt.printer_width_mm', null, 76),
+      row('receipt.thank_you_text', null, { mm: '', en: 'Thank you' }),
+    ]);
+    expect(
+      await reader.effective(['receipt.printer_width_mm', 'receipt.thank_you_text']),
+    ).toStrictEqual({ 'receipt.printer_width_mm': 58, 'receipt.thank_you_text': null });
+    expect(errors).toStrictEqual([
+      {
+        fields: { key: 'receipt.printer_width_mm', issues: [{ path: [], code: 'invalid_value' }] },
+        message: ignored,
+      },
+      {
+        fields: { key: 'receipt.thank_you_text', issues: [{ path: ['mm'], code: 'too_small' }] },
+        message: ignored,
+      },
+    ]);
+    expect(JSON.stringify(errors)).not.toContain('Thank you');
+  });
+
+  it('a malformed branch override reads as the company value', async () => {
+    const { reader, errors } = readerWith([
+      row('home_service.transport_fee_amount', null, 2000),
+      row('home_service.transport_fee_amount', B3, '3000'),
+    ]);
+    expect(await reader.effective(['home_service.transport_fee_amount'], B3)).toStrictEqual({
+      'home_service.transport_fee_amount': 2000,
+    });
+    expect(errors.map(({ fields }) => fields)).toStrictEqual([
+      { key: 'home_service.transport_fee_amount', issues: [{ path: [], code: 'invalid_type' }] },
+    ]);
+  });
+
+  it('a value the schema accepts is returned as stored, with nothing logged', async () => {
+    const { reader, errors } = readerWith([
+      row('system.maintenance', null, { enabled: true }),
+      row('receipt.thank_you_text', null, { mm: 'ကျေးဇူးတင်ပါတယ်', en: null }),
+    ]);
+    expect(await reader.effective(['system.maintenance', 'receipt.thank_you_text'])).toStrictEqual({
+      'system.maintenance': { enabled: true },
+      'receipt.thank_you_text': { mm: 'ကျေးဇူးတင်ပါတယ်', en: null },
+    });
+    expect(errors).toStrictEqual([]);
   });
 });
 
