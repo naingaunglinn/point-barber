@@ -1,13 +1,14 @@
 import { TZDate } from '@date-fns/tz';
+import { format } from 'date-fns';
 
 import { APP_TIME_ZONE } from '../constants/time.js';
-import { businessDateOf } from './business-date.js';
+import { businessDateOf, inMmt } from './business-date.js';
 import type { BusinessDate, Instant } from './instant.js';
 import { toMmtIso } from './mmt-iso.js';
 
 // A date and a time of day typed on a screen, as the instant they name in Myanmar Time — the late-entry
 // time fields (add-late-entry design D2 · D-PLT-15 · CG-TIME-04). Read through the zone name, so a
-// phone in another zone sends the same instant; businessDateOf is the way back.
+// phone in another zone sends the same instant; businessDateOf and mmtTimeOfDay are the way back.
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -31,4 +32,9 @@ export function mmtInstant(date: BusinessDate, time: string): Instant {
   // 2026-02-30 would roll over into March.
   if (businessDateOf(instant) !== date) throw new RangeError(`Not a calendar date: ${date}`);
   return instant;
+}
+
+/** The Myanmar time of day of an instant, `HH:mm`: `2026-10-04T08:35:00Z` → `15:05`. */
+export function mmtTimeOfDay(value: Instant | Date): string {
+  return format(inMmt(value), 'HH:mm');
 }
