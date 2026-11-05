@@ -9,6 +9,7 @@
     "booking": "Booking",
     "sales": "Sales & payments",
     "closing": "Closing",
+    "attendance": "Payroll & attendance",
     "dashboard": "Dashboard",
     "system": "System"
   },
@@ -67,6 +68,12 @@
       "label": "Cash difference tolerance",
       "help": "At day closing, a cash difference above this is flagged and the admin is notified. 0 = any difference.",
       "impact": "Applies to closings from now; closed days keep their result."
+    }
+  },
+  "attendance": {
+    "default_radius_meters": {
+      "label": "Default attendance radius",
+      "help": "Used at clock-in by a branch with no radius of its own, and given to each new branch (10–2,000 m)."
     }
   },
   "dashboard": {
