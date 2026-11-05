@@ -12,7 +12,7 @@ import { StatusBadge, type StatusBadgeProps } from '../../components/StatusBadge
 import { useFormat } from '../../providers/format';
 import { DERIVED_STATES, FLAGS, STATUS_MAP, type FlagKey } from '../../status/status-map';
 import { HandlerLog } from '../demo-frame';
-import { BRANCHES, PEOPLE } from '../fixtures';
+import { BRANCHES, CUSTOMERS, PEOPLE, SERVICES } from '../fixtures';
 
 // Badges and chips demos (task 9.4 · AD-CMP-05 · AD-CMP-06 · AD-CMP-09 · AD-VIS-12 v1.8 · AD-L10N-03 ·
 // design D8 / D12): every (table, status) pair of the one map and its derived states, every flag, the
@@ -85,15 +85,30 @@ export function EmployeeChipDemo() {
   );
 }
 
+// A service without an English name shows its Myanmar name through the fallback (ui-foundation
+// "Myanmar fallback value in the English UI"); Ma Su is a Latin value (scenario "Latin value gets no
+// attribute"). Both in `text-base`, where the two line-heights differ.
+const NO_ENGLISH_NAME = { name_mm: SERVICES.shave.name_mm, name_en: null };
+
 export function DataTextDemo() {
   const { locale } = useFormat('DataText demo');
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-      {Object.values(PEOPLE).map((person) => (
-        <li key={person.code}>
-          <DataText>{localized(person, 'name', locale)}</DataText>
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        {Object.values(PEOPLE).map((person) => (
+          <li key={person.code}>
+            <DataText>{localized(person, 'name', locale)}</DataText>
+          </li>
+        ))}
+      </ul>
+      <ul className="flex flex-col gap-1 text-base">
+        <li data-testid="data-text-service">
+          <DataText>{localized(NO_ENGLISH_NAME, 'name', locale)}</DataText>
         </li>
-      ))}
-    </ul>
+        <li data-testid="data-text-customer">
+          <DataText>{CUSTOMERS.maSu.name}</DataText>
+        </li>
+      </ul>
+    </div>
   );
 }

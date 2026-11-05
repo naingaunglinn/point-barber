@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -136,6 +136,26 @@ describe('tokens.css — fonts and the two component variables per tree', () => 
     expect(site.has('--font-myanmar')).toBe(false);
   });
 
+  // ui-foundation "Tabular figures" (AD-VIS-05): Pyidaungsu's Latin digits are not of equal width, so
+  // numbers keep Inter first in Myanmar text as well; Pyidaungsu only follows it (AD-FMT-10).
+  it('--font-numeric starts with Inter in English and in Myanmar text', () => {
+    const latin = declarationsOf(tokens, ':root, [lang]:not(:lang(my))').get('--font-numeric');
+    const myanmar = declarationsOf(tokens, ':lang(my)').get('--font-numeric');
+    expect(latin).toBe("'Inter', 'Manrope', system-ui, sans-serif");
+    expect(myanmar).toBe("'Inter', 'Manrope', var(--font-myanmar), system-ui, sans-serif");
+  });
+
+  // ui-foundation "Myanmar fallback value in the English UI": a Myanmar value inside Latin text takes
+  // the Myanmar line-height of the nearest text size (16 px → 28 px), not the inherited Latin one.
+  it('every text size gives Myanmar text inside it its own line-height', () => {
+    for (const size of ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl']) {
+      const scoped = new RegExp(
+        String.raw`@scope \(\.text-${size}\) \{\s*\[lang\]:lang\(my\) \{\s*line-height: var\(--leading-${size}\);`,
+      );
+      expect(tokens).toMatch(scoped);
+    }
+  });
+
   it('staff: the focus outline is --foreground and the input border --muted-foreground', () => {
     expect(staff.get('--focus-outline')).toBe('var(--foreground)');
     expect(staff.get('--field-border')).toBe('var(--muted-foreground)');
@@ -144,6 +164,32 @@ describe('tokens.css — fonts and the two component variables per tree', () => 
   it('site: the focus outline is --ring and the input border --input', () => {
     expect(site.get('--focus-outline')).toBe('var(--ring)');
     expect(site.get('--field-border')).toBe('var(--input)');
+  });
+
+  // Task 11.21 (AD-VIS-03 · AD-A11Y-02): outlines and borders reach --ring / --input only through the
+  // two variables above — no utility class (`ring-ring/50`, `border-input`, `bg-input/30` …) and no
+  // `var(--ring)` / `var(--input)` anywhere in the package's source.
+  const DIRECT =
+    /var\(--(?:ring|input)\)|--color-(?:ring|input)\b|(?<![\w-])(?:ring-offset|ring|border(?:-[xytrblse])?|outline|bg|text|fill|stroke|shadow|divide|accent|caret|decoration|placeholder|from|via|to)-(?:ring|input)(?:\/\d+)?(?![\w-])/g;
+
+  it('the check finds the shapes it looks for', () => {
+    const sample =
+      'focus-visible:ring-ring/50 border-input bg-input/30 outline-ring focus-visible:border-ring var(--input)';
+    expect(sample.match(DIRECT)).toHaveLength(6);
+  });
+
+  it('no component style refers to --ring or --input directly', () => {
+    const source = join(ui, 'src');
+    const files = readdirSync(source, { recursive: true, encoding: 'utf8' }).filter(
+      (file) => /\.(?:tsx?|css)$/.test(file) && !/\.test\.tsx?$/.test(file),
+    );
+    expect(files.length).toBeGreaterThan(50);
+    const found = files.flatMap((file) => {
+      // A data-slot value names a part (`text-input`), it is not a style.
+      const text = readFileSync(join(source, file), 'utf8').replace(/data-slot="[^"]*"/g, '');
+      return [...text.matchAll(DIRECT)].map(([match]) => `${file}: ${match}`);
+    });
+    expect(found).toEqual([]);
   });
 });
 

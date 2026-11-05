@@ -9,10 +9,12 @@ import {
   Button,
   FormField,
   LanguageSwitch,
+  TextInput,
   applyProblem,
   fieldErrorOf,
-  registerField,
+  movesToSubmit,
   useAppForm,
+  useTextField,
   type FieldError,
 } from '@point/ui';
 
@@ -122,6 +124,7 @@ export function LoginScreen({ signedOut, googleNotLinked = false, returnTo }: Lo
 function EmailStep({ onSent }: Readonly<{ onSent: (email: string) => void }>) {
   const t = useTranslations('auth');
   const form = useAppForm(otpRequestSchema, { defaultValues: { email: '' } });
+  const emailField = useTextField(form, 'email');
   const submit = form.handleSubmit(async ({ email }: OtpRequest) => {
     try {
       await api('/auth/otp/request', { method: 'POST', body: { email }, signIn: true });
@@ -148,13 +151,12 @@ function EmailStep({ onSent }: Readonly<{ onSent: (email: string) => void }>) {
         error={fieldErrorOf(form.formState.errors, 'email')}
       >
         {(control) => (
-          <input
+          <TextInput
             {...control}
-            {...registerField(form, 'email')}
+            {...emailField}
             data-testid="login-email"
             type="email"
             autoComplete="email"
-            className="h-12 rounded-md border border-input bg-background px-3 md:h-10"
           />
         )}
       </FormField>
@@ -264,22 +266,24 @@ function CodeStep({
       </p>
       <FormField label={t('code.label')} required error={error}>
         {(control) => (
-          <input
+          <TextInput
             {...control}
             data-testid="login-code"
             inputMode="numeric"
             autoComplete="one-time-code"
             value={groupCode(digits)}
             disabled={locked}
-            onChange={(event) => {
-              const next = codeDigits(event.target.value);
+            onChange={(value) => {
+              const next = codeDigits(value);
               setDigits(next);
               if (error !== undefined && error.code !== 'login_locked') setError(check(next));
             }}
-            onBlur={() => {
-              if (digits !== '') setError((current) => current ?? check(digits));
+            onBlur={(event) => {
+              // Leaving the field for "Sign in" is left to the submit, which checks the code: a
+              // message shown on the press would move the button before the release (workbook No 64).
+              if (digits !== '' && !movesToSubmit(event))
+                setError((current) => current ?? check(digits));
             }}
-            className="h-12 rounded-md border border-input bg-background px-3 font-numeric tracking-widest md:h-10"
           />
         )}
       </FormField>

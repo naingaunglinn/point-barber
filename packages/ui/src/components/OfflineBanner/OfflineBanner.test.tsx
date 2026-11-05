@@ -43,4 +43,13 @@ describe('OfflineBanner', () => {
     expect(screen.getByText(BANNER)).toBeDefined();
     fireEvent.click(screen.getByRole('link'));
   });
+
+  it('sticks under the AppShell top bar (--shell-top), at the top outside a shell', () => {
+    renderIntl(<OfflineBanner helpHref={HELP} apiUnreachable />);
+    const classes = screen.getByRole('status').className.split(/\s+/);
+    expect(classes).toEqual(
+      expect.arrayContaining(['sticky', 'top-[var(--shell-top,0px)]', 'z-40']),
+    );
+    expect(classes).not.toContain('top-0');
+  });
 });

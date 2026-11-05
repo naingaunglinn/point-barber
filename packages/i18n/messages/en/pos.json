@@ -11,6 +11,18 @@
     "submit": "Start",
     "openUnpaid": "Open the previous customer"
   },
+  "lateEntry": {
+    "link": "Late entry — record a past service",
+    "cancel": "Not a late entry",
+    "reason": "Reason",
+    "note": "Note",
+    "started": "Actual start time",
+    "completed": "Completed time",
+    "received": "Payment received time",
+    "finished": "Finish time",
+    "date": "Date",
+    "time": "Time"
+  },
   "checkout": {
     "title": "Checkout",
     "split": "Split",

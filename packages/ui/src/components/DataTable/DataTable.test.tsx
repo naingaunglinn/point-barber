@@ -138,6 +138,18 @@ describe('DataTable', () => {
     expect(nextSort('finished_at', 'finished_at')).toBe('-finished_at');
   });
 
+  it('no column claims a sort before one is chosen — aria-sort only on the sorted column', () => {
+    mockViewport(1280);
+    renderIntl(<Sales />);
+    const sorted = () =>
+      screen.getAllByRole('columnheader').filter((th) => th.hasAttribute('aria-sort'));
+    expect(sorted()).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Finished on' }));
+    expect(sorted().map((th) => [th.textContent, th.getAttribute('aria-sort')])).toEqual([
+      ['Finished on', 'descending'],
+    ]);
+  });
+
   it('Scenario: Column limit on a tablet — 7 of 9 visible at 768 px, all 9 in the Columns menu; 48 / 56 px rows', () => {
     mockViewport(768);
     const nine: DataTableColumn<Sale>[] = [

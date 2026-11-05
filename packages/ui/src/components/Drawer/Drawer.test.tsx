@@ -258,4 +258,22 @@ describe('Sheet', () => {
     );
     expect(screen.getByRole('dialog', { name: TITLE }).getAttribute('data-side')).toBe('bottom');
   });
+
+  it('with focusFirstField the first field takes the focus on open; without, it does not', async () => {
+    const { unmount } = renderIntl(
+      <Sheet open onOpenChange={() => {}} title={TITLE} focusFirstField>
+        <input type="search" aria-label={TITLE} />
+      </Sheet>,
+    );
+    await tick();
+    expect(document.activeElement).toBe(screen.getByRole('searchbox'));
+    unmount();
+    renderIntl(
+      <Sheet open onOpenChange={() => {}} title={TITLE}>
+        <input type="search" aria-label={TITLE} />
+      </Sheet>,
+    );
+    await tick();
+    expect(document.activeElement).not.toBe(screen.getByRole('searchbox'));
+  });
 });

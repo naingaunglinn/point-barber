@@ -7,12 +7,13 @@ import type { Locale } from '@point/i18n';
 import type { MeResponse } from '@point/shared';
 
 import { BranchProvider, startBranchOf } from '../lib/session/branch';
+import { GrantsProvider } from '../lib/session/grants';
 import { ME_QUERY_KEY } from '../lib/session/use-me';
 import { IDS, meOf } from './pos-fixtures';
 import { json, renderStaff } from './render';
 
 // add-walkin-visit-checkout — a POS screen as the signed-in area frames it: `/me` already in the cache,
-// the branch context of the chip, and a fetch answered by route (`'POST /api/v1/visits'`). An unrouted
+// its grants (the session layer's GrantsProvider), the branch context of the chip, and a fetch answered by route (`'POST /api/v1/visits'`). An unrouted
 // call answers 404, so a test sees every request the screen makes.
 
 export type Route =
@@ -41,11 +42,13 @@ export function renderPos(
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   client.setQueryData(ME_QUERY_KEY, me);
   return renderStaff(
-    <BranchProvider
-      value={{ branchId, setBranchId: () => undefined, startBranch: startBranchOf(me, branchId) }}
-    >
-      {ui}
-    </BranchProvider>,
+    <GrantsProvider me={me}>
+      <BranchProvider
+        value={{ branchId, setBranchId: () => undefined, startBranch: startBranchOf(me, branchId) }}
+      >
+        {ui}
+      </BranchProvider>
+    </GrantsProvider>,
     { client, locale },
   );
 }

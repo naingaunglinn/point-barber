@@ -78,8 +78,10 @@ export function Dialog({
           'flex flex-col gap-4 bg-background p-0 text-base text-foreground',
           // A bottom sheet below 768 px …
           'max-md:top-auto max-md:bottom-0 max-md:left-0 max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:data-open:slide-in-from-bottom-10 max-md:data-closed:slide-out-to-bottom-10',
-          // … centred from 768 px.
-          'md:max-w-lg',
+          // … centred from 768 px. The width changes only there: `sm:max-w-none` replaces the
+          // primitive's `sm:max-w-sm`, which Tailwind places after `max-md:` and which would narrow the
+          // sheet to 384 px between 640 and 767 px (workbook No 95; QrScanner does the same).
+          'sm:max-w-none md:max-w-lg',
           OVERLAY_MOTION,
         )}
       >

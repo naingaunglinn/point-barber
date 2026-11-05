@@ -43,7 +43,9 @@ export function useFixtureNotifications(): NotificationItem[] {
       }),
       created_at: notification.at,
       read: index === 2,
-      href: null,
+      // Each item links to its subject (AD-NTF-01 — "a link"): the discount request to the approval
+      // card of the same discount, the others to the bell's own demo.
+      href: key === 'discount' ? '#approval-card' : '#notification-bell',
     };
   });
 }

@@ -253,6 +253,48 @@
   font-synthesis: none;
 }
 
+/* Myanmar text inside Latin text — a DataText value in the English UI — keeps its own line-height,
+ * not the inherited Latin one: the size comes from the nearest text-size utility around it, the value
+ * from the `:lang(my)` tokens above (AD-L10N-04 · ui-foundation "Myanmar fallback value in the English
+ * UI"). `@scope` picks the nearest size; an element's own size utility (utilities layer) still wins. */
+@layer base {
+  @scope (.text-xs) {
+    [lang]:lang(my) {
+      line-height: var(--leading-xs);
+    }
+  }
+  @scope (.text-sm) {
+    [lang]:lang(my) {
+      line-height: var(--leading-sm);
+    }
+  }
+  @scope (.text-base) {
+    [lang]:lang(my) {
+      line-height: var(--leading-base);
+    }
+  }
+  @scope (.text-lg) {
+    [lang]:lang(my) {
+      line-height: var(--leading-lg);
+    }
+  }
+  @scope (.text-xl) {
+    [lang]:lang(my) {
+      line-height: var(--leading-xl);
+    }
+  }
+  @scope (.text-2xl) {
+    [lang]:lang(my) {
+      line-height: var(--leading-2xl);
+    }
+  }
+  @scope (.text-3xl) {
+    [lang]:lang(my) {
+      line-height: var(--leading-3xl);
+    }
+  }
+}
+
 /* ── Fonts (AD-VIS-05 · FE-VIS-02 · FE-PERF-06 · design D3) ──────────────────────────────────── */
 /* Self-hosted WOFF2 subsets of packages/ui/fonts (build-subsets.sh). The web app serves that folder
  * at /fonts/ on its own origin, so these URLs and the preloads of fontPreloads() are the same. */
@@ -307,7 +349,9 @@
 }
 
 /* Font stacks follow the tree and the language of the text: for Myanmar text the stack starts with
- * `--font-myanmar` (D-UX-02). An element with a `lang` attribute applies the stack again
+ * `--font-myanmar` (D-UX-02). Numbers are always the digits 0–9 (AD-FMT-10), so `--font-numeric`
+ * keeps Inter's tabular figures first in Myanmar text too (AD-VIS-05); Pyidaungsu after it draws only
+ * the Myanmar digits a field shows before they are normalised. An element with a `lang` attribute applies the stack again
  * (`@layer base` below), so a Myanmar name in the English UI, or the English receipt in the
  * Myanmar UI, gets its own font. */
 :root {
@@ -322,7 +366,7 @@
 
 :lang(my) {
   --font-sans: var(--font-myanmar), 'Manrope', 'Inter', system-ui, sans-serif;
-  --font-numeric: var(--font-myanmar), 'Inter', 'Manrope', system-ui, sans-serif;
+  --font-numeric: 'Inter', 'Manrope', var(--font-myanmar), system-ui, sans-serif;
 }
 
 :root[data-tree='site'],

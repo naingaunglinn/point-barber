@@ -5,6 +5,7 @@ import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-quer
 import {
   type CursorPage,
   type CustomerLookupDto,
+  HttpStatus,
   LocationType,
   type PaymentMethodDto,
   type QuoteDto,
@@ -173,7 +174,7 @@ export async function lookupRequest(key: string): Promise<RequestLookupDto | nul
   try {
     return await api<RequestLookupDto>(`/me/requests/${key}`);
   } catch (error) {
-    if (error instanceof ApiProblem && error.status === 404) return null;
+    if (error instanceof ApiProblem && error.status === HttpStatus.NOT_FOUND) return null;
     throw error;
   }
 }

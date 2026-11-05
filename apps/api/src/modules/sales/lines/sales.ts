@@ -150,6 +150,14 @@ export class Sales {
     return rows.filter((payment) => payment.voided_at === null).length;
   }
 
+  /** The received times of the sale's payments that are not voided (the late-entry order check). */
+  async receivedAts(db: Tx, saleId: string): Promise<Date[]> {
+    const rows = await this.payments.ofSale(db, saleId);
+    return rows
+      .filter((payment) => payment.voided_at === null)
+      .map((payment) => payment.received_at);
+  }
+
   async hasActiveServiceLine(db: Tx, saleId: string): Promise<boolean> {
     const lines = await this.items.ofSale(db, saleId);
     return lines.some(
