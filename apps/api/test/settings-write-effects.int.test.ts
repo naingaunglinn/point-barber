@@ -210,9 +210,13 @@ describe('two writers of one key (design D6 · task 3.9)', () => {
     const [row] = await s.prisma.settings.findMany({
       where: { key: 'closing.cash_difference_tolerance_amount' },
     });
-    // The newest history row is the last committed value, and it is the effective one.
-    expect(row?.value).toBe(history.at(-1)?.new_value);
-    expect(history.at(-1)?.old_value).toBe(history[0]?.new_value);
+    // The commit order is the history chain, not changed_at: the trigger stamps the transaction's
+    // start (now()), and the writer that waited on the index started first and committed last. The
+    // first commit inserted (old_value null); the second updated from it; its value is the one stored.
+    const inserted = history.find((item) => item.old_value === null);
+    const updated = history.find((item) => item.old_value !== null);
+    expect(updated?.old_value).toBe(inserted?.new_value);
+    expect(row?.value).toBe(updated?.new_value);
     expect(await view('closing.cash_difference_tolerance_amount')).toMatchObject({
       effective: row?.value,
     });
@@ -341,14 +345,19 @@ describe('two writers of one key (design D6 · task 3.9)', () => {
       put('E001', 'home_service.transport_fee_amount', { value: 25000 }),
     ]);
     expect([a.status, b.status]).toStrictEqual([200, 200]);
-    const added = (await historyOf('home_service.transport_fee_amount', null)).slice(before);
+    const history = await historyOf('home_service.transport_fee_amount', null);
+    const previous = history[before - 1]?.new_value;
+    const added = history.slice(before);
     expect(added.map((row) => row.new_value).sort()).toStrictEqual([20000, 25000]);
-    // Serialised on the row lock: the second compared against the first's committed value.
-    expect(added[1]?.old_value).toBe(added[0]?.new_value);
+    // Serialised on the row lock, in commit order (the history chain — changed_at is each
+    // transaction's start): the first changed the previous value, the second the first's value.
+    const first = added.find((item) => item.old_value === previous);
+    const second = added.find((item) => item !== first);
+    expect(second?.old_value).toBe(first?.new_value);
     const row = await s.prisma.settings.findFirstOrThrow({
       where: { key: 'home_service.transport_fee_amount', branch_id: null },
     });
-    expect(row.value).toBe(added[1]?.new_value);
+    expect(row.value).toBe(second?.new_value);
     expect(await view('home_service.transport_fee_amount', B1)).toMatchObject({
       effective: row.value,
     });
