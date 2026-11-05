@@ -15,6 +15,7 @@ export const NAMESPACES = [
   'auth',
   'today',
   'pos',
+  'settings',
   // add-branch-management (task 1.9 — design D10).
   'branch',
 ] as const;
