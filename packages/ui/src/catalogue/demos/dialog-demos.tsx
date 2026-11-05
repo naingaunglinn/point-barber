@@ -27,13 +27,15 @@ import { BOOKING_CANCEL_REASONS, CUSTOMERS, PEOPLE } from '../fixtures';
 // late-entry presets; free text whose result the demo maps to its endpoint's field), ConfirmDialog, the
 // booking drawer with its address key, dirty guard and width cases, the two sheets and the plain dialog.
 
-/** The DB Part 3 seed reasons, with demo ids. */
-const SEED_REASONS: readonly MasterReason[] = BOOKING_CANCEL_REASONS.map((reason, index) => ({
-  id: `reason-${index + 1}`,
-  name_mm: reason.name_mm,
-  name_en: reason.name_en,
-  requires_note: reason.requiresNote,
-}));
+/** The DB Part 3 seed reasons, with demo ids (also the ActionMenu demo's cancel dialog). */
+export const SEED_REASONS: readonly MasterReason[] = BOOKING_CANCEL_REASONS.map(
+  (reason, index) => ({
+    id: `reason-${index + 1}`,
+    name_mm: reason.name_mm,
+    name_en: reason.name_en,
+    requires_note: reason.requiresNote,
+  }),
+);
 
 /** Extra reasons for the 7- and 8-item cases. */
 function useMoreReasons(count: number): readonly MasterReason[] {

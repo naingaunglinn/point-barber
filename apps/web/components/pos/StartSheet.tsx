@@ -7,7 +7,16 @@ import {
   lateEntryOrderViolation,
   localized,
 } from '@point/shared';
-import { Button, EmployeeChip, FormAlert, LockBanner, Sheet, TextInput, useNow } from '@point/ui';
+import {
+  Button,
+  ChoiceGroup,
+  EmployeeChip,
+  FormAlert,
+  LockBanner,
+  Sheet,
+  TextInput,
+  useNow,
+} from '@point/ui';
 import { Check } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode } from 'react';
@@ -23,8 +32,9 @@ import { startChips } from './start-chips';
 // opens its sale — the link busy while it reads, a failed read as an alert under it, the link kept for
 // another try), `day_closed` as the lock banner, anything else (`not_assigned_to_branch` …) as an alert.
 // With `sale.late_entry` at the branch the sheet offers "Late entry" (AD-POS-14 · add-late-entry tasks
-// 4.2 / 4.3): the reason, the note for OTHER, and the four times (LE-2 ★); Start checks the required
-// fields, then their order (P4-RULE-13) — the first failing field gets the message and nothing is sent.
+// 4.2 / 4.3): the reason (`ChoiceGroup`), the note for OTHER, and the four times (LE-2 ★); Start checks
+// the required fields, then their order (P4-RULE-13) — the first failing field gets the message and
+// nothing is sent.
 
 export interface StartSheetProps {
   readonly open: boolean;
@@ -67,6 +77,9 @@ export interface LateEntryStart {
 const REQUIRED_MARK = '*';
 
 type TimeKey = 'started' | 'completed' | 'received' | 'finished';
+type LateField = 'reason' | 'note' | TimeKey;
+/** The message code of a late-entry field: the key under `error.` (AD-FORM-02). */
+type LateError = 'required' | 'reason_required' | 'late_entry_time';
 const TIME_KEYS: readonly TimeKey[] = ['started', 'completed', 'received', 'finished'];
 const MEMBER_FIELD: Record<string, TimeKey> = {
   started_at: 'started',
@@ -116,7 +129,7 @@ export function StartSheet({
     received: null,
     finished: null,
   });
-  const [errors, setErrors] = useState<Partial<Record<'reason' | 'note' | TimeKey, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<LateField, LateError>>>({});
   const chips = startChips(services ?? []);
   const toggle = (id: string) =>
     setChosen((current) =>
@@ -128,12 +141,12 @@ export function StartSheet({
   // check, lateEntryOrderViolation); the first failing field gets the message and nothing is sent.
   const start = () => {
     if (!late) return onStart(ordered, null);
-    const found: Partial<Record<'reason' | 'note' | TimeKey, string>> = {};
-    if (reason === null) found.reason = tError('required');
+    const found: Partial<Record<LateField, LateError>> = {};
+    if (reason === null) found.reason = 'required';
     if (reason === LateEntryReason.OTHER && note.trim() === '') {
-      found.note = tError('reason_required');
+      found.note = 'reason_required';
     }
-    for (const key of TIME_KEYS) if (times[key] === null) found[key] = tError('required');
+    for (const key of TIME_KEYS) if (times[key] === null) found[key] = 'required';
     if (Object.keys(found).length === 0) {
       const violation = lateEntryOrderViolation({
         startedAt: times.started as Instant,
@@ -142,8 +155,7 @@ export function StartSheet({
         finishedAt: times.finished as Instant,
         now,
       });
-      if (violation !== null)
-        found[MEMBER_FIELD[violation] ?? 'started'] = tError('late_entry_time');
+      if (violation !== null) found[MEMBER_FIELD[violation] ?? 'started'] = 'late_entry_time';
     }
     setErrors(found);
     if (Object.keys(found).length > 0) return undefined;
@@ -247,35 +259,21 @@ export function StartSheet({
           </Button>
           {late && (
             <>
-              <fieldset
-                className="grid gap-2"
-                aria-describedby={errors.reason ? 'late-reason-error' : undefined}
-              >
-                <legend className="mb-1 text-sm font-medium">
-                  {tLate('reason')}{' '}
-                  <span data-slot="required-mark" aria-hidden className="ms-1 text-destructive">
-                    {REQUIRED_MARK}
-                  </span>
-                </legend>
-                {REASONS.map(([name, code]) => (
-                  <label key={code} className="flex min-h-12 items-center gap-3 md:min-h-10">
-                    <input
-                      type="radio"
-                      name="late-entry-reason"
-                      className="size-5"
-                      checked={reason === code}
-                      onChange={() => setReason(code)}
-                      data-testid={`late-entry-reason-${code}`}
-                    />
-                    {tReason(name)}
-                  </label>
-                ))}
-                {errors.reason && (
-                  <p id="late-reason-error" role="alert" className="text-sm text-destructive">
-                    {errors.reason}
-                  </p>
-                )}
-              </fieldset>
+              <ChoiceGroup
+                label={tLate('reason')}
+                required
+                {...(errors.reason ? { error: { code: errors.reason } } : {})}
+                options={REASONS.map(([name, code]) => ({
+                  value: String(code),
+                  label: tReason(name),
+                  testId: `late-entry-reason-${code}`,
+                }))}
+                value={reason === null ? null : String(reason)}
+                onChange={(value) => {
+                  const chosenReason = REASONS.find(([, code]) => String(code) === value);
+                  if (chosenReason !== undefined) setReason(chosenReason[1]);
+                }}
+              />
               {reason === LateEntryReason.OTHER && (
                 <div className="grid gap-1">
                   <label className="text-sm font-medium" htmlFor="late-entry-note">
@@ -295,7 +293,7 @@ export function StartSheet({
                   />
                   {errors.note && (
                     <p role="alert" className="text-sm text-destructive">
-                      {errors.note}
+                      {tError(errors.note)}
                     </p>
                   )}
                 </div>
@@ -305,7 +303,7 @@ export function StartSheet({
                   key={key}
                   label={tLate(key)}
                   onChange={(value) => setTimes((current) => ({ ...current, [key]: value }))}
-                  {...(errors[key] ? { error: errors[key] } : {})}
+                  {...(errors[key] ? { error: tError(errors[key]) } : {})}
                   data-testid={`late-entry-${key}`}
                 />
               ))}

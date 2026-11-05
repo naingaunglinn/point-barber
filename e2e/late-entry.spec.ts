@@ -53,13 +53,34 @@ test.afterAll(async () => {
   await aungApi.dispose();
 });
 
+/** `HH:mm` as the time list shows it, "3:30 PM" (D-PLT-05 — the same in both languages). */
+function shownTime(time: string): string {
+  const [hours = 0, minutes = 0] = time.split(':').map(Number);
+  const marker = hours < 12 ? 'AM' : 'PM';
+  return `${hours % 12 === 0 ? 12 : hours % 12}:${String(minutes).padStart(2, '0')} ${marker}`;
+}
+
+/**
+ * The time `HH:mm` of the field `late-entry-<key>`, as a person chooses it: press the time's combobox,
+ * type the time as it is shown into its search field, press the time's option. The popover is portaled
+ * to the end of the page; the trigger's `aria-controls` names it.
+ */
+async function chooseTime(page: Page, key: string, time: string): Promise<void> {
+  const trigger = page.getByTestId(`late-entry-${key}`).getByTestId(`late-entry-${key}-time`);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  const popup = page.locator(`[id="${await trigger.getAttribute('aria-controls')}"]`);
+  await popup.getByRole('combobox').fill(shownTime(time));
+  await popup.getByTestId(`late-entry-${key}-time-${time}`).click();
+}
+
 /** One time field of a late entry: yesterday and the time of day `HH:mm`. */
 async function fillTime(page: Page, key: string, time: string): Promise<void> {
   const field = page.getByTestId(`late-entry-${key}`);
   const date = field.getByRole('textbox');
   await date.fill(yesterday.typed);
   await date.blur();
-  await field.getByTestId(`late-entry-${key}-time`).selectOption(time);
+  await chooseTime(page, key, time);
 }
 
 /** The START sheet of a late entry: INTERNET_OUTAGE, Haircut, the four times of the paper slip. */

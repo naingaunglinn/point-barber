@@ -7,7 +7,18 @@ export { ClockProvider, useNow } from './providers/clock';
 export { FormatProvider, useFormat, type FormatSettings } from './providers/format';
 export { createQueryClient, QueryProvider } from './providers/query';
 
+export {
+  ActionMenu,
+  type ActionMenuItem,
+  type ActionMenuProps,
+} from './components/ActionMenu/ActionMenu';
 export { Button, type ButtonProps, type ButtonVariant } from './components/Button/Button';
+export {
+  ChoiceGroup,
+  RADIO_LIMIT,
+  type ChoiceGroupProps,
+  type ChoiceOption,
+} from './components/ChoiceGroup/ChoiceGroup';
 export { DataText } from './components/DataText/DataText';
 export { DateText, type DateTextMode, type DateTextProps } from './components/DateText/DateText';
 export { Dialog, type DialogProps } from './components/Dialog/Dialog';
@@ -179,8 +190,10 @@ export {
   applyProblem,
   fieldErrorOf,
   formResolver,
+  movesToSubmit,
   registerField,
   useAppForm,
+  useTextField,
   type AppFormProps,
 } from './forms/use-app-form';
 

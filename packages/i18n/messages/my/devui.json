@@ -98,10 +98,13 @@
     "branchPersona": "Persona ရဲ့ scope ထဲက ဆိုင်ခွဲများ",
     "headerFour": "Primary တစ်ခုနှင့် secondary လေးခု",
     "headerTwo": "Primary တစ်ခုနှင့် secondary နှစ်ခု",
+    "actionMenu": "ဖျက်တဲ့ action ပါတဲ့ kebab menu",
     "buttonVariants": "ပုံစံများ၊ icon သက်သက်၊ အကြောင်းပြချက်နဲ့ ပိတ်ထား",
     "buttonLoading": "Loading — နှစ်ချက်နှိပ်လည်း တစ်ကြိမ်ပဲ ခေါ်",
     "form": "Form — Save က စစ်; ခလုတ်တွေက server အဖြေအဖြစ်",
     "textInput": "မှတ်ချက် စာကြောင်းများ (Zawgyi ကို ပြောင်း)",
+    "choiceSeven": "ရွေးစရာ ၇ ခု — radio group",
+    "choiceEight": "ရွေးစရာ ၈ ခု — ရှာလို့ရတဲ့ စာရင်း",
     "languageSwitch": "ဘာသာ ပြောင်း (demo ထဲက တန်ဖိုး မပျောက်)",
     "moneyInput": "ကျပ် အပြည့် ဈေးနှုန်း",
     "moneyText": "B3 အရောင်း ၄ ခုရဲ့ ငွေ",
@@ -160,6 +163,7 @@
     "cancelBooking": "Cancel booking ကို နှိပ်ပြီး",
     "start": "centre.onPress()",
     "branch": "onChange(\"{choice}\")",
+    "chosen": "onChange(\"{value}\")",
     "pressed": "{label} ကို နှိပ်ပြီး",
     "reported": "ပြန်ပေးတဲ့ တန်ဖိုး:",
     "sort": "onSortChange(\"{sort}\")",
@@ -268,7 +272,8 @@
     "phone": "Customer ဖုန်း",
     "serviceName": "ဝန်ဆောင်မှု နာမည်",
     "note": "မှတ်ချက်",
-    "visitDate": "လာတဲ့ရက်"
+    "visitDate": "လာတဲ့ရက်",
+    "reason": "အကြောင်းပြချက်"
   },
   "lists": {
     "receiptNo": "ဘောင်ချာ နံပါတ်",

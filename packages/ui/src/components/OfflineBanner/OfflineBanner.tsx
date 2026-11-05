@@ -6,7 +6,8 @@ import { useSyncExternalStore } from 'react';
 
 // No connection (AD-STATE-05 · D-VIS-13 · design D10): a banner that stays at the top while the browser
 // is offline or the caller reports the API unreachable, with the late-entry help link. Nothing is
-// queued and the forms keep their input — the banner only says so.
+// queued and the forms keep their input — the banner only says so. Inside an AppShell it sticks under
+// the top bar (`--shell-top`), elsewhere at the top of the page.
 
 function subscribe(onChange: () => void) {
   window.addEventListener('online', onChange);
@@ -34,7 +35,7 @@ export function OfflineBanner({ helpHref, apiUnreachable = false }: OfflineBanne
   return (
     <div
       role="status"
-      className="sticky top-0 z-40 flex flex-wrap items-center gap-2 border-b border-border bg-warning-subtle px-4 py-3 text-warning"
+      className="sticky top-[var(--shell-top,0px)] z-40 flex flex-wrap items-center gap-2 border-b border-border bg-warning-subtle px-4 py-3 text-warning"
       data-slot="offline-banner"
     >
       <WifiOff aria-hidden className="size-5 shrink-0" />

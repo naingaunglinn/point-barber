@@ -159,7 +159,7 @@ export function PriceGridEditor(props: PriceGridEditorProps) {
       >
         <MoneyInput
           {...(headers === ''
-            ? { 'aria-label': label === '' ? t('shop') : label }
+            ? { 'aria-label': label === '' ? t(location === 'home' ? 'home' : 'shop') : label }
             : { 'aria-labelledby': headers })}
           value={current?.price_amount ?? null}
           placeholder={empty}

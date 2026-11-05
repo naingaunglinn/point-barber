@@ -13,6 +13,12 @@ const action = (label: string, extra: Partial<Action> = {}): Action => ({
   ...extra,
 });
 const NEW_BOOKING = 'New booking';
+const [BOOKINGS, SALES, POINT_3, SCOPE] = [
+  'Bookings',
+  'Sales',
+  'Point 3.0',
+  'Point 3.0 · 05/Oct/2026',
+];
 const [EXPORT, PRINT, IMPORT, SETTINGS] = ['Export', 'Print', 'Import', 'Settings'];
 
 const openMenu = () =>
@@ -25,13 +31,13 @@ describe('PageHeader', () => {
   it('Scenario: Page header actions — one filled button, two secondary buttons, a menu with the other two', () => {
     renderIntl(
       <PageHeader
-        title="Bookings"
-        subtitle="Point 3.0 · 05/Oct/2026"
+        title={BOOKINGS}
+        subtitle={SCOPE}
         primary={action(NEW_BOOKING)}
         secondary={[action(EXPORT), action(PRINT), action(IMPORT), action(SETTINGS)]}
       />,
     );
-    expect(screen.getByRole('heading', { level: 1, name: 'Bookings' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: BOOKINGS })).toBeDefined();
     const buttons = screen.getAllByRole('button');
     expect(
       buttons.filter((b) => b.dataset.variant === 'primary').map((b) => b.textContent),
@@ -50,7 +56,7 @@ describe('PageHeader', () => {
   it('Scenario: Exactly two secondary actions — both visible, no menu', () => {
     renderIntl(
       <PageHeader
-        title="Bookings"
+        title={BOOKINGS}
         primary={action(NEW_BOOKING)}
         secondary={[action(EXPORT), action(PRINT)]}
       />,
@@ -63,11 +69,7 @@ describe('PageHeader', () => {
   it('a destructive secondary action goes into the menu, never next to the primary', () => {
     const remove = action('Delete branch', { destructive: true });
     renderIntl(
-      <PageHeader
-        title="Point 3.0"
-        primary={action('Save')}
-        secondary={[action(EXPORT), remove]}
-      />,
+      <PageHeader title={POINT_3} primary={action('Save')} secondary={[action(EXPORT), remove]} />,
     );
     expect(screen.queryByRole('button', { name: 'Delete branch' })).toBeNull();
     openMenu();
@@ -78,7 +80,7 @@ describe('PageHeader', () => {
   it('an action that is not allowed is not shown; the filter bar sits under the header', () => {
     renderIntl(
       <PageHeader
-        title="Sales"
+        title={SALES}
         primary={action(NEW_BOOKING, { allowed: false })}
         secondary={[action(EXPORT, { allowed: false })]}
         filterBar={<div data-testid="filters" />}
