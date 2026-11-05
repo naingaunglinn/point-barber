@@ -204,6 +204,20 @@ export function BranchForm<B extends BranchBody>({
     }
   });
 
+  // Reload after a stale save: a load that fails keeps the banner and the input, and the alert says why
+  // (CG-ERR-01 · AD-STATE-03 — the error ID for a server error), as the company form does.
+  const reload =
+    onReload === undefined
+      ? undefined
+      : async () => {
+          setAlert(null);
+          try {
+            await onReload();
+          } catch (error) {
+            setAlert(error instanceof ApiProblem ? error.problem : NO_ANSWER);
+          }
+        };
+
   const codeMessage = (code: string) =>
     code === ErrorCode.ALREADY_EXISTS ? t('branch.field.codeTaken') : undefined;
 
@@ -214,7 +228,7 @@ export function BranchForm<B extends BranchBody>({
       data-testid="branch-form"
       onSubmit={(event) => void submit(event)}
     >
-      {conflict && onReload !== undefined ? <ConflictBanner onReload={onReload} /> : null}
+      {conflict && reload !== undefined ? <ConflictBanner onReload={reload} /> : null}
       {alert === null ? null : <FormAlert problem={alert} />}
 
       <BranchSection title={t('branch.form.section.branch')}>

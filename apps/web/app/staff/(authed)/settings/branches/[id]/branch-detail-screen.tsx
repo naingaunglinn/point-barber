@@ -64,16 +64,13 @@ function Editor({ branch, reload }: Readonly<{ branch: Branch; reload: Reload }>
       onSaved={restart}
       onCancel={() => router.push('/settings/branches')}
       onDirtyChange={setDirty}
-      onReload={async () => {
-        const fresh = await reload();
-        if (fresh !== undefined) restart(fresh);
-      }}
+      onReload={async () => restart(await reload())}
     />
   );
 }
 
-/** Loads the branch again; the fresh branch, or undefined when the load failed. */
-type Reload = () => Promise<Branch | undefined>;
+/** Loads the branch again; a failed load throws, and the form's alert shows it. */
+type Reload = () => Promise<Branch>;
 
 function Detail({ branch, reload }: Readonly<{ branch: Branch; reload: Reload }>) {
   const t = useTranslations('branch');
@@ -128,11 +125,12 @@ export function BranchDetailScreen({ id }: { readonly id: string }) {
       </div>
     );
   }
-  // A failed load keeps the cached branch in `data` (TanStack Query v5), so it is read from the result's
-  // status: the form then keeps its input and the conflict banner its Reload.
+  // A failed load keeps the cached branch in `data` (TanStack Query v5), so Reload throws instead: the form
+  // then keeps its input, the conflict banner its Reload, and the alert says why.
   const reload = async () => {
-    const result = await branch.refetch();
-    return result.isError ? undefined : result.data;
+    const { data } = await branch.refetch({ throwOnError: true });
+    if (data === undefined) throw new Error('GET /v1/branches/:id answered no branch');
+    return data;
   };
   return <Detail branch={branch.data} reload={reload} />;
 }

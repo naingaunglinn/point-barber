@@ -189,7 +189,7 @@ describe('A branch — the header and the form', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
-  it('a Reload that fails after a stale save keeps the input and the banner with Reload', async () => {
+  it('a Reload that fails after a stale save keeps the input and the banner with Reload, and says why', async () => {
     const get = failAfterFirst(B3, { [`PATCH ${url(B3)}`]: json(409, problem(409, 'conflict')) });
     renderPos(<BranchDetailScreen id={B3.id} />, { me: PEOPLE.kyawZin });
     await screen.findByTestId('branch-form');
@@ -202,6 +202,8 @@ describe('A branch — the header and the form', () => {
     expect(screen.getByTestId('branch-conflict-banner')).toBeTruthy();
     expect(input('address_mm', 1).value).toBe('No. 3, Example Road');
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    // The 500's error ID (AD-STATE-03): the failure is shown, not swallowed (CG-ERR-01).
+    expect(await screen.findByText(/0199a3f2/)).toBeTruthy();
   });
 
   it('leaving with an unsaved edit asks "Discard changes?"; Keep editing keeps it', async () => {
