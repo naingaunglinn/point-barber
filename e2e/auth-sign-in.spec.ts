@@ -93,8 +93,14 @@ test.describe('add-foundation-auth-access · auth · who may sign in (task 8.5)'
       await expect(page.getByTestId('login-code')).toBeVisible();
       await expect(page.getByTestId('login-code-sent')).toBeVisible();
     }
-    // Give the job worker the time it takes for a real address (it delivers within a second or two).
-    await page.waitForTimeout(5000);
+    // The code e-mail is a job (ADR-002), enqueued while the request is answered: an address that may
+    // not sign in has none, which is visible at once, without waiting for the worker.
+    for (const email of ['nobody@point.test', 'naing@point.test']) {
+      const jobs = sql(
+        `SELECT count(*) FROM pgboss.job WHERE name = 'email.send' AND data->>'to' = '${email}';`,
+      );
+      expect(jobs.trim(), `e-mail jobs for ${email}`).toBe('0');
+    }
     expect(await mailpit.count('nobody@point.test')).toBe(before.nobody);
     expect(await mailpit.count('naing@point.test')).toBe(before.naing);
   });

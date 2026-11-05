@@ -52,7 +52,7 @@ function shiftDeviceClock(target: number): void {
   Object.setPrototypeOf(DeviceDate, NativeDate);
   Object.defineProperty(DeviceDate, 'prototype', { value: NativeDate.prototype });
   Object.defineProperty(DeviceDate, 'now', { value: now });
-  globalThis.Date = DeviceDate as unknown as DateConstructor;
+  Object.defineProperty(globalThis, 'Date', { value: DeviceDate });
 }
 
 export const test = base.extend<CatalogueOptions & CatalogueFixtures>({

@@ -1,7 +1,9 @@
 import type { Page } from '@playwright/test';
+import { z } from 'zod';
 
 import { expect, recordPolicyViolations, test } from './fixtures.js';
 import { APP_ORIGIN } from './hosts.js';
+import { looseObject, parseJsonText, readJson } from './helpers/json.js';
 import { signInAs } from './helpers/sign-in.js';
 import { restartApi, withServiceEnv } from './helpers/stack.js';
 
@@ -19,13 +21,15 @@ test.beforeAll(async ({ playwright }) => {
   await restartApi(playwright);
 });
 
+const itemHeader = z.object({ type: z.string().optional() });
+
 /** The `event` items of an envelope: newline-delimited JSON, item header then payload. */
 function eventsOf(envelope: string): Record<string, unknown>[] {
   const lines = envelope.split('\n').filter((line) => line.length > 0);
   const events: Record<string, unknown>[] = [];
   for (let i = 1; i + 1 < lines.length; i += 2) {
-    if ((JSON.parse(lines[i] ?? '{}') as { type?: string }).type === 'event') {
-      events.push(JSON.parse(lines[i + 1] ?? '{}') as Record<string, unknown>);
+    if (parseJsonText(itemHeader, lines[i] ?? '{}').type === 'event') {
+      events.push(parseJsonText(looseObject, lines[i + 1] ?? '{}'));
     }
   }
   return events;
@@ -46,8 +50,10 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
     app,
     policyViolations,
   }) => {
-    const release = ((await (await app.get('/api/v1/system/status')).json()) as { version: string })
-      .version;
+    const { version: release } = await readJson(
+      z.object({ version: z.string() }),
+      await app.get('/api/v1/system/status'),
+    );
     await withServiceEnv(
       playwright,
       'web',
@@ -62,6 +68,8 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
           await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
         const page = await context.newPage();
+        // The fake clock (CG-TEST-09) runs on with real time until it is moved by `runFor` below.
+        await page.clock.install();
         // `/` opens Today with the query kept (add-walkin-visit-checkout task 10.1); the event's URL
         // has no query string.
         await page.goto('/?branch=B3');
@@ -71,7 +79,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
         await expect(page.locator('html')).toHaveAttribute('data-error-reporting', 'ready');
         await throwUncaught(page);
         await expect.poll(() => envelopes.length).toBe(1);
-        await page.waitForTimeout(1000);
+        await page.clock.runFor(1000);
         expect(envelopes).toHaveLength(1);
         const events = eventsOf(envelopes[0] ?? '');
         expect(events).toHaveLength(1);
@@ -95,10 +103,11 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
       if (/sentry/i.test(new URL(request.url()).host)) sentry.push(request.url());
     });
     const page = await context.newPage();
+    await page.clock.install();
     await page.goto('/');
     await expect(page.getByTestId('today')).toBeVisible();
     await throwUncaught(page);
-    await page.waitForTimeout(2000);
+    await page.clock.runFor(2000);
     expect(sentry).toStrictEqual([]);
     expect(await page.content()).not.toContain('ingest.sentry.io');
     await expect(page.locator('html')).not.toHaveAttribute('data-error-reporting', 'ready');

@@ -1,6 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures.js';
+import { meClock, readJson } from './helpers/json.js';
 import { restartApi, sql } from './helpers/stack.js';
 import {
   MOBILE,
@@ -33,9 +34,7 @@ test.beforeAll(async ({ playwright }) => {
   await restartApi(playwright);
   aung = await sessionOf(playwright, PEOPLE.aung);
   aungApi = await apiAs(playwright, aung);
-  const me = (await (await aungApi.get('/api/v1/me')).json()) as {
-    system: { server_time: string };
-  };
+  const me = await readJson(meClock, await aungApi.get('/api/v1/me'));
   // server_time is written in +06:30: its date part is the Myanmar date (D-PLT-15).
   const today = new Date(`${me.system.server_time.slice(0, 10)}T00:00:00Z`);
   const day = new Date(today.getTime() - 24 * 60 * 60 * 1000);

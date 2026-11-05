@@ -11,7 +11,7 @@ const DECIMAL = /^(-?)(\d+)(?:\.(\d+))?$/;
 export function formatPercent(value: number | string): string {
   const text = typeof value === 'number' && Number.isFinite(value) ? value.toFixed(10) : value;
   const match = typeof text === 'string' ? DECIMAL.exec(text.trim()) : null;
-  if (!match) throw new RangeError(`Not a decimal number: ${String(value)}`);
+  if (match === null) throw new RangeError(`Not a decimal number: ${String(value)}`);
   const [, sign = '', whole = '0', fraction = ''] = match;
   const digits = fraction.padEnd(3, '0');
   let hundredths = BigInt(whole) * 100n + BigInt(digits.slice(0, 2));

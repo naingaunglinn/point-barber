@@ -75,7 +75,7 @@ export function Receipt({ view, company, logo }: ReceiptProps) {
   return (
     <main>
       <header className="center">
-        {logo != null && INLINE_IMAGE.test(logo.dataUri) && (
+        {logo !== undefined && logo !== null && INLINE_IMAGE.test(logo.dataUri) && (
           // The name follows as text, so the image is decorative for a reader.
           <img className="logo" src={logo.dataUri} alt="" />
         )}
@@ -170,6 +170,7 @@ export function receiptHtml(props: ReceiptProps & { readonly paper: PaperWidthMm
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        {/* cg-exception CG-SEC-04: `css` is the constant template CSS plus the paper width, never user input; React would escape the quotes and > of a <style> text and break the CSS. */}
         <style dangerouslySetInnerHTML={{ __html: css }} />
       </head>
       <body>

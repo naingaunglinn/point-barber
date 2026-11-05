@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { SETTINGS, type SettingKey, settingDefault } from './catalogue.js';
 import { type MessageTree, settingDefinitionProblems, settingTextProblems } from './definitions.js';
@@ -16,7 +17,9 @@ import { type MessageTree, settingDefinitionProblems, settingTextProblems } from
 // validation, the typed copy kept current, and the fourteen entries of this change.
 const shared = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const definitionsFile = join(shared, 'definitions/settings.json');
-const json = JSON.parse(readFileSync(definitionsFile, 'utf8')) as Record<string, unknown>[];
+const json = z
+  .array(z.record(z.string(), z.unknown()))
+  .parse(JSON.parse(readFileSync(definitionsFile, 'utf8')));
 const generator = join(shared, 'scripts/generate-settings.mjs');
 
 /** settings.json with one entry changed. */
@@ -24,10 +27,13 @@ const withEntry = (key: string, change: Record<string, unknown>): unknown[] =>
   json.map((entry) => (entry.key === key ? { ...entry, ...change } : entry));
 
 /** The `settings` namespace of one language (packages/i18n — the owner-approved copy, S18). */
+const messageTree: z.ZodType<MessageTree> = z.lazy(() =>
+  z.record(z.string(), z.union([z.string(), messageTree])),
+);
 const settingsTexts = (language: 'my' | 'en'): MessageTree =>
-  JSON.parse(
-    readFileSync(join(shared, `../i18n/messages/${language}/settings.json`), 'utf8'),
-  ) as MessageTree;
+  messageTree.parse(
+    JSON.parse(readFileSync(join(shared, `../i18n/messages/${language}/settings.json`), 'utf8')),
+  );
 
 const runGenerator = (...args: string[]) =>
   spawnSync(process.execPath, [generator, '--check', ...args], { encoding: 'utf8' });
@@ -98,13 +104,16 @@ describe('add-settings-store · settings · Setting definitions live in one file
   });
 
   it('a text key missing in one language is refused and named', () => {
-    const my = settingsTexts('my') as Record<string, Record<string, Record<string, unknown>>>;
-    const booking = { ...my.booking };
-    const { impact: _impact, ...slotWithoutImpact } = booking.slot_interval_minutes ?? {};
-    const broken = {
+    const my = z
+      .looseObject({
+        booking: z.looseObject({ slot_interval_minutes: z.record(z.string(), z.unknown()) }),
+      })
+      .parse(settingsTexts('my'));
+    const { impact: _impact, ...slotWithoutImpact } = my.booking.slot_interval_minutes;
+    const broken = messageTree.parse({
       ...my,
-      booking: { ...booking, slot_interval_minutes: slotWithoutImpact },
-    } as unknown as MessageTree;
+      booking: { ...my.booking, slot_interval_minutes: slotWithoutImpact },
+    });
     expect(settingTextProblems(SETTINGS, { my: broken, en: settingsTexts('en') })).toStrictEqual([
       'my: booking.slot_interval_minutes: no text for settings.booking.slot_interval_minutes.impact',
     ]);
