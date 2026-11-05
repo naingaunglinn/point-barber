@@ -24,6 +24,7 @@ import { SaleItemsRepository } from '../repositories/sale-items.repository.js';
 import { type SaleRow, SalesRepository } from '../repositories/sales.repository.js';
 import { openingHoursLine } from './opening-hours-line.js';
 import { type ReceiptDocument, type ReceiptFileSet, ReceiptFiles } from './receipt-files.js';
+import { ReceiptLogo } from './receipt-logo.js';
 import type { ReceiptRenderData } from './receipt-render.job.js';
 
 // `ReceiptView` (P4.RCP.01 / .02 `format=json` · AD-RCPT-01 · OPEN-32 · add-walkin-visit-checkout design
@@ -32,6 +33,8 @@ import type { ReceiptRenderData } from './receipt-render.job.js';
 // fallback (AD-L10N-03), whatever the caller's language; lines from `description_en` else
 // `description_mm`; the customer's phone masked. The same view, with the company name, is the input of
 // the receipt template, so the stored PDF and PNG print what `format=json` shows at that moment.
+// add-company-profile (design D7 · reading 2): `branch.logo_url` is the company's `logo_url` — branches
+// have no logo — and the document draws that logo, loaded inline, above the company name.
 
 /** A built receipt and the facts its stored files need. */
 export interface ReceiptSource {
@@ -62,6 +65,7 @@ export class ReceiptViews {
     private readonly hours: OpeningHours,
     private readonly settings: SettingsReader,
     private readonly files: ReceiptFiles,
+    private readonly logo: ReceiptLogo,
   ) {}
 
   /** The receipt of a sale; null when there is none; 409 unless the sale is FINISHED. */
@@ -120,7 +124,12 @@ export class ReceiptViews {
         number: sale.receipt_number,
         original_number: null,
         issued_at: toMmtIso(sale.finished_at ?? sale.updated_at),
-        branch: { name: header.name, address: header.address, phone: header.phone, logo_url: null },
+        branch: {
+          name: header.name,
+          address: header.address,
+          phone: header.phone,
+          logo_url: header.company_logo_url,
+        },
         barbers,
         customer_name: customer?.name ?? null,
         customer_phone_masked: customer?.phone_masked ?? null,
@@ -174,7 +183,12 @@ export class ReceiptViews {
         number: refund.refund_receipt_number,
         original_number: sale.receipt_number,
         issued_at: toMmtIso(refund.refunded_at),
-        branch: { name: header.name, address: header.address, phone: header.phone, logo_url: null },
+        branch: {
+          name: header.name,
+          address: header.address,
+          phone: header.phone,
+          logo_url: header.company_logo_url,
+        },
         barbers: [],
         customer_name: null,
         customer_phone_masked: null,
@@ -199,16 +213,23 @@ export class ReceiptViews {
     };
   }
 
-  /** The input of ReceiptFiles.ensure: the template at the branch's printer width (design D10 step 2). */
+  /**
+   * The input of ReceiptFiles.ensure: the template at the branch's printer width, with the company
+   * logo when there is one (walk-in design D10 step 2 · add-company-profile design D7).
+   */
   async document(entity: ReceiptRenderData): Promise<ReceiptDocument> {
     const source =
       entity.entity_type === 'sales'
         ? await this.ofSale(this.prisma, entity.entity_id)
         : await this.ofRefund(this.prisma, entity.entity_id);
     if (source === null) throw new Error(`no ${entity.entity_type} row ${entity.entity_id}`);
-    const paper = await this.paperOf(source.branch_id);
+    const [paper, logo] = await Promise.all([
+      this.paperOf(source.branch_id),
+      this.logo.load(source.view.branch.logo_url),
+    ]);
     return {
-      html: receiptHtml({ view: source.view, company: source.company, paper }),
+      // One HTML for the PDF and the PNG, so both draw the same logo (design D7).
+      html: receiptHtml({ view: source.view, company: source.company, paper, logo }),
       width_mm: paper,
       number: source.view.number,
       company_id: source.company_id,

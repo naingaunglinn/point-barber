@@ -11,6 +11,7 @@ import {
   AttachmentKind,
   AuditSource,
   BranchStatus,
+  CompanyStatus,
   CustomerStatus,
   DiscountType,
   EmployeeStatus,
@@ -139,6 +140,8 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['CustomerStatus', CustomerStatus, 'customers', 'status'],
     // task 3.6 — the receipt files
     ['AttachmentKind', AttachmentKind, 'attachments', 'kind'],
+    // add-company-profile task 1.5 — Company.status
+    ['CompanyStatus', CompanyStatus, 'companies', 'status'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
   });

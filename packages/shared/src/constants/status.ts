@@ -105,6 +105,10 @@ export type StatusCode<T extends StatusTable> =
 // STATUS_BY_TABLE: no status label shows them (AD-CMP-05). Each set equals the CHECK list of its
 // column in db/source (status.test.ts).
 
+/** part1 — companies.status (add-company-profile — `Company.status`, P1.CO.01). */
+export const CompanyStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type CompanyStatus = (typeof CompanyStatus)[keyof typeof CompanyStatus];
+
 /** part1 — roles.status. */
 export const RoleStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type RoleStatus = (typeof RoleStatus)[keyof typeof RoleStatus];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useId, useState, type FocusEvent } from 'react';
+import { useId, useState, type FocusEvent, type Ref } from 'react';
 
 import { TextInput } from '../TextInput/TextInput';
 import { FieldMessage } from '../FormField/FieldMessage';
@@ -13,7 +13,9 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // already marks the field. `required={false}` makes the Myanmar text optional too — a pair such as an
 // address (add-branch-management) or the thank-you text and the maintenance messages (add-settings-store):
 // no asterisk, no `aria-required` and no message for an empty pair. `hint` replaces the default hint under
-// the pair with a translated text of the screen (add-settings-store).
+// the pair with a translated text of the screen (add-settings-store). A form binds the two members to the
+// two inputs: `ref` / `enRef` are the elements it focuses on an error, `onBlur` gets the event of leaving
+// the pair, `testIds` names them.
 
 export interface Bilingual {
   readonly mm: string;
@@ -32,10 +34,17 @@ export interface BilingualInputProps {
   readonly disabled?: boolean;
   /** From FormField: these go to the Myanmar input, the required one. */
   readonly id?: string;
-  readonly onBlur?: () => void;
+  /** Leaving the pair: the blur of the input the focus left, to an element outside the pair. */
+  readonly onBlur?: (event: FocusEvent<HTMLDivElement>) => void;
   readonly 'aria-invalid'?: true;
   readonly 'aria-describedby'?: string;
   readonly 'aria-required'?: true;
+  /** The Myanmar input — the element a form focuses on an error of the Myanmar member. */
+  readonly ref?: Ref<HTMLInputElement>;
+  /** The English input — the element a form focuses on an error of the English member. */
+  readonly enRef?: Ref<HTMLInputElement>;
+  /** Test ids of the two inputs (CG-TEST-06). */
+  readonly testIds?: { readonly mm: string; readonly en: string };
 }
 
 const REQUIRED_MARK = '*';
@@ -52,6 +61,9 @@ export function BilingualInput({
   onBlur,
   'aria-invalid': ariaInvalid,
   'aria-describedby': describedBy,
+  ref,
+  enRef,
+  testIds,
 }: BilingualInputProps) {
   const t = useTranslations();
   const ownId = useId();
@@ -65,7 +77,7 @@ export function BilingualInput({
   const leave = (event: FocusEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) return; // still inside the pair
     setMissing(required && value.mm.trim() === '');
-    onBlur?.();
+    onBlur?.(event);
   };
 
   return (
@@ -81,6 +93,8 @@ export function BilingualInput({
         </label>
         <TextInput
           id={mmId}
+          ref={ref}
+          data-testid={testIds?.mm}
           lang="my"
           value={value.mm}
           multiline={multiline}
@@ -104,6 +118,8 @@ export function BilingualInput({
         </label>
         <TextInput
           id={enId}
+          ref={enRef}
+          data-testid={testIds?.en}
           lang="en"
           value={value.en ?? ''}
           multiline={multiline}

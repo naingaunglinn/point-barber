@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { Messages } from '@point/i18n';
 
 import { useCan } from '../../lib/session/grants';
+import { seesCompany } from './company-access';
 
 // The Settings menu (AD-NAV-02 · AD-NAV-03 · add-company-profile design D8 and "Shared pieces" — the
 // first Dev 1 wave-1 change to merge creates it, the others add their screen): one list of screens,
@@ -27,6 +28,8 @@ interface SettingsScreenEntry {
 
 /** The screens of Settings, in AD-NAV-02 order. Each change adds its own entry here. */
 const SCREENS: readonly SettingsScreenEntry[] = [
+  // add-company-profile — any `company.*` code (AD-NAV-02 · design D8).
+  { key: 'company', href: '/settings/company', visible: seesCompany },
   // add-settings-store — Additional settings for any `settings.*` code (settings.view⁺, mixed — design
   // D10); Maintenance mode for company-scope settings.update only (P1.SYS.03 · AD-NAV-08), last.
   {

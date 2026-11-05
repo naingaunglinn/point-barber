@@ -10,8 +10,8 @@ import { statementsOf } from './helpers/statements.js';
 // add-settings-store tasks 4.3 and 4.5 — spec "While maintenance is on, only company-scope
 // settings.update holders reach the staff API" (D-PLT-08 · API-AUTH-06 · P1-RULE-04 · AD-NAV-08 · design
 // D9): the gate in the guard chain after the session checks and before the access guard; the public,
-// sign-in and internal routes stay open; `/me.system.maintenance` for those who pass; one settings read
-// per staff request while off. Maintenance is turned on and off through P1.SYS.03. 05/Oct/2026 evening.
+// sign-in and internal routes stay open; `/me.system.maintenance` for those who pass; two gate queries
+// per staff request while off (the company id and the settings row). Maintenance is turned on and off through P1.SYS.03. 05/Oct/2026 evening.
 const API = '/api/v1';
 const STAFF = `${API}/_fixtures/staff-read`;
 const mmt = (local: string) => new Date(`${local}+06:30`);
@@ -55,23 +55,18 @@ const tablesOf = (sql: string): string[] =>
   );
 
 describe('while maintenance is off (task 4.3)', () => {
-  it('a staff request sends one settings read (the gate) and no company read once the company is known; /me says maintenance false', async () => {
+  it("a staff request sends the gate's two reads, the company id and the settings row; /me says maintenance false", async () => {
     const { cookie } = await session('E004');
-    // The first staff request of the application also looks the company up; the id is kept after it.
-    const first = await statementsOf(async () => {
-      expect((await s.http.get(STAFF).set('Cookie', cookie)).status).toBe(200);
-    });
-    expect(first.filter((sql) => tablesOf(sql).includes('companies'))).toHaveLength(1);
-    // Every statement of the next one: the session lookup, the gate's one read of `settings`, then
-    // the two reads of the grant rows the access guard decides on — no company read.
+    // Every statement of one staff request: the session lookup, the gate's read of `companies` and of
+    // `settings`, then the two reads of the grant rows the access guard decides on.
     const sent = await statementsOf(async () => {
       expect((await s.http.get(STAFF).set('Cookie', cookie)).status).toBe(200);
       await s.app.get(BackgroundTasks).drain();
     });
-    expect(sent).toHaveLength(4);
+    expect(sent).toHaveLength(5);
     expect(tablesOf(sent[0] ?? '')).toContain('user_sessions');
-    expect(sent.filter((sql) => tablesOf(sql).includes('settings'))).toStrictEqual([sent[1]]);
-    expect(sent.filter((sql) => tablesOf(sql).includes('companies'))).toStrictEqual([]);
+    expect(sent.filter((sql) => tablesOf(sql).includes('companies'))).toStrictEqual([sent[1]]);
+    expect(sent.filter((sql) => tablesOf(sql).includes('settings'))).toStrictEqual([sent[2]]);
     expect((await get('E004', '/me')).body.system.maintenance).toBe(false);
   });
 });
