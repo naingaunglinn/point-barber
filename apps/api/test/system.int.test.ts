@@ -1,7 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { maintenanceBodySchema } from '@point/shared';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { DatabaseProbe } from '../src/common/database/prisma.service.js';
 import { HEALTH_PING_TIMEOUT_MS } from '../src/common/limits.js';
+import { type SeededApp, seededApp } from './helpers/seeded.js';
+import { storeSetting } from './helpers/settings.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
 // Spec "Health endpoint is a details-free liveness probe" and "System status endpoint is public"
@@ -89,5 +92,72 @@ describe('add-repo-scaffold · platform-runtime · System status endpoint is pub
     const res = await t.http.get('/api/v1/system/status');
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ maintenance: false });
+  });
+});
+
+// add-settings-store task 4.4 — platform-runtime (MODIFIED) "System status endpoint is public": the
+// members come from the effective company value of `system.maintenance` (D-PLT-08 · design D9). The
+// value is stored as P1.SYS.03 stores it (maintenanceBodySchema — the four members).
+describe('add-settings-store · platform-runtime · System status endpoint is public', () => {
+  const mmt = (local: string) => new Date(`${local}+06:30`);
+  let s: SeededApp;
+  beforeAll(async () => {
+    s = await seededApp(mmt('2026-10-05T21:00:00'));
+  });
+  afterAll(() => s.close());
+
+  const status = () => s.http.get('/api/v1/system/status');
+
+  it('Scenario: Default status — no row, the body is unchanged', async () => {
+    const res = await status();
+    expect(res.body).toStrictEqual({
+      maintenance: false,
+      until: null,
+      message_mm: null,
+      message_en: null,
+      version: '0.1.0',
+      server_time: '2026-10-05T21:00:00+06:30',
+    });
+  });
+
+  it('Scenario: Maintenance is on', async () => {
+    await storeSetting(
+      s,
+      'system.maintenance',
+      maintenanceBodySchema.parse({
+        enabled: true,
+        until: '2026-10-05T22:00:00+06:30',
+        message_en: 'Server update',
+      }),
+    );
+    s.clock?.set(mmt('2026-10-05T21:05:00'));
+    const res = await status();
+    expect([res.status, res.body]).toStrictEqual([
+      200,
+      {
+        maintenance: true,
+        until: '2026-10-05T22:00:00+06:30',
+        message_mm: null,
+        message_en: 'Server update',
+        version: '0.1.0',
+        server_time: '2026-10-05T21:05:00+06:30',
+      },
+    ]);
+  });
+
+  it('Scenario: The expected end passes — at 10:30 PM maintenance is still on', async () => {
+    s.clock?.set(mmt('2026-10-05T22:30:00'));
+    expect((await status()).body).toMatchObject({ maintenance: true });
+  });
+
+  it('Scenario: Maintenance turned off again', async () => {
+    s.clock?.set(mmt('2026-10-05T22:15:00'));
+    await storeSetting(s, 'system.maintenance', maintenanceBodySchema.parse({ enabled: false }));
+    expect((await status()).body).toMatchObject({
+      maintenance: false,
+      until: null,
+      message_mm: null,
+      message_en: null,
+    });
   });
 });

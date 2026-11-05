@@ -7,6 +7,7 @@ import {
   durationRangeSchema,
   grantSchema,
   healthSchema,
+  maintenanceBodySchema,
   meResponseSchema,
   paymentMethodSchema,
   paymentSchema,
@@ -23,7 +24,13 @@ import {
   saleItemSchema,
   saleSchema,
   serviceCategorySchema,
+  SETTING_KEY_PATTERN,
   serviceListItemSchema,
+  settingDefinitionSchema,
+  settingHistoryItemSchema,
+  settingPutBodySchema,
+  settingResetBodySchema,
+  settingViewSchema,
   systemStatusSchema,
   upcomingBookingSchema,
   visitSchema,
@@ -38,9 +45,9 @@ import { z } from 'zod';
 
 type JsonSchema = Record<string, unknown>;
 
-const schema = (zodSchema: z.ZodType): JsonSchema => {
+const schema = (zodSchema: z.ZodType, io: 'input' | 'output' = 'output'): JsonSchema => {
   const { $schema: _dialect, ...rest } = z.toJSONSchema(zodSchema, {
-    io: 'output',
+    io,
     // Zod writes a number literal as `number`; the smallint codes are `integer` in Part 1 (D-DB-03).
     override: ({ zodSchema: source, jsonSchema }) => {
       const def = source._zod.def;
@@ -54,6 +61,178 @@ const schema = (zodSchema: z.ZodType): JsonSchema => {
 const PROBLEM_RESPONSE = {
   description: 'Problem details (RFC 9457)',
   content: { 'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } } },
+};
+
+// add-settings-store task 3.12 — the settings reads P1.SET.01 / 02 / 05 as Part 1 v1.7 writes them.
+const settingsOk = (schema: JsonSchema) => ({
+  description: 'OK',
+  content: { 'application/json': { schema } },
+});
+const SETTING_KEY_PARAMETER = {
+  name: 'key',
+  in: 'path',
+  required: true,
+  schema: { type: 'string', pattern: SETTING_KEY_PATTERN.source },
+};
+const SETTINGS_BRANCH_PARAMETER = {
+  name: 'branch_id',
+  in: 'query',
+  schema: { type: 'string', format: 'uuid' },
+};
+const SETTINGS_PATHS = {
+  '/settings': {
+    get: {
+      tags: ['settings'],
+      operationId: 'listSettings',
+      summary:
+        'All setting definitions with company / branch / effective values — settings.view+ (P1.SET.01)',
+      'x-permission':
+        "settings.view+ (mixed: company values at any scope; branch_id must be covered by the caller's settings grant, else empty items)",
+      parameters: [
+        { name: 'module', in: 'query', schema: { type: 'string' } },
+        SETTINGS_BRANCH_PARAMETER,
+      ],
+      responses: {
+        '200': settingsOk({
+          type: 'object',
+          required: ['items'],
+          properties: {
+            items: { type: 'array', items: { $ref: '#/components/schemas/SettingView' } },
+          },
+        }),
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/settings/effective': {
+    get: {
+      tags: ['settings'],
+      operationId: 'getEffectiveSettings',
+      summary: 'Effective values of client-readable keys (P1.SET.02)',
+      'x-permission': 'any staff',
+      parameters: [
+        SETTINGS_BRANCH_PARAMETER,
+        {
+          name: 'keys',
+          in: 'query',
+          schema: { type: 'array', items: { type: 'string' } },
+          style: 'form',
+          explode: false,
+        },
+      ],
+      responses: {
+        '200': settingsOk({
+          type: 'object',
+          required: ['values', 'as_of'],
+          properties: {
+            values: { type: 'object', additionalProperties: true },
+            as_of: { type: 'string', format: 'date-time' },
+          },
+        }),
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  // P1.SET.03 / 04 — the request bodies are the input side of their schemas.
+  '/settings/{key}': {
+    parameters: [SETTING_KEY_PARAMETER],
+    put: {
+      tags: ['settings'],
+      operationId: 'putSetting',
+      summary: 'Set a company value or a branch override — settings.update (P1.SET.03)',
+      'x-permission':
+        'settings.update (mixed: no branch_id = company value -> company scope; branch_id = branch override -> that branch in scope)',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': { schema: { $ref: '#/components/schemas/SettingPutRequest' } },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Saved (history row written by trigger; settings.changed emitted)',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/SettingView' } } },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/settings/{key}/reset': {
+    parameters: [SETTING_KEY_PARAMETER],
+    post: {
+      tags: ['settings'],
+      operationId: 'resetSetting',
+      summary:
+        'Reset to the company value (branch) or to the default (company) — settings.update (P1.SET.04)',
+      'x-permission': 'settings.update (mixed — as putSetting)',
+      requestBody: {
+        content: {
+          'application/json': { schema: { $ref: '#/components/schemas/SettingResetRequest' } },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Reset',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/SettingView' } } },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/settings/{key}/history': {
+    get: {
+      tags: ['settings'],
+      operationId: 'getSettingHistory',
+      summary: 'Who changed it, when, old → new — settings.view+ (P1.SET.05)',
+      'x-permission':
+        'settings.view+ (mixed: company rows at any scope; branch rows for covered branches)',
+      parameters: [
+        SETTING_KEY_PARAMETER,
+        SETTINGS_BRANCH_PARAMETER,
+        { name: 'cursor', in: 'query', schema: { type: 'string' } },
+        {
+          name: 'limit',
+          in: 'query',
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
+        },
+      ],
+      responses: {
+        '200': settingsOk({
+          type: 'object',
+          required: ['items', 'next_cursor'],
+          properties: {
+            items: { type: 'array', items: { $ref: '#/components/schemas/SettingHistoryItem' } },
+            next_cursor: { type: ['string', 'null'] },
+          },
+        }),
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  // P1.SYS.03 — the request body is the input side of maintenanceBodySchema (trimmed, empty → null).
+  '/system/maintenance': {
+    put: {
+      tags: ['system'],
+      operationId: 'setMaintenance',
+      summary: 'Turn maintenance mode on / off — settings.update (P1.SYS.03)',
+      'x-permission': 'settings.update (company master: company scope)',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': { schema: { $ref: '#/components/schemas/MaintenanceRequest' } },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Updated',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/SystemStatus' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
 };
 
 export function buildOpenApiDocument(version: string): JsonSchema {
@@ -96,6 +275,7 @@ export function buildOpenApiDocument(version: string): JsonSchema {
           },
         },
       },
+      ...SETTINGS_PATHS,
     },
     components: {
       schemas: {
@@ -106,6 +286,15 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         MeResponse: schema(meResponseSchema),
         Problem: schema(problemSchema),
         SystemStatus: schema(systemStatusSchema),
+        // add-settings-store task 1.7 — P1.SET.01 – 05.
+        SettingDefinition: schema(settingDefinitionSchema),
+        SettingHistoryItem: schema(settingHistoryItemSchema),
+        SettingView: schema(settingViewSchema),
+        // add-settings-store tasks 3.12 / 4.1 — the inline bodies of putSetting, resetSetting and
+        // setMaintenance.
+        SettingPutRequest: schema(settingPutBodySchema, 'input'),
+        SettingResetRequest: schema(settingResetBodySchema, 'input'),
+        MaintenanceRequest: schema(maintenanceBodySchema, 'input'),
         // add-walkin-visit-checkout tasks 2.2 – 2.5 — the response DTOs of Parts 2 / 3 / 4; their
         // endpoints are added with the controllers of this change.
         CommissionEstimate: schema(commissionEstimateSchema),
