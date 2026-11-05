@@ -98,8 +98,12 @@ const NAMING = [
   {
     selector: ['objectLiteralProperty', 'typeProperty', 'classProperty'],
     format: ['camelCase', 'snake_case', 'UPPER_CASE', 'PascalCase'],
-    // `__html` (React) and `__brand` (the Mmk brand) are data fields with a double underscore.
-    leadingUnderscore: 'allowSingleOrDouble',
+  },
+  {
+    // `__html` (React) and `__brand` (the Mmk brand) are the only names with a double underscore.
+    selector: ['objectLiteralProperty', 'typeProperty'],
+    filter: { regex: '^__(html|brand)$', match: true },
+    format: null,
   },
   {
     selector: ['objectLiteralProperty', 'typeProperty'],

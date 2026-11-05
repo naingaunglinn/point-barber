@@ -186,6 +186,13 @@ describe('add-ci-lint-rules · mutation, promises, conditions, names, errors, co
     ]);
   });
 
+  it('Only __html and __brand may start with a double underscore', async () => {
+    expect(await lintFixture('double-underscore.ts')).toEqual([
+      { ruleId: ts('naming-convention'), line: 1 },
+      { ruleId: ts('naming-convention'), line: 2 },
+    ]);
+  });
+
   it('Scenario: Data fields keep their snake_case name', async () => {
     expect(await lintFixture('ok-naming.ts')).toEqual([]);
   });
