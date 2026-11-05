@@ -10,8 +10,10 @@ import { type LateEntryStepMember, useLateEntryTimes } from './late-entry-times'
 // The time a step of a late entry sends (AD-POS-14 · add-late-entry design D6 · task 4.5): "Service done"
 // the completed time, each payment (each part of a split) the received time, Finish the finish time. The
 // time kept on this device since START is sent as it is; when it is missing (another device, cleared
-// storage) the step shows that one field, empty and required, first (LE-3 ★). A visit that is not a late
-// entry sends nothing extra and shows nothing.
+// storage) the step shows that one field, empty and required, first (LE-3 ★). A time entered there is
+// the step's until it is sent or refused: the field shows it wherever it appears again (the checkout after
+// the first part of a split, sent from the sheet), and a refused one is cleared from the field too. A visit
+// that is not a late entry sends nothing extra and shows nothing.
 
 const LABEL: Record<LateEntryStepMember, 'completed' | 'received' | 'finished'> = {
   completed_at: 'completed',
@@ -47,11 +49,14 @@ export function useLateEntryStep(
   const [entered, setEntered] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
   const [refused, setRefused] = useState(false);
+  // A new field after a refusal: the refused date and time are not shown again.
+  const [generation, setGeneration] = useState(0);
   const late = visit.is_late_entry;
   useEffect(() => {
     if (late && refusal?.code === 'late_entry_time') {
       setRefused(true);
       setEntered(null);
+      setGeneration((current) => current + 1);
     }
   }, [late, refusal]);
   const keptTime = refused ? null : (kept?.[member] ?? null);
@@ -60,7 +65,9 @@ export function useLateEntryStep(
   const field =
     late && keptTime === null ? (
       <LateEntryTimeField
+        key={generation}
         label={t(LABEL[member])}
+        initial={entered}
         onChange={(value) => {
           setEntered(value);
           if (value !== null) setMissing(false);

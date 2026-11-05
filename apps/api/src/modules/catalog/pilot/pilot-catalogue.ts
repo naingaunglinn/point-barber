@@ -5,6 +5,7 @@ import {
   ServiceCategoryStatus,
   ServicePricingMode,
   ServiceStatus,
+  moneyFromWire,
 } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
@@ -138,7 +139,7 @@ export class PilotCatalogue {
             cell.employeeCode === null ? null : keys.employeeIds.get(cell.employeeCode);
           if (employeeId === undefined) continue;
           const price = await this.findPrice(tx, keys.branchId, stored.id, employeeId, day);
-          if (price !== null && price.price_amount !== BigInt(cell.price)) {
+          if (price !== null && price.price_amount !== moneyFromWire(cell.price)) {
             problems.push(
               changedValue(
                 'service_prices',
@@ -346,7 +347,7 @@ export class PilotCatalogue {
           service_id: serviceId,
           location_type: LocationType.BRANCH,
           employee_id: employeeId,
-          price_amount: BigInt(cell.price),
+          price_amount: moneyFromWire(cell.price),
           effective_from: day,
           created_at: ctx.now,
           updated_at: ctx.now,

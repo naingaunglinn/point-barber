@@ -188,7 +188,8 @@ Once the deploy is `ok`, check the backup of step 7 by hand:
 the restore drill once (`backup-restore.md`, "Pilot").
 
 **9. First company admin** (once per environment — P1-RULE-14), with the owner present. After the
-first deploy:
+first deploy, once the base seed job has finished: `dc logs api | grep -c 'sync.code_tables step done'` prints `3`
+(before that the roles may still be missing and the command refuses):
 
 ```sh
 dc exec api node dist/cli/admin-create.js \

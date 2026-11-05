@@ -17,7 +17,7 @@ const WEB_SOURCE = [
   'packages/ui/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}',
 ];
 const DEV1_WORKSPACES = [...WEB_SOURCE, 'packages/i18n/**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
-/** apps/web and every package (design D14 row 37); apps/api is enabled by add-walkin-visit-checkout. */
+/** apps/web and every package (design D14 row 37); apps/api: api.mjs (add-walkin-visit-checkout 2.9). */
 const MONEY_SCOPE = ['apps/web/**/*.{ts,tsx,mts,cts}', 'packages/*/**/*.{ts,tsx,mts,cts}'];
 
 const RAW_TEXT =
