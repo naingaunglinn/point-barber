@@ -418,6 +418,9 @@ importers:
       '@types/node':
         specifier: 24.19.1
         version: 24.19.1
+      pdfjs-dist:
+        specifier: 6.4.299
+        version: 6.4.299
       typescript:
         specifier: 6.0.3
         version: 6.0.3

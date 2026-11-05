@@ -4,8 +4,19 @@ import { z } from 'zod';
 // API-DATA-04 · API-ERR-03): instants with their offset, Myanmar calendar dates, whole kyats as JSON
 // integers, the smallint codes of a named constant, and the two reference shapes.
 
-/** An instant on the wire — ISO 8601 with its offset (`2026-10-05T10:42:00+06:30`). */
-export const wireDateTime = z.iso.datetime({ offset: true });
+/** A fraction of a second with more than 9 digits — more than `toDate` reads (`INSTANT`). */
+const LONG_FRACTION = /\.\d{10}/;
+
+/**
+ * An instant on the wire — ISO 8601 with its offset (`2026-10-05T10:42:00+06:30`), to the nanosecond at
+ * most: a longer fraction is refused like any other malformed instant (`invalid_format`), not left for
+ * `toDate` to throw on.
+ */
+export const wireDateTime = z.iso.datetime({ offset: true, abort: true }).check((ctx) => {
+  if (LONG_FRACTION.test(ctx.value)) {
+    ctx.issues.push({ code: 'invalid_format', format: 'datetime', input: ctx.value });
+  }
+});
 
 /** A Myanmar calendar date `YYYY-MM-DD` (D-PLT-15). */
 export const wireDate = z.iso.date();

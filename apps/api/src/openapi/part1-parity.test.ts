@@ -7,12 +7,57 @@ import { buildOpenApiDocument } from './document.js';
 // out, so the schemas are copied here from point-sdd docs/api/openapi/part1-foundation.yaml (v1.6,
 // components.schemas MeResponse, Grant, BranchSummary, BranchAssignment and the EmployeeRef that
 // MeResponse.employee extends). The full comparison (`openapi:check`) is add-ci-guard-rails.
+// add-company-profile task 1.5 adds Company and SocialLinks from Part 1 v1.7 (OpenAPI 1.7.0).
 
 type Schema = Record<string, unknown>;
 
 const uuid = { type: 'string', format: 'uuid' };
 const dateTime = { type: 'string', format: 'date-time' };
+const nullableText = { type: ['string', 'null'] };
+const link = { type: ['string', 'null'], format: 'uri', maxLength: 1000, pattern: '^https?://' };
 const PART1: Record<string, Schema> = {
+  // add-company-profile task 1.5 — Part 1 v1.7 (OpenAPI 1.7.0): Company and the SocialLinks it shares
+  // with the branches (CP1 · CP2).
+  SocialLinks: {
+    type: 'object',
+    properties: {
+      facebook: link,
+      tiktok: link,
+      viber: { type: ['string', 'null'], maxLength: 1000 },
+      instagram: link,
+      youtube: link,
+      other: {
+        type: 'array',
+        maxItems: 10,
+        items: {
+          type: 'object',
+          required: ['label', 'url'],
+          properties: {
+            label: { type: 'string', maxLength: 50 },
+            url: { type: 'string', format: 'uri', maxLength: 1000, pattern: '^https?://' },
+          },
+        },
+      },
+    },
+  },
+  Company: {
+    type: 'object',
+    required: ['id', 'name_mm', 'status'],
+    properties: {
+      id: uuid,
+      name_mm: { type: 'string' },
+      name_en: nullableText,
+      logo_url: nullableText,
+      phone: nullableText,
+      email: nullableText,
+      address_mm: nullableText,
+      address_en: nullableText,
+      website_url: nullableText,
+      social_links: { $ref: '#/components/schemas/SocialLinks' },
+      status: { type: 'integer', enum: [0, 1] },
+      updated_at: dateTime,
+    },
+  },
   BranchSummary: {
     type: 'object',
     required: ['id', 'code', 'name_mm', 'status', 'is_public'],
@@ -169,8 +214,9 @@ function expectParity(part1In: Schema, generatedIn: Schema, path: string): void 
     expectParity(part1.items as Schema, actual.items as Schema, `${path}[]`);
   if (part1.properties === undefined) return;
 
-  expect(actual.required, `${path} required`).toEqual(
-    expect.arrayContaining(part1.required as string[]),
+  // A Part 1 object without a `required` list (SocialLinks) requires no member.
+  expect(actual.required ?? [], `${path} required`).toEqual(
+    expect.arrayContaining((part1.required as string[] | undefined) ?? []),
   );
   const expected = part1.properties as Record<string, Schema>;
   const members = actual.properties as Record<string, Schema>;
@@ -182,8 +228,11 @@ function expectParity(part1In: Schema, generatedIn: Schema, path: string): void 
 }
 
 describe('generated response schemas = OpenAPI Part 1 (task 1.6 · design D15)', () => {
-  it.each(['MeResponse', 'Grant', 'BranchSummary', 'BranchAssignment'])('%s', (name) => {
-    expect(generated[name], name).toBeDefined();
-    expectParity(PART1[name] as Schema, generated[name] as Schema, name);
-  });
+  it.each(['MeResponse', 'Grant', 'BranchSummary', 'BranchAssignment', 'Company', 'SocialLinks'])(
+    '%s',
+    (name) => {
+      expect(generated[name], name).toBeDefined();
+      expectParity(PART1[name] as Schema, generated[name] as Schema, name);
+    },
+  );
 });
