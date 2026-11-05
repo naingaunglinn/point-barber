@@ -40,7 +40,23 @@ const puts = () =>
     .filter(([, init]) => init?.method === 'PUT')
     .map(([url, init]) => [String(url), JSON.parse(String(init?.body)) as unknown]);
 
-function open(me: MeResponse, list = listOf(), locale: Locale = 'en', extra = {}) {
+/** The rows most tests look at; "The admin sees every group" renders every key. */
+const SOME = [
+  'booking.slot_interval_minutes',
+  'booking.advance_window_days',
+  'home_service.transport_fee_amount',
+  'receipt.auto_print',
+  'receipt.printer_width_mm',
+  'receipt.thank_you_text',
+  'closing.cash_difference_tolerance_amount',
+] as const;
+const READ_ONLY = [
+  'sales.tax_enabled',
+  'sales.service_charge_enabled',
+  'system.maintenance',
+] as const;
+
+function open(me: MeResponse, list = listOf({ only: SOME }), locale: Locale = 'en', extra = {}) {
   routeFetch(fetchMock, { [LIST]: json(200, list), ...extra });
   return renderPos(<AdditionalSettingsScreen />, { me, locale });
 }
@@ -61,7 +77,7 @@ const noConfirmStep = () => expect(document.querySelector('[role="alertdialog"]'
 
 describe('add-settings-store · settings · The Additional settings screen', () => {
   it('Scenario: The admin sees every group', async () => {
-    open(kyawZinMe());
+    open(kyawZinMe(), listOf());
     await screen.findByTestId('settings-group-system');
     const groups = [...document.querySelectorAll('[data-testid^="settings-group-"] > h2')];
     expect(groups.map((heading) => heading.textContent)).toStrictEqual([
@@ -96,7 +112,7 @@ describe('add-settings-store · settings · The Additional settings screen', () 
   });
 
   it('Scenario: A manager sees company values read-only — no control and no Save', async () => {
-    open(maHninMe(), listOf({ editable: false }));
+    open(maHninMe(), listOf({ editable: false, only: SOME }));
     for (const [key, text] of [
       ['booking.slot_interval_minutes', '15 min'],
       ['booking.advance_window_days', '14 days'],
@@ -144,6 +160,7 @@ describe('add-settings-store · settings · The Additional settings screen', () 
       maHninMe(locale === 'en' ? 2 : 1),
       listOf({
         editable: false,
+        only: SOME,
         items: {
           'home_service.transport_fee_amount': {
             company_value: 2000,
@@ -189,7 +206,7 @@ describe('controls per type (task 5.5)', () => {
   });
 
   it('the Myanmar screen: labels, units and choices from the Myanmar file', async () => {
-    open(kyawZinMe(1), listOf(), 'my');
+    open(kyawZinMe(1), listOf({ only: SOME }), 'my');
     const slot = within(await screen.findByTestId('setting-booking.slot_interval_minutes-row'));
     expect(slot.getByText('အချိန်ကွက်')).toBeTruthy();
     expect(slot.getByRole('radio', { name: '15 မိနစ်' }).getAttribute('aria-checked')).toBe('true');
@@ -200,7 +217,7 @@ describe('controls per type (task 5.5)', () => {
 
 describe('saving (task 5.6)', () => {
   it('Scenario: No note — the auto-print switch saves at once and a success toast appears', async () => {
-    open(kyawZinMe(), listOf(), 'en', {
+    open(kyawZinMe(), listOf({ only: SOME }), 'en', {
       'PUT /api/v1/settings/receipt.auto_print': json(200, {}),
     });
     const autoPrint = within(await screen.findByTestId('setting-receipt.auto_print-row'));
@@ -213,7 +230,7 @@ describe('saving (task 5.6)', () => {
   });
 
   it('a field error of the server is shown under the field', async () => {
-    open(kyawZinMe(), listOf(), 'en', {
+    open(kyawZinMe(), listOf({ only: SOME }), 'en', {
       'PUT /api/v1/settings/booking.advance_window_days': json(
         400,
         problem(400, 'validation', {
@@ -233,7 +250,7 @@ describe('saving (task 5.6)', () => {
   });
 
   it('a refusal that names no field is shown at the top of the row', async () => {
-    open(kyawZinMe(), listOf(), 'en', {
+    open(kyawZinMe(), listOf({ only: SOME }), 'en', {
       'PUT /api/v1/settings/receipt.auto_print': json(400, problem(400, 'setting_scope')),
     });
     const autoPrint = within(await screen.findByTestId('setting-receipt.auto_print-row'));
@@ -258,7 +275,7 @@ describe('saving (task 5.6)', () => {
 
 describe('read-only rows (task 5.7)', () => {
   it('Scenario: The tax switch stays off — tax and service charge shown Off without a control', async () => {
-    open(kyawZinMe());
+    open(kyawZinMe(), listOf({ only: READ_ONLY }));
     for (const key of ['sales.tax_enabled', 'sales.service_charge_enabled']) {
       const shown = within(await screen.findByTestId(`setting-${key}-row`));
       expect(shown.getByTestId(`setting-${key}-value`).textContent).toBe('Off');
@@ -268,7 +285,7 @@ describe('read-only rows (task 5.7)', () => {
   });
 
   it('system.maintenance shows its state and, for company-scope settings.update, a link to Maintenance mode', async () => {
-    open(kyawZinMe());
+    open(kyawZinMe(), listOf({ only: READ_ONLY }));
     const maintenance = within(await screen.findByTestId('setting-system.maintenance-row'));
     expect(maintenance.getByTestId('setting-system.maintenance-value').textContent).toBe('Off');
     expect(maintenance.getByRole('link', { name: 'Maintenance mode' }).getAttribute('href')).toBe(
@@ -277,7 +294,7 @@ describe('read-only rows (task 5.7)', () => {
   });
 
   it('a manager sees the maintenance state without the link', async () => {
-    open(maHninMe(), listOf({ editable: false }));
+    open(maHninMe(), listOf({ editable: false, only: READ_ONLY }));
     const maintenance = within(await screen.findByTestId('setting-system.maintenance-row'));
     expect(maintenance.queryByRole('link')).toBeNull();
   });
@@ -285,7 +302,7 @@ describe('read-only rows (task 5.7)', () => {
 
 describe('add-settings-store · settings · The impact note before saving, and the history link', () => {
   it('Scenario: The impact note — 15 → 30 min asks first; Cancel sends nothing, Confirm sends 30', async () => {
-    open(kyawZinMe(), listOf(), 'en', {
+    open(kyawZinMe(), listOf({ only: SOME }), 'en', {
       'PUT /api/v1/settings/booking.slot_interval_minutes': json(200, {}),
     });
     const slot = within(await screen.findByTestId('setting-booking.slot_interval_minutes-row'));
@@ -311,7 +328,7 @@ describe('add-settings-store · settings · The impact note before saving, and t
   });
 
   it('Scenario: The transport fee asks first — U Kyaw Zin confirms 2,000 for the company', async () => {
-    open(kyawZinMe(), listOf(), 'en', {
+    open(kyawZinMe(), listOf({ only: SOME }), 'en', {
       'PUT /api/v1/settings/home_service.transport_fee_amount': json(200, {
         updated_by: KYAW_ZIN_REF,
       }),

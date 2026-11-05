@@ -61,20 +61,24 @@ export function listOf(
     readonly editable?: boolean;
     readonly items?: Partial<Record<SettingKey, Partial<SettingView>>>;
     readonly branch?: boolean;
+    /** Only these keys (a component test about some rows renders less); default every key. */
+    readonly only?: readonly SettingKey[];
   } = {},
 ): { items: SettingView[] } {
-  const { editable = true, items = {}, branch = false } = options;
+  const { editable = true, items = {}, branch = false, only } = options;
   return {
-    items: SETTINGS.map((entry) => {
-      const key = entry.key;
-      const readOnly = 'read_only' in entry;
-      const canEdit = editable && !readOnly && (!branch || entry.scope === 'branch');
-      return viewOf(key, {
-        editable: canEdit,
-        ...(branch ? { branch_value: null } : {}),
-        ...items[key],
-      });
-    }),
+    items: SETTINGS.filter((entry) => only === undefined || only.includes(entry.key)).map(
+      (entry) => {
+        const key = entry.key;
+        const readOnly = 'read_only' in entry;
+        const canEdit = editable && !readOnly && (!branch || entry.scope === 'branch');
+        return viewOf(key, {
+          editable: canEdit,
+          ...(branch ? { branch_value: null } : {}),
+          ...items[key],
+        });
+      },
+    ),
   };
 }
 

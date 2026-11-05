@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-
 import { type SettingKey, type SettingView, isSettingKey } from '@point/shared';
 import { useFormat } from '@point/ui';
 
 import { useCan } from '../../../lib/session/grants';
+import { RowActions } from './RowActions';
 import { SettingForm } from './SettingForm';
 import { type Translate, formatSettingValue } from './setting-values';
 import { SourceBadge } from './SourceBadge';
@@ -16,12 +15,9 @@ import { SourceBadge } from './SourceBadge';
 // label and help of the language files, the source badge, and either the control — when `editable` is
 // true — or the value as text. The tax and service-charge switches and `system.maintenance` are
 // read-only; the maintenance row links to Maintenance mode for a company-scope settings.update holder.
-// `actions` are the row's History, override and reset entries.
+// Under it, the row's History, override and reset entries (RowActions).
 
-export function SettingRow({
-  view,
-  actions,
-}: Readonly<{ view: SettingView; actions?: ReactNode }>) {
+export function SettingRow({ view }: Readonly<{ view: SettingView }>) {
   const t = useTranslations() as unknown as Translate;
   const tNav = useTranslations('settings.nav');
   const format = useFormat('SettingRow');
@@ -72,7 +68,7 @@ export function SettingRow({
           <SourceBadge source={view.source} />
         </div>
       </div>
-      {actions === undefined ? null : <div className="flex flex-wrap gap-2">{actions}</div>}
+      <RowActions settingKey={key} view={view} label={label} />
     </section>
   );
 }
