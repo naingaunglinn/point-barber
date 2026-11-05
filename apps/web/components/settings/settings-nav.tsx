@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import type { Messages } from '@point/i18n';
 
+import { BRANCH_CODES } from '../../lib/branches/access';
 import { useCan } from '../../lib/session/grants';
 
 // The Settings menu (AD-NAV-02 · AD-NAV-03 · add-company-profile design D8 and "Shared pieces" — the
@@ -26,7 +27,15 @@ interface SettingsScreenEntry {
 }
 
 /** The screens of Settings, in AD-NAV-02 order. Each change adds its own entry here. */
-const SCREENS: readonly SettingsScreenEntry[] = [];
+const SCREENS: readonly SettingsScreenEntry[] = [
+  // add-branch-management — Settings › Branches for a holder of any branch.* code at any scope
+  // (branch.view⁺ — AD-PERM-03 · design D9).
+  {
+    key: 'branches',
+    href: '/settings/branches',
+    visible: (can) => BRANCH_CODES.some((code) => can(code)),
+  },
+];
 
 export interface SettingsScreen {
   readonly key: SettingsScreenKey;
