@@ -41,6 +41,19 @@ export interface SettingWrite {
 
 const jsonb = (value: unknown) => Prisma.sql`${JSON.stringify(value)}::jsonb`;
 
+/**
+ * The rows one key can have in a read of rowsOf: the company row and the asked branch's row — the
+ * unique index `settings_scope_key_uq` allows no more (CG-PERF-02).
+ */
+const ROWS_PER_KEY = 2;
+
+/**
+ * The bound of the start-up check of unknown keys (CG-PERF-02) — generous on purpose: the stored keys
+ * are the keys of settings.json plus the few it no longer defines, far below a thousand. The check runs
+ * once per start.
+ */
+const STORED_KEYS_MAX = 1_000;
+
 @Injectable()
 export class SettingsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -67,6 +80,7 @@ export class SettingsRepository {
             ? [{ branch_id: null }]
             : [{ branch_id: null }, { branch_id: branchId }],
       },
+      take: keys.length * ROWS_PER_KEY,
       select: {
         id: true,
         key: true,
@@ -161,9 +175,18 @@ export class SettingsRepository {
     return rows.map((row) => historyRowSchema.parse(row));
   }
 
-  /** Every key that has a stored row — the start-up check of unknown keys (proposal reading 11). */
+  /**
+   * Every key that has a stored row — the start-up check of unknown keys (proposal reading 11), at
+   * most STORED_KEYS_MAX of them. A `groupBy`, not `findMany` with `distinct`: Prisma applies
+   * `distinct` and its `take` in memory after reading every row, while GROUP BY … LIMIT is bounded in
+   * the database.
+   */
   async storedKeys(): Promise<string[]> {
-    const rows = await this.prisma.settings.findMany({ distinct: ['key'], select: { key: true } });
+    const rows = await this.prisma.settings.groupBy({
+      by: ['key'],
+      orderBy: { key: 'asc' },
+      take: STORED_KEYS_MAX,
+    });
     return rows.map((row) => row.key).sort();
   }
 }
