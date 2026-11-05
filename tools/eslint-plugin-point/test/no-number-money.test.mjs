@@ -10,8 +10,9 @@ import api from '../../eslint/api.mjs';
 import web from '../../eslint/web.mjs';
 
 // ui-foundation "Lint fails on number arithmetic on money" (AD-IMPL-05 · API-DATA-02 · D-PLT-04 ·
-// CG-MONEY-03 · design D14). Linted with web.mjs, which enables the rule (and bans parseFloat in the Dev 1
-// workspaces), and api.mjs, which bans parseFloat in packages/shared.
+// CG-MONEY-03 · design D14). Linted with web.mjs, which enables the rule for apps/web and packages/* (and
+// bans parseFloat in the Dev 1 workspaces), and api.mjs, which enables it for apps/api
+// (add-walkin-visit-checkout task 2.9) and bans parseFloat in apps/api and packages/shared.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const fixtures = join(root, 'tools/eslint-plugin-point/fixtures');
 
@@ -34,7 +35,15 @@ const fixture = (name) => readFileSync(join(fixtures, name), 'utf8');
 const money = (line) => ({ ruleId: 'point/no-number-money', line });
 
 describe('point/no-number-money', () => {
-  it.each(['apps/web/app/sale.ts', 'packages/ui/src/sale.ts', 'packages/shared/src/visit/sale.ts'])(
+  it.each([
+    'apps/web/app/sale.ts',
+    'packages/ui/src/sale.ts',
+    'packages/shared/src/visit/sale.ts',
+    // add-walkin-visit-checkout task 2.9: the API too — its sources and its tests.
+    'apps/api/src/sale.ts',
+    'apps/api/src/modules/sales/totals/sale-totals.ts',
+    'apps/api/test/helpers/sale.ts',
+  ])(
     'Scenario: Float money — parseFloat, sale.total_amount * 2 and Number(amount) each fail (%s)',
     async (path) => {
       expect(await lint(fixture('float-money.ts'), path)).toEqual([
@@ -78,8 +87,8 @@ describe('point/no-number-money', () => {
     expect(messages).toEqual([]);
   });
 
-  it('is not enabled for apps/api by this change (add-walkin-visit-checkout task 2.9)', async () => {
-    const messages = await lint(fixture('float-money.ts'), 'apps/api/src/sale.ts');
-    expect(messages.filter((m) => m.ruleId === 'point/no-number-money')).toEqual([]);
+  it('allows the money helpers in apps/api (add-walkin-visit-checkout task 2.9)', async () => {
+    const code = `declare const sale: { total_amount: bigint; paid_amount: bigint };\ndeclare function moneyToWire(a: bigint): number;\ndeclare function subtractMoney(a: bigint, b: bigint): bigint;\nexport const x = moneyToWire(subtractMoney(sale.total_amount, sale.paid_amount));\n`;
+    expect(await lint(code, 'apps/api/src/modules/sales/view/x.ts')).toEqual([]);
   });
 });
