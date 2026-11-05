@@ -129,14 +129,12 @@ export class BranchesRepository {
     await tx.branches.update({ where: { id }, data: { ...members, updated_at: at } });
   }
 
-  /** The distinct employees with an assignment at the branch active on `date` (proposal reading 4). */
-  async activeEmployees(id: string, date: string, db: Tx | PrismaService = this.prisma) {
-    const rows = await db.employee_branches.findMany({
-      where: activeOn(id, date),
-      distinct: ['employee_id'],
-      select: { employee_id: true },
-    });
-    return rows.length;
+  /**
+   * The employees with at least one assignment at the branch active on `date` — each counted once
+   * (proposal reading 4). One COUNT; no row is loaded (CG-PERF-02).
+   */
+  activeEmployees(id: string, date: string, db: Tx | PrismaService = this.prisma): Promise<number> {
+    return db.employees.count({ where: { employee_branches: { some: activeOn(id, date) } } });
   }
 
   /** The assignments at the branch active on `date` (P1-RULE-09 — proposal reading 3). */
