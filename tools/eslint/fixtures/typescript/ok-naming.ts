@@ -6,4 +6,6 @@ const row = { collected_by_employee_id: 'e1', 'X-Requested-With': 'point-app' };
 const MAX_LIST_LIMIT = 100;
 export function Button() {}
 const read = ({ total_amount }: SaleRow) => total_amount;
+type Branded = { __brand: 'Mmk' };
+export type { Branded };
 export { business_date, isFullyPaid, row, MAX_LIST_LIMIT, read };

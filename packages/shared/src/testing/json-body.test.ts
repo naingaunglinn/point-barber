@@ -18,9 +18,13 @@ describe('parseBody', () => {
 
   it('Scenario: A mismatched body names the path', () => {
     expect(() => parseBody(errorBody, { code: 'validation', status: '400' })).toThrow(
-      expect.objectContaining({
-        message: expect.stringMatching(/status.*[\s\S]*\{"code":"validation","status":"400"\}/),
-      }),
+      /status[\s\S]*\{"code":"validation","status":"400"\}/,
+    );
+  });
+
+  it('names the path even when the body cannot be written as JSON (a bigint)', () => {
+    expect(() => parseBody(errorBody, { code: 'validation', status: 400n })).toThrow(
+      /status[\s\S]*\(not JSON\)/,
     );
   });
 

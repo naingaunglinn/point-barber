@@ -4,15 +4,26 @@ import type { z } from 'zod';
 // preview is short because a failing test prints it.
 const PREVIEW_LENGTH = 200;
 
+/** The first characters of the body as JSON; a bigint or a circular body is not JSON. */
+function preview(body: unknown): string {
+  try {
+    return String(JSON.stringify(body)).slice(0, PREVIEW_LENGTH);
+  } catch {
+    return '(not JSON)';
+  }
+}
+
 /** The value `schema` parses `body` into; throws an Error that names every failing path. */
 export function parseBody<S extends z.ZodType>(schema: S, body: unknown): z.output<S> {
   const parsed = schema.safeParse(body);
   if (parsed.success) return parsed.data;
   const issues = parsed.error.issues
-    .map((issue) => `${issue.path.map(String).join('.') || '(body)'}: ${issue.message}`)
+    .map((issue) => {
+      const where = issue.path.map(String).join('.');
+      return `${where === '' ? '(body)' : where}: ${issue.message}`;
+    })
     .join('; ');
-  const preview = String(JSON.stringify(body)).slice(0, PREVIEW_LENGTH);
-  throw new Error(`The body does not match its schema — ${issues}. Body: ${preview}`);
+  throw new Error(`The body does not match its schema — ${issues}. Body: ${preview(body)}`);
 }
 
 /** `response.json()` read as `unknown` and parsed by `schema`. */

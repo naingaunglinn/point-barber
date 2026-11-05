@@ -66,6 +66,8 @@ const NO_SUPPRESSION = [
 
 // `source` is how the `exports` of the workspace packages point at `src` (design D7).
 const RESOLVER = createTypeScriptImportResolver({
+  // One resolver for every workspace's tsconfig: without this it warns on every run.
+  noWarnOnMultipleProjects: true,
   conditionNames: ['source', 'types', 'import', 'default'],
   project: [
     'tsconfig.json',
