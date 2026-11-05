@@ -271,7 +271,7 @@ Each phone signs in once more on the new host.
 ## A rehearsal on a developer machine
 
 Not part of an install. Use it to walk this runbook against production images before the server exists,
-with fixture data only (CG-SEC-11). Four things differ from the server:
+with fixture data only (CG-SEC-11). Six things differ from the server:
 
 - **Its own project name, before the first `up`.** `docker-compose.yml` sets `name: point`, the same as
   the dev stack, and `dc`, `deploy.sh`, `pilot-backup.sh` and `restore-check.sh` pass no `-p`. Without
@@ -291,12 +291,18 @@ with fixture data only (CG-SEC-11). Four things differ from the server:
 
   ```sh
   dc --profile tools run --rm migrate
-  dc up -d --no-build
+  dc up -d --no-build --pull never
   ```
 
 - **No release workflow.** Step 8's tag, approval and package steps do not apply. Step 9 works as
   written once the stack is up. On a machine without systemd, run
   `infra/pilot-backup/pilot-backup.sh` directly instead of step 7's timer.
+- **A local bucket.** The backup and the restore drill write to and read from a bucket. Add an
+  S3-compatible one, such as a MinIO service in an extra compose file, and point the bucket values of
+  `.env` at it. Never use the pilot buckets' keys.
+- **Sign-in by e-mail code.** Google has no OAuth client for a rehearsal host, so step 9's admin signs in
+  with the e-mail code. Publish Mailpit's web port on the rehearsal machine only, in an extra compose
+  file. Google is tested on the server.
 
 ## Install record
 
