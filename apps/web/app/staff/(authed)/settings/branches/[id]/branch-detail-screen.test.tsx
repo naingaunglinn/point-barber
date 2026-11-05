@@ -67,7 +67,8 @@ const input = (member: string, nth = 0) =>
   within(field(member)).getAllByRole('textbox')[nth] as HTMLInputElement;
 const type = (element: HTMLElement, value: string) =>
   fireEvent.change(element, { target: { value } });
-const badge = () => screen.getByTestId('branch-status-badge');
+/** The header's status badge: the muted badge of an INACTIVE branch, none for an ACTIVE one (AD-CMP-05). */
+const badge = () => screen.queryByTestId('branch-status-badge');
 const bodyOf = (method: string) => {
   const call = fetchMock.mock.calls.filter(([, init]) => init?.method === method).at(-1);
   return JSON.parse(String(call?.[1]?.body)) as unknown;
@@ -95,7 +96,8 @@ describe('A branch — the header and the form', () => {
     const header = screen.getByRole('heading', { level: 1 }).parentElement as HTMLElement;
     expect(header.textContent).toContain('B3');
     expect(header.textContent).toContain('5 staff assigned today');
-    expect(badge().textContent).toBe('Active');
+    expect(badge()).toBeNull();
+    expect(header.querySelector('[data-slot="status-badge"]')).toBeNull();
     expect(within(field('code')).queryByRole('textbox')).toBeNull();
     expect(field('code').textContent).toContain('B3');
   });
@@ -189,11 +191,17 @@ describe('A branch — the status action (task 4.7)', () => {
       reason: 'Not opening this year',
     });
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    expect(badge().textContent).toBe('Inactive');
-    expect(screen.getByTestId('branch-reactivate')).toBeTruthy();
+    expect(badge()?.textContent).toBe('Inactive');
+    expect(badge()?.querySelector('[data-slot="status-badge"]')?.getAttribute('data-tone')).toBe(
+      'muted',
+    );
+    // Re-activate is a visible secondary button of the header, not a menu item.
+    expect(screen.getByTestId('branch-reactivate').getAttribute('role')).toBeNull();
+    expect(screen.getByTestId('branch-reactivate').tagName).toBe('BUTTON');
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 
-  it('Scenario: Deactivating a branch in use — the counts inside the dialog, the badge still Active', async () => {
+  it('Scenario: Deactivating a branch in use — the counts inside the dialog, B3 still ACTIVE (no badge)', async () => {
     serve([B3], {
       [`POST ${url(B3, '/status')}`]: json(
         409,
@@ -215,21 +223,27 @@ describe('A branch — the status action (task 4.7)', () => {
     expect(screen.getByTestId('branch-in-use').textContent).toBe(
       'This branch still has 5 assigned staff, 0 open bookings and 0 open sales.',
     );
-    expect(badge().textContent).toBe('Active');
+    expect(badge()).toBeNull();
   });
 
-  it('Scenario: Re-activating — no dialog, the badge shows Active', async () => {
+  it('Scenario: Re-activating — a visible button, no dialog, then no badge and Deactivate behind the ⋮', async () => {
     const inactive = { ...B4, status: BranchStatus.INACTIVE };
     const active = { ...B4, status: BranchStatus.ACTIVE, updated_at: T2 };
     serve([inactive, active], { [`POST ${url(B4, '/status')}`]: json(200, active) });
     renderPos(<BranchDetailScreen id={B4.id} />, { me: PEOPLE.kyawZin });
-    fireEvent.click(await screen.findByTestId('branch-reactivate'));
+    const reactivate = await screen.findByTestId('branch-reactivate');
+    expect(reactivate.tagName).toBe('BUTTON');
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
+    expect(badge()?.textContent).toBe('Inactive');
+    fireEvent.click(reactivate);
     await flush();
     await flush();
     expect(bodyOf('POST')).toStrictEqual({ status: BranchStatus.ACTIVE });
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    expect(badge().textContent).toBe('Active');
+    expect(badge()).toBeNull();
     expect(screen.queryByTestId('branch-reactivate')).toBeNull();
+    openMenu();
+    expect(await screen.findByTestId('branch-deactivate')).toBeTruthy();
   });
 
   it('only company-scope branch.delete shows the action: not with branch.delete at branch scope', async () => {

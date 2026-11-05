@@ -1,7 +1,7 @@
 // Status columns are smallint codes with named constants (D-DB-03 · API-DATA-04 · AD-IMPL-04):
 // code never compares a status with a number literal, it uses these names. The values are the DBML
 // notes of point-sdd/docs/db (parts 1–8) for the 19 tables of AD-CMP-05, and branches.status, which the
-// branch screens show as a badge (add-branch-management). Whichever of
+// branch screens filter by and show as a badge when INACTIVE (add-branch-management). Whichever of
 // add-shared-ui-components and add-foundation-auth-access merges first creates this file; the other
 // extends it — a constant is never declared twice.
 
@@ -74,8 +74,9 @@ export const ImportJobRowStatus = {
 /** part8. */
 export const BackupRunStatus = { RUNNING: 1, SUCCESS: 2, FAILED: 3 } as const;
 /**
- * part1 — branches.status. A badge of the branch list and detail (add-branch-management spec "The branch
- * list shows the branches…" · design D9), so it has its table in STATUS_BY_TABLE.
+ * part1 — branches.status. The status chips of the branch list and the INACTIVE badge of the list and
+ * the detail (add-branch-management design D9 · AD-CMP-05 master data: ACTIVE shows no badge), so it has
+ * its table in STATUS_BY_TABLE.
  */
 export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];

@@ -67,8 +67,9 @@ describe('status constants', () => {
     });
   });
 
-  // add-branch-management — branches.status is the badge of the branch list and detail (design D9).
-  it('pins branches.status (part1) and holds it as the badge table `branches`', () => {
+  // add-branch-management — branches.status is the table of the branch list's status chips and of the
+  // INACTIVE badge (design D9 · AD-CMP-05 master data: ACTIVE shows no badge).
+  it('pins branches.status (part1) and holds it as the table `branches`', () => {
     expect(BranchStatus).toEqual({ INACTIVE: 0, ACTIVE: 1 });
     expect(STATUS_BY_TABLE.branches).toBe(BranchStatus);
   });

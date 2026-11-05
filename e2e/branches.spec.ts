@@ -69,7 +69,10 @@ const input = (page: Page, member: string, nth = 0): Locator =>
 const headerMenu = (page: Page): Locator =>
   page.locator('[data-slot="page-actions"] [aria-haspopup="menu"]');
 
-/** The status badge of the detail header: its tone tells ACTIVE (success) from INACTIVE (muted). */
+/**
+ * The status badge of the detail header: the muted badge of an INACTIVE branch; an ACTIVE branch has none
+ * (AD-CMP-05 master data).
+ */
 const badge = (page: Page): Locator =>
   page.getByTestId('branch-status-badge').locator('[data-slot="status-badge"]');
 
@@ -110,7 +113,7 @@ test.describe('add-branch-management · organization · Settings › Branches en
     // On the detail the code is text, not an input (owner BR1).
     await expect(page.getByTestId('branch-field-code')).toContainText('B4');
     await expect(page.getByTestId('branch-field-code').getByRole('textbox')).toHaveCount(0);
-    await expect(badge(page)).toHaveAttribute('data-tone', 'success');
+    await expect(badge(page)).toHaveCount(0);
 
     await input(page, 'phone').fill(B4_PHONE);
     const updated = page.waitForResponse((res) => res.request().method() === 'PATCH');
@@ -122,7 +125,9 @@ test.describe('add-branch-management · organization · Settings › Branches en
     const dialog = await deactivate(page, 'Not opening this year');
     await expect(dialog).toBeHidden();
     await expect(badge(page)).toHaveAttribute('data-tone', 'muted');
+    // Re-activate is a visible button of the header; Deactivate was behind the ⋮.
     await expect(page.getByTestId('branch-reactivate')).toBeVisible();
+    await expect(headerMenu(page)).toHaveCount(0);
 
     await page.goto('/settings/branches');
     await chip(page, 'inactive').click();
@@ -135,7 +140,9 @@ test.describe('add-branch-management · organization · Settings › Branches en
     await page.getByTestId('branch-reactivate').click();
     expect((await reactivated).status()).toBe(200);
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
-    await expect(badge(page)).toHaveAttribute('data-tone', 'success');
+    await expect(badge(page)).toHaveCount(0);
+    await expect(page.getByTestId('branch-reactivate')).toHaveCount(0);
+    await expect(headerMenu(page)).toBeVisible();
     await context.close();
   });
 
@@ -180,7 +187,7 @@ test.describe('add-branch-management · organization · Settings › Branches en
   }) => {
     const { context, page } = await pageAs(browser, admin, DESKTOP);
     await page.goto(`/settings/branches/${B3}`);
-    await expect(badge(page)).toHaveAttribute('data-tone', 'success');
+    await expect(badge(page)).toHaveCount(0);
     const refused = page.waitForResponse((res) => res.url().endsWith('/status'));
     const dialog = await deactivate(page);
     expect((await refused).status()).toBe(409);
@@ -190,7 +197,7 @@ test.describe('add-branch-management · organization · Settings › Branches en
     );
     await dialog.getByRole('button').first().click();
     await expect(dialog).toBeHidden();
-    await expect(badge(page)).toHaveAttribute('data-tone', 'success');
+    await expect(badge(page)).toHaveCount(0);
     const stored = await adminApi.get(`/api/v1/branches/${B3}`);
     expect(((await stored.json()) as { status: number }).status).toBe(1);
     await context.close();

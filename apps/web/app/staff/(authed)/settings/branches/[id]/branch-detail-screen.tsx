@@ -6,10 +6,11 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { type Branch, localized } from '@point/shared';
-import { DataText, ErrorState, PageHeader, Skeleton, StatusBadge } from '@point/ui';
+import { DataText, ErrorState, PageHeader, Skeleton } from '@point/ui';
 
 import { BranchForm } from '../../../../../../components/branches/BranchForm';
 import { useBranchStatusAction } from '../../../../../../components/branches/BranchStatusAction';
+import { BranchStatusBadge } from '../../../../../../components/branches/BranchStatusBadge';
 import { BranchValues } from '../../../../../../components/branches/BranchValues';
 import { useBranchAccess } from '../../../../../../lib/branches/access';
 import { branchValues, updateFormSchema } from '../../../../../../lib/branches/form-values';
@@ -20,8 +21,9 @@ import { MainQueryState, RefusedPage } from '../../../../../../lib/session/main-
 // /settings/branches/[id] — a branch (add-branch-management spec "The branch form creates and edits a
 // branch with messages at the fields" · "The detail page deactivates and re-activates a branch…" ·
 // AD-DET-01 · AD-FORM-08 · AD-RT-02 · AD-PERM-02 · AD-STATE-01 … 04 · design D9 · tasks 4.5 / 4.7): the
-// header shows the name, the code, the status badge and the staff assigned today, and the status action
-// for company-scope branch.delete. With branch.update for the branch the form edits it — Save sends only
+// header shows the name, the code, the muted badge of an INACTIVE branch (an ACTIVE one has none —
+// AD-CMP-05 master data) and the staff assigned today, and the status action for company-scope
+// branch.delete (Deactivate behind the ⋮, Re-activate a visible button). With branch.update for the branch the form edits it — Save sends only
 // the changed members and the `updated_at` it loaded (API-IDEM-04); otherwise every value is text.
 // Without a branch code the forbidden page; a branch outside the read scope is the API's 404.
 
@@ -85,13 +87,11 @@ function Detail({ branch, reload }: Readonly<{ branch: Branch; reload: Reload }>
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
             <DataText>{branch.code}</DataText>
-            <span data-testid="branch-status-badge">
-              <StatusBadge table="branches" code={branch.status} />
-            </span>
+            <BranchStatusBadge status={branch.status} data-testid="branch-status-badge" />
             <span>{t('detail.activeEmployees', { count: branch.active_employees })}</span>
           </span>
         }
-        secondary={status.action === null ? [] : [status.action]}
+        secondary={status.actions}
       />
       {status.alert}
       {access.update(branch.id) ? (

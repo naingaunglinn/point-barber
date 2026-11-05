@@ -22,15 +22,17 @@ import { useSetBranchStatus } from '../../lib/branches/queries';
 
 // The status action of the detail header (add-branch-management spec "The detail page deactivates and
 // re-activates a branch for company-scope branch.delete holders" · AD-DET-01 · AD-RSN-01 · AD-CONF-02 ·
-// AD-LAY-04 · design D9 · task 4.7): only with company-scope branch.delete. Deactivate (destructive —
-// behind the header's kebab) opens the reason dialog with the consequence and an optional reason of at
+// AD-LAY-04 · AD-LAY-05 · AD-LIST-04 · design D9 · task 4.7): only with company-scope branch.delete. On
+// an ACTIVE branch, Deactivate — destructive, so PageHeader puts it behind the header's ⋮ — opens the
+// reason dialog, which is its confirmation, with the consequence and an optional reason of at
 // most 500 characters; a 409 `branch_in_use` stays inside the dialog with the three counts and the branch
-// stays ACTIVE. Re-activate sends at once (a routine, reversible save — AD-CONF-01). After either, the
-// header shows the branch the API answered.
+// stays ACTIVE. On an INACTIVE branch, Re-activate is a visible secondary button of the header (not
+// destructive) and sends at once (a routine, reversible save — AD-CONF-01). After either, the header
+// shows the branch the API answered.
 
 export interface BranchStatusAction {
-  /** The header's action, or null when the user may not change the status. */
-  readonly action: Action | null;
+  /** The header's two secondary actions; `allowed` shows the one for the branch's status, or none. */
+  readonly actions: readonly Action[];
   /** The deactivate dialog. */
   readonly dialog: ReactNode;
   /** A refused re-activation, for the top of the page. */
@@ -67,30 +69,31 @@ export function useBranchStatusAction(branch: Branch): BranchStatusAction {
   const inUse = refusal === null ? null : inUseOf(refusal);
   const active = branch.status === BranchStatus.ACTIVE;
 
-  const action: Action | null = !access.setStatus
-    ? null
-    : active
-      ? {
-          label: t('action.deactivate'),
-          destructive: true,
-          testId: 'branch-deactivate',
-          onPress: () => {
-            setRefusal(null);
-            setAsking(true);
-          },
+  const actions: readonly Action[] = [
+    {
+      label: t('action.reactivate'),
+      allowed: access.setStatus && !active,
+      testId: 'branch-reactivate',
+      onPress: async () => {
+        setReactivateRefusal(null);
+        try {
+          await setStatus.mutateAsync({ status: BranchStatus.ACTIVE });
+        } catch (error) {
+          setReactivateRefusal(refusalOf(error));
         }
-      : {
-          label: t('action.reactivate'),
-          testId: 'branch-reactivate',
-          onPress: async () => {
-            setReactivateRefusal(null);
-            try {
-              await setStatus.mutateAsync({ status: BranchStatus.ACTIVE });
-            } catch (error) {
-              setReactivateRefusal(refusalOf(error));
-            }
-          },
-        };
+      },
+    },
+    {
+      label: t('action.deactivate'),
+      allowed: access.setStatus && active,
+      destructive: true,
+      testId: 'branch-deactivate',
+      onPress: () => {
+        setRefusal(null);
+        setAsking(true);
+      },
+    },
+  ];
 
   const dialog = (
     <ReasonDialog
@@ -128,7 +131,7 @@ export function useBranchStatusAction(branch: Branch): BranchStatusAction {
   );
 
   return {
-    action,
+    actions,
     dialog,
     alert: reactivateRefusal === null ? null : <FormAlert problem={reactivateRefusal} />,
   };

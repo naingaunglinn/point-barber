@@ -54,7 +54,7 @@ const rowOf = (code: string) =>
   screen.getByTestId(`branch-row-${code}`).closest('tr') as HTMLElement;
 
 describe('Settings › Branches — the list', () => {
-  it("Scenario: The admin's list — 3 rows by code, each Active and Shown, and New branch", async () => {
+  it("Scenario: The admin's list — 3 rows by code, each Shown and with no badge (ACTIVE), and New branch", async () => {
     listOf(ALL);
     renderPos(<BranchesScreen />, { me: PEOPLE.kyawZin });
     await screen.findByTestId('branch-row-B1');
@@ -74,7 +74,8 @@ describe('Settings › Branches — the list', () => {
       const row = within(rowOf(code));
       expect(row.getByText(name)).toBeTruthy();
       expect(row.getByText('Shown')).toBeTruthy();
-      expect(row.getByText('Active')).toBeTruthy();
+      // AD-CMP-05 master data: an ACTIVE branch shows no status badge.
+      expect(rowOf(code).querySelector('[data-slot="status-badge"]')).toBeNull();
     }
     expect(screen.getByTestId('branch-new').textContent).toBe('New branch');
     fireEvent.click(screen.getByTestId('branch-new'));
@@ -99,6 +100,27 @@ describe('Settings › Branches — the list', () => {
     expect(window.location.search).toBe(`?status=${BranchStatus.INACTIVE}`);
     fireEvent.click(screen.getByRole('button', { name: 'Active' }));
     expect(codes()).toStrictEqual(['B1', 'B2', 'B3', 'B4']);
+  });
+
+  // AD-CMP-05 master data (lead decision of 05/Nov/2026): no badge for ACTIVE, the muted one for INACTIVE.
+  it('ACTIVE B3 shows no status badge; INACTIVE B4 shows the muted one — in the table and on the cards', async () => {
+    listOf([SUMMARIES.B3, B4]);
+    const { unmount } = renderPos(<BranchesScreen />, { me: PEOPLE.kyawZin });
+    await screen.findByTestId('branch-row-B4');
+    expect(rowOf('B3').querySelector('[data-slot="status-badge"]')).toBeNull();
+    const inactive = rowOf('B4').querySelector('[data-slot="status-badge"]');
+    expect(inactive?.getAttribute('data-tone')).toBe('muted');
+    expect(inactive?.textContent).toBe('Inactive');
+    unmount();
+    mockViewport(360);
+    renderPos(<BranchesScreen />, { me: PEOPLE.kyawZin });
+    const cardOf = (code: string) =>
+      screen.getByTestId(`branch-row-${code}`).closest('[data-slot="card"]') as HTMLElement;
+    await screen.findByTestId('branch-row-B4');
+    expect(cardOf('B3').querySelector('[data-slot="status-badge"]')).toBeNull();
+    expect(
+      cardOf('B4').querySelector('[data-slot="status-badge"]')?.getAttribute('data-tone'),
+    ).toBe('muted');
   });
 
   it('reads the status filter from the address', async () => {
@@ -127,7 +149,7 @@ describe('Settings › Branches — the list', () => {
     expect(push).toHaveBeenCalledWith(`/settings/branches/${BRANCH_IDS.B3}`);
   });
 
-  it('a table from 768 px, one card per branch below — code, name, status badge and phone', async () => {
+  it('a table from 768 px, one card per branch below — code, name, the badge when INACTIVE, phone', async () => {
     listOf([{ ...SUMMARIES.B3, phone: '09 7700 0003' }]);
     mockViewport(360);
     const { unmount } = renderPos(<BranchesScreen />, { me: PEOPLE.hnin });
@@ -135,7 +157,7 @@ describe('Settings › Branches — the list', () => {
     expect(screen.queryByRole('table')).toBeNull();
     const card = screen.getByTestId('branch-row-B3').closest('[data-slot="card"]') as HTMLElement;
     expect(within(card).getByText('Point 3.0')).toBeTruthy();
-    expect(within(card).getByText('Active')).toBeTruthy();
+    expect(card.querySelector('[data-slot="status-badge"]')).toBeNull();
     expect(within(card).getByText('09 7700 0003')).toBeTruthy();
     fireEvent.click(screen.getByTestId('branch-row-B3'));
     expect(push).toHaveBeenCalledWith(`/settings/branches/${BRANCH_IDS.B3}`);
@@ -146,12 +168,15 @@ describe('Settings › Branches — the list', () => {
     expect(screen.getByRole('table')).toBeTruthy();
   });
 
-  it('works in Myanmar: the columns, the names and the badge', async () => {
-    listOf(ALL);
+  it('works in Myanmar: the columns, the names, the badge and the chips', async () => {
+    listOf([...ALL, B4]);
     renderPos(<BranchesScreen />, { me: PEOPLE.kyawZin, locale: 'my' });
     await screen.findByTestId('branch-row-B3');
     expect(within(rowOf('B3')).getByText('ပွိုင့် ၃.၀')).toBeTruthy();
-    expect(within(rowOf('B3')).getByText('ဖွင့်ထား')).toBeTruthy();
+    expect(within(rowOf('B4')).getByText('ပိတ်ထား')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'ဖွင့်ထား' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
     expect(screen.getByTestId('branch-new').textContent).toBe('ဆိုင်ခွဲအသစ်');
   });
 });

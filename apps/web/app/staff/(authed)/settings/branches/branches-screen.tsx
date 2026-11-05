@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { type BranchSummary, BranchStatus, localized } from '@point/shared';
@@ -14,11 +14,12 @@ import {
   ErrorState,
   FilterBar,
   type FilterValue,
+  type CardFields,
   PageHeader,
-  StatusBadge,
   filterFromSearch,
 } from '@point/ui';
 
+import { BranchStatusBadge } from '../../../../../components/branches/BranchStatusBadge';
 import { useBranchAccess } from '../../../../../lib/branches/access';
 import { useBranches } from '../../../../../lib/branches/queries';
 import { screenProblem } from '../../../../../lib/pos/problem';
@@ -29,11 +30,20 @@ import { useMe } from '../../../../../lib/session/use-me';
 // branches the user's branch grants cover" · AD-LIST-01 / 02 / 06 · AD-STATE-01 … 04 · API-PERM-07 ·
 // design D9 · task 4.3): P1.BR.01 filtered to the branches the user's branch.* grants cover (every
 // branch at company scope), ordered by code; from 768 px a table — Code · Name · Phone · Website ·
-// Status — below it one card per branch; the status chips Active / Inactive (none = every status, kept
+// Status (the muted badge of an INACTIVE branch; an ACTIVE one has none — AD-CMP-05 master data) —
+// below it one card per branch; the status chips Active / Inactive (none = every status, kept
 // in the address); New branch only with company-scope branch.create. Without a branch code the
 // forbidden page. The page title is the screen's name (WCAG 2.4.2).
 
 const STATUS_CODES = [BranchStatus.ACTIVE, BranchStatus.INACTIVE];
+
+/** A card: code, name, then the INACTIVE badge and the phone when there are (AD-LIST-02 — 1 to 4). */
+function cardFields(code: ReactNode, name: ReactNode, rest: readonly ReactNode[]): CardFields {
+  const [third, fourth] = rest;
+  if (third === undefined) return [code, name];
+  if (fourth === undefined) return [code, name, third];
+  return [code, name, third, fourth];
+}
 
 function CodeCell({ code }: Readonly<{ code: string }>) {
   return (
@@ -90,8 +100,8 @@ export function BranchesScreen() {
     {
       key: 'status',
       header: t('column.status'),
-      kind: 'status',
-      value: (branch) => ({ table: 'branches', code: branch.status }),
+      kind: 'custom',
+      render: (branch) => <BranchStatusBadge status={branch.status} />,
     },
   ];
 
@@ -115,19 +125,16 @@ export function BranchesScreen() {
         rows={rows}
         rowKey={(branch) => branch.id}
         card={(branch) => ({
-          fields:
-            branch.phone === null
-              ? [
-                  <CodeCell key="code" code={branch.code} />,
-                  <DataText key="name">{localized(branch, 'name', locale)}</DataText>,
-                  <StatusBadge key="status" table="branches" code={branch.status} />,
-                ]
-              : [
-                  <CodeCell key="code" code={branch.code} />,
-                  <DataText key="name">{localized(branch, 'name', locale)}</DataText>,
-                  <StatusBadge key="status" table="branches" code={branch.status} />,
-                  <DataText key="phone">{branch.phone}</DataText>,
-                ],
+          fields: cardFields(
+            <CodeCell key="code" code={branch.code} />,
+            <DataText key="name">{localized(branch, 'name', locale)}</DataText>,
+            [
+              ...(branch.status === BranchStatus.INACTIVE
+                ? [<BranchStatusBadge key="status" status={branch.status} />]
+                : []),
+              ...(branch.phone === null ? [] : [<DataText key="phone">{branch.phone}</DataText>]),
+            ],
+          ),
         })}
         userId={me?.user.id ?? ''}
         storageKey="settings-branches"
