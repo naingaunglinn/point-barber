@@ -1,1 +1,202 @@
-[]
+[
+  {
+    "key": "booking.advance_window_days",
+    "module": "booking",
+    "type": "number",
+    "default": 14,
+    "scope": "company",
+    "client_readable": true,
+    "validation": {
+      "unit": "days",
+      "min": 0
+    },
+    "label_key": "settings.booking.advance_window_days.label",
+    "help_key": "settings.booking.advance_window_days.help",
+    "impact_key": "settings.booking.advance_window_days.impact"
+  },
+  {
+    "key": "booking.slot_interval_minutes",
+    "module": "booking",
+    "type": "choice",
+    "default": 15,
+    "scope": "company",
+    "client_readable": true,
+    "validation": {
+      "unit": "minutes",
+      "choices": [5, 10, 15, 30]
+    },
+    "label_key": "settings.booking.slot_interval_minutes.label",
+    "help_key": "settings.booking.slot_interval_minutes.help",
+    "impact_key": "settings.booking.slot_interval_minutes.impact"
+  },
+  {
+    "key": "home_service.transport_fee_amount",
+    "module": "booking",
+    "type": "number",
+    "default": 0,
+    "scope": "branch",
+    "client_readable": true,
+    "validation": {
+      "unit": "MMK",
+      "min": 0
+    },
+    "label_key": "settings.home_service.transport_fee_amount.label",
+    "help_key": "settings.home_service.transport_fee_amount.help",
+    "impact_key": "settings.home_service.transport_fee_amount.impact"
+  },
+  {
+    "key": "home_service.travel_minutes",
+    "module": "booking",
+    "type": "number",
+    "default": 30,
+    "scope": "branch",
+    "client_readable": false,
+    "validation": {
+      "unit": "minutes",
+      "min": 0
+    },
+    "label_key": "settings.home_service.travel_minutes.label",
+    "help_key": "settings.home_service.travel_minutes.help",
+    "impact_key": null
+  },
+  {
+    "key": "receipt.auto_print",
+    "module": "sales",
+    "type": "boolean",
+    "default": false,
+    "scope": "company",
+    "client_readable": true,
+    "validation": {},
+    "label_key": "settings.receipt.auto_print.label",
+    "help_key": "settings.receipt.auto_print.help",
+    "impact_key": null
+  },
+  {
+    "key": "receipt.printer_width_mm",
+    "module": "sales",
+    "type": "choice",
+    "default": 58,
+    "scope": "branch",
+    "client_readable": true,
+    "validation": {
+      "unit": "mm",
+      "choices": [58, 80]
+    },
+    "label_key": "settings.receipt.printer_width_mm.label",
+    "help_key": "settings.receipt.printer_width_mm.help",
+    "impact_key": null
+  },
+  {
+    "key": "receipt.thank_you_text",
+    "module": "sales",
+    "type": "text_mm_en",
+    "default": null,
+    "scope": "company",
+    "client_readable": false,
+    "validation": {
+      "max_length": 200,
+      "nullable": true
+    },
+    "label_key": "settings.receipt.thank_you_text.label",
+    "help_key": "settings.receipt.thank_you_text.help",
+    "impact_key": null
+  },
+  {
+    "key": "sales.service_charge_enabled",
+    "module": "sales",
+    "type": "boolean",
+    "default": false,
+    "scope": "company",
+    "client_readable": true,
+    "read_only": true,
+    "validation": {},
+    "label_key": "settings.sales.service_charge_enabled.label",
+    "help_key": "settings.sales.service_charge_enabled.help",
+    "impact_key": null
+  },
+  {
+    "key": "sales.tax_enabled",
+    "module": "sales",
+    "type": "boolean",
+    "default": false,
+    "scope": "company",
+    "client_readable": true,
+    "read_only": true,
+    "validation": {},
+    "label_key": "settings.sales.tax_enabled.label",
+    "help_key": "settings.sales.tax_enabled.help",
+    "impact_key": null
+  },
+  {
+    "key": "closing.cash_difference_tolerance_amount",
+    "module": "closing",
+    "type": "number",
+    "default": 0,
+    "scope": "company",
+    "client_readable": true,
+    "validation": {
+      "unit": "MMK",
+      "min": 0
+    },
+    "label_key": "settings.closing.cash_difference_tolerance_amount.label",
+    "help_key": "settings.closing.cash_difference_tolerance_amount.help",
+    "impact_key": "settings.closing.cash_difference_tolerance_amount.impact"
+  },
+  {
+    "key": "dashboard.show_own_earnings_all",
+    "module": "dashboard",
+    "type": "boolean",
+    "default": false,
+    "scope": "company",
+    "client_readable": false,
+    "validation": {},
+    "label_key": "settings.dashboard.show_own_earnings_all.label",
+    "help_key": "settings.dashboard.show_own_earnings_all.help",
+    "impact_key": null
+  },
+  {
+    "key": "system.default_language",
+    "module": "system",
+    "type": "choice",
+    "default": 1,
+    "scope": "company",
+    "client_readable": true,
+    "validation": {
+      "choices": [1, 2]
+    },
+    "label_key": "settings.system.default_language.label",
+    "help_key": "settings.system.default_language.help",
+    "impact_key": null
+  },
+  {
+    "key": "system.maintenance",
+    "module": "system",
+    "type": "json",
+    "default": {
+      "enabled": false
+    },
+    "scope": "company",
+    "client_readable": false,
+    "read_only": true,
+    "validation": {},
+    "label_key": "settings.system.maintenance.label",
+    "help_key": "settings.system.maintenance.help",
+    "impact_key": null
+  },
+  {
+    "key": "system.upload_max_mb",
+    "module": "system",
+    "type": "number",
+    "default": 10,
+    "scope": "company",
+    "client_readable": true,
+    "validation": {
+      "unit": "MB",
+      "min": 1,
+      "max": 10
+    },
+    "label_key": "settings.system.upload_max_mb.label",
+    "help_key": "settings.system.upload_max_mb.help",
+    "impact_key": null
+  }
+]

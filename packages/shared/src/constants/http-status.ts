@@ -10,5 +10,7 @@ export const HttpStatus = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   TOO_MANY_REQUESTS: 429, // RFC 6585
+  // add-settings-store — 503 `maintenance` while maintenance mode is on (API-AUTH-06).
+  SERVICE_UNAVAILABLE: 503,
 } as const;
 export type HttpStatus = (typeof HttpStatus)[keyof typeof HttpStatus];

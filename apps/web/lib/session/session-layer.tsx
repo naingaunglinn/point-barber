@@ -22,6 +22,12 @@ import { StaffBottomNav, useStaffRail } from '../../components/pos/StaffBottomNa
 import { api, setApiHandlers } from '../api/client';
 import { BranchProvider, initialBranchId, startBranchOf } from './branch';
 import { GrantsProvider } from './grants';
+import {
+  MaintenanceBanner,
+  MaintenanceNotice,
+  type MaintenanceState,
+  maintenanceOf,
+} from './maintenance';
 import { navigation } from './navigate';
 import { loginUrl } from './return-to';
 import { ME_QUERY_KEY, useMe } from './use-me';
@@ -30,7 +36,9 @@ import { ME_QUERY_KEY, useMe } from './use-me';
 // AD-NAV-07 · design D13 · D17). It loads `/me`, installs the one 401 handler (to the login screen with
 // the reason and the page to come back to) and the one 403 handler (refetch `/me`), makes the page
 // language follow the account — the cookie `point_locale` only mirrors it — and frames the page in the
-// AppShell fed by `/me`.
+// AppShell fed by `/me`. A 503 `maintenance` from any call, `/me` included, replaces everything with the
+// maintenance notice until "Try again" loads `/me` with a 200 (AD-NAV-08 · API-AUTH-06 · add-settings-store
+// design D10); a user who passes sees the banner while `/me.system.maintenance` is true.
 
 /** The value of a cookie of `document.cookie`. */
 export function documentCookie(name: string): string | undefined {
@@ -83,6 +91,7 @@ export function SessionLayer({
   const me = useMe();
   const client = useQueryClient();
   const router = useRouter();
+  const [maintenance, setMaintenance] = useState<MaintenanceState | null>(null);
 
   useEffect(
     () =>
@@ -100,6 +109,7 @@ export function SessionLayer({
         onForbidden: () => {
           void client.invalidateQueries({ queryKey: ME_QUERY_KEY });
         },
+        onMaintenance: (problem) => setMaintenance(maintenanceOf(problem)),
       }),
     [client],
   );
@@ -115,6 +125,17 @@ export function SessionLayer({
     router.refresh();
   }, [data, router]);
 
+  if (maintenance !== null) {
+    return (
+      <MaintenanceNotice
+        state={maintenance}
+        onRetry={async () => {
+          const result = await me.refetch();
+          if (result.isSuccess) setMaintenance(null);
+        }}
+      />
+    );
+  }
   if (data === undefined) {
     return (
       <main className="p-4" aria-busy="true">
@@ -154,6 +175,7 @@ function StaffShell({
       <AppShell
         nav={rail.nav}
         {...(rail.activeKey === undefined ? {} : { activeKey: rail.activeKey })}
+        {...(rail.activeItemKey === undefined ? {} : { activeItemKey: rail.activeItemKey })}
         bottomNav={<StaffBottomNav />}
         branchSwitcher={
           me.branches_in_scope.length > 0 ? (
@@ -179,6 +201,7 @@ function StaffShell({
           </div>
         }
       >
+        {me.system.maintenance ? <MaintenanceBanner /> : null}
         <WithOfflineHelp>{children}</WithOfflineHelp>
       </AppShell>
     </BranchProvider>

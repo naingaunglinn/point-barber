@@ -12,6 +12,7 @@ import { DateText } from '../../components/DateText/DateText';
 import { MoneyInput } from '../../components/MoneyInput/MoneyInput';
 import { MoneyText } from '../../components/MoneyText/MoneyText';
 import { PhoneInput, type PhoneValue } from '../../components/PhoneInput/PhoneInput';
+import { Switch } from '../../components/Switch/Switch';
 import { TextInput } from '../../components/TextInput/TextInput';
 import { useFormat } from '../../providers/format';
 import { HandlerLog } from '../demo-frame';
@@ -149,3 +150,16 @@ function ChoiceDemo({ count }: { readonly count: number }) {
 
 export const ChoiceSevenDemo = () => <ChoiceDemo count={7} />;
 export const ChoiceEightDemo = () => <ChoiceDemo count={8} />;
+
+/** add-settings-store task 5.1 — the switch of `receipt.auto_print` (default OFF — REC-37). */
+export function SwitchDemo() {
+  const titleId = useDemoTitleId();
+  const log = useTranslations('devui.log');
+  const [checked, setChecked] = useState(false);
+  return (
+    <div className="flex max-w-sm flex-col gap-2">
+      <Switch aria-labelledby={titleId} checked={checked} onChange={setChecked} />
+      <HandlerLog label={log('reported')} value={String(checked)} />
+    </div>
+  );
+}
