@@ -172,7 +172,13 @@ test.describe('add-shared-ui-components · ui-foundation · A shared component i
     const panel = page.getByRole('dialog');
     await expect(panel).toBeVisible();
     await expect.poll(() => width(panel)).toBe(phone ? viewport : 560);
-    const box = await panel.boundingBox();
-    expect(box === null ? null : Math.round(box.x + box.width)).toBe(viewport);
+    // The panel slides in from the right: its edge is read once it has arrived (CI read 770 px at
+    // en-768 mid-slide), and must then be the viewport's edge.
+    await expect
+      .poll(async () => {
+        const box = await panel.boundingBox();
+        return box === null ? null : Math.round(box.x + box.width);
+      })
+      .toBe(viewport);
   });
 });

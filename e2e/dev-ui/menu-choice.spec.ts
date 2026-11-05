@@ -21,14 +21,24 @@ const searchName = (lang: string) => (lang === 'en' ? 'Search' : 'ရှာမ�
 const popover = (page: Page) => page.locator('[data-slot="choice-popover"]');
 const desktop = (page: Page) => (page.viewportSize()?.width ?? 0) >= 1024;
 
-/** The boxes of the given elements, top to bottom: heights and the gaps between neighbours. */
+/**
+ * The boxes of the given elements, top to bottom: heights and the gaps between neighbours — measured after
+ * their overlay's opening animation (`zoom-in-95` scales the menu and the popover) has finished, or a box
+ * read mid-animation is a fraction of a pixel short (CI: 43.96 px for a 44 px row).
+ */
 async function rows(locator: Locator): Promise<{ heights: number[]; gaps: number[] }> {
-  const boxes = await locator.evaluateAll((elements) =>
-    elements.map((el) => {
+  const boxes = await locator.evaluateAll(async (elements) => {
+    const opening = document.getAnimations().filter((animation) => {
+      const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
+      const finite = Number.isFinite(animation.effect?.getComputedTiming().endTime);
+      return finite && target !== null && elements.some((el) => target.contains(el));
+    });
+    await Promise.all(opening.map((animation) => animation.finished.catch(() => undefined)));
+    return elements.map((el) => {
       const { top, bottom } = el.getBoundingClientRect();
       return { top, bottom };
-    }),
-  );
+    });
+  });
   return {
     heights: boxes.map((box) => box.bottom - box.top),
     gaps: boxes.slice(1).map((box, index) => box.top - (boxes[index]?.bottom ?? 0)),
