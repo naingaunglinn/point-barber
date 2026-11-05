@@ -1,4 +1,5 @@
 import { FIXTURE_IDS } from '@point/shared/testing';
+import type { Logger } from 'pino';
 import { describe, expect, it } from 'vitest';
 
 import type { SettingsRepository } from '../repositories/settings.repository.js';
@@ -20,8 +21,17 @@ interface Call {
   readonly branchId: string | null;
 }
 
+interface LoggedError {
+  readonly fields: unknown;
+  readonly message: string;
+}
+
 function readerWith(rows: StoredSetting[], companyId: string | null = COMPANY) {
   const calls: Call[] = [];
+  const errors: LoggedError[] = [];
+  const log = {
+    error: (fields: unknown, message: string) => errors.push({ fields, message }),
+  } as unknown as Logger;
   const repository = {
     rowsOf: (id: string, keys: readonly string[], branchId: string | null) => {
       calls.push({ companyId: id, keys, branchId });
@@ -34,8 +44,8 @@ function readerWith(rows: StoredSetting[], companyId: string | null = COMPANY) {
   } as unknown as SettingsRepository;
   const company = new CompanyOfSettings();
   company.use(() => Promise.resolve(companyId));
-  const reader: SettingsReader = new StoreSettingsReader(repository, company);
-  return { reader, calls };
+  const reader: SettingsReader = new StoreSettingsReader(repository, company, log);
+  return { reader, calls, errors };
 }
 
 const row = (key: string, branchId: string | null, value: unknown): StoredSetting => ({
@@ -134,6 +144,60 @@ describe('StoreSettingsReader (task 2.5)', () => {
       'system.default_language',
       'system.upload_max_mb',
     ]);
+  });
+});
+
+// Review of PR #45: a row written by SQL (the restore runbook writes `system.maintenance` while the
+// API is stopped — P8.BAK.03) is not checked by the write path. A value its key's schema refuses is
+// ignored, as if the row were absent, and logged with the key and the issue — never the value.
+describe('StoreSettingsReader — a stored value its key does not accept', () => {
+  const ignored =
+    'settings row with a value its key does not accept — ignored, the parent value applies';
+
+  it('a malformed company value reads as the default; the log names the key and the issue only', async () => {
+    const { reader, errors } = readerWith([
+      row('receipt.printer_width_mm', null, 76),
+      row('receipt.thank_you_text', null, { mm: '', en: 'Thank you' }),
+    ]);
+    expect(
+      await reader.effective(['receipt.printer_width_mm', 'receipt.thank_you_text']),
+    ).toStrictEqual({ 'receipt.printer_width_mm': 58, 'receipt.thank_you_text': null });
+    expect(errors).toStrictEqual([
+      {
+        fields: { key: 'receipt.printer_width_mm', issues: [{ path: [], code: 'invalid_value' }] },
+        message: ignored,
+      },
+      {
+        fields: { key: 'receipt.thank_you_text', issues: [{ path: ['mm'], code: 'too_small' }] },
+        message: ignored,
+      },
+    ]);
+    expect(JSON.stringify(errors)).not.toContain('Thank you');
+  });
+
+  it('a malformed branch override reads as the company value', async () => {
+    const { reader, errors } = readerWith([
+      row('home_service.transport_fee_amount', null, 2000),
+      row('home_service.transport_fee_amount', B3, '3000'),
+    ]);
+    expect(await reader.effective(['home_service.transport_fee_amount'], B3)).toStrictEqual({
+      'home_service.transport_fee_amount': 2000,
+    });
+    expect(errors.map(({ fields }) => fields)).toStrictEqual([
+      { key: 'home_service.transport_fee_amount', issues: [{ path: [], code: 'invalid_type' }] },
+    ]);
+  });
+
+  it('a value the schema accepts is returned as stored, with nothing logged', async () => {
+    const { reader, errors } = readerWith([
+      row('system.maintenance', null, { enabled: true }),
+      row('receipt.thank_you_text', null, { mm: 'ကျေးဇူးတင်ပါတယ်', en: null }),
+    ]);
+    expect(await reader.effective(['system.maintenance', 'receipt.thank_you_text'])).toStrictEqual({
+      'system.maintenance': { enabled: true },
+      'receipt.thank_you_text': { mm: 'ကျေးဇူးတင်ပါတယ်', en: null },
+    });
+    expect(errors).toStrictEqual([]);
   });
 });
 

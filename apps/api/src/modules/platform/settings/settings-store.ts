@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   type EffectiveSettings,
   ErrorCode,
@@ -11,16 +11,19 @@ import {
   settingEntry,
   toMmtIso,
 } from '@point/shared';
+import type { Logger } from 'pino';
 
 import { type GrantSet, type Scope, reaches } from '../../../common/access/grant-set.js';
 import { Clock } from '../../../common/clock/clock.js';
 import { decodeCursor, encodeCursor } from '../../../common/http/cursor.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
+import { LOGGER } from '../../../common/logging/logger.js';
 import { SettingsRepository } from '../repositories/settings.repository.js';
 import { isEditable } from './editable.js';
 import { CompanyOfSettings, SettingBranches, UserNames } from './ports.js';
 import { type Resolved, resolveSetting } from './resolve.js';
 import { CLIENT_READABLE_KEYS, SettingsReader } from './settings-reader.js';
+import { wellFormedRows } from './well-formed.js';
 
 // The settings store (D-PLT-16 · P1-RULE-08 · add-settings-store design D1 / D4 / D5 / D8): the list
 // of every key with its values (P1.SET.01), the client-readable effective values (P1.SET.02) and the
@@ -78,6 +81,7 @@ export class SettingsStore {
     private readonly branches: SettingBranches,
     private readonly reader: SettingsReader,
     private readonly clock: Clock,
+    @Inject(LOGGER) private readonly log: Logger,
   ) {}
 
   /**
@@ -117,13 +121,17 @@ export class SettingsStore {
   ): Promise<SettingView[]> {
     if (entries.length === 0) return [];
     const companyId = await this.company.id();
+    // The rows the reader uses: a value its key does not accept is ignored here too (well-formed.ts).
     const rows =
       companyId === null
         ? []
-        : await this.repository.rowsOf(
-            companyId,
-            entries.map((entry) => entry.key),
-            branchId ?? null,
+        : wellFormedRows(
+            await this.repository.rowsOf(
+              companyId,
+              entries.map((entry) => entry.key),
+              branchId ?? null,
+            ),
+            this.log,
           );
     const resolved = entries.map((entry) => resolveSetting(entry, rows, branchId));
     const names = await this.names.of(

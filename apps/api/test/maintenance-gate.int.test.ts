@@ -149,3 +149,43 @@ describe('add-settings-store · settings · While maintenance is on, only compan
     expect(res.body.system.maintenance).toBe(false);
   });
 });
+
+// Review of PR #45: the restore runbook writes `system.maintenance` by SQL while the API is stopped
+// (P8.BAK.03). A value P1.SYS.03 would refuse — here JSON null — is ignored: maintenance reads as off
+// on the staff API and on the public status, and the error log names the key, not the value.
+describe('a malformed stored maintenance value', () => {
+  it('reads as off on the staff API and the public status; each read logs the key and the issue', async () => {
+    at('2026-10-05T22:20:00');
+    await s.prisma.$executeRaw`
+      UPDATE settings SET value = 'null'::jsonb WHERE key = 'system.maintenance' AND branch_id IS NULL`;
+    const logged = s.logs.length;
+    const staff = await get('E004', '/me');
+    expect([staff.status, staff.body.system.maintenance]).toStrictEqual([200, false]);
+    const status = await s.http.get(`${API}/system/status`);
+    expect([status.status, status.body.maintenance]).toStrictEqual([200, false]);
+    const errors = s.logs
+      .slice(logged)
+      .filter((line) => line.key === 'system.maintenance' && line.issues !== undefined);
+    expect(errors.length).toBeGreaterThanOrEqual(2);
+    expect(errors[0]).toMatchObject({
+      level: 50,
+      key: 'system.maintenance',
+      issues: [{ path: [], code: 'invalid_type' }],
+    });
+    expect(Object.keys(errors[0] ?? {})).not.toContain('value');
+  });
+
+  it('the settings list (P1.SET.01) ignores the row as the reader does: the default, from no row', async () => {
+    const list = await get('E001', '/settings?module=system');
+    expect(list.status).toBe(200);
+    const item = (list.body.items as { key: string }[]).find(
+      ({ key }) => key === 'system.maintenance',
+    );
+    expect(item).toMatchObject({
+      company_value: null,
+      effective: { enabled: false },
+      source: 'default',
+      updated_at: null,
+    });
+  });
+});
