@@ -17,10 +17,15 @@ describe('parseBody', () => {
   });
 
   it('Scenario: A mismatched body names the path', () => {
-    const mismatched = () => parseBody(errorBody, { code: 'validation', status: '400' });
+    expect(() => parseBody(errorBody, { code: 'validation', status: '400' })).toThrow(
+      /status[\s\S]*\{"code":"validation","status":"400"\}/,
+    );
+  });
 
-    expect(mismatched).toThrow(/status/);
-    expect(mismatched).toThrow('{"code":"validation","status":"400"}');
+  it('names the path even when the body cannot be written as JSON (a bigint)', () => {
+    expect(() => parseBody(errorBody, { code: 'validation', status: 400n })).toThrow(
+      /status[\s\S]*\(not JSON\)/,
+    );
   });
 
   it('keeps only the first 200 characters of a long body', () => {

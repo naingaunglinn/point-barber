@@ -5,5 +5,5 @@
     "jsx": "preserve",
     "types": ["node"]
   },
-  "include": ["*.ts", "*.tsx"]
+  "include": ["*.ts", "*.tsx", "pkg-*/*.ts"]
 }

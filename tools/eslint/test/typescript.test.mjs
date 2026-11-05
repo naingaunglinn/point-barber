@@ -5,7 +5,7 @@ import { ESLint } from 'eslint';
 import tseslint from 'typescript-eslint';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ENUM_SYNTAX, typeChecked } from '../typescript.mjs';
+import { DANGER_ALLOWED, ENUM_SYNTAX, typeChecked } from '../typescript.mjs';
 import { withoutTypeAwareRules } from './lib.mjs';
 
 // add-ci-lint-rules · platform-runtime — "CI lints the fixture F": the fixtures of
@@ -158,6 +158,7 @@ describe('add-ci-lint-rules · mutation, promises, conditions, names, errors, co
       { ruleId: ts('no-misused-promises'), line: 4 },
       { ruleId: ts('await-thenable'), line: 5 },
     ]);
+    expect(await lintFixture('ok-promises.ts')).toEqual([]);
   });
 
   it('Scenario: return await is required inside try only', async () => {
@@ -183,6 +184,13 @@ describe('add-ci-lint-rules · mutation, promises, conditions, names, errors, co
       { ruleId: ts('naming-convention'), line: 2 },
       { ruleId: ts('naming-convention'), line: 2 },
       { ruleId: ts('naming-convention'), line: 3 },
+    ]);
+  });
+
+  it('Only __html and __brand may start with a double underscore', async () => {
+    expect(await lintFixture('double-underscore.ts')).toEqual([
+      { ruleId: ts('naming-convention'), line: 1 },
+      { ruleId: ts('naming-convention'), line: 2 },
     ]);
   });
 
@@ -212,6 +220,67 @@ describe('add-ci-lint-rules · mutation, promises, conditions, names, errors, co
       { ruleId: 'no-implied-eval', line: 3 },
       { ruleId: 'no-new-func', line: 4 },
     ]);
+    // A function argument is not code in a string, so the timer globals do not make it fail.
+    expect(await lintFixture('ok-sinks.tsx')).toEqual([]);
+  });
+});
+
+describe('add-ci-lint-rules · exports, file names, Node, imports, overrides', () => {
+  const only = async (code, path, ruleId) =>
+    (await lintText(code, path)).filter((message) => message.ruleId === ruleId);
+  const levelOf = async (path, ruleId) =>
+    (await typed.calculateConfigForFile(join(root, path))).rules[ruleId]?.[0];
+
+  it('Scenario: A default export fails except where Next.js or a tool needs one', async () => {
+    const code = 'export default function format() {}\n';
+    const rule = 'import-x/no-default-export';
+    expect(await only(code, 'packages/shared/src/format/format-default.ts', rule)).toHaveLength(1);
+    for (const path of [
+      'apps/web/app/staff/login/page.tsx',
+      'packages/i18n/src/request.ts',
+      'e2e/global-setup.ts',
+      'prisma.config.ts',
+    ]) {
+      expect(await only(code, path, rule), path).toEqual([]);
+    }
+  });
+
+  it('Scenario: File names by case', async () => {
+    const named = async (path) =>
+      (await only('export {};\n', path, 'unicorn/filename-case')).length;
+    expect(await named('packages/shared/src/money/Money_Helpers.ts')).toBe(1);
+    expect(await named('packages/shared/src/money/MoneyInput.ts')).toBe(1);
+    expect(await named('packages/shared/src/money/money-input.ts')).toBe(0);
+  });
+
+  it('Scenario: Shared source imports no Node module, its tests and documents may', async () => {
+    const code = 'import { readFileSync } from "node:fs";\nexport { readFileSync };\n';
+    const rule = 'import-x/no-nodejs-modules';
+    expect(await only(code, 'packages/shared/src/money/read-rate.ts', rule)).toHaveLength(1);
+    expect(await only(code, 'packages/shared/src/constants/status.test.ts', rule)).toEqual([]);
+    expect(await only(code, 'packages/documents/src/receipt/render.ts', rule)).toEqual([]);
+  });
+
+  it('Scenario: A two-file cycle fails on both files', async () => {
+    const rule = 'import-x/no-cycle';
+    for (const name of ['cycle-a.ts', 'cycle-b.ts']) {
+      const found = (await lintFixture(name)).filter((message) => message.ruleId === rule);
+      expect(found, name).toEqual([{ ruleId: rule, line: 1 }]);
+    }
+  });
+
+  it('Scenario: A relative path into another package fails, the same package passes', async () => {
+    const rule = 'import-x/no-relative-packages';
+    expect(await lintFixture('pkg-app/deep.ts')).toEqual([{ ruleId: rule, line: 1 }]);
+    expect(await lintFixture('pkg-app/ok.ts')).toEqual([]);
+  });
+
+  it('Scenario: Only money.ts may brand a bigint, only the two listed files may inject', async () => {
+    const cast = '@typescript-eslint/no-unsafe-type-assertion';
+    expect(await levelOf('packages/shared/src/money/money.ts', cast)).toBe(0);
+    expect(await levelOf('packages/shared/src/format/money.ts', cast)).toBe(2);
+    for (const path of DANGER_ALLOWED) expect(await levelOf(path, 'react/no-danger'), path).toBe(0);
+    expect(await levelOf('packages/documents/src/receipt/other.tsx', 'react/no-danger')).toBe(2);
   });
 });
 
@@ -223,14 +292,13 @@ describe('add-ci-lint-rules · focused and skipped tests, fixed waits', () => {
       { ruleId: 'vitest/no-disabled-tests', line: 2 },
     ]);
     const spec =
-      'import { test } from "@playwright/test";\n' +
       'test.only("signs in", async () => {});\n' +
-      'test("waits", async ({ page }) => { await page.waitForTimeout(1000); });\n' +
+      'await page.waitForTimeout(1000);\n' +
       'test.skip("later", async () => {});\n';
     expect(await lintText(spec, 'e2e/sign-in.spec.ts')).toEqual([
-      { ruleId: 'playwright/no-focused-test', line: 2 },
-      { ruleId: 'playwright/no-wait-for-timeout', line: 3 },
-      { ruleId: 'playwright/no-skipped-test', line: 4 },
+      { ruleId: 'playwright/no-focused-test', line: 1 },
+      { ruleId: 'playwright/no-wait-for-timeout', line: 2 },
+      { ruleId: 'playwright/no-skipped-test', line: 3 },
     ]);
   });
 

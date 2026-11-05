@@ -66,6 +66,8 @@ const NO_SUPPRESSION = [
 
 // `source` is how the `exports` of the workspace packages point at `src` (design D7).
 const RESOLVER = createTypeScriptImportResolver({
+  // One resolver for every workspace's tsconfig: without this it warns on every run.
+  noWarnOnMultipleProjects: true,
   conditionNames: ['source', 'types', 'import', 'default'],
   project: [
     'tsconfig.json',
@@ -98,8 +100,12 @@ const NAMING = [
   {
     selector: ['objectLiteralProperty', 'typeProperty', 'classProperty'],
     format: ['camelCase', 'snake_case', 'UPPER_CASE', 'PascalCase'],
-    // `__html` (React) and `__brand` (the Mmk brand) are data fields with a double underscore.
-    leadingUnderscore: 'allowSingleOrDouble',
+  },
+  {
+    // `__html` (React) and `__brand` (the Mmk brand) are the only names with a double underscore.
+    selector: ['objectLiteralProperty', 'typeProperty'],
+    filter: { regex: '^__(html|brand)$', match: true },
+    format: null,
   },
   {
     selector: ['objectLiteralProperty', 'typeProperty'],
