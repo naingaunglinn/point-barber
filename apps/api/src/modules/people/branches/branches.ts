@@ -145,6 +145,8 @@ export class Branches {
     return this.runner.run(async (tx) => {
       const now = this.clock.now();
       const members = normalizeBranchMembers(body);
+      // Before any write, as on update: Zawgyi text with a taken code answers zawgyi_text (D3 · D4).
+      assertNoZawgyi(members);
       // An absent radius takes the setting's effective value; a sent null stays NULL (D5).
       const radius =
         members.location_radius_meters === undefined
@@ -162,7 +164,6 @@ export class Branches {
         location_radius_meters: radius,
         at: now,
       });
-      assertNoZawgyi(members);
       const row = await this.stored(tx, id);
       await this.audit.emit({
         action: BRANCH_CREATE,

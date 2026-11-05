@@ -211,6 +211,17 @@ describe('add-branch-management · organization · Zawgyi text in a branch is re
     expect(await s.branches()).toBe(before);
   });
 
+  it('Zawgyi text with a code that exists → 400 zawgyi_text (checked before the insert, as on update) and no row', async () => {
+    const before = await s.branches();
+    const res = await s.create({ ...B4, code: 'B3', address_mm: ZAWGYI_ADDRESS });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      code: 'zawgyi_text',
+      errors: [{ field: 'address_mm', code: 'zawgyi_text' }],
+    });
+    expect(await s.branches()).toBe(before);
+  });
+
   it('every member found is listed, an other-link label included', async () => {
     const res = await s.create({
       ...B4,
