@@ -3,7 +3,7 @@
 import { cn } from 'cn';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import Link from 'next/link';
-import { useId, useState, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../primitives/tooltip';
 import { Button } from '../Button/Button';
@@ -21,6 +21,10 @@ import { NavIcon, type NavLinkItem } from '../BottomNav/BottomNav';
 //   24 px content padding. The page's title itself is its PageHeader `h1`.
 // Each slot is rendered once. The rail and the sub-navigation are full-height columns whose content
 // sticks to the top; the top bar and the bottom navigation are sticky, not fixed.
+// The top bar wraps, so its height depends on its content: the shell measures it (on mount and on every
+// resize) and sets it on its root as `--shell-top` in px. A sticky element inside the content sticks
+// under the top bar with `top-[var(--shell-top,0px)]` (the OfflineBanner does); outside a shell the
+// fallback keeps it at the top.
 
 export interface ShellScreen {
   readonly key: string;
@@ -61,6 +65,8 @@ export interface AppShellProps {
   readonly height?: 'viewport' | 'parent';
 }
 
+/** The top bar's height in px, set on the shell's root (see the comment above). */
+const SHELL_TOP = '--shell-top';
 const RAIL_ITEM = 'flex size-12 items-center justify-center rounded-md [&_svg]:size-5';
 const SCREEN_LINK = 'flex min-h-11 items-center rounded-md px-3 text-sm break-words';
 
@@ -73,10 +79,26 @@ export function AppShell(props: AppShellProps) {
   const { title, breadcrumb, search, mobileSearch, bell, language, userMenu } = props;
   const { height = 'viewport' } = props;
   const [collapsed, setCollapsed] = useState(false);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const topBarRef = useRef<HTMLElement>(null);
   const headingId = useId();
   const listId = useId();
   const module = nav.find((item) => item.key === activeKey);
   const screens = module?.items ?? [];
+
+  // Before the first paint, so a sticky element never starts under the top bar.
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    const topBar = topBarRef.current;
+    if (shell === null || topBar === null) return;
+    const update = () => {
+      shell.style.setProperty(SHELL_TOP, `${topBar.getBoundingClientRect().height}px`);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(topBar);
+    return () => observer.disconnect();
+  }, []);
 
   const screenLinks = (className: string) =>
     screens.map((screen) => {
@@ -97,6 +119,7 @@ export function AppShell(props: AppShellProps) {
   return (
     <TooltipProvider>
       <div
+        ref={shellRef}
         data-slot="app-shell"
         className={cn(
           'flex bg-background text-foreground',
@@ -166,6 +189,7 @@ export function AppShell(props: AppShellProps) {
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <header
+            ref={topBarRef}
             data-slot="top-bar"
             className="sticky top-0 z-20 flex min-h-14 flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-2 md:px-6"
           >

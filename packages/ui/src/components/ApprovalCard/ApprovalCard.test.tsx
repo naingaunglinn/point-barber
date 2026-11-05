@@ -10,6 +10,7 @@ import { ApprovalCard, type ApprovalCardProps } from './ApprovalCard';
 
 // ui-foundation "ApprovalCard shows a request with its resulting value and the decision actions"
 // (AD-NTF-04 · AD-POS-16 · AD-PERM-02 · design D10). The labels are the caller's (translated).
+const TITLE = 'Discount request';
 const SUBTOTAL = moneyFromWire(11000);
 const DISCOUNT = moneyFromWire(1000);
 // The resulting value is the server's (11,000 − 1,000 = 10,000); the card only shows it.
@@ -20,7 +21,7 @@ function renderCard(props: Partial<ApprovalCardProps> = {}) {
   renderIntl(
     <FormatProvider locale="en" profile="app">
       <ApprovalCard
-        title="Discount request"
+        title={TITLE}
         requester={{ name: 'Ko Min' }}
         branch="Point 3.0"
         facts={[

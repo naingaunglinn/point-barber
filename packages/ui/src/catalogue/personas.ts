@@ -1,4 +1,4 @@
-import type { BranchView, MeGrants } from '@point/shared';
+import { BranchStatus, type BranchView, type MeGrants } from '@point/shared';
 
 import { BRANCHES, PEOPLE, type BranchCode } from './fixtures';
 
@@ -37,7 +37,7 @@ const summaryOf = (code: BranchCode): BranchView => {
     code,
     name_mm: branch.name_mm,
     name_en: branch.name_en,
-    status: 1,
+    status: BranchStatus.ACTIVE,
     is_public: true,
   };
 };

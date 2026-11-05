@@ -131,6 +131,29 @@ describe('AttachmentUploader', () => {
     expect(screen.queryByRole('progressbar')).toBeNull();
   });
 
+  it('an invalid field marks the zone and describes the button; the button itself takes no aria-invalid', () => {
+    renderIntl(
+      <FormField label="Photo" error={{ code: 'required' }}>
+        {(control) => (
+          <AttachmentUploader
+            {...control}
+            purpose="image"
+            maxMb={10}
+            upload={vi.fn()}
+            value={[]}
+            onChange={vi.fn()}
+          />
+        )}
+      </FormField>,
+    );
+    const button = screen.getByRole('button', { name: 'Photo' });
+    expect(button.hasAttribute('aria-invalid')).toBe(false);
+    expect(button.getAttribute('aria-describedby')).toContain('-error');
+    expect(document.querySelector('[data-slot="drop-zone"]')?.className).toContain(
+      'border-destructive',
+    );
+  });
+
   it('accepts a file by its extension or its reported type', () => {
     expect(isAllowedType({ name: 'IMG_0001.HEIC', type: '' }, 'image')).toBe(true);
     expect(isAllowedType({ name: 'list.csv', type: 'application/vnd.ms-excel' }, 'import')).toBe(

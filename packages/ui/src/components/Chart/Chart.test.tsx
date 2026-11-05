@@ -1,6 +1,8 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { moneyToWire } from '@point/shared';
+
 import { BRANCHES, REVENUE_BY_BRANCH } from '../../catalogue/fixtures';
 import { renderIntl } from '../../test/intl';
 import { mockViewport } from '../../test/viewport';
@@ -13,7 +15,7 @@ const REVENUE: ChartSeries = {
   label: 'Revenue',
   points: REVENUE_BY_BRANCH.map((r) => ({
     x: BRANCHES.find((b) => b.code === r.branch)?.name_en ?? r.branch,
-    y: Number(r.amount),
+    y: moneyToWire(r.amount),
   })),
 };
 const BRANCH = 'Branch';

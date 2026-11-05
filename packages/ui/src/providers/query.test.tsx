@@ -6,6 +6,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { createQueryClient, QueryProvider } from './query';
 
 // AD-PERF-03 (refetch on focus) · AD-NET-02 (no automatic retry of a mutation) · design D1.
+/** A key factory, as each module has one (CG-UI-07). */
+const saleKeys = { list: () => ['sales'] as const };
+
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryProvider>{children}</QueryProvider>
 );
@@ -28,9 +31,12 @@ describe('QueryProvider', () => {
 
   it('gives each mounted provider its own client', async () => {
     const fetchList = vi.fn(() => Promise.resolve(['B3-2026-OCT-00001']));
-    const { result } = renderHook(() => useQuery({ queryKey: ['sales'], queryFn: fetchList }), {
-      wrapper,
-    });
+    const { result } = renderHook(
+      () => useQuery({ queryKey: saleKeys.list(), queryFn: fetchList }),
+      {
+        wrapper,
+      },
+    );
     await waitFor(() => expect(result.current.data).toEqual(['B3-2026-OCT-00001']));
     expect(fetchList).toHaveBeenCalledTimes(1);
   });

@@ -3,6 +3,7 @@ import { ServicePricingMode, ServiceStatus, type ServiceListItemDto } from '@poi
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { chooseTime } from '../../test/late-entry';
 import { renderStaff } from '../../test/render';
 import { StartSheet } from './StartSheet';
 
@@ -156,9 +157,7 @@ const fillTime = (key: string, label: string, time: string, date = '04/Oct/2026'
   const input = within(field).getByRole('textbox', { name: `${label} — Date` });
   fireEvent.change(input, { target: { value: date } });
   fireEvent.blur(input);
-  fireEvent.change(within(field).getByTestId(`late-entry-${key}-time`), {
-    target: { value: time },
-  });
+  chooseTime(key, time);
 };
 const fillAll = (
   times: Partial<Record<'started' | 'completed' | 'received' | 'finished', string>> = {},
@@ -169,7 +168,9 @@ const fillAll = (
   fillTime('finished', 'Finish time', times.finished ?? '15:35');
 };
 
-describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', { timeout: 10_000 }, () => {
   it('the link is absent without sale.late_entry (owner B12)', () => {
     sheet();
     expect(screen.queryByTestId('late-entry-link')).toBeNull();
@@ -181,6 +182,13 @@ describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
     fireEvent.click(screen.getByTestId('start-submit'));
     expect(onStart).not.toHaveBeenCalled();
     expect(screen.getAllByText('This field is required.')).toHaveLength(5);
+    // Each time control is marked with its field's message (AD-FORM-02), not only the date.
+    for (const key of ['started', 'completed', 'received', 'finished']) {
+      const trigger = screen.getByTestId(`late-entry-${key}-time`);
+      expect(trigger.getAttribute('aria-invalid')).toBe('true');
+      const message = within(screen.getByTestId(`late-entry-${key}`)).getByRole('alert');
+      expect(trigger.getAttribute('aria-describedby')).toBe(message.id);
+    }
   });
 
   it('OTHER shows the note, and it is required', () => {
@@ -249,7 +257,9 @@ describe('StartSheet — late entry (add-late-entry tasks 4.1 – 4.3)', () => {
   });
 });
 
-describe('StartSheet — late entry, review of #29', () => {
+// Each test fills up to four late-entry dates and times (a 288-time combobox each): 4.7–5.1 s in a
+// full `pnpm test` on 8 cores against the 5 s default, so these get 10 s (measured on #18, 02/Nov/2026).
+describe('StartSheet — late entry, review of #29', { timeout: 10_000 }, () => {
   it('a note typed for OTHER is not sent once another reason is chosen', () => {
     const onStart = sheet({ allowLateEntry: true });
     fireEvent.click(screen.getByTestId('late-entry-link'));

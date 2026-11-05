@@ -3,6 +3,7 @@
 import { toNestErrors } from '@hookform/resolvers';
 import {
   get,
+  useController,
   useForm,
   type FieldError as FormError,
   type FieldErrors,
@@ -83,16 +84,79 @@ export function useAppForm<Input extends FieldValues, Output>(
   });
 }
 
-/** `register()` for a control in a `FormField`: re-validated on every change once it shows an error. */
+/** The part of a blur event the form binding reads. */
+interface FieldBlur {
+  readonly type: string;
+  readonly target: EventTarget;
+  readonly relatedTarget: EventTarget | null;
+}
+
+/**
+ * Whether a blur moves the focus to a submit button of the field's own form. That blur is not
+ * validated: the submit validates every field, and a message shown on the press would push the button
+ * down before the release, so the first press would not submit (workbook No 64).
+ */
+export function movesToSubmit({ target, relatedTarget }: FieldBlur): boolean {
+  const form =
+    target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+      ? target.form
+      : null;
+  return (
+    form !== null &&
+    (relatedTarget instanceof HTMLButtonElement || relatedTarget instanceof HTMLInputElement) &&
+    relatedTarget.type === 'submit' &&
+    relatedTarget.form === form
+  );
+}
+
+/**
+ * `register()` for a control in a `FormField`: re-validated on every change once it shows an error; a
+ * blur to the form's submit button is left to the submit (`movesToSubmit`).
+ */
 export function registerField<Input extends FieldValues, Output>(
   form: UseFormReturn<Input, unknown, Output>,
   name: Path<Input>,
 ) {
-  return form.register(name, {
+  const registered = form.register(name, {
     onChange: () => {
       if (form.getFieldState(name).error) void form.trigger(name);
     },
   });
+  return {
+    ...registered,
+    onBlur: (event: FieldBlur) =>
+      movesToSubmit(event) ? Promise.resolve() : registered.onBlur(event),
+  };
+}
+
+/**
+ * `registerField()` for a controlled shared input (TextInput): the same validation — on blur and on
+ * submit, again on every change once the field shows an error — the value as a string, and the ref
+ * the form focuses on its first error.
+ */
+export function useTextField<Input extends FieldValues, Output>(
+  form: UseFormReturn<Input, unknown, Output>,
+  name: Path<Input>,
+) {
+  const { field } = useController({
+    control: form.control,
+    name,
+    rules: {
+      onChange: () => {
+        if (form.getFieldState(name).error) void form.trigger(name);
+      },
+    },
+  });
+  const value: unknown = field.value;
+  return {
+    name: field.name,
+    ref: field.ref,
+    value: typeof value === 'string' ? value : '',
+    onChange: (next: string) => field.onChange(next),
+    onBlur: (event: FieldBlur) => {
+      if (!movesToSubmit(event)) field.onBlur();
+    },
+  };
 }
 
 /** The error of a field for `FormField` (`{ code, params }`), or undefined. */

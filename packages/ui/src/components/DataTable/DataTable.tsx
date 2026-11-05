@@ -209,7 +209,9 @@ export function DataTable<T extends object>(props: DataTableProps<T>) {
           <thead className="sticky top-0 z-10 bg-background">
             <tr className="border-b border-border">
               {visibleColumns.map((column) => {
-                const active = sort === column.sortKey || sort === `-${column.sortKey}`;
+                const active =
+                  column.sortKey !== undefined &&
+                  (sort === column.sortKey || sort === `-${column.sortKey}`);
                 const descending = sort === `-${column.sortKey}`;
                 return (
                   <th
