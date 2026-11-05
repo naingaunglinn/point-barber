@@ -20,7 +20,8 @@ export abstract class MaintenanceGate {
 }
 
 /**
- * On the store: one read of the effective `system.maintenance`. Off → the request goes on. On → the
+ * On the store: one read of the effective `system.maintenance` (two queries: the company id and the
+ * row). Off → the request goes on. On → the
  * caller's grant set is built (today in MMT) and kept in the request context for the access guard and
  * `/me`; a company-scope settings.update holder goes on, anyone else is answered 503 `maintenance` with
  * the expected end and the two messages. `until` is only shown: maintenance stays on until turned off.
