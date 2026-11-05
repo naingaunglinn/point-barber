@@ -8,6 +8,7 @@ import {
   type SettingUser,
   type SettingView,
   isSettingKey,
+  settingEntry,
   toMmtIso,
 } from '@point/shared';
 
@@ -96,6 +97,24 @@ export class SettingsStore {
     const entries = SETTINGS.filter(
       (entry) => filter.module === undefined || entry.module === filter.module,
     );
+    return this.viewsOf(grants, entries, branchId);
+  }
+
+  /**
+   * The `SettingView` of one key — the answer of P1.SET.03 / 04 after the guard and the service
+   * checked the key and the branch; with `branchId`, that branch's values.
+   */
+  async view(grants: GrantSet, key: SettingKey, branchId?: string): Promise<SettingView> {
+    const [view] = await this.viewsOf(grants, [settingEntry(key)], branchId);
+    if (view === undefined) throw new Error(`settings: no view of ${key}`);
+    return view;
+  }
+
+  private async viewsOf(
+    grants: GrantSet,
+    entries: readonly Entry[],
+    branchId: string | undefined,
+  ): Promise<SettingView[]> {
     if (entries.length === 0) return [];
     const companyId = await this.company.id();
     const rows =

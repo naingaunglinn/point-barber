@@ -233,3 +233,41 @@ describe('the maintenance path = OpenAPI Part 1 v1.7 (add-settings-store task 4.
     expect(maxLength(members.message_en as Schema)).toBe(200);
   });
 });
+
+// add-settings-store task 3.12 — putSetting and resetSetting (P1.SET.03 / 04) as Part 1 v1.7 writes
+// them: the key path parameter, the inline request bodies and SettingView as the answer.
+describe('the settings write paths = OpenAPI Part 1 v1.7 (add-settings-store task 3.12)', () => {
+  const PUT_REQUEST: Schema = {
+    type: 'object',
+    required: ['value'],
+    properties: { value: {}, branch_id: { type: ['string', 'null'], format: 'uuid' } },
+  };
+  const RESET_REQUEST: Schema = {
+    type: 'object',
+    properties: { branch_id: { type: ['string', 'null'], format: 'uuid' } },
+  };
+  const answer = (operation: Schema) =>
+    ((operation.responses as Record<string, Schema>)['200']?.content as Record<string, Schema>)[
+      'application/json'
+    ]?.schema;
+
+  it('putSetting: the key parameter, { value, branch_id? } and SettingView', () => {
+    const path = paths['/settings/{key}'] as Record<string, unknown>;
+    const put = path.put as Schema;
+    expect(put.operationId).toBe('putSetting');
+    expect((path.parameters as Schema[]).map((parameter) => parameter.name)).toStrictEqual(['key']);
+    expect((put.requestBody as Schema).required).toBe(true);
+    expect(answer(put)).toStrictEqual({ $ref: '#/components/schemas/SettingView' });
+    expectParity(PUT_REQUEST, generated.SettingPutRequest as Schema, 'SettingPutRequest');
+  });
+
+  it('resetSetting: an optional { branch_id? } body and SettingView', () => {
+    const path = paths['/settings/{key}/reset'] as Record<string, unknown>;
+    const post = path.post as Schema;
+    expect(post.operationId).toBe('resetSetting');
+    expect((path.parameters as Schema[]).map((parameter) => parameter.name)).toStrictEqual(['key']);
+    expect((post.requestBody as Schema).required).toBeUndefined();
+    expect(answer(post)).toStrictEqual({ $ref: '#/components/schemas/SettingView' });
+    expectParity(RESET_REQUEST, generated.SettingResetRequest as Schema, 'SettingResetRequest');
+  });
+});

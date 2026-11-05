@@ -9,6 +9,7 @@ import {
   CodeTables,
   CompanyOfSettings,
   PlatformModule,
+  RegisteredGrantSource,
   SettingBranches,
   UserNames,
 } from '../platform/index.js';
@@ -40,9 +41,10 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 // Bounded context `people` (ADR-001 · docs/engineering/module-map.md): company, branches, employees,
 // branch assignments, roles and permissions. It builds on platform (audit writer, jobs); what platform
 // needs from people — the primary-branch rule of the audit writer, the steps of sync.code_tables, the
-// company, user names and branches of the settings store (add-settings-store design D1) — is
-// registered here at start-up, so the two modules never import each other. The access guard's port
-// GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design D11).
+// company, user names, branches and grant rows of the settings store (add-settings-store design D1 /
+// D9) — is registered here at start-up, so the two modules never import each other. The access
+// guard's port GrantSource and the `employee` target of P1-RULE-11 are supplied the same way (design
+// D11).
 @Module({
   imports: [PlatformModule],
   controllers: [OrganizationController],
@@ -103,6 +105,8 @@ export class PeopleModule implements OnModuleInit {
     private readonly companyOfSettings: CompanyOfSettings,
     private readonly userNames: UserNames,
     private readonly settingBranches: SettingBranches,
+    private readonly gateGrants: RegisteredGrantSource,
+    private readonly grantSource: GrantSource,
   ) {}
 
   onModuleInit(): void {
@@ -115,6 +119,8 @@ export class PeopleModule implements OnModuleInit {
     this.settingBranches.use(
       async (branchId) => (await this.directory.branchSummaries([branchId])).length === 1,
     );
+    // The maintenance gate decides on the same grant rows as the access guard (design D9).
+    this.gateGrants.use(this.grantSource);
     // sync.code_tables (design D10): the catalogue first, then the base seed that reads it.
     this.codeTables.contribute('permission catalogue', 10, async () => {
       await this.runner.run((tx) => this.catalogue.sync(tx, PERMISSIONS));

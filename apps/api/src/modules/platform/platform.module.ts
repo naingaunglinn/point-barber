@@ -18,8 +18,10 @@ import { Observability } from './observability/observability.js';
 import { RateLimiter } from './rate-limit/rate-limiter.js';
 import { AttachmentsRepository } from './repositories/attachments.repository.js';
 import { OpeningHoursRepository } from './repositories/opening-hours.repository.js';
-import { MaintenanceGate, OpenMaintenanceGate } from './settings/maintenance-gate.js';
+import { MaintenanceGate, StoreMaintenanceGate } from './settings/maintenance-gate.js';
 import { SettingsModule } from './settings/settings.module.js';
+import { SettingsCommands } from './settings/settings-commands.js';
+import { SettingsWriteController } from './settings/settings-write.controller.js';
 import { SettingsWrites } from './settings/settings-writes.js';
 import { NoTodayBranch, TodayBranch } from './settings/today-branch.js';
 import { S3StorageService } from './storage/s3-storage.service.js';
@@ -56,11 +58,12 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
 
 @Module({
   imports: [JobsModule, MailModule, SettingsModule],
-  controllers: [HealthController, StatusController, MaintenanceController],
+  controllers: [HealthController, StatusController, MaintenanceController, SettingsWriteController],
   providers: [
     SystemService,
-    // add-settings-store — the store's write path beside the audit writer, and P1.SYS.03.
+    // add-settings-store — the store's write path beside the audit writer, P1.SET.03 / 04, P1.SYS.03.
     SettingsWrites,
+    SettingsCommands,
     MaintenanceMode,
     AttachmentsRepository,
     Attachments,
@@ -76,8 +79,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
     { provide: DocumentRenderer, useClass: ChromiumDocumentRenderer },
-    // The seams of design D13: add-settings-store, scheduling and attendance replace them.
-    { provide: MaintenanceGate, useClass: OpenMaintenanceGate },
+    // The seams of design D13: the maintenance gate on the store (add-settings-store design D9);
+    // scheduling and attendance replace TodayBranch.
+    { provide: MaintenanceGate, useClass: StoreMaintenanceGate },
     { provide: TodayBranch, useClass: NoTodayBranch },
     // ADR-014: the bucket of generated documents (add-walkin-visit-checkout design D10). In development
     // and test the local MinIO's bucket is created when missing; a failure is a warning, never a stop.

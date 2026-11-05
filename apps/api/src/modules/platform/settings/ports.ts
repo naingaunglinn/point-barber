@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { SettingUser } from '@point/shared';
 
+import { GrantSource, type GrantSourceRows } from '../../../common/access/grant-set.js';
+
 // What the settings store needs from the people module (ADR-001 rule 1 · add-settings-store design
 // D1): the company whose settings are read, the names of the users behind a value or a history
-// line, and whether a branch exists. `platform` does not import `people` — people builds on platform —
+// line, whether a branch exists, and the grant rows the maintenance gate decides on (design D9). `platform` does not import `people` — people builds on platform —
 // so people registers each one at start-up, the way it registers the audit writer's primary-branch
 // rule (docs/engineering/module-map.md).
 
@@ -62,5 +64,24 @@ export class SettingBranches {
   exists(branchId: string): Promise<boolean> {
     if (this.lookup === undefined) throw missing('SettingBranches');
     return this.lookup(branchId);
+  }
+}
+
+/**
+ * The access guard's port GrantSource, as the maintenance gate reads it (design D9): the gate runs in
+ * the session guard, before the access guard, and builds the caller's grant set from the same rows.
+ * People registers its GrantSource here at start-up.
+ */
+@Injectable()
+export class RegisteredGrantSource extends GrantSource {
+  private source: GrantSource | undefined;
+
+  use(source: Pick<GrantSource, 'rowsFor'>): void {
+    this.source = source as GrantSource;
+  }
+
+  override rowsFor(employeeId: string): Promise<GrantSourceRows> {
+    if (this.source === undefined) throw missing('RegisteredGrantSource');
+    return this.source.rowsFor(employeeId);
   }
 }

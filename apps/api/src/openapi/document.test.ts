@@ -67,10 +67,12 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
     expect(document.servers).toStrictEqual([{ url: '/api/v1' }]);
     expect(Object.keys(document.paths as object).sort()).toStrictEqual([
       '/health',
-      // add-settings-store task 3.12 — P1.SET.01 / 02 / 05.
+      // add-settings-store task 3.12 — P1.SET.01 – 05.
       '/settings',
       '/settings/effective',
+      '/settings/{key}',
       '/settings/{key}/history',
+      '/settings/{key}/reset',
       // add-settings-store task 4.1 — P1.SYS.03.
       '/system/maintenance',
       '/system/status',

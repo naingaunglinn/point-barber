@@ -2,7 +2,6 @@ import { FIXTURE_IDS } from '@point/shared/testing';
 import { describe, expect, it } from 'vitest';
 
 import type { SettingsRepository } from '../repositories/settings.repository.js';
-import { MaintenanceGate, OpenMaintenanceGate } from './maintenance-gate.js';
 import { CompanyOfSettings } from './ports.js';
 import type { StoredSetting } from './resolve.js';
 import { CLIENT_READABLE_KEYS, SettingsReader } from './settings-reader.js';
@@ -138,13 +137,7 @@ describe('StoreSettingsReader (task 2.5)', () => {
   });
 });
 
-describe('the other two seams (foundation task 2.12)', () => {
-  it('the maintenance gate is open until P1.SYS.03 and the store gate exist', async () => {
-    const gate: MaintenanceGate = new OpenMaintenanceGate();
-    await expect(gate.assertOpen()).resolves.toBeUndefined();
-    expect(await gate.isOn()).toBe(false);
-  });
-
+describe('the remaining seam (foundation task 2.12)', () => {
   it('nobody has a today branch until scheduling and attendance exist (Part 1 §12)', async () => {
     const today: TodayBranch = new NoTodayBranch();
     expect(await today.of('any-employee')).toBeNull();

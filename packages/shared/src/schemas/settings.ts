@@ -74,6 +74,19 @@ export const settingKeyParamSchema = z.object({
   key: z.string().max(100).regex(SETTING_KEY_PATTERN),
 });
 
+/**
+ * P1.SET.03 body `{ value, branch_id? }`: the value is typed per settings.json, so it is checked by
+ * valueSchema(entry) after the key and the scope (design D5); no `branch_id` (or null) = the company
+ * value. A request schema: unknown members are stripped (CG-API-03).
+ */
+export const settingPutBodySchema = z.object({
+  value: z.unknown(),
+  branch_id: z.uuid().nullable().optional(),
+});
+
+/** P1.SET.04 body `{ branch_id? }` — optional: no body resets the company value. */
+export const settingResetBodySchema = z.object({ branch_id: z.uuid().nullable().optional() });
+
 /** P1.SET.01 query: `module`, `branch_id`. */
 export const settingListQuerySchema = z.object({
   module: z.string().trim().min(1).max(100).optional(),
@@ -107,6 +120,8 @@ export type SettingHistoryItem = z.infer<typeof settingHistoryItemSchema>;
 export type SettingList = z.infer<typeof settingListSchema>;
 export type EffectiveSettings = z.infer<typeof effectiveSettingsSchema>;
 export type SettingHistoryPage = z.infer<typeof settingHistoryPageSchema>;
+export type SettingPutBody = z.infer<typeof settingPutBodySchema>;
+export type SettingResetBody = z.infer<typeof settingResetBodySchema>;
 export type SettingListQuery = z.infer<typeof settingListQuerySchema>;
 export type EffectiveSettingsQuery = z.infer<typeof effectiveSettingsQuerySchema>;
 export type SettingHistoryQuery = z.infer<typeof settingHistoryQuerySchema>;

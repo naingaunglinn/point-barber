@@ -28,6 +28,8 @@ import {
   serviceListItemSchema,
   settingDefinitionSchema,
   settingHistoryItemSchema,
+  settingPutBodySchema,
+  settingResetBodySchema,
   settingViewSchema,
   systemStatusSchema,
   upcomingBookingSchema,
@@ -127,6 +129,52 @@ const SETTINGS_PATHS = {
             as_of: { type: 'string', format: 'date-time' },
           },
         }),
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  // P1.SET.03 / 04 — the request bodies are the input side of their schemas.
+  '/settings/{key}': {
+    parameters: [SETTING_KEY_PARAMETER],
+    put: {
+      tags: ['settings'],
+      operationId: 'putSetting',
+      summary: 'Set a company value or a branch override — settings.update (P1.SET.03)',
+      'x-permission':
+        'settings.update (mixed: no branch_id = company value -> company scope; branch_id = branch override -> that branch in scope)',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': { schema: { $ref: '#/components/schemas/SettingPutRequest' } },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Saved (history row written by trigger; settings.changed emitted)',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/SettingView' } } },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/settings/{key}/reset': {
+    parameters: [SETTING_KEY_PARAMETER],
+    post: {
+      tags: ['settings'],
+      operationId: 'resetSetting',
+      summary:
+        'Reset to the company value (branch) or to the default (company) — settings.update (P1.SET.04)',
+      'x-permission': 'settings.update (mixed — as putSetting)',
+      requestBody: {
+        content: {
+          'application/json': { schema: { $ref: '#/components/schemas/SettingResetRequest' } },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'Reset',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/SettingView' } } },
+        },
         default: PROBLEM_RESPONSE,
       },
     },
@@ -242,7 +290,10 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         SettingDefinition: schema(settingDefinitionSchema),
         SettingHistoryItem: schema(settingHistoryItemSchema),
         SettingView: schema(settingViewSchema),
-        // add-settings-store task 4.1 — the inline body of setMaintenance (P1.SYS.03).
+        // add-settings-store tasks 3.12 / 4.1 — the inline bodies of putSetting, resetSetting and
+        // setMaintenance.
+        SettingPutRequest: schema(settingPutBodySchema, 'input'),
+        SettingResetRequest: schema(settingResetBodySchema, 'input'),
         MaintenanceRequest: schema(maintenanceBodySchema, 'input'),
         // add-walkin-visit-checkout tasks 2.2 – 2.5 — the response DTOs of Parts 2 / 3 / 4; their
         // endpoints are added with the controllers of this change.

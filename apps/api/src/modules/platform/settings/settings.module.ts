@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { SettingsRepository } from '../repositories/settings.repository.js';
-import { CompanyOfSettings, SettingBranches, UserNames } from './ports.js';
+import { CompanyOfSettings, RegisteredGrantSource, SettingBranches, UserNames } from './ports.js';
 import { SettingsController } from './settings.controller.js';
 import { SettingsReader } from './settings-reader.js';
 import { SettingsStore } from './settings-store.js';
@@ -19,6 +19,7 @@ import { UnknownSettingKeys } from './unknown-keys.js';
     CompanyOfSettings,
     UserNames,
     SettingBranches,
+    RegisteredGrantSource,
     StoreSettingsReader,
     { provide: SettingsReader, useExisting: StoreSettingsReader },
     SettingsStore,
@@ -30,6 +31,7 @@ import { UnknownSettingKeys } from './unknown-keys.js';
     CompanyOfSettings,
     UserNames,
     SettingBranches,
+    RegisteredGrantSource,
     SettingsStore,
   ],
 })
