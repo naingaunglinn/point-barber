@@ -117,6 +117,15 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
     ]);
   });
 
+  // add-walkin-visit-checkout task 2.9 (CG-MONEY-03 · API-DATA-02): api.mjs alone carries the rule for
+  // apps/api; the rule's own cases are in tools/eslint-plugin-point/test/no-number-money.test.mjs.
+  it('switches point/no-number-money on for apps/api', async () => {
+    const code = `declare const sale: { total_amount: bigint };\nexport const x = sale.total_amount * 2n;\n`;
+    expect(await lint(code, 'apps/api/src/modules/sales/x.ts')).toEqual([
+      { ruleId: 'point/no-number-money', message: expect.stringContaining('CG-MONEY-03') },
+    ]);
+  });
+
   it('fails on the undeclared fixture route, which the root config therefore excludes', async () => {
     const path = 'apps/api/test/fixtures/undeclared.controller.ts';
     expect(await lint(readFileSync(join(root, path), 'utf8'), path)).toEqual([

@@ -1,5 +1,7 @@
 // API lint rules (apps/api, packages/shared, packages/documents) — owner: Dev 2 (design D3).
-// The access-decorator rule (design D10); in every Dev 2 workspace the AD-IMPL-05 parseFloat ban
+// The access-decorator rule (design D10); in apps/api the money rule `point/no-number-money`
+// (add-walkin-visit-checkout task 2.9 · design D8 — web.mjs holds it for apps/web and packages/*);
+// in every Dev 2 workspace the AD-IMPL-05 parseFloat ban
 // (D16) and Math.random (CG-SEC-06, beside the guard of D19); in source only `$transaction` only in
 // src/common/database/ (CG-DB-03) and process.env only in src/common/config/ (CG-SEC-05 · D19).
 // A rule set by one config object is replaced, not merged, by a later object for the same file, so
@@ -35,6 +37,14 @@ export default [
     files: ['apps/api/**/*.ts'],
     plugins: { point },
     rules: { 'point/one-access-decorator': 'error' },
+  },
+  {
+    // Money only through the helpers of packages/shared/src/money, in the API too: the mappers convert
+    // with moneyToWire / moneyFromWire and there is no global BigInt serializer (CG-MONEY-02 ·
+    // CG-MONEY-03 · API-DATA-02 · add-walkin-visit-checkout task 2.9 · guideline §24 row 37).
+    files: ['apps/api/**/*.{ts,tsx,mts,cts}'],
+    plugins: { point },
+    rules: { 'point/no-number-money': 'error' },
   },
   {
     files: DEV2_WORKSPACES,
