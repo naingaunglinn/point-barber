@@ -13,12 +13,13 @@ import { useSettings } from '../../../../../lib/settings/queries';
 
 // Settings › Additional settings (AD-SET-01 · AD-STATE-01 – 03 · AD-PERM-02 · design D10 · task 5.4): the
 // company values of every key, grouped by module in the order Booking, Sales & payments, Closing,
-// Dashboard, System — the order of settings.json — each row with its control or its value as text. A user
-// without any `settings.*` code gets the no-access page and no value is loaded. A failed first load shows
-// the error state; a failed load in the background (window focus) keeps the rows already shown, so what
-// was typed into them stays. The page title is the screen's name (WCAG 2.4.2 · AD-A11Y-01).
+// Payroll & attendance, Dashboard, System — the order of settings.json — each row with its control or
+// its value as text. A user without any `settings.*` code gets the no-access page and no value is
+// loaded. A failed first load shows the error state; a failed load in the background (window focus)
+// keeps the rows already shown, so what was typed into them stays. The page title is the screen's name
+// (WCAG 2.4.2 · AD-A11Y-01).
 
-type Module = 'booking' | 'sales' | 'closing' | 'dashboard' | 'system';
+type Module = 'booking' | 'sales' | 'closing' | 'attendance' | 'dashboard' | 'system';
 
 /** The rows by module, in the order the list gives them (settings.json order). */
 function groupsOf(items: readonly SettingView[]): { module: Module; items: SettingView[] }[] {
