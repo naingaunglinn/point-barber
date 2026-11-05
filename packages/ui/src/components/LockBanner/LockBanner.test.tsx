@@ -54,6 +54,15 @@ describe('LockBanner', () => {
     expect(onReopen).toHaveBeenCalledTimes(1);
   });
 
+  it('a long value wraps inside its column: min-w-0 on the field and its value, which wraps anywhere (AD-LAY-03)', () => {
+    const link = `https://point.test/${'a'.repeat(981)}`;
+    render(<ReadOnlyFields fields={[{ label: 'Website', value: link }]} />);
+    const value = screen.getByText(link).closest('dd');
+    expect(value?.classList.contains('min-w-0')).toBe(true);
+    expect(value?.classList.contains('[overflow-wrap:anywhere]')).toBe(true);
+    expect(value?.parentElement?.classList.contains('min-w-0')).toBe(true);
+  });
+
   it('marks a Myanmar value with lang="my"', () => {
     render(<ReadOnlyFields fields={[{ label: 'Branch', value: 'ပွိုင့် ၃.၀' }]} />);
     expect(screen.getByText('ပွိုင့် ၃.၀').getAttribute('lang')).toBe('my');

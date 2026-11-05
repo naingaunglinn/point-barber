@@ -17,6 +17,23 @@ function zawgyiProbability(text: string): number {
   return detector.getZawgyiProbability(text);
 }
 
+/** The detector's estimate that `text` is Zawgyi; tests pass their own (design D11). */
+export interface ZawgyiOptions {
+  readonly probability?: (text: string) => number;
+}
+
+/**
+ * True when `text` has Myanmar script and the detector is at least 0.95 sure it is Zawgyi — the
+ * server's refusal `zawgyi_text` (API-SHAPE-05 · add-company-profile design D10) uses the same rule
+ * as the input's conversion, so text a shared input accepted is accepted.
+ */
+export function isZawgyi(
+  text: string,
+  { probability = zawgyiProbability }: ZawgyiOptions = {},
+): boolean {
+  return hasMyanmarScript(text) && probability(text) >= THRESHOLD;
+}
+
 export interface NormalizedText {
   readonly text: string;
   /** True when the text was Zawgyi and has been converted — the input shows a notice. */
@@ -24,11 +41,8 @@ export interface NormalizedText {
 }
 
 /** `ျမန္မာ` (Zawgyi) → `{ text: 'မြန်မာ', converted: true }`; Unicode text is returned untouched. */
-export function normalizeMyanmarText(
-  text: string,
-  { probability = zawgyiProbability }: { readonly probability?: (text: string) => number } = {},
-): NormalizedText {
-  if (!hasMyanmarScript(text) || probability(text) < THRESHOLD) return { text, converted: false };
+export function normalizeMyanmarText(text: string, options: ZawgyiOptions = {}): NormalizedText {
+  if (!isZawgyi(text, options)) return { text, converted: false };
   converter ??= new ZawgyiConverter();
   return { text: converter.zawgyiToUnicode(text), converted: true };
 }

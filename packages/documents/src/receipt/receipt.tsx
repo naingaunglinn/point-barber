@@ -19,7 +19,9 @@ import type { PaperWidthMm } from '../paper.js';
 // its Myanmar one. Top to bottom as AD-RCPT-01: company and branch, the number and the date, the barber,
 // the customer, the lines, the totals, the payments and the change returned, the footer. A refund uses
 // the same template with the title "Refund" and the original receipt number; the automatic change
-// return has no lines. No logo is drawn in this change (design D10).
+// return has no lines. add-company-profile (design D7): the company logo, when the company has one, is
+// drawn centred above the company name — passed inline as a data URI, since the renderer fetches
+// nothing (ADR-013 decision 1), and made black and white with the rest of the print image.
 
 const ks = (amount: number) => formatMoney(moneyFromWire(amount), { locale: 'en', profile: 'app' });
 const quantityText = (line: ReceiptLineDto) =>
@@ -49,13 +51,23 @@ function Line({ line, perItemBarber }: { line: ReceiptLineDto; perItemBarber: bo
   );
 }
 
+/** The company logo as the renderer receives it: the image inline (ADR-013 decision 1). */
+export interface ReceiptLogo {
+  /** `data:image/<type>;base64,…` — anything else is not drawn. */
+  readonly dataUri: string;
+}
+
 export interface ReceiptProps {
   readonly view: ReceiptViewDto;
   /** The company name — `name_en`, else `name_mm` (AD-RCPT-01 item 1). */
   readonly company: string;
+  /** The company logo; absent or null → the name as text (AD-RCPT-01 item 1 · design D7). */
+  readonly logo?: ReceiptLogo | null;
 }
 
-export function Receipt({ view, company }: ReceiptProps) {
+const INLINE_IMAGE = /^data:image\/[a-z0-9.+-]+;base64,/;
+
+export function Receipt({ view, company, logo }: ReceiptProps) {
   const refund = view.kind === 'refund';
   // One performer: one line under the number; several: one per item (AD-RCPT-01 item 3).
   const oneBarber = view.barbers.length === 1 ? view.barbers[0] : undefined;
@@ -63,6 +75,10 @@ export function Receipt({ view, company }: ReceiptProps) {
   return (
     <main>
       <header className="center">
+        {logo != null && INLINE_IMAGE.test(logo.dataUri) && (
+          // The name follows as text, so the image is decorative for a reader.
+          <img className="logo" src={logo.dataUri} alt="" />
+        )}
         <div className="strong">{company}</div>
         <div>{view.branch.name}</div>
         {view.branch.address !== null && <div>{view.branch.address}</div>}
@@ -129,6 +145,8 @@ export function Receipt({ view, company }: ReceiptProps) {
 const RECEIPT_CSS = [
   'main{padding:4px 0 24px}',
   '.center{text-align:center}',
+  // One rule for 384 and 576 px: no wider than the paper, proportions kept (design D7).
+  '.logo{display:block;margin:0 auto;max-width:100%;max-height:120px;object-fit:contain}',
   '.strong{font-weight:700}',
   '.title{font-weight:700;font-size:28px}',
   '.number{font-weight:700;font-size:30px}',
@@ -155,7 +173,7 @@ export function receiptHtml(props: ReceiptProps & { readonly paper: PaperWidthMm
         <style dangerouslySetInnerHTML={{ __html: css }} />
       </head>
       <body>
-        <Receipt view={props.view} company={props.company} />
+        <Receipt view={props.view} company={props.company} logo={props.logo ?? null} />
       </body>
     </html>,
   )}`;
