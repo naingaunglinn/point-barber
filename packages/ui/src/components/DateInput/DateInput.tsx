@@ -27,6 +27,11 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // leaves the field; a date that does not exist — or lies outside `min` / `max` — shows
 // `error.date_invalid`. The picker works on the Myanmar calendar date and opens on today from the
 // supplied clock, whatever the device's zone and date are. The value is the business date `YYYY-MM-DD`.
+//
+// The popup on a small screen (AD-QA-01 · AD-A11Y-05): seven 44 px day columns are 308 px, so a 320 px
+// screen leaves 6 px a side for the popup's padding (4 px), its 1 px ring and 1 px to the screen's edge,
+// which `collisionPadding` keeps. Its height is bound to the room on the side it opens; a month taller
+// than that room scrolls inside the popup.
 
 export interface DateInputProps {
   readonly value: BusinessDate | null;
@@ -139,7 +144,12 @@ export function DateInput({
             />
           </PopoverTrigger>
         </div>
-        <PopoverContent align="end" className="w-auto max-w-[100vw] p-1.5" data-slot="date-picker">
+        <PopoverContent
+          align="end"
+          collisionPadding={2}
+          className="max-h-(--radix-popover-content-available-height) w-auto max-w-[calc(100vw-4px)] overflow-y-auto p-1"
+          data-slot="date-picker"
+        >
           <Calendar
             mode="single"
             timeZone={ZONE}
@@ -159,7 +169,7 @@ export function DateInput({
               onChange(day);
               setOpen(false);
             }}
-            className="[--cell-size:--spacing(11)]"
+            className="p-0 [--cell-size:--spacing(11)]"
           />
         </PopoverContent>
       </Popover>
