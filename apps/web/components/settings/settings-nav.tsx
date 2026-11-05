@@ -26,7 +26,20 @@ interface SettingsScreenEntry {
 }
 
 /** The screens of Settings, in AD-NAV-02 order. Each change adds its own entry here. */
-const SCREENS: readonly SettingsScreenEntry[] = [];
+const SCREENS: readonly SettingsScreenEntry[] = [
+  // add-settings-store — Additional settings for any `settings.*` code (settings.view⁺, mixed — design
+  // D10); Maintenance mode for company-scope settings.update only (P1.SYS.03 · AD-NAV-08), last.
+  {
+    key: 'additional',
+    href: '/settings/additional',
+    visible: (can) => can('settings.view') || can('settings.update'),
+  },
+  {
+    key: 'maintenance',
+    href: '/settings/maintenance',
+    visible: (can) => can('settings.update', { level: 'company' }),
+  },
+];
 
 export interface SettingsScreen {
   readonly key: SettingsScreenKey;
