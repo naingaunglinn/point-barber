@@ -47,15 +47,16 @@ All as `deploy` in `/opt/point`, with
    ```sh
    dc exec -T api node dist/cli/pilot-seed.js < ~/pilot-data.json
    ```
-   It prints one line per table: `<table>: create <n>, unchanged <m>`, and `, update <k>` on a table where a
-   stored value changes (the KBZPay pattern).
+   It prints `pilot-seed: dry run on <date> — nothing was written`, then one line per table:
+   `<table>: create <n>, unchanged <m>`, and `, update <k>` on a table where a stored value changes (the
+   KBZPay pattern), then a last line reminding you to send the summary.
 3. **Send the owner a summary and wait for the OK (PD5):** the branch, each person with their role,
    and each service with its price. No addresses go in a saved chat.
 4. **Apply**, before the shop opens:
    ```sh
    dc exec -T api node dist/cli/pilot-seed.js --apply < ~/pilot-data.json
    ```
-   It prints `applied on <date> — request_id <id>`, then the plan.
+   It prints `pilot-seed: applied on <date> — request_id <id>`, then the plan.
 5. **Check:** run the dry run once more. Every table must show `create 0`, and no table an `update` other than 0.
 6. Each barber signs in with Google in the phone's browser. No invitation e-mail is sent.
 7. **A new barber or service during the pilot:** add it to the file, then repeat steps 2–5. Only what
