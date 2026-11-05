@@ -75,7 +75,7 @@ export function Receipt({ view, company, logo }: ReceiptProps) {
   return (
     <main>
       <header className="center">
-        {logo != null && INLINE_IMAGE.test(logo.dataUri) && (
+        {logo !== undefined && logo !== null && INLINE_IMAGE.test(logo.dataUri) && (
           // The name follows as text, so the image is decorative for a reader.
           <img className="logo" src={logo.dataUri} alt="" />
         )}
