@@ -2,6 +2,7 @@ import { FIXTURE_IDS } from '@point/shared/testing';
 import type { Logger } from 'pino';
 import { describe, expect, it } from 'vitest';
 
+import { TransactionScope } from '../../../common/database/transaction-scope.js';
 import type { SettingsRepository } from '../repositories/settings.repository.js';
 import { CompanyOfSettings } from './ports.js';
 import type { StoredSetting } from './resolve.js';
@@ -129,6 +130,33 @@ describe('StoreSettingsReader (task 2.5)', () => {
     expect(await reader.effective(['system.maintenance'])).toStrictEqual({
       'system.maintenance': { enabled: false },
     });
+  });
+
+  it('keeps the company id once it is known, but never the null from before the base seed', async () => {
+    const repository = { rowsOf: () => Promise.resolve([]) } as unknown as SettingsRepository;
+    const ids: (string | null)[] = [null, COMPANY, 'another-company'];
+    let lookups = 0;
+    const company = new CompanyOfSettings();
+    company.use(() => Promise.resolve(ids[lookups++] ?? null));
+    const log = { error: () => undefined } as unknown as Logger;
+    const reader = new StoreSettingsReader(repository, company, log);
+    for (let read = 0; read < 4; read += 1) await reader.effective(['receipt.auto_print']);
+    // null (no company yet) → looked up again → the company → kept for every later read.
+    expect(lookups).toBe(2);
+    expect(await company.id()).toBe(COMPANY);
+  });
+
+  it('does not keep a company id read inside a transaction, which might still roll back', async () => {
+    let lookups = 0;
+    const company = new CompanyOfSettings();
+    company.use(() => {
+      lookups += 1;
+      return Promise.resolve(COMPANY);
+    });
+    await TransactionScope.run(TransactionScope.create(), () => company.id());
+    await company.id();
+    await company.id();
+    expect(lookups).toBe(2);
   });
 
   it('the client-readable list of P1.SET.02 is the ten keys of settings.json, in file order', () => {

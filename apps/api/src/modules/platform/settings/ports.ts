@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { SettingUser } from '@point/shared';
 
 import { GrantSource, type GrantSourceRows } from '../../../common/access/grant-set.js';
+import { TransactionScope } from '../../../common/database/transaction-scope.js';
 
 // What the settings store needs from the people module (ADR-001 rule 1 · add-settings-store design
 // D1): the company whose settings are read, the names of the users behind a value or a history
@@ -12,18 +13,28 @@ import { GrantSource, type GrantSourceRows } from '../../../common/access/grant-
 const missing = (port: string): Error =>
   new Error(`${port}: nothing registered (PeopleModule not loaded)`);
 
-/** `id()` — the one company (D-ORG-03); null before the base seed has created it. */
+/**
+ * `id()` — the one company (D-ORG-03); null before the base seed has created it. The id is kept once
+ * it is known: there is one company row, it is never deleted (D-DAT-05) and a restore runs with the
+ * API stopped (P8.BAK.03), so it cannot change while the API runs. A null is never kept, and neither is
+ * an id read inside a transaction, which might still roll back.
+ */
 @Injectable()
 export class CompanyOfSettings {
   private lookup: (() => Promise<string | null>) | undefined;
+  private known: string | undefined;
 
   use(lookup: () => Promise<string | null>): void {
     this.lookup = lookup;
+    this.known = undefined;
   }
 
-  id(): Promise<string | null> {
+  async id(): Promise<string | null> {
+    if (this.known !== undefined) return this.known;
     if (this.lookup === undefined) throw missing('CompanyOfSettings');
-    return this.lookup();
+    const id = await this.lookup();
+    if (id !== null && TransactionScope.current() === undefined) this.known = id;
+    return id;
   }
 }
 
