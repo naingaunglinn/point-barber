@@ -228,7 +228,13 @@ test("5.3 the English name changed on the form — the next walk-in's receipt PD
   await expect(page.getByTestId('success-panel')).toBeVisible();
   const answer = await pdf;
   expect(answer.status()).toBe(200);
-  const text = await pdfText(await answer.body());
+  // The page reads the file as a Blob, and Chromium then hands the response's bytes to the Blob without
+  // passing them to the inspector, so `answer.body()` is empty (CI run 41968379042). The same file is
+  // read again with the context's own cookies.
+  const file = await context.request.get(answer.url());
+  expect(file.status()).toBe(200);
+  expect(file.headers()['content-type']).toContain('application/pdf');
+  const text = await pdfText(await file.body());
   expect(text.trimStart().startsWith(NEW_NAME_EN), `receipt text: ${text.slice(0, 80)}`).toBe(true);
   await context.close();
 });
