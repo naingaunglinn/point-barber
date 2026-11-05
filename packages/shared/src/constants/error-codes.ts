@@ -74,6 +74,8 @@ export const FieldIssueCode = {
   TOO_SMALL: 'too_small',
   TOO_BIG: 'too_big',
   INVALID_TYPE: 'invalid_type',
+  // add-settings-store — a value that is not one of the listed choices (Zod 4 `invalid_value`).
+  INVALID_VALUE: 'invalid_value',
 } as const;
 
 export type FieldIssueCode = (typeof FieldIssueCode)[keyof typeof FieldIssueCode];

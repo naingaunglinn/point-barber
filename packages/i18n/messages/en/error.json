@@ -52,5 +52,6 @@
   "locked": "This record is finished and can no longer be changed.",
   "late_entry_time": "The times must be in order — started, completed, paid, finished — and not later than now.",
   "setting_scope": "This setting can't be changed here.",
-  "maintenance": "The system is under maintenance. Please try again later."
+  "maintenance": "The system is under maintenance. Please try again later.",
+  "invalid_value": "Choose one of the listed values."
 }

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { SETTINGS, type SettingKey, settingDefault } from './catalogue.js';
-import { settingDefinitionProblems } from './definitions.js';
+import { type MessageTree, settingDefinitionProblems, settingTextProblems } from './definitions.js';
 
 // add-settings-store tasks 1.1 – 1.3 — the definition file (D-PLT-16 · P1-RULE-08 · design D2 / D3):
 // the entry shape, the key pattern of the DB CHECK, unique keys, every default within its own
@@ -22,6 +22,12 @@ const generator = join(shared, 'scripts/generate-settings.mjs');
 /** settings.json with one entry changed. */
 const withEntry = (key: string, change: Record<string, unknown>): unknown[] =>
   json.map((entry) => (entry.key === key ? { ...entry, ...change } : entry));
+
+/** The `settings` namespace of one language (packages/i18n — the owner-approved copy, S18). */
+const settingsTexts = (language: 'my' | 'en'): MessageTree =>
+  JSON.parse(
+    readFileSync(join(shared, `../i18n/messages/${language}/settings.json`), 'utf8'),
+  ) as MessageTree;
 
 const runGenerator = (...args: string[]) =>
   spawnSync(process.execPath, [generator, '--check', ...args], { encoding: 'utf8' });
@@ -83,6 +89,25 @@ describe('add-settings-store · settings · Setting definitions live in one file
     expect(
       settingDefinitionProblems(withEntry('system.upload_max_mb', { default: 11 })),
     ).toStrictEqual(['system.upload_max_mb: the default 11 fails its validation']);
+  });
+
+  it('label_key, help_key and impact_key — and the group, unit and choice labels — exist in my and en', () => {
+    expect(
+      settingTextProblems(SETTINGS, { my: settingsTexts('my'), en: settingsTexts('en') }),
+    ).toStrictEqual([]);
+  });
+
+  it('a text key missing in one language is refused and named', () => {
+    const my = settingsTexts('my') as Record<string, Record<string, Record<string, unknown>>>;
+    const booking = { ...my.booking };
+    const { impact: _impact, ...slotWithoutImpact } = booking.slot_interval_minutes ?? {};
+    const broken = {
+      ...my,
+      booking: { ...booking, slot_interval_minutes: slotWithoutImpact },
+    } as unknown as MessageTree;
+    expect(settingTextProblems(SETTINGS, { my: broken, en: settingsTexts('en') })).toStrictEqual([
+      'my: booking.slot_interval_minutes: no text for settings.booking.slot_interval_minutes.impact',
+    ]);
   });
 
   it('a key declared twice, an unknown scope and text keys of another key are refused', () => {
