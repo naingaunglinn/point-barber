@@ -218,6 +218,10 @@ describe('companyUpdateSchema — members it does not define (CG-API-03)', () =>
     expect(issuesOf({ expected_updated_at: '05/Oct/2026' })).toStrictEqual([
       { field: 'expected_updated_at', code: 'invalid_format' },
     ]);
+    // More than 9 fractional digits: refused here, never a RangeError of toDate (500).
+    expect(issuesOf({ expected_updated_at: '2026-10-05T09:00:00.1234567890+06:30' })).toStrictEqual(
+      [{ field: 'expected_updated_at', code: 'invalid_format' }],
+    );
   });
 });
 
