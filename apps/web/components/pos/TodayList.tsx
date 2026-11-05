@@ -67,7 +67,7 @@ export function TodayList({ visits, error, onRetry, onOpen, onStart }: TodayList
               .filter((item) => item.removed_at === null)
               .map((item) => localized(item, 'description', locale))
               .join(', '),
-            <span key="status" className="flex items-center gap-2">
+            <span key="status" className="flex flex-wrap items-center gap-2">
               <StatusBadge table="visits" code={visit.status} />
               {visit.is_late_entry && <FlagChip flag="late_entry" />}
               <span>{formatDuration(minutesSince(visit.started_at, now), { locale })}</span>
