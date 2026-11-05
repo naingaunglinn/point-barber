@@ -20,7 +20,7 @@ export function businessDateOf(value: Instant | Date): BusinessDate {
 /** A business date as the start of that day in Myanmar Time — for a calendar widget in the zone. */
 export function mmtDate(day: BusinessDate): TZDate {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
-  if (!match) throw new RangeError(`Not a business date: ${day}`);
+  if (match === null) throw new RangeError(`Not a business date: ${day}`);
   return new TZDate(Number(match[1]), Number(match[2]) - 1, Number(match[3]), APP_TIME_ZONE);
 }
 

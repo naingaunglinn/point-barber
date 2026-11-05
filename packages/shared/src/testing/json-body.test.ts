@@ -17,11 +17,10 @@ describe('parseBody', () => {
   });
 
   it('Scenario: A mismatched body names the path', () => {
-    expect(() => parseBody(errorBody, { code: 'validation', status: '400' })).toThrow(
-      expect.objectContaining({
-        message: expect.stringMatching(/status.*[\s\S]*\{"code":"validation","status":"400"\}/),
-      }),
-    );
+    const mismatched = () => parseBody(errorBody, { code: 'validation', status: '400' });
+
+    expect(mismatched).toThrow(/status/);
+    expect(mismatched).toThrow('{"code":"validation","status":"400"}');
   });
 
   it('keeps only the first 200 characters of a long body', () => {

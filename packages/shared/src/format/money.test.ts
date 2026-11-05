@@ -1,9 +1,10 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { Mmk } from '../money/mmk.js';
+import { testMoney } from '../testing/money.js';
 import { formatMoney, moneyUnit } from './money.js';
 
-const ks = (amount: bigint) => amount as Mmk; // test values; production code builds Mmk through the parser and wire helpers
+const ks = testMoney; // production code builds Mmk through the parser and wire helpers
 
 // ui-foundation · "Money is displayed through one formatter with the `app` and `site` profiles"
 // (D-PLT-04 · AD-FMT-01 · FE-FMT-01).

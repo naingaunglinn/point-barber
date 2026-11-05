@@ -9,7 +9,10 @@ export function parseBody<S extends z.ZodType>(schema: S, body: unknown): z.outp
   const parsed = schema.safeParse(body);
   if (parsed.success) return parsed.data;
   const issues = parsed.error.issues
-    .map((issue) => `${issue.path.map(String).join('.') || '(body)'}: ${issue.message}`)
+    .map((issue) => {
+      const path = issue.path.map(String).join('.');
+      return `${path === '' ? '(body)' : path}: ${issue.message}`;
+    })
     .join('; ');
   const preview = String(JSON.stringify(body)).slice(0, PREVIEW_LENGTH);
   throw new Error(`The body does not match its schema — ${issues}. Body: ${preview}`);

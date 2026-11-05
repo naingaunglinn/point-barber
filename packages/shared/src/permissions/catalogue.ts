@@ -28,9 +28,20 @@ type Entry = (typeof PERMISSION_ENTRIES)[number];
  * The catalogue in the shape createCan / createGrants take: `{ [code]: { level } }`, codes kept as
  * literals (the web app binds its GrantsProvider with it).
  */
-export const LEVEL_BY_CODE = Object.fromEntries(
+type LevelByCode = { readonly [E in Entry as E['code']]: { readonly level: E['level'] } };
+
+/** True when `map` holds exactly the level of every code of the catalogue. */
+function isLevelByCode(
+  map: Readonly<Record<string, { readonly level: PermissionLevel }>>,
+): map is LevelByCode {
+  return PERMISSIONS.every((entry) => map[entry.code]?.level === entry.level);
+}
+
+const levelByCode = Object.fromEntries(
   PERMISSIONS.map((entry) => [entry.code, { level: entry.level }]),
-) as { readonly [E in Entry as E['code']]: { readonly level: E['level'] } };
+);
+if (!isLevelByCode(levelByCode)) throw new Error('LEVEL_BY_CODE does not match the catalogue');
+export const LEVEL_BY_CODE = levelByCode;
 
 /**
  * `can(me)(code, options)` — the UI mirror of the API's access decision (add-shared-ui-components
