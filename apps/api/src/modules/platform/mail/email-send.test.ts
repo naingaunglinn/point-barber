@@ -10,6 +10,7 @@ import { EmailSendJob, type EmailSendData } from './email-send.job.js';
 import { Mail } from './mail.service.js';
 import type { MailMessage, MailTransport } from './mail-transport.js';
 import type { MailTemplates } from './mail-templates.js';
+import type { SettingsReader } from '../settings/settings-reader.js';
 import { decryptParams } from './payload-cipher.js';
 
 // add-foundation-auth-access task 2.9 — ADR-002 · ADR-007 · D-AUTH-04 · design D8: the `email.send`
@@ -29,6 +30,12 @@ class FixedClock extends Clock {
 }
 
 const config = { env: { MAIL_PAYLOAD_KEY: KEY } } as never;
+
+/** The settings reader of add-settings-store with `system.default_language` = `language`. */
+const settingsWith = (language: 1 | 2) =>
+  ({
+    effective: () => Promise.resolve({ 'system.default_language': language }),
+  }) as unknown as SettingsReader;
 
 function fakeJobs() {
   const sent: { name: string; data: EmailSendData; options: unknown }[] = [];
@@ -53,22 +60,34 @@ async function enqueued() {
   return sent;
 }
 
-function job(at: string, transport: MailTransport) {
+function job(at: string, transport: MailTransport, language: 1 | 2 = 1) {
   const warnings: string[] = [];
+  const locales: (string | null)[] = [];
   const log = {
     info: () => undefined,
     warn: (_fields: unknown, msg: string) => warnings.push(msg),
   } as unknown as Logger;
   const templates = {
-    render: (_template: string, _locale: string, params: Record<string, string>) => ({
-      subject: 'Point Barbershop sign-in code',
-      text: `Your code:\n${params.code ?? ''}`,
-      html: `<p>${params.code ?? ''}</p>`,
-    }),
+    render: (_template: string, locale: string | null, params: Record<string, string>) => {
+      locales.push(locale);
+      return {
+        subject: 'Point Barbershop sign-in code',
+        text: `Your code:\n${params.code ?? ''}`,
+        html: `<p>${params.code ?? ''}</p>`,
+      };
+    },
   } as unknown as MailTemplates;
   return {
-    handler: new EmailSendJob(transport, templates, new FixedClock(at), config, log),
+    handler: new EmailSendJob(
+      transport,
+      templates,
+      settingsWith(language),
+      new FixedClock(at),
+      config,
+      log,
+    ),
     warnings,
+    locales,
   };
 }
 
@@ -124,6 +143,30 @@ describe('email.send handler (task 2.9)', () => {
     ]);
   });
 
+  // add-settings-store task 2.9 — auth (MODIFIED) "The code e-mail uses the user's language …":
+  // a recipient without a language gets the effective system.default_language when the job sends.
+  it.each([
+    [1, 'my'],
+    [2, 'en'],
+  ] as const)(
+    'a job without a locale renders in system.default_language %i (%s)',
+    async (language, locale) => {
+      const [stored] = await enqueued();
+      const { transport } = recordingTransport();
+      const sending = job('2026-10-05T09:01:00+06:30', transport, language);
+      await sending.handler.handle({ ...stored!.data, locale: null });
+      expect(sending.locales).toStrictEqual([locale]);
+    },
+  );
+
+  it("a job with the user's own locale keeps it, whatever the system default", async () => {
+    const [stored] = await enqueued();
+    const { transport } = recordingTransport();
+    const sending = job('2026-10-05T09:01:00+06:30', transport, 2);
+    await sending.handler.handle(stored!.data);
+    expect(sending.locales).toStrictEqual(['my']);
+  });
+
   it.each(['2026-10-05T09:05:00+06:30', '2026-10-05T09:30:00+06:30'])(
     'a job started at %s (at or after expires_at) sends nothing and completes',
     async (at) => {
@@ -154,6 +197,7 @@ describe('email.send handler (task 2.9)', () => {
     const handler = new EmailSendJob(
       transport,
       { render: () => ({ subject: '', text: '', html: '' }) } as unknown as MailTemplates,
+      settingsWith(1),
       new FixedClock('2026-10-05T09:01:00+06:30'),
       { env: { MAIL_PAYLOAD_KEY: other } } as never,
       log,

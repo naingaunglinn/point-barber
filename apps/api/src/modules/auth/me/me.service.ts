@@ -44,16 +44,18 @@ export class MeService {
     }
     const now = this.clock.now();
     const grants = await this.grantsOf(employee.id, now);
-    const [branches, assigned, todayBranchId, settings, extra, maintenance] = await Promise.all([
+    // One read for the company values of the client-readable keys and the own-earnings switch
+    // (add-settings-store design D4 — `/me.settings` is the company view, proposal reading 3).
+    const [branches, assigned, todayBranchId, values, maintenance] = await Promise.all([
       this.directory.branchSummaries(
         grants.readScope.all ? undefined : [...grants.readScope.branchIds],
       ),
       this.directory.assignedBranchIds(employee.id),
       this.todayBranch.of(employee.id),
-      this.settings.effective(CLIENT_READABLE_KEYS),
-      this.settings.effective(['dashboard.show_own_earnings_all']),
+      this.settings.effective([...CLIENT_READABLE_KEYS, 'dashboard.show_own_earnings_all']),
       this.maintenance.isOn(),
     ]);
+    const { 'dashboard.show_own_earnings_all': showOwnEarningsAll, ...settings } = values;
     return {
       user: {
         id: user.id,
@@ -75,7 +77,7 @@ export class MeService {
       today_branch_id: todayBranchId,
       assigned_branch_ids: assigned,
       effective: {
-        show_own_earnings: employee.show_own_earnings ?? extra['dashboard.show_own_earnings_all'],
+        show_own_earnings: employee.show_own_earnings ?? showOwnEarningsAll,
       },
       settings,
       system: {

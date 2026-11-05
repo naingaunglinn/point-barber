@@ -7,6 +7,7 @@ import { AppConfig } from '../../../common/config/config.js';
 import { DatabaseProbe } from '../../../common/database/prisma.service.js';
 import { HEALTH_PING_TIMEOUT_MS } from '../../../common/limits.js';
 import { LOGGER } from '../../../common/logging/logger.js';
+import { SettingsReader } from '../settings/settings-reader.js';
 
 @Injectable()
 export class SystemService {
@@ -14,6 +15,7 @@ export class SystemService {
     private readonly clock: Clock,
     private readonly config: AppConfig,
     private readonly database: DatabaseProbe,
+    private readonly settings: SettingsReader,
     @Inject(LOGGER) private readonly log: Logger,
   ) {}
 
@@ -39,15 +41,19 @@ export class SystemService {
   }
 
   /**
-   * P1.SYS.02 — reads no table yet: maintenance stays off until add-settings-store builds P1.SYS.03
-   * (the key's default { enabled: false }); version = APP_VERSION (design D9).
+   * P1.SYS.02 — the effective company value of `system.maintenance` (D-PLT-08 · add-settings-store
+   * design D9): while no row exists its default `{ enabled: false }` applies, so `maintenance` is
+   * false and the other three are null; version = APP_VERSION (design D9).
    */
-  status(): SystemStatus {
+  async status(): Promise<SystemStatus> {
+    const { 'system.maintenance': maintenance } = await this.settings.effective([
+      'system.maintenance',
+    ]);
     return {
-      maintenance: false,
-      until: null,
-      message_mm: null,
-      message_en: null,
+      maintenance: maintenance.enabled,
+      until: maintenance.until ?? null,
+      message_mm: maintenance.message_mm ?? null,
+      message_en: maintenance.message_en ?? null,
       version: this.config.env.APP_VERSION,
       server_time: toMmtIso(this.clock.now()),
     };

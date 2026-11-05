@@ -226,9 +226,15 @@ export class ReceiptViews {
   }
 
   private async footer(branchId: string): Promise<ReceiptViewDto['footer']> {
-    const days = await this.hours.ofBranch(branchId);
-    // `receipt.thank_you_text` has no value before add-settings-store (proposal: no thank-you line).
-    return { opening_hours: openingHoursLine(days, labels.closed), thank_you: null };
+    const [days, { 'receipt.thank_you_text': thankYou }] = await Promise.all([
+      this.hours.ofBranch(branchId),
+      this.settings.effective(['receipt.thank_you_text'], branchId),
+    ]);
+    // Only the English text is printed (AD-RCPT-01 · owner SS1): none set, or Myanmar only → no line.
+    return {
+      opening_hours: openingHoursLine(days, labels.closed),
+      thank_you: thankYou?.en ?? null,
+    };
   }
 
   /** Service charge and tax lines only where the sale charged them (AD-RCPT-01 item 6). */
