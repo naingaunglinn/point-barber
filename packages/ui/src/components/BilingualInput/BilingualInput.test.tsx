@@ -129,6 +129,22 @@ describe('BilingualInput in a form (add-company-profile design D8)', () => {
   });
 });
 
+describe('BilingualInput for an optional pair (add-branch-management — the branch address)', () => {
+  it('required={false}: no asterisk, no aria-required and no message when the pair is left empty', () => {
+    renderIntl(
+      <>
+        <BilingualInput value={{ mm: '', en: null }} onChange={() => undefined} required={false} />
+        <button type="button">{NOTE}</button>
+      </>,
+    );
+    expect(document.querySelector('[data-slot="bilingual-input"] .text-destructive')).toBeNull();
+    expect(mm().hasAttribute('aria-required')).toBe(false);
+    fireEvent.blur(mm(), { relatedTarget: outside() });
+    expect(screen.queryByText('This field is required.')).toBeNull();
+    expect(mm().hasAttribute('aria-invalid')).toBe(false);
+  });
+});
+
 describe('TextInput', () => {
   it('converts Zawgyi in a multi-line note too, and the notice goes away when the user types again', () => {
     function Note() {

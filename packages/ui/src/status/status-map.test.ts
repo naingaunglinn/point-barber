@@ -16,13 +16,18 @@ const tones = (table: Record<string, { tone: string }>) =>
   Object.fromEntries(Object.entries(table).map(([name, style]) => [name, style.tone]));
 
 describe('STATUS_MAP', () => {
-  it('has exactly the 71 pairs of the status constants', () => {
+  // add-branch-management — AD-CMP-05 master data: an ACTIVE branch has no badge, so branches.ACTIVE is
+  // the one status constant without an entry (its label is the filter's Active chip).
+  it('has exactly the 72 pairs of the status constants but branches.ACTIVE (71 of AD-CMP-05, branches.INACTIVE)', () => {
     const pairs = (map: Record<string, Record<string, unknown>>) =>
       Object.entries(map)
         .flatMap(([table, names]) => Object.keys(names).map((name) => `${table}.${name}`))
         .sort();
-    expect(pairs(STATUS_MAP)).toEqual(pairs(STATUS_BY_TABLE));
-    expect(pairs(STATUS_MAP)).toHaveLength(71);
+    expect(pairs(STATUS_MAP)).toEqual(
+      pairs(STATUS_BY_TABLE).filter((pair) => pair !== 'branches.ACTIVE'),
+    );
+    expect(pairs(STATUS_MAP)).toHaveLength(72);
+    expect(pairs(STATUS_MAP)).not.toContain('branches.ACTIVE');
   });
 
   it('gives every pair the tone of AD-CMP-05', () => {
@@ -78,6 +83,8 @@ describe('STATUS_MAP', () => {
         SKIPPED: 'muted',
       },
       backup_runs: { RUNNING: 'info', SUCCESS: 'success', FAILED: 'danger' },
+      // add-branch-management — INACTIVE muted, ACTIVE no badge (AD-CMP-05 master data).
+      branches: { INACTIVE: 'muted' },
     });
   });
 

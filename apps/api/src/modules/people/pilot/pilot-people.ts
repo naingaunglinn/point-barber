@@ -16,7 +16,7 @@ import {
   changedValue,
   dbDate,
 } from '../../../common/pilot/pilot-run.js';
-import { Audit } from '../../platform/index.js';
+import { Audit, SettingsReader } from '../../platform/index.js';
 import { CatalogueRepository } from '../repositories/catalogue.repository.js';
 import { CompanyRepository } from '../repositories/company.repository.js';
 
@@ -51,14 +51,6 @@ const SEED_ROLE_CODES = {
   ],
 } as const satisfies Record<PilotData['people'][number]['role'], readonly string[]>;
 
-/**
- * A new branch's radius (P1.BR.02 · Part 5 §17 — `attendance.default_radius_meters`, default 100 m).
- * The key is not in settings.json yet: add-settings-store merged before add-branch-management, which
- * appends it (add-settings-store design D3 note), so until then the seed keeps the locked default
- * (add-pilot-data-seed design D1: "otherwise its locked default 100").
- */
-const DEFAULT_RADIUS_METERS = 100;
-
 /** The lock of the code tables, taken first by every run (design D6). */
 @Injectable()
 export class PeopleSeedLock {
@@ -85,6 +77,7 @@ interface Found {
 export class PilotPeople {
   constructor(
     private readonly companies: CompanyRepository,
+    private readonly settings: SettingsReader,
     private readonly audit: Audit,
   ) {}
 
@@ -292,6 +285,9 @@ export class PilotPeople {
     data: PilotData,
     ctx: PilotRunContext,
   ): Promise<string> {
+    const { 'attendance.default_radius_meters': radius } = await this.settings.effective([
+      'attendance.default_radius_meters',
+    ]);
     const row = {
       id: uuidV7(ctx.now.getTime()),
       company_id: companyId,
@@ -301,7 +297,7 @@ export class PilotPeople {
       phone: data.branch.phone ?? null,
       address_mm: data.branch.address_mm ?? null,
       address_en: data.branch.address_en ?? null,
-      location_radius_meters: DEFAULT_RADIUS_METERS,
+      location_radius_meters: radius,
       status: BranchStatus.ACTIVE,
     };
     await tx.branches.create({ data: { ...row, created_at: ctx.now, updated_at: ctx.now } });

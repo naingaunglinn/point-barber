@@ -6,7 +6,7 @@ import { BookingModule, Customers } from '../booking/index.js';
 import { CashClosingModule } from '../cash-closing/index.js';
 import { CatalogModule } from '../catalog/index.js';
 import { PayrollModule } from '../payroll/index.js';
-import { PeopleModule } from '../people/index.js';
+import { BranchUsage, PeopleModule } from '../people/index.js';
 import { CodeTables, Jobs, PlatformModule } from '../platform/index.js';
 import { SaleAccess } from './access/sale-access.js';
 import { SalesCustomerActivity } from './customer-activity/sales-customer-activity.js';
@@ -97,6 +97,8 @@ export class SalesModule implements OnModuleInit {
     private readonly access: SaleAccess,
     private readonly targets: TargetResolvers,
     private readonly orSelf: OrSelfResolvers,
+    private readonly usage: BranchUsage,
+    private readonly sales: SalesRepository,
   ) {}
 
   onModuleInit(): void {
@@ -113,5 +115,8 @@ export class SalesModule implements OnModuleInit {
       { localConcurrency: 1 },
     );
     this.access.register(this.targets, this.orSelf);
+    // add-branch-management: a branch with an OPEN sale cannot be deactivated (P1-RULE-09 · owner
+    // BR2 · design D1) — people counts through its registry and never imports sales.
+    this.usage.register('open_sales', (tx, branchId) => this.sales.openAt(tx, branchId));
   }
 }

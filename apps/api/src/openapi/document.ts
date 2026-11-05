@@ -1,6 +1,11 @@
 import {
   branchAssignmentSchema,
+  branchCreateSchema,
+  branchInUseContextSchema,
+  branchSchema,
+  branchStatusSchema,
   branchSummarySchema,
+  branchUpdateSchema,
   commissionEstimateSchema,
   companySchema,
   companyUpdateSchema,
@@ -69,6 +74,75 @@ const PROBLEM_RESPONSE = {
 const json = (name: string) => ({
   content: { 'application/json': { schema: { $ref: `#/components/schemas/${name}` } } },
 });
+const ID_PARAMETER = {
+  name: 'id',
+  in: 'path',
+  required: true,
+  schema: { type: 'string', format: 'uuid' },
+};
+
+// add-branch-management task 3.12 — P1.BR.02 – 05 as Part 1 v1.7 writes them (owner BR1 – BR3).
+const BRANCH_PATHS = {
+  '/branches': {
+    post: {
+      tags: ['branches'],
+      operationId: 'createBranch',
+      summary: 'Create a branch — branch.create (P1.BR.02)',
+      'x-permission': 'branch.create (company master: company scope)',
+      requestBody: { required: true, ...json('BranchCreate') },
+      responses: {
+        '201': {
+          description: 'Created',
+          headers: { Location: { schema: { type: 'string' } } },
+          ...json('Branch'),
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/branches/{id}': {
+    parameters: [ID_PARAMETER],
+    get: {
+      tags: ['branches'],
+      operationId: 'getBranch',
+      summary: 'Branch detail (P1.BR.03)',
+      'x-permission': 'any staff',
+      responses: { '200': { description: 'OK', ...json('Branch') }, default: PROBLEM_RESPONSE },
+    },
+    patch: {
+      tags: ['branches'],
+      operationId: 'patchBranch',
+      summary: 'Update a branch — branch.update (P1.BR.04)',
+      'x-permission': 'branch.update (branch data: branch in scope)',
+      requestBody: { required: true, ...json('BranchUpdate') },
+      responses: {
+        '200': { description: 'Updated', ...json('Branch') },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/branches/{id}/status': {
+    parameters: [ID_PARAMETER],
+    post: {
+      tags: ['branches'],
+      operationId: 'setBranchStatus',
+      summary: 'Activate / deactivate — branch.delete (P1.BR.05)',
+      'x-permission': 'branch.delete (company master: company scope)',
+      requestBody: { required: true, ...json('BranchStatusRequest') },
+      responses: {
+        '200': { description: 'Updated', ...json('Branch') },
+        '409': {
+          description:
+            'branch_in_use { open_bookings, open_sales, active_assignments } (v1.7 — owner BR2); the context is BranchInUseContext',
+          content: {
+            'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+};
 
 /** Part 1 `components.parameters.XRequestedWith` — the CSRF header of every changing request. */
 const X_REQUESTED_WITH = {
@@ -291,6 +365,7 @@ export function buildOpenApiDocument(version: string): JsonSchema {
           },
         },
       },
+      ...BRANCH_PATHS,
       // add-company-profile task 2.10 — P1.CO.01 / P1.CO.02 as Part 1 v1.7 lists them.
       '/company': {
         get: {
@@ -368,6 +443,12 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         UpcomingBooking: schema(upcomingBookingSchema),
         Visit: schema(visitSchema),
         Warning: schema(warningSchema),
+        // add-branch-management tasks 1.7 / 3.12 — P1.BR.02 – 05 (Part 1 v1.7 · owner BR1 – BR3).
+        Branch: schema(branchSchema),
+        BranchCreate: schema(branchCreateSchema),
+        BranchUpdate: schema(branchUpdateSchema),
+        BranchStatusRequest: schema(branchStatusSchema),
+        BranchInUseContext: schema(branchInUseContextSchema),
       },
     },
   };

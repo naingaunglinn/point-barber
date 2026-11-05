@@ -229,4 +229,76 @@ describe('ReasonDialog', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(opener);
   });
+
+  // add-branch-management — Deactivate branch (AD-RSN-01 · AD-FORM-04 · design D9): a free reason that may
+  // stay empty, named and capped by the screen, the screen's cancel label, and a refusal of the request
+  // shown inside the dialog with the typed reason kept until the dialog closes.
+  it('an optional free reason: the screen names the note, caps it and names Keep; a refusal stays inside', async () => {
+    const REASON = 'Reason (optional)';
+    const KEEP_ACTIVE = 'Keep active';
+    const REFUSED = 'Still in use';
+    function Optional({ onConfirm }: { onConfirm: (result: ReasonResult) => void }) {
+      const [open, setOpen] = useState(false);
+      const [refused, setRefused] = useState(false);
+      return (
+        <FormatProvider locale="en" profile="app">
+          <Button onClick={() => setOpen(true)}>{OPEN}</Button>
+          <ReasonDialog
+            open={open}
+            title={TITLE}
+            consequence={CONSEQUENCE}
+            source={{ type: 'free' }}
+            note="optional"
+            noteLabel={REASON}
+            noteMaxLength={500}
+            keepLabel={KEEP_ACTIVE}
+            alert={refused ? <p role="alert">{REFUSED}</p> : null}
+            confirmLabel={TITLE}
+            destructive
+            onConfirm={async (result) => {
+              onConfirm(result);
+              await Promise.resolve();
+              if (result.note === null) setOpen(false);
+              else setRefused(true);
+            }}
+            onCancel={() => {
+              setRefused(false);
+              setOpen(false);
+            }}
+          />
+        </FormatProvider>
+      );
+    }
+    const onConfirm = vi.fn();
+    renderIntl(<Optional onConfirm={onConfirm} />);
+    open();
+    const note = screen.getByRole('textbox', { name: REASON });
+    expect(note.getAttribute('maxlength')).toBe('500');
+    expect(note.hasAttribute('aria-required')).toBe(false);
+    expect(screen.getByRole('button', { name: KEEP_ACTIVE })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
+    // Refused: the alert inside, the dialog open, the typed reason kept.
+    fireEvent.change(note, { target: { value: 'Not opening this year' } });
+    await act(async () => {
+      confirm();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onConfirm).toHaveBeenLastCalledWith({ note: 'Not opening this year' });
+    expect(screen.getByRole('alertdialog').textContent).toContain(REFUSED);
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: REASON }).value).toBe(
+      'Not opening this year',
+    );
+    // Closing clears it; an empty reason confirms with note null and closes.
+    fireEvent.click(screen.getByRole('button', { name: KEEP_ACTIVE }));
+    open();
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: REASON }).value).toBe('');
+    expect(screen.getByRole('alertdialog').textContent).not.toContain(REFUSED);
+    await act(async () => {
+      confirm();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(required()).toBeNull();
+    expect(onConfirm).toHaveBeenLastCalledWith({ note: null });
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
 });

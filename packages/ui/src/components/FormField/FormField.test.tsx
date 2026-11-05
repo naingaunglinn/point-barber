@@ -86,4 +86,18 @@ describe('FormField', () => {
       HELPER,
     );
   });
+
+  // add-branch-management — 409 already_exists under Code as branch.field.codeTaken (design D9).
+  it("shows the screen's own wording of a code instead of error.<code>", () => {
+    const TAKEN = 'A branch with this code already exists.';
+    renderIntl(
+      <FormField label={NAME} error={{ code: 'already_exists', message: TAKEN }}>
+        {(control) => <Input {...control} />}
+      </FormField>,
+    );
+    const input = screen.getByRole('textbox', { name: NAME });
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    const message = document.getElementById(input.getAttribute('aria-describedby') ?? '');
+    expect(message?.textContent).toBe(TAKEN);
+  });
 });

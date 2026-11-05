@@ -56,7 +56,13 @@ const danger: StatusStyle = { tone: 'danger' };
 const muted: StatusStyle = { tone: 'muted' };
 const locked = (tone: Tone): StatusStyle => ({ tone, icons: ['lock'] });
 
-/** The 71 (table, status constant) pairs of AD-CMP-05; names as in constants/status.ts. */
+/**
+ * The 71 (table, status constant) pairs of AD-CMP-05 and branches.status INACTIVE (add-branch-management
+ * design D9); names as in constants/status.ts. AD-CMP-05's master-data row: an ACTIVE branch shows no
+ * badge, an INACTIVE one the muted badge — so `branches.ACTIVE` has no entry, and a badge of it does not
+ * render (StatusBadge refuses a pair without an entry). Its label `status.branches.ACTIVE` is the
+ * filter's Active chip.
+ */
 export const STATUS_MAP = {
   bookings: { BOOKED: neutral, STARTED: info, COMPLETED: success, CANCELLED: muted },
   visits: { STARTED: info, COMPLETED: warning, FINISHED: success, INCOMPLETE: muted },
@@ -102,6 +108,7 @@ export const STATUS_MAP = {
     SKIPPED: muted,
   },
   backup_runs: { RUNNING: info, SUCCESS: success, FAILED: danger },
+  branches: { INACTIVE: muted },
 } as const satisfies Record<string, Record<string, StatusStyle>>;
 
 /**
