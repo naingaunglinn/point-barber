@@ -15,6 +15,7 @@ import {
 } from '../src/modules/platform/index.js';
 import type { FixturePerson, SeededApp } from './helpers/seeded.js';
 import { seededApp } from './helpers/seeded.js';
+import { storeSetting } from './helpers/settings.js';
 import { type WalkinHttp, walkinHttp } from './helpers/walkin-http.js';
 
 // add-company-profile tasks 3.3 / 3.5 — sales-checkout spec "The receipt is English with fixed content"
@@ -194,5 +195,22 @@ describe('add-company-profile · sales-checkout · The receipt is English with f
     expect(s.logs).toContainEqual(
       expect.objectContaining({ level: 40, msg: 'receipt.logo_missing', attachment_id: logo }),
     );
+  });
+
+  it('with add-settings-store: the logo above the name and the thank-you line in the footer of one receipt, in the PDF and the PNG', async () => {
+    const logo = await companyLogo({ object: true });
+    s.clock?.set(at('11:35'));
+    await storeSetting(s, 'receipt.thank_you_text', { mm: 'ကျေးဇူးတင်ပါတယ်', en: 'Thank you!' });
+    const next = await sale();
+    const json = await receipt(next, 'json');
+    expect(json.body.branch.logo_url).toBe(`/api/v1/public/media/${logo}/original`);
+    expect(json.body.footer.thank_you).toBe('Thank you!');
+    await pdf(next);
+    const image = `<img class="logo" src="data:image/webp;base64,${webp.toString('base64')}" alt=""/>`;
+    const html = htmlOf('B3-2026-OCT-00006');
+    for (const document of [html.pdf, html.png]) {
+      expect(document).toContain(`<header class="center">${image}<div class="strong">`);
+      expect(document).toContain('<div>Thank you!</div></footer>');
+    }
   });
 });
