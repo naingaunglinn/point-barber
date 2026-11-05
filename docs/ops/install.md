@@ -152,8 +152,8 @@ Set the values below. Every other value keeps its `.env.example` default.
 - only Caddy publishes ports (80, 443);
 - `mailpit` holds the sign-in e-mails and publishes no port.
 
-You never start it by hand: the first deploy (step 8) pulls, migrates and starts it. For a command by
-hand, as `deploy` in `/opt/point`:
+You never start it by hand: the first deploy (step 8) pulls, migrates and starts it (a rehearsal is the
+exception, see below). For a command by hand, as `deploy` in `/opt/point`:
 
 ```sh
 alias dc='docker compose -f docker-compose.yml -f docker-compose.staging.yml'
@@ -184,8 +184,8 @@ The server pulls without a login.
 
 Once the deploy is `ok`, check the backup of step 7 by hand:
 `sudo systemctl start point-pilot-backup.service`, then
-`journalctl -t pilot-backup -n 5` → `pilot-backup ok pilot/daily/point-<date>.dump <bytes>`, and run
-the restore drill once (`backup-restore.md`, "Pilot").
+`journalctl -t pilot-backup -n 5` → the last line is `pilot-backup ok pilot/daily/point-<date>.dump <bytes>`
+(the rclone `NOTICE` lines above it are normal), and run the restore drill once (`backup-restore.md`, "Pilot").
 
 **9. First company admin** (once per environment — P1-RULE-14), with the owner present. After the
 first deploy, once the base seed job has finished: `dc logs api | grep -c 'sync.code_tables step done'` prints `3`
@@ -198,7 +198,8 @@ dc exec api node dist/cli/admin-create.js \
 
 - It prints the new employee code and exits with status 0. No invitation e-mail is sent.
 - It refuses (status 1, one line on stderr, nothing changed) when an active company admin exists, or
-  when the e-mail or the code is taken.
+  when the e-mail or the code is taken. An admin who has not signed in yet counts as active (P1-RULE-14):
+  a second run before the first sign-in is refused.
 - The admin signs in with **Google**, in the browser tab, on an Android phone and on an iPhone. Staff
   use Google on the pilot server: e-mail codes only reach Mailpit.
 
@@ -266,6 +267,36 @@ Outside `.env`:
 - the DNS records.
 
 Each phone signs in once more on the new host.
+
+## A rehearsal on a developer machine
+
+Not part of an install. Use it to walk this runbook against production images before the server exists,
+with fixture data only (CG-SEC-11). Four things differ from the server:
+
+- **Its own project name, before the first `up`.** `docker-compose.yml` sets `name: point`, the same as
+  the dev stack, and `dc`, `deploy.sh`, `pilot-backup.sh` and `restore-check.sh` pass no `-p`. Without
+  the line below, they act on the dev stack's `postgres`. Use a separate checkout with its own `.env`,
+  and add to that `.env`:
+
+  ```sh
+  COMPOSE_PROJECT_NAME=point-rehearsal
+  ```
+
+  The pilot server runs one stack, so its `.env` does not need this line.
+
+- **One Caddy at a time.** Both stacks publish ports 80 and 443, so stop the dev stack's Caddy first.
+- **No `deploy.sh`.** It accepts only a `vX.Y.Z` tag on `main` and pulls from `ghcr.io`, so a local tag
+  such as `v0.1.0-local` is refused, on purpose. Do its steps by hand, after setting `APP_VERSION` to the
+  local tag and `IMAGE_PREFIX` to the prefix the images were built with:
+
+  ```sh
+  dc --profile tools run --rm migrate
+  dc up -d --no-build
+  ```
+
+- **No release workflow.** Step 8's tag, approval and package steps do not apply. Step 9 works as
+  written once the stack is up. On a machine without systemd, run
+  `infra/pilot-backup/pilot-backup.sh` directly instead of step 7's timer.
 
 ## Install record
 
