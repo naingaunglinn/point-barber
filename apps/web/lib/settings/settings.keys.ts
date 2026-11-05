@@ -9,4 +9,5 @@ export const settingsKeys = {
   history: (key: string, branchId: string | undefined) =>
     ['settings', 'history', key, { branchId }] as const,
   systemStatus: ['system', 'status'] as const,
+  company: ['company'] as const,
 };

@@ -181,6 +181,49 @@ describe('receipt template (task 9.2)', () => {
   });
 });
 
+// add-company-profile task 3.1 — sales-checkout spec "The receipt is English with fixed content"
+// (modified): the company logo, inlined as a data URI (ADR-013 — the renderer fetches nothing), centred
+// above the company name and scaled to the paper width (AD-RCPT-01 item 1 · design D7); no logo → the
+// name as text, the markup of every receipt before add-attachments-upload.
+const LOGO = {
+  dataUri: 'data:image/webp;base64,UklGRhYAAABXRUJQVlA4IAoAAAAwAQCdASoBAAEAAUAmJaQAA3AA/v3AgAA=',
+};
+
+describe('receipt template — the company logo (add-company-profile task 3.1)', () => {
+  it('Scenario: The company logo above the name — one image, first in the header, then the name', () => {
+    const html = receiptMarkup({ view: sale(), company: COMPANY, logo: LOGO });
+    expect(html).toContain(
+      `<header class="center"><img class="logo" src="${LOGO.dataUri}" alt=""/><div class="strong">${COMPANY}</div>`,
+    );
+    expect(html.match(/<img/g)).toHaveLength(1);
+    expect(pretty(html)).toMatchSnapshot();
+  });
+
+  it('Scenario: No logo — the name as text, the markup unchanged', () => {
+    const without = markup(sale());
+    expect(without).not.toContain('<img');
+    expect(without).toContain(`<header class="center"><div class="strong">${COMPANY}</div>`);
+    expect(receiptMarkup({ view: sale(), company: COMPANY, logo: null })).toBe(without);
+  });
+
+  it('the logo fits the paper: centred, at most the paper width and 120 px high, proportions kept', () => {
+    const html = receiptHtml({ view: sale(), company: COMPANY, paper: 58, logo: LOGO });
+    expect(html).toContain(
+      '.logo{display:block;margin:0 auto;max-width:100%;max-height:120px;object-fit:contain}',
+    );
+    expect(html).toContain(`src="${LOGO.dataUri}"`);
+  });
+
+  it('only an inline image is drawn — a web address is never put into the receipt', () => {
+    const html = receiptMarkup({
+      view: sale(),
+      company: COMPANY,
+      logo: { dataUri: 'https://point.test/logo.png' },
+    });
+    expect(html).not.toContain('<img');
+  });
+});
+
 describe('refund-receipt template (task 9.3)', () => {
   it('Scenario: Receipt of the automatic change return — title Refund, RF number, original, no lines', () => {
     const html = markup(

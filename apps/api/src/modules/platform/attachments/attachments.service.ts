@@ -56,6 +56,14 @@ export class Attachments {
     return this.repository.insert(tx, { ...file, uploaded_at: this.clock.now() });
   }
 
+  /**
+   * One live row by id — the company logo of a receipt (add-company-profile design D7); the caller
+   * checks that it is the row it expects. Uploads and their checks come with add-attachments-upload.
+   */
+  findLive(id: string): Promise<AttachmentRow | null> {
+    return this.repository.liveById(id);
+  }
+
   /** The live rows of an entity (PDF before PNG); inside a transaction, through it. */
   findGenerated(entityType: string, entityId: string): Promise<AttachmentRow[]> {
     return this.repository.liveOf(entityType, entityId);

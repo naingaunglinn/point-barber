@@ -23,11 +23,14 @@ const DAY = 86_400;
 // ADR-002 job table: 3 retries for each of the three; completed jobs kept 30 days (action item 5).
 const QUEUE_OPTIONS = { retryLimit: 3, retryBackoff: true, deleteAfterSeconds: 30 * DAY };
 // add-walkin-visit-checkout design D10: the receipt render, 3 attempts in all (2 retries).
+// add-company-profile design D6: the website refresh (ADR-002 — retry 3); its handler comes with
+// add-public-website-pages, until then the jobs wait.
 const QUEUES = {
   'email.send': QUEUE_OPTIONS,
   'auth.cleanup': QUEUE_OPTIONS,
   'sync.code_tables': QUEUE_OPTIONS,
   'receipt.render': { ...QUEUE_OPTIONS, retryLimit: 2 },
+  'site.revalidate': QUEUE_OPTIONS,
 };
 
 async function installPgBoss() {
