@@ -41,6 +41,7 @@ export {
 } from './components/LanguageSwitch/LanguageSwitch';
 export { MoneyText, type MoneyTextProps } from './components/MoneyText/MoneyText';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './components/Skeleton/Skeleton';
+export { Switch, type SwitchProps } from './components/Switch/Switch';
 export { toast, Toaster } from './components/Toaster/Toaster';
 
 export {
@@ -193,6 +194,7 @@ export {
   movesToSubmit,
   registerField,
   useAppForm,
+  useFieldArray,
   useTextField,
   type AppFormProps,
 } from './forms/use-app-form';

@@ -1,8 +1,40 @@
 {
   "nav": {
     "title": "ဆက်တင်",
+    "company": "ကုမ္ပဏီ",
     "additional": "ထပ်ဆောင်း ဆက်တင်",
     "maintenance": "Maintenance mode"
+  },
+  "company": {
+    "title": "ကုမ္ပဏီ",
+    "section": {
+      "name": "အမည်",
+      "contact": "ဆက်သွယ်ရန်",
+      "address": "လိပ်စာ",
+      "links": "Website နဲ့ social link များ"
+    },
+    "phone": "ဖုန်း",
+    "email": "Email",
+    "website": "Website",
+    "link": {
+      "help": "https:// နဲ့ စပါ",
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "viber": "Viber",
+      "instagram": "Instagram",
+      "youtube": "YouTube"
+    },
+    "viber": {
+      "help": "viber:// link (သို့) ဖုန်းနံပါတ်"
+    },
+    "other": {
+      "title": "အခြား link များ",
+      "label": "အမည်",
+      "url": "Link",
+      "add": "Link ထည့်ရန်"
+    },
+    "saved": "ကုမ္ပဏီ အချက်အလက် သိမ်းပြီးပါပြီ",
+    "reload": "ပြန်ဖွင့်ရန်"
   },
   "group": {
     "booking": "ကြိုတင်ချိန်းဆိုမှု",

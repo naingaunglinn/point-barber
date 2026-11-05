@@ -38,10 +38,20 @@ export interface TextInputProps {
   readonly 'aria-required'?: true;
   /** A single line only: `email` for an e-mail address. Default `text`. */
   readonly type?: 'text' | 'email';
-  /** The phone's keyboard, e.g. `numeric` for a code typed as digits. */
-  readonly inputMode?: 'text' | 'email' | 'numeric';
+  /**
+   * The phone's keyboard, e.g. `numeric` for a code typed as digits, `tel` for a phone number stored as
+   * typed, `decimal` for a coordinate, `url` for a link.
+   */
+  readonly inputMode?: 'text' | 'email' | 'numeric' | 'tel' | 'decimal' | 'url';
   /** The browser's autofill hint, e.g. `email` or `one-time-code`. */
   readonly autoComplete?: string;
+  /**
+   * `none` for a link (the phone's keyboard does not capitalise the first letter); `characters` for a
+   * code typed in capitals.
+   */
+  readonly autoCapitalize?: 'none' | 'characters';
+  /** `off` for a link: the phone's keyboard does not correct the text (Safari). */
+  readonly autoCorrect?: 'off';
   /** The single-line input — the element a form focuses on its first error (useTextField). */
   readonly ref?: Ref<HTMLInputElement>;
   readonly 'data-testid'?: string;
@@ -92,7 +102,10 @@ export function TextInput({
           {...shared}
           ref={ref}
           type={type}
-          className={cn('h-12 text-base md:h-10', inputMode === 'numeric' && 'font-numeric')}
+          className={cn(
+            'h-12 text-base md:h-10',
+            (inputMode === 'numeric' || inputMode === 'decimal') && 'font-numeric',
+          )}
         />
       )}
       {converted ? (

@@ -4,9 +4,11 @@ import { PUBLIC_API_BASE } from '../../env';
 
 // The staff app's API client (API-AUTH-02 · API-AUD-02 · AD-AUTH-01 · AD-PERM-03 · design D17): a
 // relative base on the app's own origin, the app header the CSRF guard needs and `X-Client: web` on
-// every call, a problem body turned into `ApiProblem`. One 401 handler and one 403 handler, installed by
-// the session layer: a lost session goes to the login screen, an unexpected 403 refetches `/me` once.
-// The sign-in calls opt out — a wrong code is a 401 the login screen shows itself.
+// every call, a problem body turned into `ApiProblem`. One 401 handler, one 403 handler and one handler
+// of 503 `maintenance`, installed by the session layer: a lost session goes to the login screen, an
+// unexpected 403 refetches `/me` once, maintenance mode replaces the screen with its notice (API-AUTH-06 ·
+// add-settings-store design D10). The sign-in calls opt out — a wrong code is a 401 the login screen
+// shows itself.
 
 export class ApiProblem extends Error {
   constructor(
@@ -25,6 +27,8 @@ export interface ApiHandlers {
   readonly onUnauthorized?: (problem: Problem) => void;
   /** A staff call answered 403. */
   readonly onForbidden?: (problem: Problem) => void;
+  /** A staff call answered 503 `maintenance` — the API holds everyone back but the admins. */
+  readonly onMaintenance?: (problem: Problem) => void;
 }
 
 let handlers: ApiHandlers = {};
@@ -115,5 +119,8 @@ async function send<T>(
   );
   if (!signIn && response.status === HttpStatus.UNAUTHORIZED) handlers.onUnauthorized?.(problem);
   if (!signIn && response.status === HttpStatus.FORBIDDEN) handlers.onForbidden?.(problem);
+  if (response.status === HttpStatus.SERVICE_UNAVAILABLE && problem.code === 'maintenance') {
+    handlers.onMaintenance?.(problem);
+  }
   throw failure;
 }

@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderIntl } from '../../test/intl';
@@ -97,6 +97,38 @@ describe('BilingualInput', () => {
   });
 });
 
+describe('BilingualInput in a form (add-company-profile design D8)', () => {
+  it('names the two inputs by test id, hands each to its ref and passes the leaving blur on', () => {
+    const mmRef = createRef<HTMLInputElement>();
+    const enRef = createRef<HTMLInputElement>();
+    const onBlur = vi.fn();
+    renderIntl(
+      <>
+        <BilingualInput
+          value={{ mm: HAIRCUT_MM, en: HAIRCUT_EN }}
+          onChange={() => undefined}
+          ref={mmRef}
+          enRef={enRef}
+          testIds={{ mm: 'name-mm', en: 'name-en' }}
+          onBlur={onBlur}
+        />
+        <button type="button">{NOTE}</button>
+      </>,
+    );
+    expect(screen.getByTestId('name-mm')).toBe(mm());
+    expect(screen.getByTestId('name-en')).toBe(en());
+    expect(mmRef.current).toBe(mm());
+    expect(enRef.current).toBe(en());
+    fireEvent.blur(mm(), { relatedTarget: en() }); // inside the pair: not a leave
+    expect(onBlur).not.toHaveBeenCalled();
+    fireEvent.blur(en(), { relatedTarget: outside() });
+    expect(onBlur).toHaveBeenCalledTimes(1);
+    const [event] = onBlur.mock.calls[0] as [{ target: EventTarget; relatedTarget: EventTarget }];
+    expect(event.target).toBe(en());
+    expect(event.relatedTarget).toBe(outside());
+  });
+});
+
 describe('TextInput', () => {
   it('converts Zawgyi in a multi-line note too, and the notice goes away when the user types again', () => {
     function Note() {
@@ -111,5 +143,29 @@ describe('TextInput', () => {
     expect(document.querySelector('[data-slot="zawgyi-notice"]')).not.toBeNull();
     fireEvent.change(note, { target: { value: `${UNICODE} ` } });
     expect(document.querySelector('[data-slot="zawgyi-notice"]')).toBeNull();
+  });
+
+  // add-settings-store tasks 5.5 / 6.1 — the thank-you text and the maintenance messages: both members
+  // optional (an empty pair means "no text"), and the screen's own helper under the pair.
+  it('required={false}: no asterisk, no aria-required, and no message when the pair is left empty', () => {
+    const HELPER = 'Only the English text is printed on receipts. Leave English empty for no line.';
+    function Optional() {
+      const [value, setValue] = useState<Bilingual>({ mm: '', en: null });
+      return (
+        <>
+          <BilingualInput value={value} onChange={setValue} required={false} hint={HELPER} />
+          <button type="button">{NOTE}</button>
+        </>
+      );
+    }
+    renderIntl(<Optional />);
+    expect(mm().getAttribute('aria-required')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Myanmar' })).toBe(mm());
+    fireEvent.focus(mm());
+    fireEvent.blur(mm(), { relatedTarget: outside() });
+    expect(mm().getAttribute('aria-invalid')).toBeNull();
+    expect(screen.queryByText('This field is required.')).toBeNull();
+    expect(screen.getByText(HELPER)).toBeTruthy();
+    expect(screen.queryByText('Leave English empty to show the Myanmar text')).toBeNull();
   });
 });

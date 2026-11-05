@@ -2,6 +2,8 @@ import {
   branchAssignmentSchema,
   branchSummarySchema,
   commissionEstimateSchema,
+  companySchema,
+  companyUpdateSchema,
   customerLookupSchema,
   discountRequestSchema,
   durationRangeSchema,
@@ -31,6 +33,7 @@ import {
   settingPutBodySchema,
   settingResetBodySchema,
   settingViewSchema,
+  socialLinksSchema,
   systemStatusSchema,
   upcomingBookingSchema,
   visitSchema,
@@ -61,6 +64,19 @@ const schema = (zodSchema: z.ZodType, io: 'input' | 'output' = 'output'): JsonSc
 const PROBLEM_RESPONSE = {
   description: 'Problem details (RFC 9457)',
   content: { 'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } } },
+};
+
+const json = (name: string) => ({
+  content: { 'application/json': { schema: { $ref: `#/components/schemas/${name}` } } },
+});
+
+/** Part 1 `components.parameters.XRequestedWith` — the CSRF header of every changing request. */
+const X_REQUESTED_WITH = {
+  name: 'X-Requested-With',
+  in: 'header',
+  required: true,
+  schema: { type: 'string', enum: ['point-app'] },
+  description: 'CSRF guard for cookie-authenticated mutations (API-AUTH-02)',
 };
 
 // add-settings-store task 3.12 — the settings reads P1.SET.01 / 02 / 05 as Part 1 v1.7 writes them.
@@ -275,6 +291,35 @@ export function buildOpenApiDocument(version: string): JsonSchema {
           },
         },
       },
+      // add-company-profile task 2.10 — P1.CO.01 / P1.CO.02 as Part 1 v1.7 lists them.
+      '/company': {
+        get: {
+          tags: ['company'],
+          operationId: 'getCompany',
+          summary: 'Company info (P1.CO.01)',
+          'x-permission': 'any staff',
+          responses: {
+            '200': { description: 'OK', ...json('Company') },
+            '401': PROBLEM_RESPONSE,
+          },
+        },
+        patch: {
+          tags: ['company'],
+          operationId: 'patchCompany',
+          summary: 'Update company info — company.update (P1.CO.02)',
+          'x-permission': 'company.update (company master: company scope)',
+          parameters: [X_REQUESTED_WITH],
+          requestBody: { required: true, ...json('CompanyUpdate') },
+          responses: {
+            '200': { description: 'Updated (enqueues site.content_changed)', ...json('Company') },
+            '400': PROBLEM_RESPONSE,
+            '401': PROBLEM_RESPONSE,
+            '403': PROBLEM_RESPONSE,
+            '409': PROBLEM_RESPONSE,
+            '422': PROBLEM_RESPONSE,
+          },
+        },
+      },
       ...SETTINGS_PATHS,
     },
     components: {
@@ -286,6 +331,10 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         MeResponse: schema(meResponseSchema),
         Problem: schema(problemSchema),
         SystemStatus: schema(systemStatusSchema),
+        // add-company-profile tasks 1.5 / 2.10 — P1.CO.01 / P1.CO.02.
+        Company: schema(companySchema),
+        CompanyUpdate: schema(companyUpdateSchema),
+        SocialLinks: schema(socialLinksSchema),
         // add-settings-store task 1.7 — P1.SET.01 – 05.
         SettingDefinition: schema(settingDefinitionSchema),
         SettingHistoryItem: schema(settingHistoryItemSchema),
