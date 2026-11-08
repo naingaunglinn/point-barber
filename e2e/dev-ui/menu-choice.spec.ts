@@ -115,6 +115,7 @@ test.describe('add-shared-ui-components · ui-foundation · Rare and destructive
     await page.keyboard.press('Enter');
     await expect(items.nth(0)).toBeFocused();
     await page.keyboard.press('ArrowDown');
+    await expect(items.nth(1)).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('menu')).toHaveCount(0);
     if (lang === 'en') await expect(log(kebab(page))).toHaveText('Handler call: Export pressed');

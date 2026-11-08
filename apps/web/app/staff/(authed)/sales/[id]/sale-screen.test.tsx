@@ -964,7 +964,7 @@ describe('FINISH and after (group 13)', () => {
   });
 });
 
-describe('the page title by step (task 13.8 · WCAG 2.4.2 · AD-A11Y-01)', () => {
+describe('the page title and the level-1 heading by step (task 13.8 · WCAG 2.4.2 · AD-A11Y-01)', () => {
   const CANCELLED_VISIT = visitOf({
     status: VisitStatus.INCOMPLETE,
     incomplete_at: '2026-10-05T10:06:00+06:30',
@@ -1018,14 +1018,24 @@ describe('the page title by step (task 13.8 · WCAG 2.4.2 · AD-A11Y-01)', () =>
     (['en', 'my'] as const).map((locale) => ({ ...row, locale, title: row[locale] })),
   );
 
-  it.each(ROWS)('$step · $locale → "$title"', async ({ routes, locale, title, ...row }) => {
+  const showStep = async ({ routes, locale, ...row }: (typeof ROWS)[number]) => {
     routeFetch(fetchMock, routes);
     renderPos(<SaleScreen id={IDS.SALE} />, { locale });
     if ('finish' in row) {
       fireEvent.click(await screen.findByTestId('finish-submit'));
       expect(await screen.findByTestId('success-panel')).toBeTruthy();
     }
-    await waitFor(() => expect(document.title).toBe(title));
+  };
+
+  it.each(ROWS)('$step · $locale → "$title"', async (row) => {
+    await showStep(row);
+    await waitFor(() => expect(document.title).toBe(row.title));
     expect(document.head.querySelectorAll('title')).toHaveLength(1);
+  });
+
+  it.each(ROWS)('$step · $locale → one level-1 heading, "$title"', async (row) => {
+    await showStep(row);
+    expect(await screen.findByRole('heading', { level: 1, name: row.title })).toBeTruthy();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 });

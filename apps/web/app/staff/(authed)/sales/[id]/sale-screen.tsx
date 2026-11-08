@@ -22,7 +22,9 @@ import { InProgress } from './in-progress';
 // read-only receipt when opened again; CANCELLED → read-only. A refused read (403, 404) shows the page
 // state with a link Home. The sticky visit header stays on every step. The page title names the step
 // shown (WCAG 2.4.2 · AD-A11Y-01 — task 13.8): In progress, Checkout, Sale finished, or the sale's
-// status Cancelled; one <title>, so a step change rewrites it in place.
+// status Cancelled; one <title>, so a step change rewrites it in place. Each step also has one <h1> with
+// that title (AD-A11Y-01): the success panel shows its own (AD-POS-12); the layouts of the others have no
+// visible title (AD-POS-04 · AD-POS-07), so theirs is for screen readers only.
 export function SaleScreen({ id }: { readonly id: string }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
@@ -52,6 +54,7 @@ export function SaleScreen({ id }: { readonly id: string }) {
   const current = sale.data;
   const branch = me?.branches_in_scope.find((item) => item.id === current.branch_id);
   const branchName = branch === undefined ? '' : localized(branch, 'name', locale);
+  const panelHasHeading = current.status === SaleStatus.FINISHED && justFinished;
   const step =
     current.status === SaleStatus.CANCELLED
       ? {
@@ -84,6 +87,7 @@ export function SaleScreen({ id }: { readonly id: string }) {
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4" data-testid="sale-screen">
       {step !== null && <title>{step.title}</title>}
+      {step !== null && !panelHasHeading && <h1 className="sr-only">{step.title}</h1>}
       <StaffOfflineBanner />
       {visit.data !== undefined && <VisitHeader visit={visit.data} branchName={branchName} />}
       {step?.content}
