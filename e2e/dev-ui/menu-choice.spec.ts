@@ -52,7 +52,8 @@ function colours(locator: Locator, token: string): Promise<{ text: string; token
       const context = Object.assign(document.createElement('canvas'), {
         width: 1,
         height: 1,
-      }).getContext('2d') as CanvasRenderingContext2D;
+      }).getContext('2d');
+      if (context === null) throw new Error('This browser has no 2D canvas');
       context.fillStyle = colour;
       context.fillRect(0, 0, 1, 1);
       return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)].join(',');

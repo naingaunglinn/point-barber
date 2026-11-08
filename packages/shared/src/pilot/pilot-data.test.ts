@@ -15,19 +15,46 @@ const examplePath = join(
   dirname(fileURLToPath(import.meta.url)),
   '../../../../db/pilot/pilot-data.example.json',
 );
-const example = (): Record<string, any> => JSON.parse(readFileSync(examplePath, 'utf8'));
+const example = (): unknown => JSON.parse(readFileSync(examplePath, 'utf8'));
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** The value at a dot-separated path of the example (`categories.0.services.0.price`). */
+const read = (path: string): unknown =>
+  path.split('.').reduce<unknown>((node, key) => {
+    if (Array.isArray(node)) return node[Number(key)];
+    return isRecord(node) ? node[key] : undefined;
+  }, example());
+
+const readRecord = (path: string): Record<string, unknown> => {
+  const value = read(path);
+  if (!isRecord(value)) throw new Error(`${path} is not an object in the example`);
+  return value;
+};
+
+/** A copy of `node` with `value` at `path`; an array index equal to its length appends. */
+function put(node: unknown, path: string[], value: unknown): unknown {
+  const [key = '', ...rest] = path;
+  const next = (child: unknown) => (rest.length === 0 ? value : put(child, rest, value));
+  if (Array.isArray(node)) {
+    const list = node.map((item: unknown) => item);
+    list[Number(key)] = next(list[Number(key)]);
+    return list;
+  }
+  const record = isRecord(node) ? node : {};
+  return { ...record, [key]: next(record[key]) };
+}
+
+/** The example with one value set (or, with `undefined`, taken out); nothing is mutated. */
+const edit = (path: string, value: unknown): unknown => put(example(), path.split('.'), value);
 
 /** The JSON paths of the issues, joined with dots; [] when the file is accepted. */
 const refused = (data: unknown): string[] => {
   const result = PilotDataSchema.safeParse(data);
   return result.success ? [] : result.error.issues.map((issue) => issue.path.join('.'));
 };
-const edit = (change: (data: Record<string, any>) => void) => {
-  const data = example();
-  change(data);
-  return data;
-};
-const cut = (data: Record<string, any>) => data.categories[0].services[0];
+const SERVICE = 'categories.0.services.0';
 
 describe('db/pilot/pilot-data.example.json (task 1.2)', () => {
   it('parses with PilotDataSchema', () => {
@@ -48,7 +75,7 @@ describe('PilotDataSchema (task 1.1 · brief S5)', () => {
     ['PX123456789', ['branch.code']],
     ['px1', ['branch.code']],
   ])('branch code %s', (code, paths) => {
-    expect(refused(edit((d) => (d.branch.code = code)))).toStrictEqual(paths);
+    expect(refused(edit('branch.code', code))).toStrictEqual(paths);
   });
 
   it.each([
@@ -57,7 +84,7 @@ describe('PilotDataSchema (task 1.1 · brief S5)', () => {
     [1440, []],
     [1441, ['categories.0.services.0.duration_minutes']],
   ])('duration %d', (minutes, paths) => {
-    expect(refused(edit((d) => (cut(d).duration_minutes = minutes)))).toStrictEqual(paths);
+    expect(refused(edit(`${SERVICE}.duration_minutes`, minutes))).toStrictEqual(paths);
   });
 
   it.each([
@@ -65,11 +92,11 @@ describe('PilotDataSchema (task 1.1 · brief S5)', () => {
     [-1, ['categories.0.services.0.price']],
     [2500.5, ['categories.0.services.0.price']],
   ])('price %d', (price, paths) => {
-    expect(refused(edit((d) => (cut(d).price = price)))).toStrictEqual(paths);
+    expect(refused(edit(`${SERVICE}.price`, price))).toStrictEqual(paths);
   });
 
   it('a barber price follows the same rule', () => {
-    expect(refused(edit((d) => (cut(d).barber_prices[0].price = -1)))).toStrictEqual([
+    expect(refused(edit(`${SERVICE}.barber_prices.0.price`, -1))).toStrictEqual([
       'categories.0.services.0.barber_prices.0.price',
     ]);
   });
@@ -79,75 +106,69 @@ describe('PilotDataSchema (task 1.1 · brief S5)', () => {
     ['Manager', []],
     ['Admin', ['people.2.role']],
   ])('role %s', (role, paths) => {
-    expect(refused(edit((d) => (d.people[2].role = role)))).toStrictEqual(paths);
+    expect(refused(edit('people.2.role', role))).toStrictEqual(paths);
   });
 
   it('Scenario: A fixture address in the file — a .test address is refused', () => {
-    expect(refused(edit((d) => (d.people[0].email = 'aung@point.test')))).toStrictEqual([
-      'people.0.email',
-    ]);
+    expect(refused(edit('people.0.email', 'aung@point.test'))).toStrictEqual(['people.0.email']);
   });
 
   it('an address is trimmed and lower-cased', () => {
-    const data = PilotDataSchema.parse(
-      edit((d) => (d.people[0].email = '  Barber.One@Example.COM ')),
-    );
+    const data = PilotDataSchema.parse(edit('people.0.email', '  Barber.One@Example.COM '));
     expect(data.people[0]?.email).toBe('barber.one@example.com');
   });
 
   it('the same address twice, in another case, is refused at the repeat', () => {
-    expect(refused(edit((d) => (d.people[1].email = 'BARBER.ONE@example.com')))).toStrictEqual([
+    expect(refused(edit('people.1.email', 'BARBER.ONE@example.com'))).toStrictEqual([
       'people.1.email',
     ]);
   });
 
   it('a code, a category or a service given twice is refused at the repeat', () => {
-    expect(refused(edit((d) => (d.people[2].employee_code = 'X01')))).toStrictEqual([
+    expect(refused(edit('people.2.employee_code', 'X01'))).toStrictEqual([
       'people.2.employee_code',
     ]);
+    const another = {
+      ...readRecord('categories.0'),
+      services: [{ ...readRecord(SERVICE), name_mm: 'other' }],
+    };
+    expect(refused(edit('categories.1', another))).toStrictEqual(['categories.1.name_mm']);
     expect(
-      refused(
-        edit((d) =>
-          d.categories.push({ ...d.categories[0], services: [{ ...cut(d), name_mm: 'other' }] }),
-        ),
-      ),
-    ).toStrictEqual(['categories.1.name_mm']);
-    expect(
-      refused(edit((d) => (d.categories[0].services[1].name_mm = cut(d).name_mm))),
+      refused(edit('categories.0.services.1.name_mm', read(`${SERVICE}.name_mm`))),
     ).toStrictEqual(['categories.0.services.1.name_mm']);
   });
 
   it('a barber price or a service list naming something not in the file is refused', () => {
-    expect(refused(edit((d) => (cut(d).barber_prices[0].employee_code = 'X09')))).toStrictEqual([
+    expect(refused(edit(`${SERVICE}.barber_prices.0.employee_code`, 'X09'))).toStrictEqual([
       'categories.0.services.0.barber_prices.0.employee_code',
     ]);
     expect(
-      refused(edit((d) => cut(d).barber_prices.push({ employee_code: 'X01', price: 7000 }))),
+      refused(edit(`${SERVICE}.barber_prices.1`, { employee_code: 'X01', price: 7000 })),
     ).toStrictEqual(['categories.0.services.0.barber_prices.1.employee_code']);
-    expect(refused(edit((d) => (d.people[1].services = ['no such service'])))).toStrictEqual([
+    expect(refused(edit('people.1.services', ['no such service']))).toStrictEqual([
       'people.1.services.0',
     ]);
-    expect(refused(edit((d) => (d.people[1].services = [cut(d).name_mm])))).toStrictEqual([]);
+    expect(refused(edit('people.1.services', [read(`${SERVICE}.name_mm`)]))).toStrictEqual([]);
   });
 
   it('a pattern that does not compile, or a sample that does not match, is refused', () => {
-    expect(refused(edit((d) => (d.kbzpay.reference_regex = '^EX[0-9{8}$')))).toStrictEqual([
+    expect(refused(edit('kbzpay.reference_regex', '^EX[0-9{8}$'))).toStrictEqual([
       'kbzpay.reference_regex',
     ]);
-    expect(refused(edit((d) => (d.kbzpay.examples = ['EX12345678', 'EX1234'])))).toStrictEqual([
+    expect(refused(edit('kbzpay.examples', ['EX12345678', 'EX1234']))).toStrictEqual([
       'kbzpay.examples.1',
     ]);
   });
 
   it('an unknown key is refused, at any level', () => {
-    expect(refused(edit((d) => (d.extra = 1)))).toStrictEqual(['']);
-    expect(refused(edit((d) => (d.people[0].branch = 'PX2')))).toStrictEqual(['people.0']);
+    expect(refused(edit('extra', 1))).toStrictEqual(['']);
+    expect(refused(edit('people.0.branch', 'PX2'))).toStrictEqual(['people.0']);
   });
 
   it('the KBZPay block is optional; people and categories are not', () => {
-    expect(refused(edit((d) => delete d.kbzpay))).toStrictEqual([]);
+    expect(refused(edit('kbzpay', undefined))).toStrictEqual([]);
     // With no people, X01's barber price names nobody either.
-    expect(refused(edit((d) => (d.people = [])))).toContain('people');
-    expect(refused(edit((d) => (d.categories = [])))).toStrictEqual(['categories']);
+    expect(refused(edit('people', []))).toContain('people');
+    expect(refused(edit('categories', []))).toStrictEqual(['categories']);
   });
 });

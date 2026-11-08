@@ -3,6 +3,12 @@
 // src/common/database/, apps/web never imports Prisma or apps/api (design D10 · ADR-001 module
 // boundary rules 1–2). All through `no-restricted-imports`: a later config object for the same file
 // replaces the rule's options, so every object below carries the full pattern list for its files.
+// The package dependency zones (`import-x/no-restricted-paths`, add-ci-lint-rules design D13) are one
+// option list built by `packageZones`; `add-ci-lint-api` and the web side extend that list, not add an object.
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { importX } from 'eslint-plugin-import-x';
 
 const MODULES = 'apps/api/src/modules';
 // The deepest folder level inside a module that the generated globs cover.
@@ -71,6 +77,16 @@ const wrapperConfigs = SDKS.flatMap(({ name, folder }) =>
   })),
 );
 
+// A substitute for the real database in a test is never imported (CG-TEST-04 · guideline §24 row 68).
+const DB_MESSAGE =
+  'A substitute database (pg-mem, SQLite, PGlite, a Prisma mock) — tests run against a real PostgreSQL 16 (CG-TEST-04).';
+const DB_SUBSTITUTES = [
+  {
+    regex: String.raw`^(pg-mem|sqlite3?|better-sqlite3|@electric-sql/pglite|prisma-mock|@quramy/jest-prisma[a-z-]*)(/|$)`,
+    message: DB_MESSAGE,
+  },
+];
+
 const WEB_MESSAGE =
   'The web app reaches data only through the HTTP API — never the Prisma client or apps/api (ADR-001 · ADR-009 · design D10).';
 const WEB_PATTERNS = [
@@ -80,6 +96,7 @@ const WEB_PATTERNS = [
   // Any PostgreSQL client, not only Prisma (CG-ARCH-06 · guideline §24 row 20).
   { regex: '^(pg|pg-[a-z-]+|postgres)(/|$)', message: WEB_MESSAGE },
   { regex: '(^|/)apps/api(/|$)', message: WEB_MESSAGE },
+  ...DB_SUBSTITUTES,
 ];
 // The web app's Sentry SDK: only its error-reporting files (CG-ARCH-08 · add-staging-deploy D10).
 const WEB_SENTRY_FILES = ['apps/web/lib/observability/**', 'apps/web/instrumentation.ts'];
@@ -88,6 +105,37 @@ const WEB_SENTRY = {
   message:
     'The Sentry SDK is imported only in apps/web/lib/observability/ and apps/web/instrumentation.ts (CG-ARCH-08 · guideline §24 row 22).',
 };
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const SOURCE = '**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}';
+// The workspaces the package rules cover so far (add-ci-lint-rules A1).
+const A1_WORKSPACES = ['packages/shared', 'packages/documents', 'e2e'].map(
+  (path) => `${path}/${SOURCE}`,
+);
+
+/**
+ * The zones of `import-x/no-restricted-paths` (CG-ARCH-04 · CG-DEP-06 · design D13), written relative to
+ * `basePath` — the repository root in the real configuration, the graph fixture tree in its test.
+ */
+export function packageZones(basePath) {
+  const at = (path) => resolve(basePath, path);
+  const zone = (target, from, message, except) => ({
+    target: at(target),
+    from: at(from),
+    message: `${message} (CG-ARCH-04 · design D13).`,
+    ...(except === undefined ? {} : { except }),
+  });
+  const SHARED = 'packages/shared imports no other internal package';
+  return [
+    // The language files are data and `packages/i18n` imports nothing: words.ts reads them.
+    zone('packages/shared/src', 'packages/i18n', SHARED, ['./messages']),
+    ...['packages/ui', 'packages/documents', 'apps'].map((from) =>
+      zone('packages/shared/src', from, SHARED),
+    ),
+    zone('packages/documents', 'packages/ui', 'packages/documents does not import packages/ui'),
+    zone('packages/documents', 'apps', 'packages/documents does not import an app'),
+  ];
+}
 
 export default [
   {
@@ -113,5 +161,15 @@ export default [
   {
     files: WEB_SENTRY_FILES,
     rules: restrict(WEB_PATTERNS),
+  },
+  {
+    // No database substitute anywhere else in the covered workspaces (web and ui: WEB_PATTERNS).
+    files: A1_WORKSPACES,
+    rules: restrict(DB_SUBSTITUTES),
+  },
+  {
+    files: A1_WORKSPACES,
+    plugins: { 'import-x': importX },
+    rules: { 'import-x/no-restricted-paths': ['error', { zones: packageZones(ROOT) }] },
   },
 ];

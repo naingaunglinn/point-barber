@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import api from '../../eslint/api.mjs';
 import web from '../../eslint/web.mjs';
+import { withoutTypeChecked } from '../../eslint/test/lib.mjs';
 
 // ui-foundation "Lint fails on locale formatting outside the formatter" (AD-FMT-00 · D-PLT-05),
 // the clock and zone rules (D-PLT-15 · CG-TIME-03 / 04) and "Lint fails on a status compared with or
@@ -18,7 +19,7 @@ const eslint = new ESLint({
   overrideConfig: [
     { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
     ...web,
-    ...api,
+    ...withoutTypeChecked(api),
   ],
 });
 

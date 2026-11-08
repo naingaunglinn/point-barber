@@ -73,7 +73,7 @@ function measurePicker(page: Page) {
 /** Scrolls the popup to its end: is the month's last day then inside the popup and on the screen? */
 function lastDayReachable(page: Page): Promise<boolean> {
   return picker(page).evaluate((el) => {
-    el.scrollTop = el.scrollHeight;
+    el.scrollTo({ top: el.scrollHeight });
     const box = el.getBoundingClientRect();
     const days = el.querySelectorAll('button[data-day]');
     const last = days[days.length - 1]?.getBoundingClientRect();

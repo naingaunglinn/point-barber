@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { expect, test } from './fixtures.js';
+import { looseObject, parseJsonText, readJson } from './helpers/json.js';
 import { rawRequest } from './helpers/raw-request.js';
 import { withServiceEnv } from './helpers/stack.js';
 import { APP_ORIGIN, COMPOSE, SITE_HOST, SITE_ORIGIN } from './hosts.js';
@@ -150,9 +151,10 @@ test.describe('edge: client address (design D5 / D12)', () => {
         const found = logs
           .split('\n')
           .find((l) => l.includes(requestId) && l.includes('"client_ip"'));
-        line = found
-          ? (JSON.parse(found.slice(found.indexOf('{'))) as Record<string, unknown>)
-          : undefined;
+        line =
+          found === undefined
+            ? undefined
+            : parseJsonText(looseObject, found.slice(found.indexOf('{')));
         return line !== undefined;
       })
       .toBe(true);
@@ -169,7 +171,7 @@ test.describe('add-repo-scaffold · platform-runtime · Health endpoint is a det
     const health = async (): Promise<Record<string, unknown>> => {
       const res = await app.get('/api/v1/health');
       expect(res.status()).toBe(200);
-      return (await res.json()) as Record<string, unknown>;
+      return readJson(looseObject, res);
     };
 
     compose('stop postgres');
@@ -273,7 +275,7 @@ const directives = (header: string): Record<string, string[]> =>
       .split(';')
       .map((part) => part.trim().split(/\s+/))
       .filter(([name]) => name !== undefined && name !== '')
-      .map(([name, ...sources]) => [name, sources]),
+      .map(([name = '', ...sources]): [string, string[]] => [name, sources]),
   );
 
 test.describe('add-staging-deploy · platform-runtime · Both hosts send the content-security policy', () => {

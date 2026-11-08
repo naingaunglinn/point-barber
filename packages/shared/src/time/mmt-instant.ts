@@ -16,9 +16,9 @@ const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 /** `2026-10-04` + `15:00` → `2026-10-04T15:00:00+06:30`. */
 export function mmtInstant(date: BusinessDate, time: string): Instant {
   const day = DATE.exec(date);
-  if (!day) throw new RangeError(`Not a business date: ${date}`);
+  if (day === null) throw new RangeError(`Not a business date: ${date}`);
   const clock = TIME.exec(time);
-  if (!clock) throw new RangeError(`Not a time of day HH:mm: ${time}`);
+  if (clock === null) throw new RangeError(`Not a time of day HH:mm: ${time}`);
   const instant = toMmtIso(
     new TZDate(
       Number(day[1]),

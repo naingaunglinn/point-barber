@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { formatMoney } from '../format/money.js';
+import { testMoney } from '../testing/money.js';
 import type { Mmk } from './mmk.js';
 import {
   MAX_OVER_TRANSFER_CHANGE_AMOUNT,
@@ -40,9 +41,8 @@ describe('parseMoneyInput', () => {
   it('Scenario: No precision loss above the float limit', () => {
     const amount = parseMoneyInput('9007199254740993');
     expect(amount).toBe(9007199254740993n);
-    expect(formatMoney(amount as Mmk, { locale: 'en', profile: 'app' })).toBe(
-      '9,007,199,254,740,993 Ks',
-    );
+    if (typeof amount !== 'bigint') throw new Error('amount_invalid');
+    expect(formatMoney(amount, { locale: 'en', profile: 'app' })).toBe('9,007,199,254,740,993 Ks');
   });
 
   it('returns Mmk, null or the error code', () => {
@@ -65,9 +65,9 @@ describe('moneyFromWire / moneyToWire', () => {
   });
 
   it('Scenario: Wire boundaries — moneyToWire(9007199254740993) throws', () => {
-    expect(() => moneyToWire(9007199254740993n as Mmk)).toThrow(RangeError);
-    expect(() => moneyToWire(-9007199254740992n as Mmk)).toThrow(RangeError);
-    expect(moneyToWire(-9007199254740991n as Mmk)).toBe(-9007199254740991);
+    expect(() => moneyToWire(testMoney(9007199254740993n))).toThrow(RangeError);
+    expect(() => moneyToWire(testMoney(-9007199254740992n))).toThrow(RangeError);
+    expect(moneyToWire(testMoney(-9007199254740991n))).toBe(-9007199254740991);
   });
 });
 

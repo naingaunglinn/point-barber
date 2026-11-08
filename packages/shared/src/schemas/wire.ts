@@ -29,7 +29,8 @@ export const wirePositiveAmount = z.int().min(1);
 
 /** The smallint codes of one named constant, e.g. `codeOf(SaleStatus)` = 0 | 1 | 2 (D-DB-03). */
 export function codeOf<const T extends Record<string, number>>(set: T) {
-  return z.literal(Object.values(set) as T[keyof T][]);
+  const keys: (keyof T)[] = Object.keys(set);
+  return z.literal(keys.map((key) => set[key]));
 }
 
 /** `{ id, display_name }` — an employee (the performer, the collector); not Part 1's `EmployeeRef`. */
