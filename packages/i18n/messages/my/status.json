@@ -147,5 +147,9 @@
   },
   "master": {
     "INACTIVE": "အသုံးမပြု"
+  },
+  "branches": {
+    "INACTIVE": "ပိတ်ထား",
+    "ACTIVE": "ဖွင့်ထား"
   }
 }

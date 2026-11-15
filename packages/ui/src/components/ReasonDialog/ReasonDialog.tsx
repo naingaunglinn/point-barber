@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 
 import { localized } from '@point/shared';
 
@@ -21,6 +21,11 @@ import { FieldMessage } from '../FormField/FieldMessage';
 // a reason, or without a note the reason needs, shows `error.reason_required` and keeps the dialog
 // open. The result is the generic `{ reason_id?, reason_code?, note? }`; the calling screen maps it to
 // the field its endpoint defines (API Part 4: `reason`, `added_reason`, `override_reason` …).
+// A free-text reason that may stay empty is `source: { type: 'free' }` with `note: 'optional'`; a screen
+// may name the note (`noteLabel`), cap it (`noteMaxLength`), name the cancel button (`keepLabel`) and
+// show a refusal of its request inside the dialog (`alert`). After an `onConfirm` that returns a
+// promise, the choice and the note stay while the dialog stays open (a refusal) and are cleared when it
+// closes.
 
 export interface MasterReason {
   readonly id: string;
@@ -65,6 +70,14 @@ export interface ReasonDialogProps {
   readonly confirmLabel: string;
   readonly note?: NoteMode;
   readonly cancelLabel?: 'keep' | 'goBack';
+  /** Translated text of the cancel button instead of Keep / Go back ("Keep active"). */
+  readonly keepLabel?: string;
+  /** Translated label of the note field; default `common.form.note`. */
+  readonly noteLabel?: string;
+  /** The longest note the endpoint takes. */
+  readonly noteMaxLength?: number;
+  /** A refusal of the confirmed request, shown at the top of the dialog (AD-FORM-04). */
+  readonly alert?: ReactNode;
   readonly destructive?: boolean;
   readonly onConfirm: (result: ReasonResult) => void | Promise<unknown>;
   readonly onCancel: () => void;
@@ -78,6 +91,10 @@ export function ReasonDialog({
   confirmLabel,
   note: noteMode = 'by-reason',
   cancelLabel = 'keep',
+  keepLabel,
+  noteLabel,
+  noteMaxLength,
+  alert,
   destructive = false,
   onConfirm,
   onCancel,
@@ -111,7 +128,9 @@ export function ReasonDialog({
     noteMode === 'required' ||
     noteMode === 'optional' ||
     (noteMode === 'by-reason' && reasonNeedsNote);
-  const noteRequired = free || noteMode === 'required' || (noteMode !== 'none' && reasonNeedsNote);
+  const noteRequired = free
+    ? noteMode !== 'optional'
+    : noteMode === 'required' || (noteMode !== 'none' && reasonNeedsNote);
   const reasonMissing = !free && chosen === null;
   const noteMissing = noteShown && noteRequired && noteText.trim() === '';
 
@@ -120,6 +139,14 @@ export function ReasonDialog({
     setNoteText('');
     setShowErrors(false);
   };
+
+  // Closing clears the choice and the note, so the next opening starts empty.
+  useEffect(() => {
+    if (open) return;
+    setChosen(null);
+    setNoteText('');
+    setShowErrors(false);
+  }, [open]);
 
   const confirm = () => {
     if (reasonMissing || noteMissing) {
@@ -133,7 +160,7 @@ export function ReasonDialog({
       ...(noteShown ? { note: text } : {}),
     };
     const done = onConfirm(result);
-    if (done instanceof Promise) return done.then(reset);
+    if (done instanceof Promise) return done;
     reset();
     return undefined;
   };
@@ -161,7 +188,7 @@ export function ReasonDialog({
               onCancel();
             }}
           >
-            {t(cancelLabel === 'keep' ? 'common.action.keep' : 'common.action.goBack')}
+            {keepLabel ?? t(cancelLabel === 'keep' ? 'common.action.keep' : 'common.action.goBack')}
           </Button>
           <Button variant={destructive ? 'destructive' : 'primary'} onClick={confirm}>
             {confirmLabel}
@@ -170,6 +197,7 @@ export function ReasonDialog({
       }
     >
       <div className="flex flex-col gap-4 pb-2">
+        {alert}
         {options.length > 0 ? (
           <ChoiceGroup
             aria-label={title}
@@ -184,12 +212,18 @@ export function ReasonDialog({
         {noteShown ? (
           // The visible label "Note" (AD-A11Y-04); the asterisk marks a note the reason needs.
           <FormField
-            label={t('common.form.note')}
+            label={noteLabel ?? t('common.form.note')}
             required={noteRequired}
             error={noteError ? { code: 'reason_required' } : undefined}
           >
             {(control) => (
-              <TextInput multiline value={noteText} onChange={setNoteText} {...control} />
+              <TextInput
+                multiline
+                value={noteText}
+                onChange={setNoteText}
+                maxLength={noteMaxLength}
+                {...control}
+              />
             )}
           </FormField>
         ) : null}

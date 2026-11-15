@@ -50,6 +50,14 @@ export function isPaymentReferenceConflict(error: unknown): boolean {
   return uniqueViolationIndex(error) === 'payments_reference_unique';
 }
 
+/**
+ * A second branch with a code the company already has hit branches_company_id_code_idx (P1.BR.02 ·
+ * Part 1 §11b · add-branch-management design D3): answered 409 already_exists.
+ */
+export function isBranchCodeTaken(error: unknown): boolean {
+  return uniqueViolationIndex(error) === 'branches_company_id_code_idx';
+}
+
 /** The SQLSTATE of a failed query (`55P03` lock_not_available, `23505` …), from the driver adapter. */
 export function sqlStateOf(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) return null;

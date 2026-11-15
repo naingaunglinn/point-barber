@@ -66,6 +66,10 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
   it('serves under /api/v1 with the two paths of this change and the company of add-company-profile', () => {
     expect(document.servers).toStrictEqual([{ url: '/api/v1' }]);
     expect(Object.keys(document.paths as object).sort()).toStrictEqual([
+      // add-branch-management task 3.12 — P1.BR.02 – 05.
+      '/branches',
+      '/branches/{id}',
+      '/branches/{id}/status',
       '/company',
       '/health',
       // add-settings-store task 3.12 — P1.SET.01 – 05.
@@ -78,6 +82,15 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
       '/system/maintenance',
       '/system/status',
     ]);
+  });
+
+  // add-branch-management task 3.12 — the operations of P1.BR.02 – 05 with Part 1's operation ids.
+  it('the branch paths carry the four operations of Part 1 v1.7', () => {
+    const paths = document.paths as Record<string, Record<string, { operationId?: string }>>;
+    expect(paths['/branches']?.post?.operationId).toBe('createBranch');
+    expect(paths['/branches/{id}']?.get?.operationId).toBe('getBranch');
+    expect(paths['/branches/{id}']?.patch?.operationId).toBe('patchBranch');
+    expect(paths['/branches/{id}/status']?.post?.operationId).toBe('setBranchStatus');
   });
 
   // add-company-profile task 2.10 — copied from Part 1 v1.7 (OpenAPI 1.7.0) `paths./company`.

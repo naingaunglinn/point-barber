@@ -277,6 +277,20 @@ describe('form binding', () => {
     renderIntl(<FormAlert problem={problem('internal_error')} />);
     expect(screen.getByRole('alert').textContent).toContain('Error ID: 0192a5c4');
   });
+
+  // add-branch-management — 409 branch_in_use with the three counts of its context (design D9 · D10).
+  it("fills the message's placeholders from params and carries a test id", () => {
+    renderIntl(
+      <FormAlert
+        problem={problem('branch_in_use')}
+        params={{ active_assignments: 5, open_bookings: 0, open_sales: 0 }}
+        data-testid="in-use"
+      />,
+    );
+    expect(screen.getByTestId('in-use').textContent).toBe(
+      'This branch still has 5 assigned staff, 0 open bookings and 0 open sales.',
+    );
+  });
 });
 
 describe('TextInput for a code typed as digits', () => {
@@ -299,6 +313,36 @@ describe('TextInput for a code typed as digits', () => {
     );
     expect(screen.getByTestId('code').className).toContain('font-numeric');
     expect(screen.getByTestId('email').className).not.toContain('font-numeric');
+  });
+
+  // add-branch-management — a branch phone (stored as typed), a coordinate and a link (design D9).
+  it('takes the tel, decimal and url keyboards; a decimal shows the numeric font', () => {
+    renderIntl(
+      <>
+        <TextInput
+          value="09 7700 0003"
+          onChange={() => undefined}
+          inputMode="tel"
+          data-testid="tel"
+        />
+        <TextInput
+          value="16.8409"
+          onChange={() => undefined}
+          inputMode="decimal"
+          data-testid="dec"
+        />
+        <TextInput
+          value="https://x.test"
+          onChange={() => undefined}
+          inputMode="url"
+          data-testid="url"
+        />
+      </>,
+    );
+    expect(screen.getByTestId('tel').getAttribute('inputmode')).toBe('tel');
+    expect(screen.getByTestId('dec').getAttribute('inputmode')).toBe('decimal');
+    expect(screen.getByTestId('dec').className).toContain('font-numeric');
+    expect(screen.getByTestId('url').getAttribute('inputmode')).toBe('url');
   });
 });
 

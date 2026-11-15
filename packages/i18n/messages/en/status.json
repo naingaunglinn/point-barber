@@ -147,5 +147,9 @@
   },
   "master": {
     "INACTIVE": "Inactive"
+  },
+  "branches": {
+    "INACTIVE": "Inactive",
+    "ACTIVE": "Active"
   }
 }

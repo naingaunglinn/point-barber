@@ -37,7 +37,7 @@ describe('add-settings-store · settings · Setting definitions live in one file
     const res = await get('E001', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(14);
+    expect(items).toHaveLength(15);
     for (const item of items) {
       expect([item.key, item.source, item.company_value]).toStrictEqual([
         item.key,
@@ -69,6 +69,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'sales.service_charge_enabled': false,
       'sales.tax_enabled': false,
       'closing.cash_difference_tolerance_amount': 0,
+      'attendance.default_radius_meters': 100,
       'dashboard.show_own_earnings_all': false,
       'system.default_language': 1,
       'system.maintenance': { enabled: false },
@@ -107,7 +108,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'home_service.travel_minutes',
       'receipt.printer_width_mm',
     ]);
-    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(11);
+    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(12);
   });
 });
 
@@ -187,7 +188,7 @@ describe('add-settings-store · settings · The settings list shows each key wit
     const res = await get('E002', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(14);
+    expect(items).toHaveLength(15);
     expect(itemOf({ items }, 'home_service.transport_fee_amount')).toMatchObject({
       company_value: 2000,
       effective: 2000,
