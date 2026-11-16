@@ -1,0 +1,71 @@
+{
+  "list": {
+    "title": "ဆိုင်ခွဲများ",
+    "new": "ဆိုင်ခွဲအသစ်",
+    "column": {
+      "code": "ကုဒ်",
+      "name": "အမည်",
+      "phone": "ဖုန်း",
+      "website": "Website",
+      "status": "အခြေအနေ"
+    },
+    "shown": "ပြထားသည်",
+    "hidden": "မပြပါ",
+    "emptyFiltered": "ဒီ filter နဲ့ ကိုက်တဲ့ ဆိုင်ခွဲ မရှိပါ။"
+  },
+  "form": {
+    "section": {
+      "branch": "ဆိုင်ခွဲ",
+      "location": "လိပ်စာနဲ့ တည်နေရာ",
+      "website": "Website"
+    },
+    "conflict": "ဒီဆိုင်ခွဲကို တခြားသူ ပြင်လိုက်ပါပြီ။ ပြင်ထားတာ ကြည့်ဖို့ Reload နှိပ်ပါ။",
+    "reload": "Reload"
+  },
+  "field": {
+    "code": "ကုဒ်",
+    "codeHelp": "A–Z စာလုံးကြီး သို့မဟုတ် ဂဏန်း 1–10 လုံး၊ ဥပမာ B4။ နောက်မှ ပြောင်းလို့ မရပါ။",
+    "codeTaken": "ဒီ code နဲ့ ဆိုင်ခွဲ ရှိပြီးသားပါ။",
+    "name": "အမည်",
+    "phone": "ဖုန်း",
+    "email": "အီးမေးလ်",
+    "address": "လိပ်စာ",
+    "latitude": "Latitude (လတ္တီကျု)",
+    "longitude": "Longitude (လောင်ဂျီကျု)",
+    "radius": "Clock-in အကွာအဝေး",
+    "radiusHelp": "ဆိုင်နဲ့ ဒီအကွာအဝေးအတွင်းမှာပဲ clock-in လုပ်လို့ရမယ် (10–2,000 m)။ အလွတ်ထားရင် company setting ကို သုံးမယ်။",
+    "mapUrl": "မြေပုံ link",
+    "mapUrlHelp": "\"လမ်းညွှန်\" အတွက် Google Maps link။ အလွတ်ထားရင် latitude / longitude ကနေ ထုတ်မယ်။",
+    "isPublic": "Website မှာ ပြမယ်",
+    "websiteUrl": "Website",
+    "social": {
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "viber": "Viber",
+      "instagram": "Instagram",
+      "youtube": "YouTube",
+      "other": "တခြား link များ",
+      "label": "အမည်",
+      "url": "Link",
+      "add": "Link ထည့်မယ်",
+      "remove": "Link ဖယ်မယ်"
+    }
+  },
+  "detail": {
+    "activeEmployees": "ဒီနေ့ assign ထားတဲ့ ဝန်ထမ်း {count} ယောက်"
+  },
+  "toast": {
+    "saved": "ဆိုင်ခွဲ သိမ်းပြီးပါပြီ"
+  },
+  "action": {
+    "deactivate": "ပိတ်မယ်",
+    "reactivate": "ပြန်ဖွင့်မယ်"
+  },
+  "deactivate": {
+    "title": "ဆိုင်ခွဲ ပိတ်မယ်",
+    "consequence": "{name} ကို website နဲ့ booking မှာ မပြတော့ပါ။ မှတ်တမ်းတွေ မပျက်ပါ၊ နောက်မှ ပြန်ဖွင့်လို့ ရပါတယ်။",
+    "reason": "အကြောင်းပြချက် (မထည့်လည်း ရ)",
+    "confirm": "ဆိုင်ခွဲ ပိတ်မယ်",
+    "keep": "ဆက်ဖွင့်ထားမယ်"
+  }
+}

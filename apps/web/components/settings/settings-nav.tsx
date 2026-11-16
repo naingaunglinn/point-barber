@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import type { Messages } from '@point/i18n';
 
+import { BRANCH_CODES } from '../../lib/branches/access';
 import { useCan } from '../../lib/session/grants';
 import { seesCompany } from './company-access';
 
@@ -30,6 +31,13 @@ interface SettingsScreenEntry {
 const SCREENS: readonly SettingsScreenEntry[] = [
   // add-company-profile — any `company.*` code (AD-NAV-02 · design D8).
   { key: 'company', href: '/settings/company', visible: seesCompany },
+  // add-branch-management — Settings › Branches for a holder of any branch.* code at any scope
+  // (branch.view⁺ — AD-PERM-03 · design D9).
+  {
+    key: 'branches',
+    href: '/settings/branches',
+    visible: (can) => BRANCH_CODES.some((code) => can(code)),
+  },
   // add-settings-store — Additional settings for any `settings.*` code (settings.view⁺, mixed — design
   // D10); Maintenance mode for company-scope settings.update only (P1.SYS.03 · AD-NAV-08), last.
   {

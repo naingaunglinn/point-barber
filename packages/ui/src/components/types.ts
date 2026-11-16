@@ -9,6 +9,8 @@ export interface Action {
   readonly onPress: () => void | Promise<unknown>;
   readonly allowed?: boolean;
   readonly destructive?: boolean;
+  /** Set on the action's button or menu item, for the screen's tests. */
+  readonly testId?: string;
 }
 
 /** The fields of a card: 1 to 4 (AD-LIST-02) — a fifth does not compile. */

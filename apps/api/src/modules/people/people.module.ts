@@ -1,4 +1,4 @@
-import { Module, type OnModuleInit } from '@nestjs/common';
+import { Module, type OnApplicationBootstrap, type OnModuleInit } from '@nestjs/common';
 import { PERMISSIONS } from '@point/shared';
 
 import { GrantSource } from '../../common/access/grant-set.js';
@@ -14,6 +14,9 @@ import {
   UserNames,
 } from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
+import { BranchUsage } from './branches/branch-usage.js';
+import { BranchesController } from './branches/branches.controller.js';
+import { Branches } from './branches/branches.js';
 import { PermissionCatalogue } from './catalogue/permission-catalogue.js';
 import { CompanyController } from './company/company.controller.js';
 import { CompanyProfile } from './company/company-profile.js';
@@ -26,6 +29,7 @@ import { PeopleDirectory } from './directory/people-directory.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { AccessRepository } from './repositories/access.repository.js';
 import { AssignmentsRepository } from './repositories/assignments.repository.js';
+import { BranchesRepository } from './repositories/branches.repository.js';
 import { BranchCodesRepository } from './repositories/branch-codes.repository.js';
 import { BranchHeaderRepository } from './repositories/branch-header.repository.js';
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
@@ -49,7 +53,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 // D11).
 @Module({
   imports: [PlatformModule],
-  controllers: [OrganizationController, CompanyController],
+  controllers: [OrganizationController, CompanyController, BranchesController],
   providers: [
     PeopleRepository,
     AccessRepository,
@@ -77,6 +81,10 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     FirstAdmin,
     PeopleSeedLock,
     PilotPeople,
+    // add-branch-management (design D1).
+    BranchesRepository,
+    BranchUsage,
+    Branches,
   ],
   exports: [
     GrantSource,
@@ -93,9 +101,10 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     FirstAdmin,
     PeopleSeedLock,
     PilotPeople,
+    BranchUsage,
   ],
 })
-export class PeopleModule implements OnModuleInit {
+export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
   constructor(
     private readonly audit: Audit,
     private readonly directory: PeopleDirectory,
@@ -104,6 +113,7 @@ export class PeopleModule implements OnModuleInit {
     private readonly catalogue: PermissionCatalogue,
     private readonly baseSeed: BaseSeed,
     private readonly targets: TargetResolvers,
+    private readonly usage: BranchUsage,
     private readonly companies: CompanyRepository,
     private readonly names: DisplayNameRepository,
     private readonly companyOfSettings: CompanyOfSettings,
@@ -132,5 +142,13 @@ export class PeopleModule implements OnModuleInit {
     this.codeTables.contribute('base seed', 20, () =>
       this.runner.run((tx) => this.baseSeed.run(tx)),
     );
+  }
+
+  /**
+   * After every module's onModuleInit: booking and sales have registered their counts of a branch's
+   * use; a build without one of them does not start (add-branch-management design D1 · R8).
+   */
+  onApplicationBootstrap(): void {
+    this.usage.assertComplete();
   }
 }

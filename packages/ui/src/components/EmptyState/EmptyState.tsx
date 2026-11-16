@@ -11,8 +11,8 @@ import type { Action } from '../types';
 export interface EmptyStateProps {
   /** Translated. */
   readonly title: string;
-  /** Translated: what the area is for and what to do next. */
-  readonly body: string;
+  /** Translated: what the area is for and what to do next; a filtered list may say it in the title alone. */
+  readonly body?: string;
   readonly action?: Action;
 }
 
@@ -24,7 +24,9 @@ export function EmptyState({ title, body, action }: EmptyStateProps) {
     >
       <Inbox aria-hidden className="size-8 text-muted-foreground" />
       <p className="font-semibold">{title}</p>
-      <p className="max-w-prose text-sm text-muted-foreground">{body}</p>
+      {body === undefined ? null : (
+        <p className="max-w-prose text-sm text-muted-foreground">{body}</p>
+      )}
       {action === undefined || action.allowed === false ? null : (
         <Button variant={action.destructive ? 'destructive' : 'primary'} onClick={action.onPress}>
           {action.label}
