@@ -206,3 +206,46 @@ describe('add-settings-store · settings · Maintenance mode is switched by a co
     });
   });
 });
+
+// add-customer-management task 1.8 — customers "The preferred-barber settings are company values with
+// min ≤ window" (Part 3 §10 · owner CM3 ★ · design D9): whole numbers ≥ 1 with no maximum; the bound of
+// the other key comes from its effective value, after the entry's own limit.
+describe('add-customer-management · the preferred-barber settings bound each other', () => {
+  const minVisits = (value: unknown, window: number) =>
+    issuesOf(
+      valueSchema(settingEntry('customer.preferred_barber_min_visits'), {
+        'customer.preferred_barber_window': window,
+      }),
+      value,
+    );
+  const window = (value: unknown, min: number) =>
+    issuesOf(
+      valueSchema(settingEntry('customer.preferred_barber_window'), {
+        'customer.preferred_barber_min_visits': min,
+      }),
+      value,
+    );
+
+  it('Scenario: A minimum within the window — 2 and 5 pass with the window 5', () => {
+    expect(minVisits(2, 5)).toStrictEqual([]);
+    expect(minVisits(5, 5)).toStrictEqual([]);
+  });
+
+  it('Scenario: A minimum above the window — 6 is too_big with maximum 5', () => {
+    expect(minVisits(6, 5)).toMatchObject([{ code: 'too_big', maximum: 5, path: [] }]);
+  });
+
+  it('Scenario: A window below the minimum — 2 is too_small with minimum 3', () => {
+    expect(window(2, 3)).toMatchObject([{ code: 'too_small', minimum: 3, path: [] }]);
+  });
+
+  it('Scenario: Zero — the own limit comes first: too_small with minimum 1', () => {
+    expect(window(0, 3)[0]).toMatchObject({ code: 'too_small', minimum: 1 });
+    expect(minVisits(0, 5)).toMatchObject([{ code: 'too_small', minimum: 1 }]);
+  });
+
+  it('no maximum of their own; without the other value there is no cross-key bound', () => {
+    expect(window(1000, 3)).toStrictEqual([]);
+    expect(issuesOf(schemaOf('customer.preferred_barber_min_visits'), 6)).toStrictEqual([]);
+  });
+});
