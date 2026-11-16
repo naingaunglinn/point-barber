@@ -42,7 +42,7 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout` |
 | `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout` |
 | `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`        |
-| `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
+| `catalog`      | `service_categories`, `services`, `branch_services`, `service_prices` (close only) · reads `employee_service_eligibilities` | `add-service-catalogue`     |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
 | `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |

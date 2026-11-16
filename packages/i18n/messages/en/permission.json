@@ -1,0 +1,8 @@
+{
+  "service": {
+    "view": "View services and categories",
+    "create": "Create services and categories",
+    "update": "Update services and categories",
+    "delete": "Archive services and categories"
+  }
+}

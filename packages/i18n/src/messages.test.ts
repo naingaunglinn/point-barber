@@ -26,6 +26,17 @@ describe('language files', () => {
       'settings',
       'branch',
       'maintenance',
+      'permission',
+    ]);
+  });
+
+  // add-service-catalogue task 1.2 — the label `permission.<code>` of each Part 2 service code.
+  it.each(LOCALES)('labels the four service codes in %s', (locale) => {
+    expect(Object.keys(loadMessages(locale).permission.service)).toStrictEqual([
+      'view',
+      'create',
+      'update',
+      'delete',
     ]);
   });
 

@@ -33,8 +33,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(res.headers['cache-control']).toBe('no-store');
     expect(meResponseSchema.parse(res.body)).toBeDefined();
     // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
-    // (add-walkin-visit-checkout design D3 · API Part 4 §9) and its 2 Part 2 schedule codes
-    // (add-schedule-patterns task 1.3): 21 entries.
+    // (add-walkin-visit-checkout design D3 · API Part 4 §9), its 2 Part 2 schedule codes
+    // (add-schedule-patterns task 1.3) and its 2 Part 2 service codes (add-service-catalogue design
+    // D3 · API Part 2 §12): 23 entries.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
@@ -53,6 +54,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'sale.view',
         'schedule.update',
         'schedule.view',
+        'service.update',
+        'service.view',
         'settings.update',
         'settings.view',
         'visit.delete',
@@ -71,8 +74,17 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
       (g) => !g.code.startsWith('fixture.'),
     );
     // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
-    // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns): 45.
-    expect(catalogue).toHaveLength(45);
+    // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
+    // 4 Part 2 service codes (add-service-catalogue design D3): 49.
+    expect(catalogue).toHaveLength(49);
+    expect(catalogue.map((grant) => grant.code)).toEqual(
+      expect.arrayContaining([
+        'service.view',
+        'service.create',
+        'service.update',
+        'service.delete',
+      ]),
+    );
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
@@ -99,6 +111,10 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         session: { device_label: 'Android · Chrome' },
       });
       expect(body.branches_in_scope).toMatchObject([{ code: 'B3' }]);
+      // services-pricing "The Barber holds none" (add-service-catalogue design D3).
+      expect(
+        (body.grants as { code: string }[]).filter((g) => g.code.startsWith('service.')),
+      ).toStrictEqual([]);
     }
   });
 

@@ -19,6 +19,8 @@ export const NAMESPACES = [
   // add-branch-management (task 1.9 — design D10).
   'branch',
   'maintenance',
+  // add-service-catalogue task 1.2 — `permission.<code>` (AD-L10N-02); each change adds its codes' labels.
+  'permission',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
