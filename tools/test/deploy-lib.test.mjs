@@ -4,7 +4,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Each case starts real bash, so on a busy machine the 5 s default runs out with nothing wrong (the
+// pre-push hook, 05/Nov/2026). A time budget only, as apps/api/vitest.int.config.ts gives: 15 s.
+vi.setConfig({ testTimeout: 15_000 });
 
 // add-staging-deploy tasks 6.5–6.7 — the parts of infra/deploy/lib.sh that need no Docker: the
 // configuration check of spec "The deploy checks the server configuration before it changes anything",
