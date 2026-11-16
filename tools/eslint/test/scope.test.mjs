@@ -124,14 +124,14 @@ describe('add-ci-lint-rules · scope of the A1 file sets', () => {
     ]);
   });
 
-  it('Scenario: A conditional project filter passes (the 17 real calls)', async () => {
+  it('Scenario: A conditional project filter passes (every real call)', async () => {
     const spec = new ESLint({ cwd: root });
     const results = await spec.lintFiles(['e2e/dev-ui/*.spec.ts']);
     const calls = results.flatMap(({ filePath }) =>
       [...readFileSync(filePath, 'utf8').matchAll(/\btest\.skip\(/g)].map(() => filePath),
     );
-    expect(calls).toHaveLength(17);
-    expect(new Set(calls).size).toBe(9);
+    // 17 calls in 9 files on 434fd12; later specs add more, and every one must pass.
+    expect(calls.length).toBeGreaterThanOrEqual(17);
     const found = results.flatMap(({ messages }) => messages.map(({ ruleId }) => ruleId));
     expect(found).not.toContain('playwright/no-skipped-test');
     expect(await options('e2e/dev-ui/layout.spec.ts', 'playwright/no-skipped-test')).toEqual([
