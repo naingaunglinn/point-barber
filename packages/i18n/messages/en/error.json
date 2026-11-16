@@ -56,6 +56,7 @@
   "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode.",
   "already_exists": "This already exists. Check the value and try again.",
   "branch_in_use": "This branch still has {active_assignments} assigned staff, {open_bookings} open bookings and {open_sales} open sales.",
+  "customer_has_active_bookings": "This customer has {count} booked or started bookings. Cancel or finish them first.",
   "setting_scope": "This setting can't be changed here.",
   "maintenance": "The system is under maintenance. Please try again later.",
   "invalid_value": "Choose one of the listed values."

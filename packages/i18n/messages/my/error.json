@@ -56,6 +56,7 @@
   "zawgyi_text": "ဒီစာက Zawgyi ဖြစ်နေပါတယ်။ Unicode နဲ့ ရိုက်ပေးပါ။",
   "already_exists": "ဒါ ရှိပြီးသားပါ။ တန်ဖိုးကို စစ်ပြီး ထပ်လုပ်ပါ။",
   "branch_in_use": "ဒီဆိုင်ခွဲမှာ assign ထားတဲ့ ဝန်ထမ်း {active_assignments} ယောက်၊ မပြီးသေးတဲ့ booking {open_bookings} ခု၊ ငွေမရှင်းရသေးတဲ့ sale {open_sales} ခု ကျန်နေပါသေးတယ်။",
+  "customer_has_active_bookings": "ဒီဧည့်သည်မှာ မပြီးသေးတဲ့ booking {count} ခု ရှိနေပါတယ်။ အရင် cancel ဒါမှမဟုတ် ပြီးအောင် လုပ်ပါ။",
   "setting_scope": "ဒီ setting ကို ဒီနေရာမှာ ပြင်လို့ မရပါ။",
   "maintenance": "စနစ်ကို ပြင်ဆင်နေပါတယ်။ ခဏနေမှ ပြန်ကြိုးစားပါ။",
   "invalid_value": "ပြထားတဲ့ထဲက တစ်ခုကို ရွေးပါ။"
