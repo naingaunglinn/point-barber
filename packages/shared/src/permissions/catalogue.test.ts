@@ -19,6 +19,8 @@ const json: unknown = JSON.parse(
 
 /** The modules of Part 1 §10; the codes of later parts are added by their changes (Part 4 §9 below). */
 const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'settings']);
+/** The Part 2 §12 modules on main so far: `schedule` (add-schedule-patterns, below). */
+const PART2_MODULES = new Set(['schedule']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
 
 const count = <K extends string>(values: readonly K[]) =>
@@ -91,8 +93,8 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     ]);
   });
 
-  it('holds nothing but the codes of Part 1 and Part 4', () => {
-    const modules = new Set([...PART1_MODULES, ...PART4_MODULES]);
+  it('holds nothing but the codes of Parts 1, 2 and 4', () => {
+    const modules = new Set([...PART1_MODULES, ...PART2_MODULES, ...PART4_MODULES]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
 
@@ -148,6 +150,26 @@ describe('add-walkin-visit-checkout · the 22 Part 4 codes', () => {
 
   it('types a Part 4 code', () => {
     const code: PermissionCode = 'sale.finish_override';
+    expect(permissionLevel(code)).toBe('branch');
+  });
+});
+
+// add-schedule-patterns task 1.2 — spec "Two schedule codes exist" (Part 2 §12 · ADR-011 · ADR-012):
+// `schedule.view` and `schedule.update`, kind crud, level branch. `schedule.create` / `schedule.delete`
+// come with add-schedule-roster.
+describe('add-schedule-patterns · scheduling · Two schedule codes exist', () => {
+  it('holds the two codes of this change with their kind, level and label key', () => {
+    const schedule = PERMISSIONS.filter((entry) => PART2_MODULES.has(entry.module));
+    expect(
+      schedule.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['schedule.view', 'crud · branch', 'permission.schedule.view'],
+      ['schedule.update', 'crud · branch', 'permission.schedule.update'],
+    ]);
+  });
+
+  it('types a schedule code', () => {
+    const code: PermissionCode = 'schedule.update';
     expect(permissionLevel(code)).toBe('branch');
   });
 });

@@ -25,12 +25,15 @@ const QUEUE_OPTIONS = { retryLimit: 3, retryBackoff: true, deleteAfterSeconds: 3
 // add-walkin-visit-checkout design D10: the receipt render, 3 attempts in all (2 retries).
 // add-company-profile design D6: the website refresh (ADR-002 — retry 3); its handler comes with
 // add-public-website-pages, until then the jobs wait.
+// add-schedule-patterns design D5: the shift generation (ADR-002 — retry 3, nightly 00:30); its handler
+// and its cron come with the job part of that change.
 const QUEUES = {
   'email.send': QUEUE_OPTIONS,
   'auth.cleanup': QUEUE_OPTIONS,
   'sync.code_tables': QUEUE_OPTIONS,
   'receipt.render': { ...QUEUE_OPTIONS, retryLimit: 2 },
   'site.revalidate': QUEUE_OPTIONS,
+  'shifts.generate': QUEUE_OPTIONS,
 };
 
 async function installPgBoss() {
