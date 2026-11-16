@@ -13,7 +13,7 @@ import { type MessageTree, settingDefinitionProblems, settingTextProblems } from
 
 // add-settings-store tasks 1.1 – 1.3 — the definition file (D-PLT-16 · P1-RULE-08 · design D2 / D3):
 // the entry shape, the key pattern of the DB CHECK, unique keys, every default within its own
-// validation, the typed copy kept current, and the fourteen entries of this change.
+// validation, the typed copy kept current, and the fifteen entries (design D3, and its note).
 const shared = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const definitionsFile = join(shared, 'definitions/settings.json');
 const json = JSON.parse(readFileSync(definitionsFile, 'utf8')) as Record<string, unknown>[];
@@ -125,10 +125,10 @@ describe('add-settings-store · settings · Setting definitions live in one file
   });
 });
 
-// Design D3 — the fourteen entries; add-branch-management appends attendance.default_radius_meters
-// when it merges after this change (design D3 note).
+// Design D3 — the fourteen entries, and attendance.default_radius_meters of add-branch-management,
+// which merged after this change (design D3 note · add-branch-management design D5).
 describe('add-settings-store · settings · The settings of this change and their defaults', () => {
-  it('holds the fourteen keys of design D3 in AD-SET-01 group order, by key inside a module', () => {
+  it('holds the fifteen keys of design D3 and its note in AD-SET-01 group order, by key inside a module', () => {
     expect(SETTINGS.map((entry) => `${entry.module} ${entry.key}`)).toStrictEqual([
       'booking booking.advance_window_days',
       'booking booking.slot_interval_minutes',
@@ -140,6 +140,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'sales sales.service_charge_enabled',
       'sales sales.tax_enabled',
       'closing closing.cash_difference_tolerance_amount',
+      'attendance attendance.default_radius_meters',
       'dashboard dashboard.show_own_earnings_all',
       'system system.default_language',
       'system system.maintenance',
@@ -147,7 +148,7 @@ describe('add-settings-store · settings · The settings of this change and thei
     ]);
   });
 
-  it('the twelve keys of the old DEFAULT_SETTINGS keep their values; the two new ones their defaults', () => {
+  it('the twelve keys of the old DEFAULT_SETTINGS keep their values; the new ones their defaults', () => {
     expect(Object.fromEntries(SETTINGS.map((entry) => [entry.key, entry.default]))).toStrictEqual({
       'booking.slot_interval_minutes': 15,
       'booking.advance_window_days': 14,
@@ -164,6 +165,8 @@ describe('add-settings-store · settings · The settings of this change and thei
       // New in this change: no thank-you line (owner SS1); maintenance off (D-PLT-08).
       'receipt.thank_you_text': null,
       'system.maintenance': { enabled: false },
+      // add-branch-management design D5 — Part 5 §17; a new branch's radius (P1.BR.02).
+      'attendance.default_radius_meters': 100,
     });
   });
 
@@ -229,6 +232,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'sales.service_charge_enabled': {},
       'sales.tax_enabled': {},
       'closing.cash_difference_tolerance_amount': { unit: 'MMK', min: 0 },
+      'attendance.default_radius_meters': { min: 10, max: 2000 },
       'dashboard.show_own_earnings_all': {},
       'system.default_language': { choices: [1, 2] },
       'system.maintenance': {},

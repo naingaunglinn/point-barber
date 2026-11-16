@@ -1,6 +1,7 @@
 // Status columns are smallint codes with named constants (D-DB-03 · API-DATA-04 · AD-IMPL-04):
 // code never compares a status with a number literal, it uses these names. The values are the DBML
-// notes of point-sdd/docs/db (parts 1–8) for the 19 tables of AD-CMP-05. Whichever of
+// notes of point-sdd/docs/db (parts 1–8) for the 19 tables of AD-CMP-05, and branches.status, which the
+// branch screens filter by and show as a badge when INACTIVE (add-branch-management). Whichever of
 // add-shared-ui-components and add-foundation-auth-access merges first creates this file; the other
 // extends it — a constant is never declared twice.
 
@@ -72,6 +73,13 @@ export const ImportJobRowStatus = {
 } as const;
 /** part8. */
 export const BackupRunStatus = { RUNNING: 1, SUCCESS: 2, FAILED: 3 } as const;
+/**
+ * part1 — branches.status. The status chips of the branch list and the INACTIVE badge of the list and
+ * the detail (add-branch-management design D9 · AD-CMP-05 master data: ACTIVE shows no badge), so it has
+ * its table in STATUS_BY_TABLE.
+ */
+export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 
 /** The constants by table name — the key the status map and the language keys use. */
 export const STATUS_BY_TABLE = {
@@ -94,6 +102,8 @@ export const STATUS_BY_TABLE = {
   import_jobs: ImportJobStatus,
   import_job_rows: ImportJobRowStatus,
   backup_runs: BackupRunStatus,
+  // add-branch-management — the branch screens' badge and status chips (design D9).
+  branches: BranchStatus,
 } as const;
 
 export type StatusTable = keyof typeof STATUS_BY_TABLE;
@@ -102,7 +112,7 @@ export type StatusCode<T extends StatusTable> =
   (typeof STATUS_BY_TABLE)[T][keyof (typeof STATUS_BY_TABLE)[T]];
 
 // add-foundation-auth-access — DB Part 1 v3.4, Part 1b v1, Part 8 v1.1 (task 1.2). Not in
-// STATUS_BY_TABLE: no status label shows them (AD-CMP-05). Each set equals the CHECK list of its
+// STATUS_BY_TABLE: no status label shows them (AD-CMP-05) — branches.status, above, now has one. Each set equals the CHECK list of its
 // column in db/source (status.test.ts).
 
 /** part1 — companies.status (add-company-profile — `Company.status`, P1.CO.01). */
@@ -112,10 +122,6 @@ export type CompanyStatus = (typeof CompanyStatus)[keyof typeof CompanyStatus];
 /** part1 — roles.status. */
 export const RoleStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type RoleStatus = (typeof RoleStatus)[keyof typeof RoleStatus];
-
-/** part1 — branches.status. */
-export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
-export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 
 /** part1 — employee_roles.scope_type; COMPANY reaches every branch, also later ones. */
 export const ScopeType = { COMPANY: 1, BRANCHES: 2 } as const;

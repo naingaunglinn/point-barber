@@ -16,6 +16,11 @@ import { FieldMessage } from './FieldMessage';
 export interface FieldError {
   readonly code: string;
   readonly params?: Readonly<Record<string, string | number>>;
+  /**
+   * Translated text shown instead of `error.<code>`, where the screen's language file words the code
+   * for this field ("A branch with this code already exists." for `already_exists` under *Code*).
+   */
+  readonly message?: string;
 }
 
 /** What the control receives: spread it on the input. */
@@ -61,7 +66,9 @@ export function FormField({ label, required = false, helper, error, children }: 
         'aria-required': required || undefined,
       })}
       {error ? (
-        <FieldMessage id={errorId}>{t(errorMessageKey(error.code), error.params)}</FieldMessage>
+        <FieldMessage id={errorId}>
+          {error.message ?? t(errorMessageKey(error.code), error.params)}
+        </FieldMessage>
       ) : null}
       {helper ? (
         <p id={helperId} className="text-sm text-muted-foreground">

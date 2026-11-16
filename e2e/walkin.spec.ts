@@ -100,6 +100,13 @@ async function finishSkip(page: Page): Promise<string> {
   return (await page.getByTestId('success-number').textContent()) ?? '';
 }
 
+/** The step on screen has one <h1>, and it reads as the page's title (AD-A11Y-01). */
+async function expectOneHeading(page: Page): Promise<void> {
+  const heading = page.getByRole('heading', { level: 1 });
+  await expect(heading).toHaveCount(1);
+  await expect(heading).toHaveText(await page.title());
+}
+
 test.describe('14.3 Flow "walk-in cash" — Ko Aung, Haircut 10,000, at most 7 taps', () => {
   for (const [name, language, viewport] of [
     ['MM at 360 × 800', 'my', MOBILE],
@@ -121,10 +128,13 @@ test.describe('14.3 Flow "walk-in cash" — Ko Aung, Haircut 10,000, at most 7 t
       await counter.tap(page.getByTestId('arrival-walk-in'));
       await counter.tap(page.getByTestId('start-chips').getByRole('button').first());
       await counter.tap(page.getByTestId('start-submit'));
+      await expect(page.getByTestId('visit-in-progress')).toBeVisible();
+      await expectOneHeading(page);
       await counter.tap(page.getByTestId('visit-done'));
       // The breakdown toggle is a 44 px target like every other control (AD-A11Y-05 · task 12.9).
       const toggle = await page.getByTestId('checkout-breakdown').locator('summary').boundingBox();
       expect(toggle?.height ?? 0).toBeGreaterThanOrEqual(44);
+      await expectOneHeading(page);
       await counter.tap(page.getByTestId('pay-CASH'));
       const expected = await nextReceipt(aungApi, 'sale');
       // The success panel loads the PDF as it shows (task 13.6 — the tap shares it at once), so the
@@ -132,6 +142,7 @@ test.describe('14.3 Flow "walk-in cash" — Ko Aung, Haircut 10,000, at most 7 t
       const pdf = page.waitForResponse((res) => res.url().includes('/receipt?format=pdf'));
       await counter.tap(page.getByTestId('finish-submit'));
       await expect(page.getByTestId('success-number')).toHaveText(expected);
+      await expectOneHeading(page);
       expect(counter.count).toBeLessThanOrEqual(7);
       const answer = await pdf;
       await page.getByTestId('success-share').click();

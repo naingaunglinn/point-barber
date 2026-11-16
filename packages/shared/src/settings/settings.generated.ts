@@ -124,6 +124,18 @@ export const SETTING_ENTRIES = [
     impact_key: 'settings.closing.cash_difference_tolerance_amount.impact',
   },
   {
+    key: 'attendance.default_radius_meters',
+    module: 'attendance',
+    type: 'number',
+    default: 100,
+    scope: 'company',
+    client_readable: false,
+    validation: { min: 10, max: 2000 },
+    label_key: 'settings.attendance.default_radius_meters.label',
+    help_key: 'settings.attendance.default_radius_meters.help',
+    impact_key: null,
+  },
+  {
     key: 'dashboard.show_own_earnings_all',
     module: 'dashboard',
     type: 'boolean',
