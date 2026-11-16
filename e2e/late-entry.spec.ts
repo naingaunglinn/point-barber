@@ -235,3 +235,26 @@ test.describe('5.3 Continue on another device after START (LE-3)', () => {
     await context.close();
   });
 });
+
+test.describe('6.2 A flagged visit on Today at 320 px', () => {
+  for (const language of ['my', 'en'] as const) {
+    // Myanmar is the wider of the two: the flag, the status and the running time must wrap (AD-QA-01).
+    test(language, async ({ browser }) => {
+      setLanguage(PEOPLE.aung, language);
+      await clearOpenVisits(aungApi);
+      const { context, page } = await pageAs(browser, aung, { width: 320, height: 800 });
+      try {
+        await startLate(page);
+        await page.goto('/');
+        await expect(page.getByTestId('today')).toBeVisible();
+        await expect(page.locator('[data-slot="flag-chip"]')).toBeVisible();
+        const width = await page.evaluate(() => document.documentElement.scrollWidth);
+        expect(width).toBeLessThanOrEqual(320);
+      } finally {
+        await context.close();
+        setLanguage(PEOPLE.aung, 'en');
+        await clearOpenVisits(aungApi);
+      }
+    });
+  }
+});
