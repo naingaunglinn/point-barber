@@ -12,3 +12,10 @@ export const listQuerySchema = z.object({
 });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
+
+/** A repeatable query member (`status=1&status=2`): one value arrives as a string, several as a list. */
+export const repeated = <T extends z.ZodType>(item: T) =>
+  z.preprocess((value): unknown[] => {
+    const list: unknown[] = Array.isArray(value) ? value : [value];
+    return list;
+  }, z.array(item));
