@@ -1,7 +1,18 @@
 import { z } from 'zod';
 
-// A JSON body is read through a schema, never cast (CG-TS-02 · CG-TS-03). The same two functions as
-// @point/shared/testing, which Playwright's loader cannot resolve from source.
+// A JSON body is read through a schema, never cast (CG-TS-02 · CG-TS-03). A copy of
+// @point/shared/testing (add-ci-lint-rules D10), which Playwright's loader cannot resolve from source.
+
+const PREVIEW_LENGTH = 200;
+
+/** The first characters of the body as JSON; a bigint or a circular body is not JSON. */
+function preview(body: unknown): string {
+  try {
+    return String(JSON.stringify(body)).slice(0, PREVIEW_LENGTH);
+  } catch {
+    return '(not JSON)';
+  }
+}
 
 /** A JSON object whose members are not described further. */
 export const looseObject = z.record(z.string(), z.unknown());
@@ -14,9 +25,12 @@ export function parseJson<S extends z.ZodType>(schema: S, value: unknown): z.out
   const parsed = schema.safeParse(value);
   if (parsed.success) return parsed.data;
   const issues = parsed.error.issues
-    .map((issue) => `${issue.path.map(String).join('.')}: ${issue.message}`)
+    .map((issue) => {
+      const where = issue.path.map(String).join('.');
+      return `${where === '' ? '(body)' : where}: ${issue.message}`;
+    })
     .join('; ');
-  throw new Error(`The body does not match its schema — ${issues}`);
+  throw new Error(`The body does not match its schema — ${issues}. Body: ${preview(value)}`);
 }
 
 export const parseJsonText = <S extends z.ZodType>(schema: S, text: string): z.output<S> =>

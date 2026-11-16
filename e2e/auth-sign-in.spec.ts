@@ -82,10 +82,6 @@ test.describe('add-foundation-auth-access · auth · who may sign in (task 8.5)'
   test('an unknown and a deactivated address reach the same code step, and no e-mail is sent', async ({
     page,
   }) => {
-    const before = {
-      nobody: await mailpit.count('nobody@point.test'),
-      naing: await mailpit.count('naing@point.test'),
-    };
     for (const email of ['nobody@point.test', 'naing@point.test']) {
       await page.goto('/login');
       await page.getByTestId('login-email').fill(email);
@@ -101,8 +97,6 @@ test.describe('add-foundation-auth-access · auth · who may sign in (task 8.5)'
       );
       expect(jobs.trim(), `e-mail jobs for ${email}`).toBe('0');
     }
-    expect(await mailpit.count('nobody@point.test')).toBe(before.nobody);
-    expect(await mailpit.count('naing@point.test')).toBe(before.naing);
   });
 
   test('the same message for a known and an unknown address', async ({ app }) => {

@@ -1,6 +1,9 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
+import { z } from 'zod';
+
 import { expect, test } from './fixtures.js';
+import { readJson } from './helpers/json.js';
 import { restartApi, sql } from './helpers/stack.js';
 import {
   DESKTOP,
@@ -120,7 +123,9 @@ test.describe('add-branch-management · organization · Settings › Branches en
     await page.getByTestId('branch-save').click();
     const patch = await updated;
     expect(patch.status()).toBe(200);
-    expect(((await patch.json()) as { phone: string | null }).phone).toBe(B4_PHONE);
+    expect((await readJson(z.object({ phone: z.string().nullable() }), patch)).phone).toBe(
+      B4_PHONE,
+    );
 
     const dialog = await deactivate(page, 'Not opening this year');
     await expect(dialog).toBeHidden();
@@ -199,7 +204,7 @@ test.describe('add-branch-management · organization · Settings › Branches en
     await expect(dialog).toBeHidden();
     await expect(badge(page)).toHaveCount(0);
     const stored = await adminApi.get(`/api/v1/branches/${B3}`);
-    expect(((await stored.json()) as { status: number }).status).toBe(1);
+    expect((await readJson(z.object({ status: z.number() }), stored)).status).toBe(1);
     await context.close();
   });
 });

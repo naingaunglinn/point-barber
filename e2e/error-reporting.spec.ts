@@ -36,12 +36,12 @@ function eventsOf(envelope: string): Record<string, unknown>[] {
 }
 
 /** An error no code catches, thrown in the page after the current task. */
-const throwUncaught = (page: Page) =>
-  page.evaluate(() => {
+const throwUncaught = (page: Page, message = 'e2e uncaught error') =>
+  page.evaluate((text) => {
     setTimeout(() => {
-      throw new Error('e2e uncaught error');
+      throw new Error(text);
     }, 0);
-  });
+  }, message);
 
 test.describe('add-staging-deploy · platform-runtime · Web app errors reach Sentry with a DSN read at run time', () => {
   test('Scenario: An uncaught browser error on the staff host', async ({
@@ -68,8 +68,6 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
           await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         });
         const page = await context.newPage();
-        // The fake clock (CG-TEST-09) runs on with real time until it is moved by `runFor` below.
-        await page.clock.install();
         // `/` opens Today with the query kept (add-walkin-visit-checkout task 10.1); the event's URL
         // has no query string.
         await page.goto('/?branch=B3');
@@ -79,8 +77,12 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
         await expect(page.locator('html')).toHaveAttribute('data-error-reporting', 'ready');
         await throwUncaught(page);
         await expect.poll(() => envelopes.length).toBe(1);
-        await page.clock.runFor(1000);
-        expect(envelopes).toHaveLength(1);
+        // One envelope per error, not a second copy of the first: a different error is sent next
+        // and arrives as the second envelope (no fixed wait — CG-TEST-09; no page.clock, whose Date
+        // stand-in breaks TZDate — e2e/dev-ui/fixtures.ts).
+        await throwUncaught(page, 'e2e second uncaught error');
+        await expect.poll(() => envelopes.length).toBe(2);
+        expect(JSON.stringify(eventsOf(envelopes[1] ?? ''))).toContain('e2e second uncaught error');
         const events = eventsOf(envelopes[0] ?? '');
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
@@ -103,11 +105,11 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
       if (/sentry/i.test(new URL(request.url()).host)) sentry.push(request.url());
     });
     const page = await context.newPage();
-    await page.clock.install();
     await page.goto('/');
     await expect(page.getByTestId('today')).toBeVisible();
     await throwUncaught(page);
-    await page.clock.runFor(2000);
+    // Without a DSN the client is never set up (below: no `ready`, no ingest host in the page), so
+    // nothing can be sent; no wait is needed to show it (CG-TEST-09).
     expect(sentry).toStrictEqual([]);
     expect(await page.content()).not.toContain('ingest.sentry.io');
     await expect(page.locator('html')).not.toHaveAttribute('data-error-reporting', 'ready');

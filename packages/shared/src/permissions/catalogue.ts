@@ -41,7 +41,7 @@ const levelByCode = Object.fromEntries(
   PERMISSIONS.map((entry) => [entry.code, { level: entry.level }]),
 );
 if (!isLevelByCode(levelByCode)) throw new Error('LEVEL_BY_CODE does not match the catalogue');
-export const LEVEL_BY_CODE = levelByCode;
+export const LEVEL_BY_CODE: LevelByCode = levelByCode;
 
 /**
  * `can(me)(code, options)` — the UI mirror of the API's access decision (add-shared-ui-components

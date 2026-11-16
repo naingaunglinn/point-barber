@@ -43,6 +43,10 @@ function put(node: unknown, path: string[], value: unknown): unknown {
     return list;
   }
   const record = isRecord(node) ? node : {};
+  if (rest.length === 0 && value === undefined) {
+    const { [key]: _removed, ...kept } = record;
+    return kept;
+  }
   return { ...record, [key]: next(record[key]) };
 }
 
