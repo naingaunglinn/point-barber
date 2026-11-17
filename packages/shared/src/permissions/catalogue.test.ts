@@ -22,6 +22,8 @@ const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'setting
 /** The Part 2 §12 modules on main so far: `schedule` (add-schedule-patterns, below). */
 const PART2_MODULES = new Set(['schedule']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
+/** The Part 3 §7 modules on main so far: `booking_cancel_reason` (add-booking-cancel-reasons, below). */
+const PART3_MODULES = new Set(['booking_cancel_reason']);
 
 const count = <K extends string>(values: readonly K[]) =>
   values.reduce<Record<string, number>>(
@@ -93,8 +95,13 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     ]);
   });
 
-  it('holds nothing but the codes of Parts 1, 2 and 4', () => {
-    const modules = new Set([...PART1_MODULES, ...PART2_MODULES, ...PART4_MODULES]);
+  it('holds nothing but the codes of Parts 1, 2, 3 and 4', () => {
+    const modules = new Set([
+      ...PART1_MODULES,
+      ...PART2_MODULES,
+      ...PART3_MODULES,
+      ...PART4_MODULES,
+    ]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
 
@@ -151,6 +158,28 @@ describe('add-walkin-visit-checkout · the 22 Part 4 codes', () => {
   it('types a Part 4 code', () => {
     const code: PermissionCode = 'sale.finish_override';
     expect(permissionLevel(code)).toBe('branch');
+  });
+});
+
+// add-booking-cancel-reasons task 1.2 — spec "Four cancel-reason permission codes exist at company level"
+// (Part 3 §7 · ADR-011 · ADR-012 · D-ROLE-09). The sync that gives them to the company-admin role, and
+// the Manager and Barber seed roles without them: base-seed.int.test.ts.
+describe('add-booking-cancel-reasons · booking · Four cancel-reason permission codes exist at company level', () => {
+  it('holds the four codes of the Part 3 table, each crud · company with its label key', () => {
+    const reasons = PERMISSIONS.filter((entry) => PART3_MODULES.has(entry.module));
+    expect(
+      reasons.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['booking_cancel_reason.view', 'crud · company', 'permission.booking_cancel_reason.view'],
+      ['booking_cancel_reason.create', 'crud · company', 'permission.booking_cancel_reason.create'],
+      ['booking_cancel_reason.update', 'crud · company', 'permission.booking_cancel_reason.update'],
+      ['booking_cancel_reason.delete', 'crud · company', 'permission.booking_cancel_reason.delete'],
+    ]);
+  });
+
+  it('types a cancel-reason code', () => {
+    const code: PermissionCode = 'booking_cancel_reason.update';
+    expect(permissionLevel(code)).toBe('company');
   });
 });
 

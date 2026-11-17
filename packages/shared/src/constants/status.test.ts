@@ -11,6 +11,8 @@ import {
   AttachmentKind,
   AuditSource,
   BranchStatus,
+  CancelReasonStatus,
+  CancelReasonSystemCode,
   CompanyStatus,
   CustomerStatus,
   DiscountType,
@@ -145,6 +147,9 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['AttachmentKind', AttachmentKind, 'attachments', 'kind'],
     // add-company-profile task 1.5 — Company.status
     ['CompanyStatus', CompanyStatus, 'companies', 'status'],
+    // add-booking-cancel-reasons task 1.3 — the cancel-reason master list
+    ['CancelReasonStatus', CancelReasonStatus, 'booking_cancel_reasons', 'status'],
+    ['CancelReasonSystemCode', CancelReasonSystemCode, 'booking_cancel_reasons', 'system_code'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
   });

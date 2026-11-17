@@ -47,6 +47,7 @@ const TABLES = [
   'employee_service_eligibilities',
   'branch_opening_hours',
   'schedule_patterns',
+  'booking_cancel_reasons',
 ] as const;
 
 async function counts(): Promise<Record<string, number>> {
@@ -72,9 +73,9 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (45) + Manager 6 Part 1 + 13 Part 4 + 2 schedule + Barber 2 Part 4
-      // (add-walkin-visit-checkout · add-schedule-patterns).
-      role_permissions: 68,
+      // Admin every code (49) + Manager 6 Part 1 + 13 Part 4 + 2 schedule + Barber 2 Part 4
+      // (add-walkin-visit-checkout · add-schedule-patterns · add-booking-cancel-reasons).
+      role_permissions: 72,
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,
@@ -87,6 +88,8 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       branch_opening_hours: 21,
       // add-schedule-patterns module 300 — spec-fixtures §10.1: 6 + 6 + 5 + 2 + 6 + 6.
       schedule_patterns: 31,
+      // add-booking-cancel-reasons — the four presets of the base seed (design D3), no fixture module.
+      booking_cancel_reasons: 4,
     });
     await runSeed(t.app, FIXTURES);
     expect(await counts()).toStrictEqual(first);

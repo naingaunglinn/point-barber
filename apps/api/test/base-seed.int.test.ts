@@ -187,6 +187,26 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
   });
 });
 
+// add-booking-cancel-reasons task 1.2 — spec "Four cancel-reason permission codes exist at company
+// level" (Part 3 §7 · ADR-011 · ADR-012 · D-ROLE-09 · P1-RULE-12): the sync gives all four to the
+// company-admin role; the Manager and Barber seed sets hold none. GET /v1/me: me.int.test.ts.
+describe('add-booking-cancel-reasons · booking · Four cancel-reason permission codes exist at company level', () => {
+  it('Scenario: The admin holds the four codes · Manager and barber hold none', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const reasons = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('booking_cancel_reason.'));
+    expect(reasons('Admin')).toStrictEqual([
+      'booking_cancel_reason.create',
+      'booking_cancel_reason.delete',
+      'booking_cancel_reason.update',
+      'booking_cancel_reason.view',
+    ]);
+    expect(reasons('Manager')).toStrictEqual([]);
+    expect(reasons('Barber')).toStrictEqual([]);
+  });
+});
+
 describe('add-foundation-auth-access · access · A company admin holds all five role codes at company scope and receives every new code', () => {
   it('Scenario: The seed admin qualifies · A manager with one role code does not qualify', async () => {
     await firstStart();

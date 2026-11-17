@@ -35,18 +35,19 @@ adds rows for the tables it first writes. The list starts with `add-walkin-visit
 written by earlier changes (`people`, `auth`, `platform`) are not listed yet — the table-ownership
 guard of `add-ci-guard-rails` completes the list before it reads it.
 
-| Module         | Writes                                                                                                                      | Added by                    |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| `delivery`     | `visits`                                                                                                                    | `add-walkin-visit-checkout` |
-| `sales`        | `sales`, `sale_items`, `receipt_counters`, `payment_methods`, `payments`, `refunds`                                         | `add-walkin-visit-checkout` |
-| `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout` |
-| `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout` |
-| `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`        |
-| `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
-| `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
-| `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
-| `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
-| `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`     |
+| Module         | Writes                                                                                                                      | Added by                     |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `delivery`     | `visits`                                                                                                                    | `add-walkin-visit-checkout`  |
+| `sales`        | `sales`, `sale_items`, `receipt_counters`, `payment_methods`, `payments`, `refunds`                                         | `add-walkin-visit-checkout`  |
+| `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout`  |
+| `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout`  |
+| `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`         |
+| `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout`  |
+| `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout`  |
+| `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout`  |
+| `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`        |
+| `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`      |
+| `booking`      | `booking_cancel_reasons` — the P3.CRS writes and the base-seed step `cancel reasons` (order 40, after payment methods 30)   | `add-booking-cancel-reasons` |
 
 The website refresh (API-PUB-03 · ADR-006) has one owner: `platform/website` — `SiteContent.touch(tx,
 tags)`, which every writer of website data calls inside its write transaction; it raises

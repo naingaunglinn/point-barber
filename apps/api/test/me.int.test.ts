@@ -71,8 +71,19 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
       (g) => !g.code.startsWith('fixture.'),
     );
     // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
-    // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns): 45.
-    expect(catalogue).toHaveLength(45);
+    // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
+    // 4 Part 3 cancel-reason codes (add-booking-cancel-reasons): 49.
+    expect(catalogue).toHaveLength(49);
+    // booking "Four cancel-reason permission codes exist at company level" — Scenario: The admin holds
+    // the four codes (Ma Hnin's list above and Ko Aung's below hold none).
+    expect(catalogue.map((grant) => grant.code)).toEqual(
+      expect.arrayContaining([
+        'booking_cancel_reason.view',
+        'booking_cancel_reason.create',
+        'booking_cancel_reason.update',
+        'booking_cancel_reason.delete',
+      ]),
+    );
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
