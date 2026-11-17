@@ -59,7 +59,19 @@ export class OtpService {
   /** The issuing work: the same call for every address; only an eligible one gets a code. */
   private async issue(email: string, ip: string | null): Promise<void> {
     const user = await this.logins.userByEmail(email);
-    if (user === null || !(await this.signIn.eligible(user))) return;
+    if (user === null || !(await this.signIn.eligible(user))) {
+      // REVERT CHECK (add-ci-lint-rules task 5.2) — never merge: an address that may not sign in gets a job.
+      await this.runner.run(async (tx) => {
+        await this.mail.enqueue(
+          tx,
+          OTP_TEMPLATE,
+          email,
+          { code: '000000' },
+          { expiresAt: this.clock.now(), locale: null },
+        );
+      });
+      return;
+    }
     await this.runner.run(async (tx) => {
       await this.logins.lockUser(tx, user.id);
       const at = this.clock.now();

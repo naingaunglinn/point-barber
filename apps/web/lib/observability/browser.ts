@@ -18,12 +18,15 @@ export function startBrowserReporting(options: ReportingOptions): Promise<Sdk> {
       integrations: [
         Sentry.globalHandlersIntegration(),
         Sentry.linkedErrorsIntegration(),
-        Sentry.dedupeIntegration(),
         // The page URL (its query string is cut by beforeSend) and the browser.
         Sentry.httpContextIntegration(),
       ],
     });
     // The end-to-end test waits for this before it throws (add-staging-deploy task 5.3).
+    // REVERT CHECK (add-ci-lint-rules task 5.2) — never merge: every uncaught error is sent twice.
+    window.addEventListener('error', (event) => {
+      Sentry.captureException(event.error);
+    });
     document.documentElement.dataset.errorReporting = 'ready';
     return Sentry;
   });

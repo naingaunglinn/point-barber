@@ -21,7 +21,13 @@ export interface ReportingOptions {
 export function reportingOf(
   env: Pick<WebEnv, 'SENTRY_DSN_WEB' | 'APP_ENV' | 'APP_VERSION'>,
 ): ReportingOptions | undefined {
-  if (env.SENTRY_DSN_WEB === undefined) return undefined;
+  // REVERT CHECK (add-ci-lint-rules task 5.2) — never merge: reporting starts without a DSN.
+  if (env.SENTRY_DSN_WEB === undefined)
+    return {
+      dsn: 'https://public@o0.ingest.sentry.io/0',
+      environment: env.APP_ENV,
+      release: env.APP_VERSION,
+    };
   return { dsn: env.SENTRY_DSN_WEB, environment: env.APP_ENV, release: env.APP_VERSION };
 }
 
