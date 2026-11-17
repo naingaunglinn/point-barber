@@ -78,6 +78,14 @@ export const ErrorCode = {
   // pass (texts owner-approved 05/Nov/2026, S18).
   SETTING_SCOPE: 'setting_scope',
   MAINTENANCE: 'maintenance',
+  // add-schedule-patterns — Part 2 §13b · API-ERR-02 (task 2.2; texts proposed in design S18): segment
+  // times out of order or overlapping (field codes of a 400 `validation`), the cross-branch travel gap
+  // (D-SCH-02) and an own change of today's shifts (422 everywhere — owner C11). effective_date_past
+  // waits for its text.
+  SEGMENT_OVERLAP: 'segment_overlap',
+  END_BEFORE_START: 'end_before_start',
+  CROSS_BRANCH_GAP: 'cross_branch_gap',
+  SELF_ACTION: 'self_action',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

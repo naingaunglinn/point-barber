@@ -59,5 +59,9 @@
   "customer_has_active_bookings": "ဒီဧည့်သည်မှာ မပြီးသေးတဲ့ booking {count} ခု ရှိနေပါတယ်။ အရင် cancel ဒါမှမဟုတ် ပြီးအောင် လုပ်ပါ။",
   "setting_scope": "ဒီ setting ကို ဒီနေရာမှာ ပြင်လို့ မရပါ။",
   "maintenance": "စနစ်ကို ပြင်ဆင်နေပါတယ်။ ခဏနေမှ ပြန်ကြိုးစားပါ။",
-  "invalid_value": "ပြထားတဲ့ထဲက တစ်ခုကို ရွေးပါ။"
+  "invalid_value": "ပြထားတဲ့ထဲက တစ်ခုကို ရွေးပါ။",
+  "segment_overlap": "အချိန်ချင်း ထပ်နေပါတယ်။",
+  "end_before_start": "ပြီးချိန်က စချိန်ထက် နောက်ကျရပါမယ်။",
+  "cross_branch_gap": "ဆိုင်ခွဲ ပြောင်းရင် {needed} မိနစ် ခြားရပါမယ် ({branchA} {endA} ပြီး၊ {branchB} {startB} စ)။",
+  "self_action": "ဒီနေ့ ကိုယ့် shift ကို ကိုယ်တိုင် မပြောင်းရပါ — တခြား manager ကို ပြောပါ။"
 }

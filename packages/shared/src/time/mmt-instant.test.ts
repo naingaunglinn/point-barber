@@ -45,3 +45,12 @@ describe('mmtTimeOfDay', () => {
     expect(mmtTimeOfDay(mmtInstant('2026-10-03', '23:55'))).toBe('23:55');
   });
 });
+
+// add-schedule-patterns task 2.3 — the planner reads a segment time on a date through mmtInstant
+// (the zonedTimeToInstant of design D4 — one helper, not two).
+describe('mmtInstant — the instants of a shift (design D4 step 4)', () => {
+  it('Ko Aung on 06/Oct/2026: 09:00 – 21:00 in Myanmar Time', () => {
+    expect(mmtInstant('2026-10-06', '09:00')).toBe('2026-10-06T09:00:00+06:30');
+    expect(mmtInstant('2026-10-06', '21:00')).toBe('2026-10-06T21:00:00+06:30');
+  });
+});
