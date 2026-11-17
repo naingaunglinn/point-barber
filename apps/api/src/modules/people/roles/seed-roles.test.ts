@@ -8,6 +8,7 @@ import {
   MANAGER_PART4_SEED_CODES,
   MANAGER_SCHEDULE_SEED_CODES,
   MANAGER_SEED_CODES,
+  MANAGER_WEBSITE_SEED_CODES,
 } from './seed-roles.js';
 
 // add-walkin-visit-checkout task 1.4 — the Part 4 seed codes of Manager and Barber (Part 4 §9 ·
@@ -60,6 +61,7 @@ describe('seed roles — Part 4 codes', () => {
       ...MANAGER_SEED_CODES,
       ...MANAGER_PART4_SEED_CODES,
       ...MANAGER_SCHEDULE_SEED_CODES,
+      ...MANAGER_WEBSITE_SEED_CODES,
       ...BARBER_SEED_CODES,
     ])
       expect(known.has(code)).toBe(true);
@@ -109,5 +111,29 @@ describe('seed roles — Part 3 customer codes', () => {
   it('names only codes of the catalogue', () => {
     for (const code of [...MANAGER_PART3_SEED_CODES, ...BARBER_PART3_SEED_CODES])
       expect(known.has(code)).toBe(true);
+  });
+});
+
+// add-website-management task 1.2 — spec "Website has two permission codes with the mixed level"
+// (Part 8 §14 · D-ROLE-09): the Manager seed holds both website codes, the Barber seed neither. The
+// roles on an empty database: base-seed.int.test.ts; the grants through /v1/me: me.int.test.ts.
+describe('seed roles — Part 8 website codes', () => {
+  it('Manager: website.view and website.update', () => {
+    expect([...MANAGER_WEBSITE_SEED_CODES]).toStrictEqual(['website.view', 'website.update']);
+  });
+
+  it('Barber: no website code', () => {
+    const barber = [...BARBER_PART3_SEED_CODES, ...BARBER_SEED_CODES];
+    expect(barber.filter((code) => code.startsWith('website.'))).toStrictEqual([]);
+  });
+
+  it('the other Manager sets hold no website code of their own', () => {
+    const others = [
+      ...MANAGER_SEED_CODES,
+      ...MANAGER_PART3_SEED_CODES,
+      ...MANAGER_PART4_SEED_CODES,
+      ...MANAGER_SCHEDULE_SEED_CODES,
+    ];
+    expect(others.filter((code) => code.startsWith('website.'))).toStrictEqual([]);
   });
 });

@@ -34,8 +34,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(meResponseSchema.parse(res.body)).toBeDefined();
     // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
     // (add-walkin-visit-checkout design D3 · API Part 4 §9), its 2 Part 2 schedule codes
-    // (add-schedule-patterns task 1.3) and its 3 Part 3 customer codes (add-customer-management task
-    // 1.3 · API Part 3 §7): 24 entries.
+    // (add-schedule-patterns task 1.3), its 3 Part 3 customer codes (add-customer-management task
+    // 1.3 · API Part 3 §7) and its 2 Part 8 website codes (add-website-management task 1.2 — spec
+    // "Website has two permission codes …", Scenario: The seed roles): 26 entries.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
@@ -62,6 +63,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'visit.delete',
         'visit.update',
         'visit.view',
+        'website.update',
+        'website.view',
       ].map((code) => ({ code, scope_type: 2, branch_ids: [B3] })),
     );
     expect(res.body.branches_in_scope).toMatchObject([{ code: 'B3', name_en: 'Point 3.0' }]);
@@ -76,8 +79,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     );
     // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
     // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
-    // 4 Part 3 customer codes (add-customer-management): 49.
-    expect(catalogue).toHaveLength(49);
+    // 4 Part 3 customer codes (add-customer-management) + the 2 Part 8 website codes
+    // (add-website-management task 1.2): 51.
+    expect(catalogue).toHaveLength(51);
     // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management).
     expect(catalogue.map((grant) => grant.code)).toEqual(
       expect.arrayContaining([
@@ -87,6 +91,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'customer.delete',
       ]),
     );
+    expect(
+      catalogue.map((grant) => grant.code).filter((code) => code.startsWith('website.')),
+    ).toStrictEqual(['website.update', 'website.view']);
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
@@ -116,6 +123,10 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         session: { device_label: 'Android · Chrome' },
       });
       expect(body.branches_in_scope).toMatchObject([{ code: 'B3' }]);
+      // add-website-management task 1.2 — the Barber seed holds no website code (Part 8 §14).
+      expect(
+        (body.grants as { code: string }[]).filter((g) => g.code.startsWith('website.')),
+      ).toStrictEqual([]);
     }
   });
 

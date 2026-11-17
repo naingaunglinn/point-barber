@@ -72,9 +72,10 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (49) + Manager 6 Part 1 + 3 Part 3 + 13 Part 4 + 2 schedule + Barber 2 Part 3
-      // + 2 Part 4 (add-walkin-visit-checkout · add-schedule-patterns · add-customer-management).
-      role_permissions: 77,
+      // Admin every code (51) + Manager 6 Part 1 + 3 Part 3 + 13 Part 4 + 2 schedule + 2 website + Barber
+      // 2 Part 3 + 2 Part 4 (add-walkin-visit-checkout · add-schedule-patterns · add-customer-management ·
+      // add-website-management).
+      role_permissions: 81,
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,

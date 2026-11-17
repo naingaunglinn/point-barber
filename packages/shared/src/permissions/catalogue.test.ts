@@ -24,6 +24,8 @@ const PART2_MODULES = new Set(['schedule']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
 /** Part 3 §7 — add-customer-management adds the `customer` module; `booking.*` come with their changes. */
 const PART3_MODULES = new Set(['customer']);
+/** The Part 8 §14 modules on main so far: `website` (add-website-management, below). */
+const PART8_MODULES = new Set(['website']);
 
 const count = <K extends string>(values: readonly K[]) =>
   values.reduce<Record<string, number>>(
@@ -95,12 +97,13 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     ]);
   });
 
-  it('holds nothing but the codes of Parts 1, 2, 3 and 4', () => {
+  it('holds nothing but the codes of Parts 1, 2, 3, 4 and 8', () => {
     const modules = new Set([
       ...PART1_MODULES,
       ...PART2_MODULES,
       ...PART3_MODULES,
       ...PART4_MODULES,
+      ...PART8_MODULES,
     ]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
@@ -200,6 +203,25 @@ describe('add-customer-management · the four Part 3 customer codes', () => {
   it('types a Part 3 code', () => {
     const code: PermissionCode = 'customer.update';
     expect(permissionLevel(code)).toBe('shared');
+  });
+});
+
+// add-website-management task 1.2 — spec "Website has two permission codes with the mixed level"
+// (Part 8 §14 · P8-RULE-01 · ADR-011 · ADR-012 — owner F7: one `website.update`, no branch twin).
+describe('add-website-management · website · Website has two permission codes with the mixed level', () => {
+  it('holds the two codes of this change with their kind, level and label key', () => {
+    const website = PERMISSIONS.filter((entry) => PART8_MODULES.has(entry.module));
+    expect(
+      website.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['website.view', 'crud · mixed', 'permission.website.view'],
+      ['website.update', 'crud · mixed', 'permission.website.update'],
+    ]);
+  });
+
+  it('types a website code', () => {
+    const code: PermissionCode = 'website.update';
+    expect(permissionLevel(code)).toBe('mixed');
   });
 });
 
