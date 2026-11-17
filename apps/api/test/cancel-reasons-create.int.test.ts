@@ -162,3 +162,41 @@ describe('add-booking-cancel-reasons · booking · The Myanmar name of a cancel 
     expect(res.status).toBe(201);
   });
 });
+
+// A2 recorded readings (the lead's answers of 17/Nov/2026, following the locked texts named):
+// an empty English name is stored as NULL (AD-L10N-03), and Zawgyi in a name is refused before any
+// lookup or write (API-SHAPE-05 · AD-FORM-13 · CG-API-03).
+// "Example name" typed with a Zawgyi keyboard (the sample of branches-create.int.test.ts).
+const ZAWGYI = 'အမွတ္ ၃၊ စမ္းသပ္လမ္း';
+
+describe('add-booking-cancel-reasons · booking · recorded readings of A2', () => {
+  it('a blank English name is stored as NULL', async () => {
+    const res = await create(kyawZin, { name_mm: 'မိုးရွာ', name_en: '   ' });
+    expect(res.status).toBe(201);
+    expect(res.body.name_en).toBeNull();
+    const row = await t.prisma.booking_cancel_reasons.findUniqueOrThrow({
+      where: { id: res.body.id },
+    });
+    expect(row.name_en).toBeNull();
+  });
+
+  it('Zawgyi in either name → 400 zawgyi_text, nothing written', async () => {
+    const res = await create(kyawZin, { name_mm: ZAWGYI, name_en: ZAWGYI });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      code: 'zawgyi_text',
+      errors: [
+        { field: 'name_mm', code: 'zawgyi_text' },
+        { field: 'name_en', code: 'zawgyi_text' },
+      ],
+    });
+    expect(await rows()).toBe(4);
+    expect(await auditOf(res)).toStrictEqual([]);
+  });
+
+  it('Zawgyi is answered before a taken name', async () => {
+    const res = await create(kyawZin, { name_mm: 'Other', name_en: ZAWGYI });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('zawgyi_text');
+  });
+});

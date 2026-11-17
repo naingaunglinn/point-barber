@@ -4,6 +4,8 @@ import {
   type CancelReasonCreate,
   CancelReasonStatus,
   ErrorCode,
+  type FieldError,
+  isZawgyi,
 } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
@@ -22,6 +24,23 @@ import { toCancelReason } from './cancel-reason-reads.js';
 export const CANCEL_REASON_CREATE = 'booking_cancel_reason.create';
 const ENTITY = 'booking_cancel_reasons';
 
+/**
+ * Zawgyi text in a name is refused, one `errors[]` item per member (API-SHAPE-05 · AD-FORM-13 — the
+ * check branch and company apply; recorded reading of A2), before any lookup or write.
+ */
+export function assertNoZawgyi(names: {
+  readonly name_mm?: string;
+  readonly name_en?: string | null;
+}): void {
+  const errors: FieldError[] = (['name_mm', 'name_en'] as const)
+    .filter((member) => {
+      const text = names[member];
+      return typeof text === 'string' && isZawgyi(text);
+    })
+    .map((field) => ({ field, code: ErrorCode.ZAWGYI_TEXT }));
+  if (errors.length > 0) throw new ProblemException(ErrorCode.ZAWGYI_TEXT, 400, { errors });
+}
+
 @Injectable()
 export class CancelReasonWrites {
   constructor(
@@ -37,6 +56,7 @@ export class CancelReasonWrites {
    * last unless a `sort_order` is sent (owner CR1).
    */
   async create(tx: Tx, body: CancelReasonCreate): Promise<CancelReason> {
+    assertNoZawgyi(body);
     const companyId = await this.company.id(tx);
     if (await this.repository.nameTaken(tx, companyId, body.name_mm)) {
       throw new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
