@@ -7,6 +7,7 @@ import tseslint from 'typescript-eslint';
 import { describe, expect, it } from 'vitest';
 
 import web from '../web.mjs';
+import { withoutTypeChecked } from './lib.mjs';
 
 // The fixtures are excluded from `pnpm lint` (root config). Here each one is linted with the rules
 // of web.mjs alone, under a path inside apps/web or packages/ui so that the file globs apply.
@@ -18,7 +19,7 @@ const eslint = new ESLint({
   overrideConfigFile: true,
   overrideConfig: [
     { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
-    ...web,
+    ...withoutTypeChecked(web),
   ],
 });
 

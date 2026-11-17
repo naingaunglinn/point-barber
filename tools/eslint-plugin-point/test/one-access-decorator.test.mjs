@@ -7,6 +7,7 @@ import tseslint from 'typescript-eslint';
 import { describe, expect, it } from 'vitest';
 
 import api from '../../eslint/api.mjs';
+import { withoutTypeChecked } from '../../eslint/test/lib.mjs';
 import point from '../index.mjs';
 import { ROUTE_DECORATORS } from '../rules/one-access-decorator.mjs';
 
@@ -65,7 +66,7 @@ describe('add-repo-scaffold · platform-runtime · Every endpoint declares exact
       overrideConfigFile: true,
       overrideConfig: [
         { files: ['**/*.ts'], languageOptions: { parser: tseslint.parser } },
-        ...api,
+        ...withoutTypeChecked(api),
       ],
     });
     const results = await real.lintFiles([

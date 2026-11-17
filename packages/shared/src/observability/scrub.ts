@@ -46,13 +46,15 @@ export interface ScrubbableEvent {
   request?: { url?: string | undefined; method?: string | undefined } | undefined;
   exception?: { values?: { value?: string | undefined }[] | undefined } | undefined;
   extra?: object | undefined;
+  user?: unknown;
+  breadcrumbs?: unknown;
   contexts?: object | undefined;
 }
 
 /** `beforeSend`: a copy of the event with nothing of the list above in it. */
 export function scrubEvent<E extends ScrubbableEvent>(event: E): E {
   const { request, exception, extra, contexts } = event;
-  const scrubbed: Record<string, unknown> = { ...(event as Record<string, unknown>) };
+  const scrubbed = Object.assign({}, event);
   if (event.message !== undefined) scrubbed.message = redactText(event.message);
   if (request !== undefined) {
     scrubbed.request = {
@@ -72,5 +74,5 @@ export function scrubEvent<E extends ScrubbableEvent>(event: E): E {
   if (contexts !== undefined) scrubbed.contexts = withoutDenied(contexts);
   delete scrubbed.user;
   delete scrubbed.breadcrumbs;
-  return scrubbed as E;
+  return scrubbed;
 }

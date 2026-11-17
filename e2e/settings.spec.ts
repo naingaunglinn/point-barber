@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
 import type { APIRequestContext, Page } from '@playwright/test';
+import { z } from 'zod';
 
 import { expect, test } from './fixtures.js';
+import { meClock, readJson } from './helpers/json.js';
 import { APP_HEADERS } from './helpers/sign-in.js';
 import { restartApi, sql } from './helpers/stack.js';
 import {
@@ -171,14 +173,11 @@ test('7.3 Flow "maintenance" — on with an expected end, the notice on the phon
     await desk.page.goto('/settings/maintenance');
     await desk.page.getByTestId('maintenance-switch').click();
     // The expected end: today (the server's date) at 11:55 PM.
-    const me = (await (await adminApi.get('/api/v1/me')).json()) as {
-      system: { server_time: string };
-    };
-    const [year, month, day] = me.system.server_time.slice(0, 10).split('-') as [
-      string,
-      string,
-      string,
-    ];
+    const me = await readJson(meClock, await adminApi.get('/api/v1/me'));
+    const [year, month, day] = me.system.server_time.slice(0, 10).split('-');
+    if (year === undefined || month === undefined || day === undefined) {
+      throw new Error(`Not a date: ${me.system.server_time}`);
+    }
     const MONTHS = [
       'Jan',
       'Feb',
@@ -253,7 +252,10 @@ test('7.4 Flow "thank-you text" — "Thank you!" on the receipt of Ko Aung\'s ca
       data: { branch_id: branchId('B3'), items: [{ service_id: haircut }] },
     });
     expect(started.status()).toBe(201);
-    const visit = (await started.json()) as { id: string; sale: { id: string } };
+    const visit = await readJson(
+      z.object({ id: z.string(), sale: z.object({ id: z.string() }) }),
+      started,
+    );
     const paid = await aungApi.post(`/api/v1/sales/${visit.sale.id}/payments`, {
       headers: { ...APP_HEADERS, 'Idempotency-Key': randomUUID() },
       data: { payment_method_id: cash, amount: 10000 },
@@ -273,9 +275,11 @@ test('7.4 Flow "thank-you text" — "Thank you!" on the receipt of Ko Aung\'s ca
     // The receipt's footer carries the English text (the PDF's text is read back by the renderer's
     // integration test — document-renderer.int.test.ts); the PDF is served.
     const receipt = await aungApi.get(`/api/v1/sales/${visit.sale.id}/receipt?format=json`);
-    expect(
-      ((await receipt.json()) as { footer: { thank_you: string | null } }).footer.thank_you,
-    ).toBe('Thank you!');
+    const { footer } = await readJson(
+      z.object({ footer: z.object({ thank_you: z.string().nullable() }) }),
+      receipt,
+    );
+    expect(footer.thank_you).toBe('Thank you!');
     const pdf = await aungApi.get(`/api/v1/sales/${visit.sale.id}/receipt?format=pdf`);
     expect(pdf.status()).toBe(200);
     expect(pdf.headers()['content-type']).toContain('application/pdf');

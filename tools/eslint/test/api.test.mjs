@@ -7,6 +7,7 @@ import tseslint from 'typescript-eslint';
 import { describe, expect, it } from 'vitest';
 
 import api from '../api.mjs';
+import { withoutTypeChecked } from './lib.mjs';
 
 // The fixtures are excluded from `pnpm lint` (root config). Here each one is linted with the rules
 // of api.mjs alone, under a path inside apps/api or packages/shared so that the file globs apply.
@@ -18,7 +19,7 @@ const eslint = new ESLint({
   overrideConfigFile: true,
   overrideConfig: [
     { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
-    ...api,
+    ...withoutTypeChecked(api),
   ],
 });
 
@@ -89,9 +90,17 @@ describe('tools/eslint/api.mjs (AD-IMPL-05 · CG-DB-03 · CG-SEC-05 · design D1
   });
 
   it.each(SCOPES)('fails on process.env outside the config module (%s)', async (scope) => {
-    expect(await lint(fixture('process-env.ts'), `${scope}/process-env.ts`)).toEqual([
-      { ruleId: 'n/no-process-env', message: expect.any(String) },
-    ]);
+    // packages/shared/src also reports the `process` global (CG-ARCH-07 · add-ci-lint-rules).
+    const global = {
+      ruleId: 'no-restricted-globals',
+      message: expect.stringContaining('CG-ARCH-07'),
+    };
+    const reported = await lint(fixture('process-env.ts'), `${scope}/process-env.ts`);
+    expect(reported).toEqual(
+      scope.startsWith('packages/shared')
+        ? [global, { ruleId: 'n/no-process-env', message: expect.any(String) }]
+        : [{ ruleId: 'n/no-process-env', message: expect.any(String) }],
+    );
   });
 
   // D19: packages/documents reads no environment (PR #5 review).

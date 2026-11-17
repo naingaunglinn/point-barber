@@ -31,7 +31,7 @@ function businessDate(date: TZDate): BusinessDate {
 /** `DD/MM/YYYY` or `DD/MMM/YYYY` (Myanmar digits too) → `YYYY-MM-DD`, or `date_invalid`. */
 export function parseDateInput(text: string): BusinessDate | 'date_invalid' {
   const match = TYPED.exec(normalizeDigits(text).trim());
-  if (!match) return 'date_invalid';
+  if (match === null) return 'date_invalid';
   const [, dd = '', mm = '', yyyy = ''] = match;
   const month = /^\d+$/.test(mm) ? Number(mm) : MONTHS.indexOf(mm.toLowerCase()) + 1;
   if (month < 1 || month > 12) return 'date_invalid';
@@ -49,7 +49,7 @@ export function dateRangeForPreset(
   today: BusinessDate,
 ): { from: BusinessDate; to: BusinessDate } {
   const match = CALENDAR_DATE.exec(today);
-  if (!match) throw new RangeError(`Not a business date: ${today}`);
+  if (match === null) throw new RangeError(`Not a business date: ${today}`);
   const now = day(Number(match[1]), Number(match[2]), Number(match[3]));
   const range = (from: TZDate, to: TZDate) => ({ from: businessDate(from), to: businessDate(to) });
   switch (preset) {
