@@ -4,6 +4,19 @@ import { BRANCHES, COMPANY } from './010-organization.mjs';
 import { JOIN_DATE, PEOPLE } from './020-people.mjs';
 import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
+import {
+  EFFECTIVE_FROM as PATTERN_FROM,
+  PATTERN_ROWS,
+  PATTERNS,
+} from './300-schedule-patterns.mjs';
+import {
+  FIRST_ROW as SCHEDULE_GRANT_ROW,
+  GRANTS as SCHEDULE_GRANTS,
+} from './310-schedule-grants.mjs';
+import {
+  BARBER_PART4_CODES,
+  MANAGER_PART4_CODES,
+} from '../../../packages/shared/src/permissions/seed-codes.ts';
 
 // add-foundation-auth-access tasks 3.7 and 3.8 — the fixture modules hold exactly the rows of
 // docs/plan/spec-fixtures.md §1–§3 and design D16.
@@ -85,5 +98,62 @@ describe('fixture 040-services (task 3.8)', () => {
     for (const s of SERVICES) {
       for (const amount of Object.values(s.prices)) expect(Number.isSafeInteger(amount)).toBe(true);
     }
+  });
+});
+
+// add-schedule-patterns task 1.6 — the weekly patterns of docs/plan/spec-fixtures.md §10.1 (module 300)
+// and the schedule codes on the fixture Manager role (module 310). Who holds the codes on a seeded
+// database: apps/api/test/dev-seed.int.test.ts.
+describe('fixture 300-schedule-patterns (task 1.6)', () => {
+  const weekly = (code) =>
+    PATTERN_ROWS.filter((row) => row.code === code).map(
+      (row) => `${row.day} ${row.branch} ${row.start}-${row.end}`,
+    );
+
+  it('holds the six patterns of §10.1, every one from 01/Sep/2026', () => {
+    expect(PATTERNS.map((pattern) => pattern.code)).toStrictEqual([
+      'E004',
+      'E005',
+      'E002',
+      'E001',
+      'E006',
+      'E007',
+    ]);
+    expect(PATTERN_FROM).toBe('2026-09-01');
+  });
+
+  it('Ko Aung, Ko Min, Ko Htet and Ko Thura work Monday – Saturday; Sunday is a day off', () => {
+    expect(weekly('E004')).toStrictEqual([1, 2, 3, 4, 5, 6].map((day) => `${day} B3 09:00-21:00`));
+    expect(weekly('E005')).toStrictEqual([1, 2, 3, 4, 5, 6].map((day) => `${day} B3 10:00-20:00`));
+    expect(weekly('E006')).toStrictEqual([1, 2, 3, 4, 5, 6].map((day) => `${day} B1 09:00-21:00`));
+    expect(weekly('E007')).toStrictEqual([1, 2, 3, 4, 5, 6].map((day) => `${day} B2 09:00-21:00`));
+  });
+
+  it('Ma Hnin works Monday – Friday at B3, 9:00 AM – 6:00 PM', () => {
+    expect(weekly('E002')).toStrictEqual([1, 2, 3, 4, 5].map((day) => `${day} B3 09:00-18:00`));
+  });
+
+  it('U Kyaw Zin works Mondays only: B1 until 1:00 PM, B3 from 2:00 PM (the 60-minute gap)', () => {
+    expect(weekly('E001')).toStrictEqual(['1 B1 09:00-13:00', '1 B3 14:00-18:00']);
+  });
+
+  it('Ma Thida and Ko Naing have no pattern; 31 rows in all (6 + 6 + 5 + 2 + 6 + 6)', () => {
+    expect(weekly('E008')).toStrictEqual([]);
+    expect(weekly('E009')).toStrictEqual([]);
+    expect(PATTERN_ROWS).toHaveLength(31);
+  });
+});
+
+describe('fixture 310-schedule-grants (task 1.6)', () => {
+  it('gives the fixture Manager role schedule.view and schedule.update; the Barber role none', () => {
+    expect(SCHEDULE_GRANTS).toStrictEqual([
+      { role: 'Manager', codes: ['schedule.view', 'schedule.update'] },
+    ]);
+  });
+
+  it('numbers its role_permissions rows after the rows of module 090', () => {
+    expect(SCHEDULE_GRANT_ROW).toBeGreaterThan(
+      MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
+    );
   });
 });

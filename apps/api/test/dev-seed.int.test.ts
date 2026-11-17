@@ -46,6 +46,7 @@ const TABLES = [
   'customers',
   'employee_service_eligibilities',
   'branch_opening_hours',
+  'schedule_patterns',
 ] as const;
 
 async function counts(): Promise<Record<string, number>> {
@@ -71,8 +72,9 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (43) + Manager 6 Part 1 + 13 Part 4 + Barber 2 Part 4 (add-walkin-visit-checkout).
-      role_permissions: 64,
+      // Admin every code (45) + Manager 6 Part 1 + 13 Part 4 + 2 schedule + Barber 2 Part 4
+      // (add-walkin-visit-checkout · add-schedule-patterns).
+      role_permissions: 68,
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,
@@ -83,6 +85,8 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       customers: 1,
       employee_service_eligibilities: 12,
       branch_opening_hours: 21,
+      // add-schedule-patterns module 300 — spec-fixtures §10.1: 6 + 6 + 5 + 2 + 6 + 6.
+      schedule_patterns: 31,
     });
     await runSeed(t.app, FIXTURES);
     expect(await counts()).toStrictEqual(first);
@@ -206,6 +210,83 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
     expect(rows.map((row) => [row.role, Number(row.n)])).toStrictEqual([
       ['Barber', 2],
       ['Manager', 13],
+    ]);
+  });
+});
+
+// add-schedule-patterns task 1.6 — spec "Two schedule codes exist" (Part 2 §12 · ADR-012 · D-ROLE-09) and
+// the weekly patterns of spec-fixtures §10.1 (fixture modules 300 and 310).
+describe('add-schedule-patterns · scheduling · Two schedule codes exist', () => {
+  const scheduleGrants = () =>
+    prisma.$queryRaw<
+      { code: string; permission: string; scope: number; branches: string | null }[]
+    >`
+      SELECT e.employee_code AS code, p.code AS permission, er.scope_type AS scope,
+             string_agg(b.code, ',' ORDER BY b.code) AS branches
+      FROM employee_roles er
+      JOIN employees e ON e.id = er.employee_id
+      JOIN role_permissions rp ON rp.role_id = er.role_id
+      JOIN permissions p ON p.id = rp.permission_id
+      LEFT JOIN employee_role_branches erb ON erb.employee_role_id = er.id
+      LEFT JOIN branches b ON b.id = erb.branch_id
+      WHERE e.employee_code IN ('E002', 'E003', 'E004') AND er.revoked_at IS NULL
+        AND p.module = 'schedule'
+      GROUP BY e.employee_code, p.code, er.scope_type ORDER BY e.employee_code, p.code`;
+
+  it('Scenario: The fixture Manager', async () => {
+    await runSeed(t.app, FIXTURES);
+    // Ma Hnin both codes for B3 only, Ko Zaw for B1 only; Ko Aung (Barber) neither.
+    expect(await scheduleGrants()).toStrictEqual([
+      { code: 'E002', permission: 'schedule.update', scope: 2, branches: 'B3' },
+      { code: 'E002', permission: 'schedule.view', scope: 2, branches: 'B3' },
+      { code: 'E003', permission: 'schedule.update', scope: 2, branches: 'B1' },
+      { code: 'E003', permission: 'schedule.view', scope: 2, branches: 'B1' },
+    ]);
+  });
+
+  it('module 310 gives the two codes to a Manager role created before them, once', async () => {
+    // A Manager role as a build before this change left it: no schedule link.
+    await prisma.$executeRaw`
+      DELETE FROM role_permissions rp USING roles r, permissions p
+      WHERE rp.role_id = r.id AND rp.permission_id = p.id AND r.name_en = 'Manager'
+        AND p.module = 'schedule'`;
+    await runSeed(t.app, FIXTURES);
+    await runSeed(t.app, FIXTURES);
+    const rows = await prisma.$queryRaw<{ role: string; code: string }[]>`
+      SELECT r.name_en AS role, p.code FROM role_permissions rp
+      JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id
+      WHERE p.module = 'schedule' AND r.name_en IN ('Manager', 'Barber')
+      ORDER BY r.name_en, p.code`;
+    expect(rows).toStrictEqual([
+      { role: 'Manager', code: 'schedule.update' },
+      { role: 'Manager', code: 'schedule.view' },
+    ]);
+  });
+
+  it('seeds the weekly patterns of §10.1 from 01/Sep/2026, open-ended', async () => {
+    await runSeed(t.app, FIXTURES);
+    const rows = await prisma.$queryRaw<
+      { code: string; day: number; branch: string; hours: string; open: boolean }[]
+    >`
+      SELECT e.employee_code AS code, sp.day_of_week AS day, b.code AS branch,
+             to_char(sp.start_time, 'HH24:MI') || '-' || to_char(sp.end_time, 'HH24:MI') AS hours,
+             sp.effective_to IS NULL AND sp.archived_at IS NULL
+               AND sp.effective_from = DATE '2026-09-01' AS open
+      FROM schedule_patterns sp
+      JOIN employees e ON e.id = sp.employee_id
+      JOIN branches b ON b.id = sp.branch_id
+      WHERE e.employee_code IN ('E001', 'E004')
+      ORDER BY e.employee_code, sp.day_of_week, sp.start_time`;
+    expect(rows).toStrictEqual([
+      { code: 'E001', day: 1, branch: 'B1', hours: '09:00-13:00', open: true },
+      { code: 'E001', day: 1, branch: 'B3', hours: '14:00-18:00', open: true },
+      ...[1, 2, 3, 4, 5, 6].map((day) => ({
+        code: 'E004',
+        day,
+        branch: 'B3',
+        hours: '09:00-21:00',
+        open: true,
+      })),
     ]);
   });
 });

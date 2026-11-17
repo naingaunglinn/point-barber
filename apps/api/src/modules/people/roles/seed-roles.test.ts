@@ -1,7 +1,12 @@
 import { PERMISSIONS } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
-import { BARBER_SEED_CODES, MANAGER_PART4_SEED_CODES, MANAGER_SEED_CODES } from './seed-roles.js';
+import {
+  BARBER_SEED_CODES,
+  MANAGER_PART4_SEED_CODES,
+  MANAGER_SCHEDULE_SEED_CODES,
+  MANAGER_SEED_CODES,
+} from './seed-roles.js';
 
 // add-walkin-visit-checkout task 1.4 — the Part 4 seed codes of Manager and Barber (Part 4 §9 ·
 // D-ROLE-07 · D-ROLE-09). The Part 1 set is checked by base-seed.int.test.ts.
@@ -49,7 +54,30 @@ describe('seed roles — Part 4 codes', () => {
   });
 
   it('names only codes of the catalogue', () => {
-    for (const code of [...MANAGER_SEED_CODES, ...MANAGER_PART4_SEED_CODES, ...BARBER_SEED_CODES])
+    for (const code of [
+      ...MANAGER_SEED_CODES,
+      ...MANAGER_PART4_SEED_CODES,
+      ...MANAGER_SCHEDULE_SEED_CODES,
+      ...BARBER_SEED_CODES,
+    ])
       expect(known.has(code)).toBe(true);
+  });
+});
+
+// add-schedule-patterns task 1.3 — spec "Two schedule codes exist" (Part 2 §12 · D-ROLE-09 ·
+// API-PERM-06): the Manager seed holds both schedule codes, the Barber seed neither. The roles on an
+// empty database: base-seed.int.test.ts.
+describe('seed roles — Part 2 schedule codes', () => {
+  it('Manager: schedule.view and schedule.update', () => {
+    expect([...MANAGER_SCHEDULE_SEED_CODES]).toStrictEqual(['schedule.view', 'schedule.update']);
+  });
+
+  it('Barber: no schedule code — his own pattern and shifts need none', () => {
+    expect(BARBER_SEED_CODES.filter((code) => code.startsWith('schedule.'))).toStrictEqual([]);
+  });
+
+  it('the Part 1 and Part 4 Manager sets hold no schedule code of their own', () => {
+    const others = [...MANAGER_SEED_CODES, ...MANAGER_PART4_SEED_CODES];
+    expect(others.filter((code) => code.startsWith('schedule.'))).toStrictEqual([]);
   });
 });
