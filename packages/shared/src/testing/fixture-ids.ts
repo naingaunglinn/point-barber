@@ -18,6 +18,8 @@ const ROW_GROUPS = {
   employee_service_eligibilities: '00c',
   branch_opening_hours: '00d',
   role_permissions: '00e',
+  // add-schedule-patterns (fixture module 300)
+  schedule_patterns: '00f',
 } as const;
 
 export const FIXTURE_IDS = {

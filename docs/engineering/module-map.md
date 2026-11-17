@@ -46,6 +46,7 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
 | `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
+| `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`     |
 
 The website refresh (API-PUB-03 · ADR-006) has one owner: `platform/website` — `SiteContent.touch(tx,
 tags)`, which every writer of website data calls inside its write transaction; it raises
@@ -65,6 +66,7 @@ it, on `hashtextextended(<key>, 0)` (CG-DB-08). A new key gets a row here in the
 | `payroll:<company_id>`            | `PayrollLock.assertNotFinalized`    | `payroll`      | shared (P5-RULE-10); finalize / reopen come with payroll                | `add-walkin-visit-checkout`  |
 | `payref:<method_id>:<reference>`  | `PaymentReferenceLock`              | `sales`        | exclusive                                                               | `add-walkin-visit-checkout`  |
 | `receipt:<entity_id>`             | `ReceiptFilesLock.acquire`          | `platform`     | exclusive                                                               | `add-walkin-visit-checkout`  |
+| `schedule:<employee_id>`          | `ScheduleLock.acquire`              | `scheduling`   | exclusive — every writer of one employee's patterns and shifts          | `add-schedule-patterns`      |
 
 Locks are taken in one order per transaction; the order of each write is in its change's design (for
 walk-in checkout: design D4 and D5).

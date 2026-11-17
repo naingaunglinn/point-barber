@@ -49,6 +49,9 @@ const MANAGER = [
   'payment.verify',
   'discount.view',
   'discount.approve',
+  // Part 2 §12 (add-schedule-patterns task 1.3).
+  'schedule.view',
+  'schedule.update',
 ];
 const BARBER = ['sale.create', 'sale.late_entry'];
 
@@ -167,6 +170,20 @@ describe('add-foundation-auth-access · access · The first start creates the se
     await firstStart();
     expect((await roleCodes()).Manager?.codes).toHaveLength(MANAGER.length - 1);
     expect(await prisma.roles.count()).toBe(3);
+  });
+});
+
+// add-schedule-patterns task 1.3 — spec "Two schedule codes exist" (Part 2 §12 · ADR-011 · ADR-012 ·
+// D-ROLE-09 · P1-RULE-12).
+describe('add-schedule-patterns · scheduling · Two schedule codes exist', () => {
+  it('Scenario: After the catalogue sync', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const schedule = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('schedule.'));
+    expect(schedule('Admin')).toStrictEqual(['schedule.update', 'schedule.view']);
+    expect(schedule('Manager')).toStrictEqual(['schedule.update', 'schedule.view']);
+    expect(schedule('Barber')).toStrictEqual([]);
   });
 });
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BARBER_PART4_CODES, MANAGER_PART4_CODES } from '@point/shared';
+import { BARBER_PART4_CODES, MANAGER_PART4_CODES, MANAGER_SCHEDULE_CODES } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
@@ -12,8 +12,8 @@ import { CompanyRepository } from '../repositories/company.repository.js';
 // never re-created — Admin gets every code, Manager the six codes whose Part 1 seed entry names
 // Manager (the two "Manager if the owner wants" codes are not seeded — owner sheet record R2) and the
 // Part 4 codes of its seed entry, Barber the two Part 4 codes of its own (add-walkin-visit-checkout
-// task 1.4). Scope is not part of a role. Names: fixtures §2 and the brief's copy table (owner answer
-// S18).
+// task 1.4); Manager also the two Part 2 schedule codes, Barber none (add-schedule-patterns task 1.3).
+// Scope is not part of a role. Names: fixtures §2 and the brief's copy table (owner answer S18).
 
 /** Part 1 §10 entries whose seed names Manager without a condition. */
 export const MANAGER_SEED_CODES = [
@@ -29,12 +29,15 @@ export const MANAGER_SEED_CODES = [
 export const MANAGER_PART4_SEED_CODES = MANAGER_PART4_CODES;
 export const BARBER_SEED_CODES = BARBER_PART4_CODES;
 
+/** Part 2 §12 — `schedule.view`, `schedule.update` (packages/shared — the fixture module 310 reads it). */
+export const MANAGER_SCHEDULE_SEED_CODES = MANAGER_SCHEDULE_CODES;
+
 const SEED_ROLES = [
   { name_en: 'Admin', name_mm: 'အက်ဒမင်', codes: 'all' },
   {
     name_en: 'Manager',
     name_mm: 'မန်နေဂျာ',
-    codes: [...MANAGER_SEED_CODES, ...MANAGER_PART4_SEED_CODES],
+    codes: [...MANAGER_SEED_CODES, ...MANAGER_PART4_SEED_CODES, ...MANAGER_SCHEDULE_SEED_CODES],
   },
   { name_en: 'Barber', name_mm: 'ဘာဘာ', codes: BARBER_SEED_CODES },
 ] as const;
