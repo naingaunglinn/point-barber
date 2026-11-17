@@ -1,3 +1,5 @@
+// cg-exception CG-ARCH-04: the language files of packages/i18n are data (JSON, no code, no import), and packages/i18n imports nothing, so
+// no cycle is possible; moving the words into shared would copy language text (D-PLT-03). Only these two files, only the messages folder.
 import en from '@point/i18n/messages/en/common.json' with { type: 'json' };
 import my from '@point/i18n/messages/my/common.json' with { type: 'json' };
 

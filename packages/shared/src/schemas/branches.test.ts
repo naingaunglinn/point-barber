@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { z } from 'zod';
 
 import {
   PUBLIC_BRANCH_MEMBERS,
@@ -20,11 +21,10 @@ import { normalizeSocialLinks, socialLinksSchema } from './company.js';
 
 type Issue = { readonly code: string; readonly path: readonly PropertyKey[]; [k: string]: unknown };
 
-function issuesOf(schema: { safeParse(value: unknown): unknown }, value: unknown): Issue[] {
-  const result = schema.safeParse(value) as
-    { success: true } | { success: false; error: { issues: Issue[] } };
+function issuesOf(schema: z.ZodType, value: unknown): Issue[] {
+  const result = schema.safeParse(value);
   if (result.success) throw new Error(`expected a failure for ${JSON.stringify(value)}`);
-  return result.error.issues;
+  return result.error.issues.map((issue) => ({ ...issue }));
 }
 
 const B4 = { code: 'B4', name_mm: 'ပွိုင့် ၄.၀', name_en: 'Point 4.0' };

@@ -403,5 +403,41 @@
     "level": "company",
     "label_key": "permission.payment_method.delete",
     "description": "payment_method · delete — archive / restore — P4.PMT.04/05"
+  },
+  {
+    "code": "customer.view",
+    "module": "customer",
+    "action": "view",
+    "kind": "crud",
+    "level": "shared",
+    "label_key": "permission.customer.view",
+    "description": "customer · view — Customers menu, P3.CUS.01 / 04 / 09 (shared — every customer of the company)"
+  },
+  {
+    "code": "customer.create",
+    "module": "customer",
+    "action": "create",
+    "kind": "crud",
+    "level": "shared",
+    "label_key": "permission.customer.create",
+    "description": "customer · create — P3.CUS.03 (the automatic create of a booking or walk-in needs no code — P3-RULE-01)"
+  },
+  {
+    "code": "customer.update",
+    "module": "customer",
+    "action": "update",
+    "kind": "crud",
+    "level": "shared",
+    "label_key": "permission.customer.update",
+    "description": "customer · update — name, phone, notes — P3.CUS.05"
+  },
+  {
+    "code": "customer.delete",
+    "module": "customer",
+    "action": "delete",
+    "kind": "crud",
+    "level": "shared",
+    "label_key": "permission.customer.delete",
+    "description": "customer · delete — Inactive / Active, archive, restore — P3.CUS.06 / 07 / 08"
   }
 ]

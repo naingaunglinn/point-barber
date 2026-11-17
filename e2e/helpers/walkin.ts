@@ -6,10 +6,12 @@ import type {
   Page,
   PlaywrightWorkerArgs,
 } from '@playwright/test';
+import { z } from 'zod';
 
 import { type PolicyViolation, recordPolicyViolations } from '../fixtures.js';
 import { APP_ORIGIN } from '../hosts.js';
 import { APP_HEADERS, signInWithCode } from './sign-in.js';
+import { meClock, readJson } from './json.js';
 import { sql } from './stack.js';
 
 // add-walkin-visit-checkout tasks 14.1 / 14.2 — the walk-in flows' test base:
@@ -88,18 +90,22 @@ export async function apiAs(
   });
 }
 
-interface OpenVisit {
-  readonly id: string;
-  readonly sale: {
-    readonly payments: readonly { readonly id: string; readonly voided_at: string | null }[];
-  };
-}
+const openVisits = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      sale: z.object({
+        payments: z.array(z.object({ id: z.string(), voided_at: z.string().nullable() })),
+      }),
+    }),
+  ),
+});
 
 /** Closes the caller's open visits: every live payment voided, then the visit INCOMPLETE. */
 export async function clearOpenVisits(api: APIRequestContext): Promise<void> {
   const res = await api.get('/api/v1/me/visits?status=1&status=2');
   if (res.status() !== 200) throw new Error(`my visits answered ${res.status()}`);
-  const { items } = (await res.json()) as { items: OpenVisit[] };
+  const { items } = await readJson(openVisits, res);
   for (const visit of items) {
     for (const payment of visit.sale.payments.filter((item) => item.voided_at === null)) {
       await api.post(`/api/v1/payments/${payment.id}/void`, {
@@ -123,12 +129,10 @@ export async function nextReceipt(
   /** The business date of the sale (a late entry); the server's today when absent. */
   on?: string,
 ): Promise<string> {
-  const me = (await (await api.get('/api/v1/me')).json()) as { system: { server_time: string } };
+  const me = await readJson(meClock, await api.get('/api/v1/me'));
   // server_time is written in +06:30, so its date part is the Myanmar calendar date (D-PLT-15).
-  const [year, month] = (on ?? me.system.server_time).slice(0, 7).split('-').map(Number) as [
-    number,
-    number,
-  ];
+  const [year, month] = (on ?? me.system.server_time).slice(0, 7).split('-').map(Number);
+  if (year === undefined || month === undefined) throw new Error(`Not a date: ${on ?? ''}`);
   const table = kind === 'sale' ? 'sales' : 'refunds';
   const last = Number(
     sql(

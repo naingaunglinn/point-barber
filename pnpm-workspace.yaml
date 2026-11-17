@@ -9,8 +9,8 @@ allowBuilds:
   '@prisma/engines': true
   '@swc/core': false
   prisma: true
-  # unrs-resolver 1.12.2 (held back by overrides, CG-DEP-05) has a postinstall that only checks the native
-  # binding, which pnpm installs as an optional dependency; no script is run.
+  # unrs-resolver 1.12.2 (held back by overrides, CG-DEP-05) has a postinstall that checks the native
+  # binding and would fetch it with npm if it were missing; pnpm installs it as an optional dependency, so no script is run.
   unrs-resolver: false
 minimumReleaseAgeExclude:
   - '@turbo/darwin-64@2.11.7'

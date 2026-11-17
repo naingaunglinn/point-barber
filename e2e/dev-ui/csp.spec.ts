@@ -29,7 +29,8 @@ function caddyPolicy(): string {
     throw new Error(
       `${CADDYFILE}: expected one Content-Security-Policy line in (common), found ${lines.length}`,
     );
-  const policy = lines[0]![1]!.replaceAll('{$CADDY_CSP_CONNECT}', '');
+  const policy = lines[0]?.[1]?.replaceAll('{$CADDY_CSP_CONNECT}', '');
+  if (policy === undefined) throw new Error(`${CADDYFILE}: the policy line has no value`);
   if (policy.includes('{$')) throw new Error(`${CADDYFILE}: a placeholder is left in ${policy}`);
   return policy;
 }

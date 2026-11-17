@@ -22,6 +22,8 @@ const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'setting
 /** The Part 2 §12 modules on main so far: `schedule` (add-schedule-patterns, below). */
 const PART2_MODULES = new Set(['schedule']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
+/** Part 3 §7 — add-customer-management adds the `customer` module; `booking.*` come with their changes. */
+const PART3_MODULES = new Set(['customer']);
 
 const count = <K extends string>(values: readonly K[]) =>
   values.reduce<Record<string, number>>(
@@ -93,8 +95,13 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     ]);
   });
 
-  it('holds nothing but the codes of Parts 1, 2 and 4', () => {
-    const modules = new Set([...PART1_MODULES, ...PART2_MODULES, ...PART4_MODULES]);
+  it('holds nothing but the codes of Parts 1, 2, 3 and 4', () => {
+    const modules = new Set([
+      ...PART1_MODULES,
+      ...PART2_MODULES,
+      ...PART3_MODULES,
+      ...PART4_MODULES,
+    ]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
 
@@ -171,6 +178,28 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
   it('types a schedule code', () => {
     const code: PermissionCode = 'schedule.update';
     expect(permissionLevel(code)).toBe('branch');
+  });
+});
+
+// add-customer-management task 1.2 — customers "The four `customer.*` codes are shared-level codes
+// with their seed" (Part 3 §7 · ADR-011 · ADR-012 · D-ROLE-08).
+describe('add-customer-management · the four Part 3 customer codes', () => {
+  it('holds the codes, kinds and levels of the Part 3 table — every one shared', () => {
+    const part3 = PERMISSIONS.filter((entry) => PART3_MODULES.has(entry.module));
+    expect(
+      Object.fromEntries(part3.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`])),
+    ).toStrictEqual({
+      'customer.view': 'crud · shared',
+      'customer.create': 'crud · shared',
+      'customer.update': 'crud · shared',
+      'customer.delete': 'crud · shared',
+    });
+    for (const entry of part3) expect(entry.label_key).toBe(`permission.${entry.code}`);
+  });
+
+  it('types a Part 3 code', () => {
+    const code: PermissionCode = 'customer.update';
+    expect(permissionLevel(code)).toBe('shared');
   });
 });
 

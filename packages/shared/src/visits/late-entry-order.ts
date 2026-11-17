@@ -23,7 +23,7 @@ export function lateEntryOrderViolation(times: LateEntryTimes): LateEntryTimeMem
 
   let floor = at(times.startedAt);
   if (floor > now) return 'started_at';
-  if (times.completedAt != null) {
+  if (times.completedAt !== undefined && times.completedAt !== null) {
     const completed = at(times.completedAt);
     if (outOf(completed, floor)) return 'completed_at';
     floor = completed;
@@ -34,6 +34,11 @@ export function lateEntryOrderViolation(times: LateEntryTimes): LateEntryTimeMem
     if (outOf(received, floor)) return 'received_at';
     latest = Math.max(latest, received);
   }
-  if (times.finishedAt != null && outOf(at(times.finishedAt), latest)) return 'finished_at';
+  if (
+    times.finishedAt !== undefined &&
+    times.finishedAt !== null &&
+    outOf(at(times.finishedAt), latest)
+  )
+    return 'finished_at';
   return null;
 }

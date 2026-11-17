@@ -1,7 +1,9 @@
 import type { Page } from '@playwright/test';
+import { z } from 'zod';
 
 import { expect, recordPolicyViolations, test } from './fixtures.js';
 import { APP_ORIGIN } from './hosts.js';
+import { looseObject, parseJsonText, readJson } from './helpers/json.js';
 import { signInAs } from './helpers/sign-in.js';
 import { restartApi, withServiceEnv } from './helpers/stack.js';
 
@@ -19,25 +21,27 @@ test.beforeAll(async ({ playwright }) => {
   await restartApi(playwright);
 });
 
+const itemHeader = z.object({ type: z.string().optional() });
+
 /** The `event` items of an envelope: newline-delimited JSON, item header then payload. */
 function eventsOf(envelope: string): Record<string, unknown>[] {
   const lines = envelope.split('\n').filter((line) => line.length > 0);
   const events: Record<string, unknown>[] = [];
   for (let i = 1; i + 1 < lines.length; i += 2) {
-    if ((JSON.parse(lines[i] ?? '{}') as { type?: string }).type === 'event') {
-      events.push(JSON.parse(lines[i + 1] ?? '{}') as Record<string, unknown>);
+    if (parseJsonText(itemHeader, lines[i] ?? '{}').type === 'event') {
+      events.push(parseJsonText(looseObject, lines[i + 1] ?? '{}'));
     }
   }
   return events;
 }
 
 /** An error no code catches, thrown in the page after the current task. */
-const throwUncaught = (page: Page) =>
-  page.evaluate(() => {
+const throwUncaught = (page: Page, message = 'e2e uncaught error') =>
+  page.evaluate((text) => {
     setTimeout(() => {
-      throw new Error('e2e uncaught error');
+      throw new Error(text);
     }, 0);
-  });
+  }, message);
 
 test.describe('add-staging-deploy · platform-runtime · Web app errors reach Sentry with a DSN read at run time', () => {
   test('Scenario: An uncaught browser error on the staff host', async ({
@@ -46,8 +50,10 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
     app,
     policyViolations,
   }) => {
-    const release = ((await (await app.get('/api/v1/system/status')).json()) as { version: string })
-      .version;
+    const { version: release } = await readJson(
+      z.object({ version: z.string() }),
+      await app.get('/api/v1/system/status'),
+    );
     await withServiceEnv(
       playwright,
       'web',
@@ -71,8 +77,12 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
         await expect(page.locator('html')).toHaveAttribute('data-error-reporting', 'ready');
         await throwUncaught(page);
         await expect.poll(() => envelopes.length).toBe(1);
-        await page.waitForTimeout(1000);
-        expect(envelopes).toHaveLength(1);
+        // One envelope per error, not a second copy of the first: a different error is sent next
+        // and arrives as the second envelope (no fixed wait — CG-TEST-09; no page.clock, whose Date
+        // stand-in breaks TZDate — e2e/dev-ui/fixtures.ts).
+        await throwUncaught(page, 'e2e second uncaught error');
+        await expect.poll(() => envelopes.length).toBe(2);
+        expect(JSON.stringify(eventsOf(envelopes[1] ?? ''))).toContain('e2e second uncaught error');
         const events = eventsOf(envelopes[0] ?? '');
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
@@ -98,7 +108,8 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
     await page.goto('/');
     await expect(page.getByTestId('today')).toBeVisible();
     await throwUncaught(page);
-    await page.waitForTimeout(2000);
+    // Without a DSN the client is never set up (below: no `ready`, no ingest host in the page), so
+    // nothing can be sent; no wait is needed to show it (CG-TEST-09).
     expect(sentry).toStrictEqual([]);
     expect(await page.content()).not.toContain('ingest.sentry.io');
     await expect(page.locator('html')).not.toHaveAttribute('data-error-reporting', 'ready');

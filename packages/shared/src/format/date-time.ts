@@ -23,7 +23,7 @@ interface Options {
 function calendarDate(value: BusinessDate | Instant | Date): TZDate {
   if (typeof value === 'string') {
     const match = CALENDAR_DATE.exec(value);
-    if (match) {
+    if (match !== null) {
       const [, year, month, day] = match.map(Number);
       const date = new TZDate(Number(year), Number(month) - 1, Number(day), APP_TIME_ZONE);
       if (!isValid(date) || format(date, 'yyyy-MM-dd') !== value) {
@@ -38,7 +38,7 @@ function calendarDate(value: BusinessDate | Instant | Date): TZDate {
 /** Hours (0–23) and minutes of a wire time of day or of an instant in Myanmar Time. */
 function timeOfDay(value: string | Date): { hours: number; minutes: number } {
   const match = typeof value === 'string' ? WIRE_TIME.exec(value) : null;
-  if (match) {
+  if (match !== null) {
     const hours = Number(match[1]);
     const minutes = Number(match[2]);
     if (hours > 23 || minutes > 59) throw new RangeError(`Not a time of day: ${String(value)}`);

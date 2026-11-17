@@ -85,7 +85,7 @@ function measureTargets(page: Page): Promise<Findings> {
         const owner = el.closest('[data-testid]') ?? el.closest('section[id], header, nav');
         const where =
           owner instanceof HTMLElement
-            ? (owner.dataset.testid ?? (owner.id || owner.tagName))
+            ? (owner.dataset.testid ?? (owner.id === '' ? owner.tagName : owner.id))
             : 'page';
         const kind = el.getAttribute('role') ?? el.getAttribute('data-slot') ?? el.tagName;
         const name = (el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 30);
@@ -95,7 +95,9 @@ function measureTargets(page: Page): Promise<Findings> {
       const targets = [...document.querySelectorAll(SELECTOR)].filter(shown).map((el) => {
         const own = el.getBoundingClientRect();
         let area = grown(el, own);
-        const label = toggles.has(el.getAttribute('role') ?? (el as HTMLInputElement).type)
+        const label = toggles.has(
+          el.getAttribute('role') ?? (el instanceof HTMLInputElement ? el.type : ''),
+        )
           ? labelOf(el)
           : null;
         if (label !== null) area = union(area, label.getBoundingClientRect());

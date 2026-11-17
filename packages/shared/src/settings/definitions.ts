@@ -6,11 +6,11 @@ import { valueSchema } from './values.js';
 // keys of its own key), no key is declared twice, and every default passes its own value schema.
 // One message per finding, each naming the key (or the position when there is no key).
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object';
+
 const keyOf = (value: unknown, index: number): string => {
-  const key =
-    value !== null && typeof value === 'object'
-      ? (value as Record<string, unknown>).key
-      : undefined;
+  const key = isRecord(value) ? value.key : undefined;
   return typeof key === 'string' ? key : `entry ${index}`;
 };
 
@@ -36,7 +36,7 @@ export function settingDefinitionProblems(json: unknown): string[] {
     try {
       defaultPasses = valueSchema(entry).safeParse(entry.default).success;
     } catch (error) {
-      problems.push(`${entry.key}: ${(error as Error).message}`);
+      problems.push(`${entry.key}: ${error instanceof Error ? error.message : String(error)}`);
       return;
     }
     if (!defaultPasses) {
@@ -54,13 +54,7 @@ export type MessageTree = { readonly [key: string]: string | MessageTree };
 const textAt = (tree: MessageTree, dotted: string): unknown =>
   dotted
     .split('.')
-    .reduce<unknown>(
-      (node, part) =>
-        node !== null && typeof node === 'object'
-          ? (node as Record<string, unknown>)[part]
-          : undefined,
-      tree,
-    );
+    .reduce<unknown>((node, part) => (isRecord(node) ? node[part] : undefined), tree);
 
 /** An entry as the text check reads it — a settings.json entry or its typed copy. */
 export interface TextKeyEntry {

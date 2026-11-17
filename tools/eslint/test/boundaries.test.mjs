@@ -7,6 +7,7 @@ import tseslint from 'typescript-eslint';
 import { describe, expect, it } from 'vitest';
 
 import boundaries from '../boundaries.mjs';
+import { withoutTypeChecked } from './lib.mjs';
 
 // The fixtures are excluded from `pnpm lint` (root config). Here each one is linted with the rules
 // of boundaries.mjs alone, under the matching path in apps/api or apps/web so that the globs apply.
@@ -18,7 +19,7 @@ const eslint = new ESLint({
   overrideConfigFile: true,
   overrideConfig: [
     { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
-    ...boundaries,
+    ...withoutTypeChecked(boundaries),
   ],
 });
 

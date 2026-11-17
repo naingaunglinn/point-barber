@@ -6,7 +6,8 @@ import { expect, test } from './fixtures.js';
 /** What has the focus inside the ReasonDialog, with its outline after the colour transition. */
 function focusStop(page: import('@playwright/test').Page) {
   return page.evaluate(async () => {
-    const el = document.activeElement as HTMLElement;
+    const el = document.activeElement;
+    if (!(el instanceof HTMLElement)) throw new Error('Nothing in the dialog has the focus');
     await Promise.all(el.getAnimations().map((animation) => animation.finished));
     const dialog = el.closest('[role="alertdialog"]');
     // Colours compared as sRGB pixels: the computed spellings (oklab, lab, rgb) differ.
@@ -14,7 +15,8 @@ function focusStop(page: import('@playwright/test').Page) {
       const context = Object.assign(document.createElement('canvas'), {
         width: 1,
         height: 1,
-      }).getContext('2d') as CanvasRenderingContext2D;
+      }).getContext('2d');
+      if (context === null) throw new Error('This browser has no 2D canvas');
       context.fillStyle = colour;
       context.fillRect(0, 0, 1, 1);
       return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)].join(',');
@@ -82,7 +84,9 @@ test.describe('add-shared-ui-components · ui-foundation · A shared component i
             (span) => span.children.length === 0 && span.textContent?.trim() !== '',
           );
           const span = spans.at(-1) ?? el;
-          (el.parentElement as HTMLElement).style.width = `${width}px`;
+          const parent = el.parentElement;
+          if (parent === null) throw new Error('The label has no parent');
+          parent.style.width = `${width}px`;
           span.textContent = text;
           // The label's line boxes: a range over its text has a client rect per line (several on one
           // line when Myanmar and Latin runs mix); a new line starts more than half a line lower.
@@ -91,7 +95,7 @@ test.describe('add-shared-ui-components · ui-foundation · A shared component i
           const rects = [...range.getClientRects()].sort((a, b) => a.top - b.top);
           const half = Math.min(...rects.map((rect) => rect.height)) / 2;
           const lines = rects.filter(
-            (rect, i) => i === 0 || rect.top - rects[i - 1]!.top > half,
+            (rect, i) => i === 0 || rect.top - (rects[i - 1]?.top ?? rect.top) > half,
           ).length;
           return {
             lines,

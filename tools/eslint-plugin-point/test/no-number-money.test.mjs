@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import api from '../../eslint/api.mjs';
 import web from '../../eslint/web.mjs';
+import { withoutTypeChecked } from '../../eslint/test/lib.mjs';
 
 // ui-foundation "Lint fails on number arithmetic on money" (AD-IMPL-05 · API-DATA-02 · D-PLT-04 ·
 // CG-MONEY-03 · design D14). Linted with web.mjs, which enables the rule for apps/web and packages/* (and
@@ -22,7 +23,7 @@ const eslint = new ESLint({
   overrideConfig: [
     { files: ['**/*.{ts,tsx}'], languageOptions: { parser: tseslint.parser } },
     ...web,
-    ...api,
+    ...withoutTypeChecked(api),
   ],
 });
 

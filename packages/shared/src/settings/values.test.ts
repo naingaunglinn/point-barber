@@ -16,7 +16,7 @@ type Issue = { readonly code: string; readonly path: readonly PropertyKey[] } & 
 
 function issuesOf(schema: z.ZodType, value: unknown): Issue[] {
   const result = schema.safeParse(value);
-  return result.success ? [] : (result.error.issues as unknown as Issue[]);
+  return result.success ? [] : result.error.issues.map((issue) => ({ ...issue }));
 }
 
 const schemaOf = (key: Parameters<typeof settingEntry>[0]) => valueSchema(settingEntry(key));
