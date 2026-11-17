@@ -34,10 +34,10 @@ function fieldErrorsOf(schema: z.ZodType, value: unknown): { field: string; code
   }));
 }
 
-const seg = (start_time: string, end_time: string, branch_id = B3) => ({
-  branch_id,
-  start_time,
-  end_time,
+const seg = (startTime: string, endTime: string, branchId = B3) => ({
+  branch_id: branchId,
+  start_time: startTime,
+  end_time: endTime,
 });
 
 /** Ko Aung's set from 12/Oct/2026 whose day 1 holds `segments`. */

@@ -53,7 +53,10 @@ export const patternDaySchema = z
     if (!ctx.value.segments.every(wellFormed)) return;
     const ordered = ctx.value.segments
       .map((segment, index) => ({ ...segment, index }))
-      .sort((a, b) => a.start_time.localeCompare(b.start_time) || a.index - b.index);
+      .sort((a, b) => {
+        const byStart = a.start_time.localeCompare(b.start_time);
+        return byStart === 0 ? a.index - b.index : byStart;
+      });
     let latestEnd: string | null = null;
     for (const segment of ordered) {
       if (latestEnd !== null && segment.start_time < latestEnd) {
