@@ -58,6 +58,11 @@ describe('add-ci-lint-rules · dependencies point one way', () => {
     expect(await lint('packages/shared/src/format/words.ts')).toEqual([]);
   });
 
+  it('Scenario: Any other import of packages/i18n from shared fails (D13)', async () => {
+    // The exception is the message files only (`except: ['./messages']`); i18n code stays out of shared.
+    expect(await lint('packages/shared/src/format/request.ts')).toEqual([ZONE]);
+  });
+
   it('Scenario: A two-file cycle fails', async () => {
     expect(await lint('packages/shared/src/cycle/a.ts')).toEqual([
       { ruleId: 'import-x/no-cycle', line: 1 },

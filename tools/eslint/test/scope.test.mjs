@@ -134,14 +134,24 @@ describe('add-ci-lint-rules · scope of the A1 file sets', () => {
     expect(calls.length).toBeGreaterThanOrEqual(17);
     const found = results.flatMap(({ messages }) => messages.map(({ ruleId }) => ruleId));
     expect(found).not.toContain('playwright/no-skipped-test');
+    expect(await severity('e2e/dev-ui/layout.spec.ts', 'playwright/no-skipped-test')).toBe(2);
     expect(await options('e2e/dev-ui/layout.spec.ts', 'playwright/no-skipped-test')).toEqual([
       expect.objectContaining({ allowConditional: true }),
     ]);
   }, 60_000);
 
   it('Scenario: Every importing workspace has the source condition', async () => {
-    // apps/web is added by pull request A4 (task 8.1).
-    for (const workspace of ['apps/api', 'packages/documents', 'packages/shared', 'packages/ui']) {
+    // The spec's seven workspaces; apps/web is added by pull request A4 (task 8.1).
+    const workspaces = [
+      'apps/api',
+      'packages/documents',
+      'packages/shared',
+      'packages/ui',
+      'packages/i18n',
+      'e2e',
+    ];
+    let importing = 0;
+    for (const workspace of workspaces) {
       const manifest = JSON.parse(readFileSync(join(root, workspace, 'package.json'), 'utf8'));
       const own = manifest.name;
       const uses = Object.keys({
@@ -149,10 +159,14 @@ describe('add-ci-lint-rules · scope of the A1 file sets', () => {
         ...manifest.devDependencies,
         ...manifest.peerDependencies,
       }).filter((name) => name.startsWith('@point/') && name !== own);
-      expect(uses.length).toBeGreaterThan(0);
+      if (uses.length === 0) continue;
+      importing += 1;
       const tsconfig = readFileSync(join(root, workspace, 'tsconfig.json'), 'utf8');
-      expect(tsconfig).toMatch(/"customConditions":\s*\[\s*"source"/);
+      expect(tsconfig, `${workspace} imports ${uses.join(', ')}`).toMatch(
+        /"customConditions":\s*\[\s*"source"/,
+      );
     }
+    expect(importing).toBeGreaterThanOrEqual(4);
   });
 
   it.each([
@@ -172,5 +186,70 @@ describe('add-ci-lint-rules · scope of the A1 file sets', () => {
     for (const id of ['no-console', 'no-var', 'eqeqeq', '@typescript-eslint/no-explicit-any']) {
       expect(rules[id]?.[0]).toBe(2);
     }
+  });
+
+  // The other half of "No rule is a warning": every rule of this specification that applies to the path
+  // is an error (2), so a later object that turns one off for a file set fails here (Dev 1, #57).
+  const EVERY_A1_PATH = [
+    '@typescript-eslint/ban-ts-comment',
+    '@eslint-community/eslint-comments/require-description',
+    '@eslint-community/eslint-comments/no-unlimited-disable',
+    '@typescript-eslint/no-explicit-any',
+    '@typescript-eslint/no-unsafe-assignment',
+    '@typescript-eslint/no-unsafe-member-access',
+    '@typescript-eslint/no-unsafe-call',
+    '@typescript-eslint/no-unsafe-return',
+    '@typescript-eslint/no-unsafe-argument',
+    '@typescript-eslint/no-non-null-assertion',
+    '@typescript-eslint/no-unsafe-type-assertion',
+    'no-restricted-syntax',
+    '@typescript-eslint/switch-exhaustiveness-check',
+    'prefer-const',
+    'no-var',
+    'no-param-reassign',
+    '@typescript-eslint/prefer-readonly',
+    '@typescript-eslint/no-floating-promises',
+    '@typescript-eslint/no-misused-promises',
+    '@typescript-eslint/await-thenable',
+    '@typescript-eslint/return-await',
+    'eqeqeq',
+    '@typescript-eslint/strict-boolean-expressions',
+    '@typescript-eslint/prefer-nullish-coalescing',
+    '@typescript-eslint/naming-convention',
+    'unicorn/filename-case',
+    'import-x/no-cycle',
+    'no-eval',
+    'no-implied-eval',
+    'no-new-func',
+  ];
+  const ZONED = ['import-x/no-restricted-paths', 'import-x/no-default-export'];
+  const VITEST = ['vitest/no-focused-tests', 'vitest/no-disabled-tests'];
+  const PLAYWRIGHT = [
+    'playwright/no-focused-test',
+    'playwright/no-skipped-test',
+    'playwright/no-wait-for-timeout',
+  ];
+
+  it.each([
+    // path, the rules that must be errors there, the rules that must be absent there
+    [
+      'packages/shared/src/money/money.test.ts',
+      [...ZONED, 'react/no-danger', ...VITEST],
+      PLAYWRIGHT,
+    ],
+    [
+      'packages/shared/src/format/money.ts',
+      [...ZONED, 'react/no-danger'],
+      [...VITEST, ...PLAYWRIGHT],
+    ],
+    // react/no-danger is off here: the allow-list scenario above (cg-exception CG-SEC-04).
+    ['packages/documents/src/receipt/receipt.tsx', ZONED, [...VITEST, ...PLAYWRIGHT]],
+    ['e2e/edge.spec.ts', [...ZONED, 'react/no-danger', ...PLAYWRIGHT], VITEST],
+    // A root config file: no package zone, and its default export is the tool's contract.
+    ['prisma.config.ts', ['react/no-danger'], [...VITEST, ...PLAYWRIGHT]],
+  ])('Scenario: Every rule of the A1 set is an error in %s', async (path, extra, absent) => {
+    const { rules } = await configOf(path);
+    for (const id of [...EVERY_A1_PATH, ...extra]) expect(rules[id]?.[0], id).toBe(2);
+    for (const id of absent) expect(rules[id], id).toBeUndefined();
   });
 });
