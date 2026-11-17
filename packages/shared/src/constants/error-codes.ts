@@ -73,6 +73,10 @@ export const ErrorCode = {
   // already_exists is shared with the catalogue changes (first merge declares it — design D10).
   ALREADY_EXISTS: 'already_exists',
   BRANCH_IN_USE: 'branch_in_use',
+  // add-customer-management — Part 3 §9 · API-ERR-02 (task 1.4): an archive refused while BOOKED /
+  // STARTED bookings exist, context `{ count }` (P3.CUS.07 · P3-RULE-02). already_exists, conflict and
+  // zawgyi_text above are reused.
+  CUSTOMER_HAS_ACTIVE_BOOKINGS: 'customer_has_active_bookings',
   // add-settings-store — API-ERR-02 · Part 1 §11b · P1-RULE-08 · API-AUTH-06 (task 1.8): a write of a
   // read-only key or a branch override of a company-only key; maintenance mode for a caller who may not
   // pass (texts owner-approved 05/Nov/2026, S18).

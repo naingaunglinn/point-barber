@@ -73,9 +73,10 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (49) + Manager 6 Part 1 + 13 Part 4 + 2 schedule + Barber 2 Part 4
-      // (add-walkin-visit-checkout · add-schedule-patterns · add-booking-cancel-reasons).
-      role_permissions: 72,
+      // Admin every code (53) + Manager 6 Part 1 + 3 Part 3 + 13 Part 4 + 2 schedule + Barber 2 Part 3
+      // + 2 Part 4 (add-walkin-visit-checkout · add-schedule-patterns · add-customer-management ·
+      // add-booking-cancel-reasons).
+      role_permissions: 81,
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,
@@ -213,6 +214,28 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
     expect(rows.map((row) => [row.role, Number(row.n)])).toStrictEqual([
       ['Barber', 2],
       ['Manager', 13],
+    ]);
+  });
+
+  // add-customer-management task 1.3 — Part 3 §7 · spec-fixtures §9.
+  it('module 170 gives the customer codes to roles created before Part 3, once', async () => {
+    await prisma.$executeRaw`
+      DELETE FROM role_permissions rp USING roles r, permissions p
+      WHERE rp.role_id = r.id AND rp.permission_id = p.id AND r.name_en IN ('Manager', 'Barber')
+        AND p.module = 'customer'`;
+    await runSeed(t.app, FIXTURES);
+    await runSeed(t.app, FIXTURES);
+    const rows = await prisma.$queryRaw<{ role: string; code: string }[]>`
+      SELECT r.name_en AS role, p.code FROM role_permissions rp
+      JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id
+      WHERE p.module = 'customer' AND r.name_en IN ('Manager', 'Barber')
+      ORDER BY r.name_en, p.code`;
+    expect(rows).toStrictEqual([
+      { role: 'Barber', code: 'customer.create' },
+      { role: 'Barber', code: 'customer.view' },
+      { role: 'Manager', code: 'customer.create' },
+      { role: 'Manager', code: 'customer.update' },
+      { role: 'Manager', code: 'customer.view' },
     ]);
   });
 });

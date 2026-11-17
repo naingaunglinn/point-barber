@@ -26,6 +26,17 @@ describe('language files', () => {
       'settings',
       'branch',
       'maintenance',
+      'permission',
+    ]);
+  });
+
+  // add-customer-management task 1.2 — the label `permission.<code>` of each `customer.*` code (D12).
+  it.each(LOCALES)('labels the four customer codes in %s', (locale) => {
+    expect(Object.keys(loadMessages(locale).permission.customer)).toStrictEqual([
+      'view',
+      'create',
+      'update',
+      'delete',
     ]);
   });
 

@@ -115,3 +115,14 @@ describe('fieldMessageKey — the table of design D9', () => {
     });
   });
 });
+
+// add-customer-management task 1.4 — the Part 3 §9 code of the archive guard; its count is the context
+// member `count` (P3.CUS.07).
+describe('errorMessageKey — add-customer-management', () => {
+  it('customer_has_active_bookings → error.customer_has_active_bookings', () => {
+    expect(ErrorCode.CUSTOMER_HAS_ACTIVE_BOOKINGS).toBe('customer_has_active_bookings');
+    expect(errorMessageKey('customer_has_active_bookings')).toBe(
+      'error.customer_has_active_bookings',
+    );
+  });
+});
