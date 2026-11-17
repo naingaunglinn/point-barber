@@ -61,9 +61,8 @@ export const ErrorCode = {
   // add-late-entry — P4-RULE-13 · LE-1: the four late-entry times out of order or later than now.
   LATE_ENTRY_TIME: 'late_entry_time',
   // add-booking-cancel-reasons — Part 3 §9 · API-ERR-02 (task 2.2): 409 when a write would switch off,
-  // re-flag or archive the no-show reason (`system_code` 1 — D-BKG-17 · P3.CRS.03 / 04). The key is
-  // shared with add-payment-methods-admin; the second of the two to merge aligns the text.
-  // already_exists and conflict below are reused.
+  // re-flag or archive the no-show reason (`system_code` 1 — D-BKG-17 · P3.CRS.03 / 04). Shared with
+  // add-payment-methods-admin, one neutral text (point-sdd #47). already_exists and conflict are reused.
   SYSTEM_ROW: 'system_row',
   // add-company-profile — API-ERR-02 · Part 1 v1.7 §11b · design D10 (task 1.2): a stale
   // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).

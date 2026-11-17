@@ -39,30 +39,27 @@ export const CANCEL_REASON_PRESETS: readonly CancelReasonPreset[] = [
   preset('Other', 'Other', 4, { requires_note: true }),
 ];
 
-/** What the planner reads of each existing row of the company, archived rows included. */
-export interface ExistingCancelReason {
-  readonly system_code: number | null;
-  readonly sort_order: number;
-  readonly archived_at: Date | null;
+/** What the planner reads of the company's reasons: two counts and one aggregate, no row list. */
+export interface CancelReasonSeedState {
+  /** Every row of the company, archived rows included. */
+  readonly rows: number;
+  /** A `system_code` 1 row exists — an archived one counts, as the unique index counts it. */
+  readonly hasNoShow: boolean;
+  /** The highest `sort_order` of the non-archived rows; 0 when there is none. */
+  readonly lastSortOrder: number;
 }
 
 /**
- * The rows to insert for a company (design D3 steps 2 – 3):
- * - no row at all → the four presets;
- * - rows, but none with `system_code` 1 (archived rows count — the unique index does too) → the no-show
- *   row only, placed after the highest non-archived `sort_order`;
- * - otherwise nothing: an existing row is never changed, so a rename survives every start.
+ * The rows to insert for a company (design D3 steps 2 – 3): no row at all → the four presets; rows but
+ * no system row → the no-show row only, placed last; otherwise nothing — an existing row is never
+ * changed, so a rename survives every start.
  */
-export function planCancelReasonSeed(
-  existing: readonly ExistingCancelReason[],
-): readonly CancelReasonPreset[] {
-  if (existing.length === 0) return CANCEL_REASON_PRESETS;
-  if (existing.some((row) => row.system_code === CancelReasonSystemCode.NO_SHOW)) return [];
-  const last = existing
-    .filter((row) => row.archived_at === null)
-    .reduce((highest, row) => Math.max(highest, row.sort_order), 0);
+export function planCancelReasonSeed(state: CancelReasonSeedState): readonly CancelReasonPreset[] {
+  if (state.rows === 0) return CANCEL_REASON_PRESETS;
+  if (state.hasNoShow) return [];
+  const { name_mm, name_en } = NO_SHOW;
   return [
-    preset(NO_SHOW.name_mm, NO_SHOW.name_en, last + 1, {
+    preset(name_mm, name_en, state.lastSortOrder + 1, {
       system_code: CancelReasonSystemCode.NO_SHOW,
     }),
   ];

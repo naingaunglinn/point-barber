@@ -5,21 +5,21 @@ import { CANCEL_REASON_PRESETS, planCancelReasonSeed } from './cancel-reason-pre
 
 // add-booking-cancel-reasons task 1.5 — the seed planner of design D3, written before the seed step:
 // spec "Every company starts with the four preset cancel reasons" (D-BKG-14 · D-BKG-17 · D-DB-07 ·
-// F-BK-17).
+// F-BK-17). The state is what CancelReasonsRepository.seedState counts (archived rows ignored for the
+// place: cancel-reason-seed.int.test.ts).
 const NO_SHOW = CancelReasonSystemCode.NO_SHOW;
-const ARCHIVED = new Date('2026-10-05T10:00:00+06:30');
-const row = (
-  sort_order: number,
-  system_code: number | null = null,
-  archived_at: Date | null = null,
-) => ({ sort_order, system_code, archived_at });
+const state = (rows: number, hasNoShow: boolean, lastSortOrder: number) => ({
+  rows,
+  hasNoShow,
+  lastSortOrder,
+});
 /** A planned row as [name_mm, name_en, requires_note, system_code, sort_order]. */
 const summary = (rows: ReturnType<typeof planCancelReasonSeed>) =>
   rows.map((r) => [r.name_mm, r.name_en, r.requires_note, r.system_code, r.sort_order]);
 
 describe('planCancelReasonSeed', () => {
   it('no rows → the four presets with sort_order 1 … 4, all ACTIVE', () => {
-    const rows = planCancelReasonSeed([]);
+    const rows = planCancelReasonSeed(state(0, false, 0));
     expect(summary(rows)).toStrictEqual([
       ['Customer ပြောင်းချင်', 'Customer wants to change', false, null, 1],
       ['Barber မအား', 'Barber not available', false, null, 2],
@@ -31,25 +31,19 @@ describe('planCancelReasonSeed', () => {
   });
 
   it('rows without a system row → the no-show row only, after the highest sort_order', () => {
-    const rows = planCancelReasonSeed([row(1), row(2), row(4)]);
+    const rows = planCancelReasonSeed(state(3, false, 4));
     expect(summary(rows)).toStrictEqual([['Customer မလာ', 'Customer no-show', false, NO_SHOW, 5]]);
     expect(rows[0]?.status).toBe(CancelReasonStatus.ACTIVE);
   });
 
-  it('the place of the no-show row ignores archived rows; every row archived → 1', () => {
-    expect(planCancelReasonSeed([row(2), row(9, null, ARCHIVED)])).toMatchObject([
-      { system_code: NO_SHOW, sort_order: 3 },
-    ]);
-    expect(planCancelReasonSeed([row(7, null, ARCHIVED)])).toMatchObject([
+  it('every row archived (no non-archived sort_order) → the no-show row at 1', () => {
+    expect(planCancelReasonSeed(state(2, false, 0))).toMatchObject([
       { system_code: NO_SHOW, sort_order: 1 },
     ]);
   });
 
-  it('all present → nothing (an existing row is never changed)', () => {
-    expect(planCancelReasonSeed([row(1), row(2), row(3, NO_SHOW), row(4)])).toStrictEqual([]);
-  });
-
-  it('an archived system row still counts — a second one would break the unique index', () => {
-    expect(planCancelReasonSeed([row(1), row(3, NO_SHOW, ARCHIVED)])).toStrictEqual([]);
+  it('a system row present, archived or not → nothing (an existing row is never changed)', () => {
+    expect(planCancelReasonSeed(state(4, true, 4))).toStrictEqual([]);
+    expect(planCancelReasonSeed(state(1, true, 0))).toStrictEqual([]);
   });
 });
