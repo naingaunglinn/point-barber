@@ -189,6 +189,24 @@
     "description": "settings · update (incl. reset, maintenance mode; company values + maintenance = company scope, branch overrides = branch in scope) — P1.SET.03/04, P1.SYS.03"
   },
   {
+    "code": "schedule.view",
+    "module": "schedule",
+    "action": "view",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.schedule.view",
+    "description": "schedule · view (patterns of others, conflicts) — P2.PAT.01, P2.SHF.07"
+  },
+  {
+    "code": "schedule.update",
+    "module": "schedule",
+    "action": "update",
+    "kind": "crud",
+    "level": "branch",
+    "label_key": "permission.schedule.update",
+    "description": "schedule · update (pattern set, edit shift, generate, day reset) — P2.PAT.02, P2.SHF.04/06/08"
+  },
+  {
     "code": "visit.view",
     "module": "visit",
     "action": "view",

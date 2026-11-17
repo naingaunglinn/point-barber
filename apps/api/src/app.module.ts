@@ -15,6 +15,7 @@ import { PayrollModule } from './modules/payroll/index.js';
 import { PeopleModule } from './modules/people/index.js';
 import { PlatformModule } from './modules/platform/index.js';
 import { SalesModule } from './modules/sales/index.js';
+import { SchedulingModule } from './modules/scheduling/index.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SalesModule } from './modules/sales/index.js';
     CatalogModule,
     PayrollModule,
     SalesModule,
+    SchedulingModule,
     DeliveryModule,
   ],
   // The three global guards, in the order of design D2: a forged changing request is refused before
