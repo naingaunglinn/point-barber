@@ -221,6 +221,15 @@ describe('add-ci-lint-rules · scope of the A1 file sets', () => {
     'no-eval',
     'no-implied-eval',
     'no-new-func',
+    // row 45
+    'no-empty',
+    '@typescript-eslint/only-throw-error',
+    '@typescript-eslint/use-unknown-in-catch-callback-variable',
+    'preserve-caught-error',
+    // row 78
+    'no-console',
+    // row 88
+    'import-x/no-relative-packages',
   ];
   const ZONED = ['import-x/no-restricted-paths', 'import-x/no-default-export'];
   const VITEST = ['vitest/no-focused-tests', 'vitest/no-disabled-tests'];
@@ -239,7 +248,8 @@ describe('add-ci-lint-rules · scope of the A1 file sets', () => {
     ],
     [
       'packages/shared/src/format/money.ts',
-      [...ZONED, 'react/no-danger'],
+      // NO_SUPPRESSION: no eslint-disable comment at all in money, permission and date code.
+      [...ZONED, 'react/no-danger', '@eslint-community/eslint-comments/no-use'],
       [...VITEST, ...PLAYWRIGHT],
     ],
     // react/no-danger is off here: the allow-list scenario above (cg-exception CG-SEC-04).
