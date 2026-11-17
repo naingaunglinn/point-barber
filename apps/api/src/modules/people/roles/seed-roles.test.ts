@@ -2,8 +2,10 @@ import { PERMISSIONS } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
+  BARBER_PART3_SEED_CODES,
   BARBER_SEED_CODES,
   MANAGER_PART2_SEED_CODES,
+  MANAGER_PART3_SEED_CODES,
   MANAGER_PART4_SEED_CODES,
   MANAGER_SCHEDULE_SEED_CODES,
   MANAGER_SEED_CODES,
@@ -96,11 +98,41 @@ describe('seed roles — Part 2 service codes', () => {
     const manager = [
       ...MANAGER_SEED_CODES,
       ...MANAGER_PART2_SEED_CODES,
+      ...MANAGER_PART3_SEED_CODES,
       ...MANAGER_PART4_SEED_CODES,
       ...MANAGER_SCHEDULE_SEED_CODES,
     ];
     expect(manager).not.toContain('service.create');
     expect(manager).not.toContain('service.delete');
-    expect(BARBER_SEED_CODES.filter((code) => code.startsWith('service.'))).toStrictEqual([]);
+    const barber = [...BARBER_SEED_CODES, ...BARBER_PART3_SEED_CODES];
+    expect(barber.filter((code) => code.startsWith('service.'))).toStrictEqual([]);
+  });
+});
+
+// add-customer-management task 1.3 — customers "The four `customer.*` codes are shared-level codes
+// with their seed" (Part 3 §7 · D-ROLE-09 · owner #9): Manager view / create / update, Barber view /
+// create; `customer.delete` stays with the Admin, who holds every code.
+describe('seed roles — Part 3 customer codes', () => {
+  it('Manager: customer.view, customer.create and customer.update', () => {
+    expect([...MANAGER_PART3_SEED_CODES]).toStrictEqual([
+      'customer.view',
+      'customer.create',
+      'customer.update',
+    ]);
+  });
+
+  it('Barber: customer.view and customer.create', () => {
+    expect([...BARBER_PART3_SEED_CODES]).toStrictEqual(['customer.view', 'customer.create']);
+  });
+
+  it('keeps customer.delete with the Admin', () => {
+    expect([...MANAGER_PART3_SEED_CODES, ...BARBER_PART3_SEED_CODES]).not.toContain(
+      'customer.delete',
+    );
+  });
+
+  it('names only codes of the catalogue', () => {
+    for (const code of [...MANAGER_PART3_SEED_CODES, ...BARBER_PART3_SEED_CODES])
+      expect(known.has(code)).toBe(true);
   });
 });

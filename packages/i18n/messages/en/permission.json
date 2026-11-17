@@ -1,8 +1,14 @@
 {
+  "customer": {
+    "view": "View customers",
+    "create": "Add customers",
+    "update": "Edit customers",
+    "delete": "Deactivate and archive customers"
+  },
   "service": {
     "view": "View services and categories",
-    "create": "Create services and categories",
-    "update": "Update services and categories",
+    "create": "Add services and categories",
+    "update": "Edit services and categories",
     "delete": "Archive services and categories"
   }
 }

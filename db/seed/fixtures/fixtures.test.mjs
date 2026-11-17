@@ -5,6 +5,14 @@ import { JOIN_DATE, PEOPLE } from './020-people.mjs';
 import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
 import {
+  FIRST_ROW as SERVICE_GRANT_ROW,
+  GRANTS as SERVICE_GRANTS,
+} from './100-part2-service-grants.mjs';
+import {
+  FIRST_ROW as CUSTOMER_FIRST_ROW,
+  GRANTS as CUSTOMER_GRANTS,
+} from './170-customer-grants.mjs';
+import {
   EFFECTIVE_FROM as PATTERN_FROM,
   PATTERN_ROWS,
   PATTERNS,
@@ -13,10 +21,6 @@ import {
   FIRST_ROW as SCHEDULE_GRANT_ROW,
   GRANTS as SCHEDULE_GRANTS,
 } from './310-schedule-grants.mjs';
-import {
-  FIRST_ROW as SERVICE_GRANT_ROW,
-  GRANTS as SERVICE_GRANTS,
-} from './100-part2-service-grants.mjs';
 import {
   BARBER_PART4_CODES,
   MANAGER_PART4_CODES,
@@ -171,10 +175,26 @@ describe('fixture 100-part2-service-grants (add-service-catalogue task 1.4)', ()
     ]);
   });
 
-  it('numbers its role_permissions rows in a block of its own, apart from modules 090 and 310', () => {
+  it('numbers its role_permissions rows in a block of its own, apart from modules 090, 170 and 310', () => {
+    expect(SERVICE_GRANT_ROW).toBe(10001);
     expect(SERVICE_GRANT_ROW).toBeGreaterThan(
       MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
     );
-    expect(SERVICE_GRANT_ROW + SERVICE_GRANTS[0].codes.length).toBeLessThan(SCHEDULE_GRANT_ROW);
+    expect(SERVICE_GRANT_ROW + SERVICE_GRANTS[0].codes.length).toBeLessThan(CUSTOMER_FIRST_ROW);
+  });
+});
+
+// add-customer-management task 1.3 — module 170 adds the Part 3 customer codes (Part 3 §7 · owner #9 ·
+// spec-fixtures §9); dev-seed.int.test.ts runs it on a database whose roles lack them.
+describe('fixture 170-customer-grants (add-customer-management task 1.3)', () => {
+  it('gives the Manager view / create / update and the Barber view / create, never delete', () => {
+    expect(CUSTOMER_GRANTS.map(({ role, codes }) => [role, [...codes]])).toStrictEqual([
+      ['Manager', ['customer.view', 'customer.create', 'customer.update']],
+      ['Barber', ['customer.view', 'customer.create']],
+    ]);
+  });
+
+  it('numbers its role_permissions rows in a block of its own (17001 …)', () => {
+    expect(CUSTOMER_FIRST_ROW).toBe(17001);
   });
 });

@@ -1,5 +1,5 @@
 import { TZDate } from '@date-fns/tz';
-import { addDays, format } from 'date-fns';
+import { addDays, format, getISODay } from 'date-fns';
 
 import { APP_TIME_ZONE } from '../constants/time.js';
 import { toDate, type BusinessDate, type Instant } from './instant.js';
@@ -32,4 +32,17 @@ export function nextBusinessDate(day: BusinessDate): BusinessDate {
 /** Today in Myanmar Time, for the supplied `now` — never the device date (CG-TIME-03). */
 export function todayMmt(now: Instant | Date): BusinessDate {
   return businessDateOf(now);
+}
+
+/**
+ * The ISO weekday of a business date — 1 Monday … 7 Sunday, the numbering of `day_of_week` in
+ * `schedule_patterns` and `branch_opening_hours` (`2026-10-05` → 1).
+ */
+export function isoWeekdayOf(day: BusinessDate): number {
+  return getISODay(mmtDate(day));
+}
+
+/** The business date `days` calendar days later (earlier when negative): `2026-10-05` + 21 → `2026-10-26`. */
+export function plusDays(day: BusinessDate, days: number): BusinessDate {
+  return businessDateOf(addDays(mmtDate(day), days));
 }
