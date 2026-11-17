@@ -3,6 +3,7 @@ export * from './constants/http-status.js';
 export * from './constants/limits.js';
 export * from './constants/status.js';
 export * from './constants/time.js';
+export * from './customers/query.js';
 export * from './errors/message-key.js';
 export * from './format/date-time.js';
 export * from './format/initials.js';

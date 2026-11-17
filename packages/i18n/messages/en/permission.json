@@ -1,0 +1,8 @@
+{
+  "customer": {
+    "view": "View customers",
+    "create": "Add customers",
+    "update": "Edit customers",
+    "delete": "Deactivate and archive customers"
+  }
+}
