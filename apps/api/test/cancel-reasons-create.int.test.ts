@@ -166,7 +166,7 @@ describe('add-booking-cancel-reasons · booking · The Myanmar name of a cancel 
 // A2 recorded readings (the lead's answers of 17/Nov/2026, following the locked texts named):
 // an empty English name is stored as NULL (AD-L10N-03), and Zawgyi in a name is refused before any
 // lookup or write (API-SHAPE-05 · AD-FORM-13 · CG-API-03).
-// "Example name" typed with a Zawgyi keyboard (the sample of branches-create.int.test.ts).
+// "No. 3, Example Road" in Myanmar typed with a Zawgyi keyboard (the sample of branches-create.int.test.ts).
 const ZAWGYI = 'အမွတ္ ၃၊ စမ္းသပ္လမ္း';
 
 describe('add-booking-cancel-reasons · booking · recorded readings of A2', () => {
