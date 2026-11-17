@@ -35,6 +35,7 @@ export * from './schemas/list-query.js';
 export * from './schemas/me.js';
 export * from './schemas/problem.js';
 export * from './schemas/sales.js';
+export * from './schemas/schedule.js';
 export * from './schemas/settings.js';
 export * from './schemas/system-status.js';
 export * from './schemas/wire.js';
