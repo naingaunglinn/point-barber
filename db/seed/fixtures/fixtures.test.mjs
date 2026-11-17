@@ -4,6 +4,7 @@ import { BRANCHES, COMPANY } from './010-organization.mjs';
 import { JOIN_DATE, PEOPLE } from './020-people.mjs';
 import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
+import { LEAVE_TYPES, seed as seedLeaveTypes } from './150-leave-types.mjs';
 import {
   EFFECTIVE_FROM as PATTERN_FROM,
   PATTERN_ROWS,
@@ -17,6 +18,7 @@ import {
   BARBER_PART4_CODES,
   MANAGER_PART4_CODES,
 } from '../../../packages/shared/src/permissions/seed-codes.ts';
+import { FIXTURE_IDS } from '../../../packages/shared/src/testing/fixture-ids.ts';
 
 // add-foundation-auth-access tasks 3.7 and 3.8 — the fixture modules hold exactly the rows of
 // docs/plan/spec-fixtures.md §1–§3 and design D16.
@@ -155,5 +157,34 @@ describe('fixture 310-schedule-grants (task 1.6)', () => {
     expect(SCHEDULE_GRANT_ROW).toBeGreaterThan(
       MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
     );
+  });
+});
+
+// add-leave-types task 1.7 — the three development leave types of docs/plan/spec-fixtures.md §10.3
+// (module 150 · design D3). The rows on a seeded database: apps/api/test/dev-seed.int.test.ts.
+describe('fixture 150-leave-types (add-leave-types task 1.7)', () => {
+  it('holds Paid leave, Sick leave and Unpaid leave of §10.3 with their paid flag', () => {
+    expect(LEAVE_TYPES.map((type) => [type.name_en, type.name_mm, type.is_paid])).toStrictEqual([
+      ['Paid leave', 'လစာရခွင့်', true],
+      ['Sick leave', 'ဆေးခွင့်', false],
+      ['Unpaid leave', 'လစာမဲ့ခွင့်', false],
+    ]);
+  });
+
+  it('writes each with its fixed id, the company, its position 1 – 3 and status 1 ACTIVE', async () => {
+    const written = [];
+    const db = {
+      query: async (_sql, values) => {
+        written.push(values);
+      },
+    };
+    await seedLeaveTypes(db, { companyId: 'company' });
+    const ids = FIXTURE_IDS.leaveTypes;
+    expect(written).toStrictEqual([
+      [ids.PAID_LEAVE, 'company', 'လစာရခွင့်', 'Paid leave', true, 1, 1],
+      [ids.SICK_LEAVE, 'company', 'ဆေးခွင့်', 'Sick leave', false, 2, 1],
+      [ids.UNPAID_LEAVE, 'company', 'လစာမဲ့ခွင့်', 'Unpaid leave', false, 3, 1],
+    ]);
+    expect(new Set(Object.values(ids)).size).toBe(3);
   });
 });

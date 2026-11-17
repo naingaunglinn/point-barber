@@ -21,6 +21,8 @@ const json: unknown = JSON.parse(
 const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'settings']);
 /** The Part 2 §12 modules on main so far: `schedule` (add-schedule-patterns, below). */
 const PART2_MODULES = new Set(['schedule']);
+/** Part 2 §12 — the `leave_type` module of add-leave-types (below). */
+const PART2_LEAVE_TYPE_MODULES = new Set(['leave_type']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
 
 const count = <K extends string>(values: readonly K[]) =>
@@ -94,7 +96,12 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
   });
 
   it('holds nothing but the codes of Parts 1, 2 and 4', () => {
-    const modules = new Set([...PART1_MODULES, ...PART2_MODULES, ...PART4_MODULES]);
+    const modules = new Set([
+      ...PART1_MODULES,
+      ...PART2_MODULES,
+      ...PART2_LEAVE_TYPE_MODULES,
+      ...PART4_MODULES,
+    ]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
 
@@ -171,6 +178,28 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
   it('types a schedule code', () => {
     const code: PermissionCode = 'schedule.update';
     expect(permissionLevel(code)).toBe('branch');
+  });
+});
+
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// ADR-011 · ADR-012 · D-ROLE-08 · design D3): kind crud, level company — a company master. The sync
+// that gives them to a company-admin role, and not to the seed Manager or Barber: base-seed.int.test.ts.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  it('holds the four codes with their kind, level and label key', () => {
+    const leaveType = PERMISSIONS.filter((entry) => PART2_LEAVE_TYPE_MODULES.has(entry.module));
+    expect(
+      leaveType.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['leave_type.view', 'crud · company', 'permission.leave_type.view'],
+      ['leave_type.create', 'crud · company', 'permission.leave_type.create'],
+      ['leave_type.update', 'crud · company', 'permission.leave_type.update'],
+      ['leave_type.delete', 'crud · company', 'permission.leave_type.delete'],
+    ]);
+  });
+
+  it('types a leave-type code', () => {
+    const code: PermissionCode = 'leave_type.delete';
+    expect(permissionLevel(code)).toBe('company');
   });
 });
 

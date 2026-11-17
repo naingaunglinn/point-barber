@@ -1,0 +1,8 @@
+{
+  "leave_type": {
+    "view": "View leave types",
+    "create": "Create leave types",
+    "update": "Edit leave types",
+    "delete": "Archive leave types"
+  }
+}

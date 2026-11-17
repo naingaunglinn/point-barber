@@ -58,5 +58,6 @@
   "branch_in_use": "This branch still has {active_assignments} assigned staff, {open_bookings} open bookings and {open_sales} open sales.",
   "setting_scope": "This setting can't be changed here.",
   "maintenance": "The system is under maintenance. Please try again later.",
-  "invalid_value": "Choose one of the listed values."
+  "invalid_value": "Choose one of the listed values.",
+  "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first."
 }

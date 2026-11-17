@@ -47,6 +47,7 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
 | `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
 | `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`     |
+| `scheduling`   | `leave_types` — P2.LVT.02 – 04 (reads `leaves` for the archive's PENDING check)                                             | `add-leave-types`           |
 
 The website refresh (API-PUB-03 · ADR-006) has one owner: `platform/website` — `SiteContent.touch(tx,
 tags)`, which every writer of website data calls inside its write transaction; it raises

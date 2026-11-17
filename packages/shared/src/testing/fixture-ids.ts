@@ -50,6 +50,12 @@ export const FIXTURE_IDS = {
   services: { HAIRCUT: id('005', '1'), SHAVE: id('005', '2'), HAIR_WASH: id('005', '3') },
   // add-walkin-visit-checkout — spec-fixtures §2 customers (fixture module 060).
   customers: { MA_SU: id('00b', '1') },
+  // add-leave-types — spec-fixtures §10.3 leave types (fixture module 150).
+  leaveTypes: {
+    PAID_LEAVE: id('010', '1'),
+    SICK_LEAVE: id('010', '2'),
+    UNPAID_LEAVE: id('010', '3'),
+  },
 } as const;
 
 /** The id of row `n` (1, 2, …) of a fixture table whose rows have no code of their own. */

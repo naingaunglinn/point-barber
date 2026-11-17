@@ -47,6 +47,8 @@ const TABLES = [
   'employee_service_eligibilities',
   'branch_opening_hours',
   'schedule_patterns',
+  // add-leave-types (fixture module 150)
+  'leave_types',
 ] as const;
 
 async function counts(): Promise<Record<string, number>> {
@@ -72,9 +74,9 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (45) + Manager 6 Part 1 + 13 Part 4 + 2 schedule + Barber 2 Part 4
-      // (add-walkin-visit-checkout · add-schedule-patterns).
-      role_permissions: 68,
+      // Admin every code (49) + Manager 6 Part 1 + 13 Part 4 + 2 schedule + Barber 2 Part 4
+      // (add-walkin-visit-checkout · add-schedule-patterns · add-leave-types: 4 Admin codes).
+      role_permissions: 72,
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,
@@ -87,6 +89,8 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       branch_opening_hours: 21,
       // add-schedule-patterns module 300 — spec-fixtures §10.1: 6 + 6 + 5 + 2 + 6 + 6.
       schedule_patterns: 31,
+      // add-leave-types module 150 — spec-fixtures §10.3: Paid leave, Sick leave, Unpaid leave.
+      leave_types: 3,
     });
     await runSeed(t.app, FIXTURES);
     expect(await counts()).toStrictEqual(first);
@@ -287,6 +291,52 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
         hours: '09:00-21:00',
         open: true,
       })),
+    ]);
+  });
+});
+
+// add-leave-types task 1.7 — the three development leave types of spec-fixtures §10.3 (D-LV-01 · design
+// D3 · Recorded reading 1): invented, not the shop's list; ACTIVE, not archived, in their order.
+describe('add-leave-types · fixture module 150', () => {
+  it('seeds Paid leave, Sick leave and Unpaid leave with their paid flag and order', async () => {
+    await runSeed(t.app, FIXTURES);
+    const rows = await prisma.$queryRaw<
+      {
+        name_en: string;
+        name_mm: string;
+        is_paid: boolean;
+        sort_order: number;
+        status: number;
+        archived: boolean;
+      }[]
+    >`
+      SELECT name_en, name_mm, is_paid, sort_order, status, archived_at IS NOT NULL AS archived
+      FROM leave_types ORDER BY sort_order`;
+    expect(rows).toStrictEqual([
+      {
+        name_en: 'Paid leave',
+        name_mm: 'လစာရခွင့်',
+        is_paid: true,
+        sort_order: 1,
+        status: 1,
+        archived: false,
+      },
+      {
+        name_en: 'Sick leave',
+        name_mm: 'ဆေးခွင့်',
+        is_paid: false,
+        sort_order: 2,
+        status: 1,
+        archived: false,
+      },
+      {
+        name_en: 'Unpaid leave',
+        name_mm: 'လစာမဲ့ခွင့်',
+        is_paid: false,
+        sort_order: 3,
+        status: 1,
+        archived: false,
+      },
     ]);
   });
 });
