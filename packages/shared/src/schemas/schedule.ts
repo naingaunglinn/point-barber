@@ -13,7 +13,10 @@ import { wireDate, wireDateTime } from './wire.js';
 // segment that does not end after it starts and an `effective_to` before `effective_from` →
 // `end_before_start`; two segments of one day that overlap → `segment_overlap` on the later one (touching
 // is not overlapping); a malformed time, a weekday outside 1 … 7, more than 7 days or a weekday sent twice
-// → the Zod issue name.
+// → the Zod issue name (`invalid_format`, `too_small` / `too_big`, `invalid_value`).
+
+/** ISO weekdays, 1 Monday … 7 Sunday — `day_of_week` of `schedule_patterns`. */
+const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7];
 
 /** The most dates one roster read covers (P2.SHF.01 — "at most 42 dates"). */
 export const ROSTER_MAX_DATES = 42;
@@ -87,13 +90,14 @@ export const patternSetWriteSchema = z
         input: to,
       });
     }
-    // A weekday sent twice: the Zod issue name (`custom`) on the second one (reading 5).
+    // A weekday sent twice (reading 5 — a Zod issue name): `invalid_value` on the second one, whose
+    // allowed values are the weekdays not sent before it — a named code with its `error.*` text.
     const seen = new Set<number>();
     for (const [index, day] of days.entries()) {
       if (seen.has(day.day_of_week)) {
         ctx.issues.push({
-          code: 'custom',
-          message: 'day_of_week sent twice',
+          code: 'invalid_value',
+          values: WEEKDAYS.filter((weekday) => !seen.has(weekday)),
           path: ['days', index, 'day_of_week'],
           input: day.day_of_week,
         });

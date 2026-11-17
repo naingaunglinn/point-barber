@@ -110,7 +110,7 @@ describe('add-schedule-patterns · scheduling · Segment times and dates are che
     ).toStrictEqual([{ field: 'days[0].segments[1]', code: 'segment_overlap' }]);
   });
 
-  it('a weekday sent twice → the Zod issue name on the second one', () => {
+  it('a weekday sent twice → invalid_value on the second one, its values the weekdays not sent', () => {
     const body = {
       effective_from: '2026-10-12',
       days: [
@@ -119,8 +119,12 @@ describe('add-schedule-patterns · scheduling · Segment times and dates are che
       ],
     };
     expect(fieldErrorsOf(patternSetWriteSchema, body)).toStrictEqual([
-      { field: 'days[1].day_of_week', code: 'custom' },
+      { field: 'days[1].day_of_week', code: 'invalid_value' },
     ]);
+    expect(patternSetWriteSchema.safeParse(body).error?.issues[0]).toMatchObject({
+      code: 'invalid_value',
+      values: [2, 3, 4, 5, 6, 7],
+    });
   });
 
   it.each([['9:00'], ['24:00'], ['09:60'], ['09:00:00']])(
@@ -151,7 +155,7 @@ describe('add-schedule-patterns · scheduling · Segment times and dates are che
     ).toStrictEqual([
       { field: 'days', code: 'too_big' },
       // Eight days of 1 … 7 repeat one.
-      { field: 'days[7].day_of_week', code: 'custom' },
+      { field: 'days[7].day_of_week', code: 'invalid_value' },
     ]);
   });
 
