@@ -14,6 +14,7 @@ import {
   isBranchCodeTaken,
   isClientRequestIdConflict,
   isFinishedImmutable,
+  isLeaveTypeNameTaken,
   isPaymentReferenceConflict,
 } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
@@ -57,6 +58,8 @@ function toProblem(error: unknown): ProblemException | null {
   // A branch code the company already has (P1.BR.02 · add-branch-management design D3): the unique
   // index decides, so two simultaneous creates of one code cannot both succeed.
   if (isBranchCodeTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
+  // A Myanmar name another non-archived leave type holds (add-leave-types design D5).
+  if (isLeaveTypeNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
   // The second wall (add-walkin-visit-checkout design D9): a finished record reached its guard trigger.
   if (isFinishedImmutable(error)) return new ProblemException(ErrorCode.LOCKED, 423);
   // The JSON body could not be read: unparseable or above the 1 MB limit (design D7, reading 5).

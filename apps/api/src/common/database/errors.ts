@@ -58,6 +58,14 @@ export function isBranchCodeTaken(error: unknown): boolean {
   return uniqueViolationIndex(error) === 'branches_company_id_code_idx';
 }
 
+/**
+ * A second non-archived leave type with a Myanmar name the company already has hit
+ * leave_types_name_active (P2.LVT.02 / 03 · Part 2 §13b · add-leave-types design D5): 409 already_exists.
+ */
+export function isLeaveTypeNameTaken(error: unknown): boolean {
+  return uniqueViolationIndex(error) === 'leave_types_name_active';
+}
+
 /** The SQLSTATE of a failed query (`55P03` lock_not_available, `23505` …), from the driver adapter. */
 export function sqlStateOf(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) return null;
