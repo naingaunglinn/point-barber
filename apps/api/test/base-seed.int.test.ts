@@ -35,6 +35,10 @@ const MANAGER = [
   'role.assign',
   'settings.view',
   'settings.update',
+  // Part 3 §7 (add-customer-management task 1.3).
+  'customer.view',
+  'customer.create',
+  'customer.update',
   // Part 4 §9 (add-walkin-visit-checkout task 1.4).
   'visit.view',
   'visit.update',
@@ -53,7 +57,8 @@ const MANAGER = [
   'schedule.view',
   'schedule.update',
 ];
-const BARBER = ['sale.create', 'sale.late_entry'];
+// Part 3 §7 (add-customer-management task 1.3) and Part 4 §9, sorted as roleCodes() reads them.
+const BARBER = ['customer.create', 'customer.view', 'sale.create', 'sale.late_entry'];
 
 /** The job's two steps: the catalogue, then the base seed. */
 async function firstStart(entries = PERMISSIONS) {

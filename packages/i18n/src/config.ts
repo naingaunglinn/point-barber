@@ -19,8 +19,8 @@ export const NAMESPACES = [
   // add-branch-management (task 1.9 — design D10).
   'branch',
   'maintenance',
-  // `permission.<code>` (AD-L10N-02): the first change to merge creates it, each change adds the labels
-  // of its codes — add-leave-types task 1.2 (`permission.leave_type.*`).
+  // `permission.<code>` (AD-L10N-02) — add-customer-management task 1.2 · add-service-catalogue task
+  // 1.2: the first to merge creates it; each change adds its codes' labels.
   'permission',
   // add-leave-types task 1.8 — design D10 (texts proposed for the owner's review, S18).
   'leaveType',

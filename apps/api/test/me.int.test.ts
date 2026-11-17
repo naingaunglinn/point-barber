@@ -33,11 +33,15 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(res.headers['cache-control']).toBe('no-store');
     expect(meResponseSchema.parse(res.body)).toBeDefined();
     // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
-    // (add-walkin-visit-checkout design D3 · API Part 4 §9) and its 2 Part 2 schedule codes
-    // (add-schedule-patterns task 1.3): 21 entries.
+    // (add-walkin-visit-checkout design D3 · API Part 4 §9), its 2 Part 2 schedule codes
+    // (add-schedule-patterns task 1.3) and its 3 Part 3 customer codes (add-customer-management task
+    // 1.3 · API Part 3 §7): 24 entries.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
+        'customer.create',
+        'customer.update',
+        'customer.view',
         'discount.approve',
         'discount.view',
         'employee.rating_update',
@@ -72,8 +76,18 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     );
     // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
     // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
-    // 4 Part 2 leave-type codes (add-leave-types): 49.
-    expect(catalogue).toHaveLength(49);
+    // 4 Part 3 customer codes (add-customer-management) + the 4 Part 2 leave-type codes
+    // (add-leave-types): 53.
+    expect(catalogue).toHaveLength(53);
+    // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management).
+    expect(catalogue.map((grant) => grant.code)).toEqual(
+      expect.arrayContaining([
+        'customer.view',
+        'customer.create',
+        'customer.update',
+        'customer.delete',
+      ]),
+    );
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
@@ -90,8 +104,11 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     const again = await me(`point_session=${sessionCookieOf(res) ?? ''}`);
     for (const body of [res.body, again.body]) {
       expect(body).toMatchObject({
-        // The Part 4 codes of the seed Barber role (add-walkin-visit-checkout design D3 · API Part 4 §9).
+        // The Part 4 codes of the seed Barber role (add-walkin-visit-checkout design D3 · API Part 4 §9)
+        // and its Part 3 customer.view / customer.create (add-customer-management task 1.3).
         grants: [
+          { code: 'customer.create', scope_type: 2, branch_ids: [B3] },
+          { code: 'customer.view', scope_type: 2, branch_ids: [B3] },
           { code: 'sale.create', scope_type: 2, branch_ids: [B3] },
           { code: 'sale.late_entry', scope_type: 2, branch_ids: [B3] },
         ],

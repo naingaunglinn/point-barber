@@ -31,6 +31,16 @@ describe('language files', () => {
     ]);
   });
 
+  // add-customer-management task 1.2 — the label `permission.<code>` of each `customer.*` code (D12).
+  it.each(LOCALES)('labels the four customer codes in %s', (locale) => {
+    expect(Object.keys(loadMessages(locale).permission.customer)).toStrictEqual([
+      'view',
+      'create',
+      'update',
+      'delete',
+    ]);
+  });
+
   // add-leave-types task 1.2 — the label `permission.<code>` of each `leave_type.*` code (design D10).
   it.each(LOCALES)('labels the four leave-type codes in %s', (locale) => {
     expect(Object.keys(loadMessages(locale).permission.leave_type)).toStrictEqual([

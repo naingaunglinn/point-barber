@@ -6,6 +6,10 @@ import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
 import { LEAVE_TYPES, seed as seedLeaveTypes } from './150-leave-types.mjs';
 import {
+  FIRST_ROW as CUSTOMER_FIRST_ROW,
+  GRANTS as CUSTOMER_GRANTS,
+} from './170-customer-grants.mjs';
+import {
   EFFECTIVE_FROM as PATTERN_FROM,
   PATTERN_ROWS,
   PATTERNS,
@@ -186,5 +190,20 @@ describe('fixture 150-leave-types (add-leave-types task 1.7)', () => {
       [ids.UNPAID_LEAVE, 'company', 'လစာမဲ့ခွင့်', 'Unpaid leave', false, 3, 1],
     ]);
     expect(new Set(Object.values(ids)).size).toBe(3);
+  });
+});
+
+// add-customer-management task 1.3 — module 170 adds the Part 3 customer codes (Part 3 §7 · owner #9 ·
+// spec-fixtures §9); dev-seed.int.test.ts runs it on a database whose roles lack them.
+describe('fixture 170-customer-grants (add-customer-management task 1.3)', () => {
+  it('gives the Manager view / create / update and the Barber view / create, never delete', () => {
+    expect(CUSTOMER_GRANTS.map(({ role, codes }) => [role, [...codes]])).toStrictEqual([
+      ['Manager', ['customer.view', 'customer.create', 'customer.update']],
+      ['Barber', ['customer.view', 'customer.create']],
+    ]);
+  });
+
+  it('numbers its role_permissions rows in a block of its own (17001 …)', () => {
+    expect(CUSTOMER_FIRST_ROW).toBe(17001);
   });
 });

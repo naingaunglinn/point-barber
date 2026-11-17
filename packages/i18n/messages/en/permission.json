@@ -1,4 +1,10 @@
 {
+  "customer": {
+    "view": "View customers",
+    "create": "Add customers",
+    "update": "Edit customers",
+    "delete": "Deactivate and archive customers"
+  },
   "leave_type": {
     "view": "View leave types",
     "create": "Create leave types",
