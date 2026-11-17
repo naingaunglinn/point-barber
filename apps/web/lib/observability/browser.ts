@@ -25,7 +25,7 @@ export function startBrowserReporting(options: ReportingOptions): Promise<Sdk> {
     // The end-to-end test waits for this before it throws (add-staging-deploy task 5.3).
     // REVERT CHECK (add-ci-lint-rules task 5.2) — never merge: every uncaught error is sent twice.
     window.addEventListener('error', (event) => {
-      Sentry.captureException(event.error);
+      Sentry.captureException(new Error(event.message));
     });
     document.documentElement.dataset.errorReporting = 'ready';
     return Sentry;
