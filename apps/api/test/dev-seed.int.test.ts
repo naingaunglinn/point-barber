@@ -68,7 +68,7 @@ async function counts(): Promise<Record<string, number>> {
 }
 
 /** The `GRANTS` a fixture module exports: the codes it adds to a role created before them. */
-const fixtureGrants = z.array(z.object({ role: z.string(), codes: z.array(z.string()).readonly() }));
+const fixtureGrants = z.array(z.object({ role: z.string(), codes: z.array(z.string()) }));
 
 /**
  * The codes each role holds after `pnpm db:seed` on a fresh database, sorted (owner 18/Nov/2026, #40):
