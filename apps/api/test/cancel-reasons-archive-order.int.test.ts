@@ -174,9 +174,9 @@ describe('add-booking-cancel-reasons · booking · The cancel reasons are reorde
   });
 
   it('a repeated id, an unknown id', async () => {
-    const [noShow, change, busy] = await Promise.all([NO_SHOW, CHANGE, BUSY].map(idOf));
-    await refused([noShow, change, busy, busy]);
-    await refused([noShow, change, busy, UNKNOWN_ID]);
+    const three = await Promise.all([NO_SHOW, CHANGE, BUSY].map(idOf));
+    await refused([...three, await idOf(BUSY)]);
+    await refused([...three, UNKNOWN_ID]);
   });
 
   it('a reason created between the read and the save', async () => {
@@ -204,8 +204,8 @@ describe('add-booking-cancel-reasons · booking · Every cancel-reason change le
         entity_type: 'booking_cancel_reasons',
         entity_id: reason.id,
         branch_id: null,
-        before: { name_en: 'Barber not available' },
-        after: { name_en: 'Barber is busy' },
+        before_data: { name_en: 'Barber not available' },
+        after_data: { name_en: 'Barber is busy' },
       },
     ]);
   });
@@ -232,8 +232,8 @@ describe('add-booking-cancel-reasons · booking · Every cancel-reason change le
         action: 'booking_cancel_reason.reorder',
         entity_type: 'booking_cancel_reasons',
         branch_id: null,
-        before: { ids: before },
-        after: { ids: after },
+        before_data: { ids: before },
+        after_data: { ids: after },
       },
     ]);
   });
