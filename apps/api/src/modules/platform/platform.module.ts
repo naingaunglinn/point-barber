@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import type { Logger } from 'pino';
 
+import { TargetResolvers } from '../../common/access/resolvers.js';
 import { AppConfig } from '../../common/config/config.js';
 import { LOGGER } from '../../common/logging/logger.js';
 import { Attachments } from './attachments/attachments.service.js';
@@ -17,6 +18,7 @@ import { MailModule } from './mail/mail.module.js';
 import { Observability } from './observability/observability.js';
 import { RateLimiter } from './rate-limit/rate-limiter.js';
 import { AttachmentsRepository } from './repositories/attachments.repository.js';
+import { BranchClosuresRepository } from './repositories/branch-closures.repository.js';
 import { OpeningHoursRepository } from './repositories/opening-hours.repository.js';
 import { MaintenanceGate, StoreMaintenanceGate } from './settings/maintenance-gate.js';
 import { SettingsModule } from './settings/settings.module.js';
@@ -31,6 +33,7 @@ import { MaintenanceController } from './system/maintenance.controller.js';
 import { MaintenanceMode } from './system/maintenance-mode.js';
 import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
+import { ClosureAccess } from './website/closure-access.js';
 import { OpeningHours } from './website/opening-hours.js';
 import { SiteContent } from './website/site-content.js';
 
@@ -77,6 +80,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     OpeningHoursRepository,
     OpeningHours,
     SiteContent,
+    // add-website-management task 1.6 — the closure loader of P8.WEB.07 / 08 (design D2).
+    BranchClosuresRepository,
+    ClosureAccess,
     RateLimiter,
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
@@ -119,4 +125,13 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     MailModule,
   ],
 })
-export class PlatformModule {}
+export class PlatformModule implements OnModuleInit {
+  constructor(
+    private readonly closureAccess: ClosureAccess,
+    private readonly targets: TargetResolvers,
+  ) {}
+
+  onModuleInit(): void {
+    this.closureAccess.register(this.targets);
+  }
+}
