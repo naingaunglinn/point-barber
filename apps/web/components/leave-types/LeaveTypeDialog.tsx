@@ -9,6 +9,7 @@ import {
   type LeaveType,
   type LeaveTypeCreateBody,
   LeaveTypeLimits,
+  LeaveTypeStatus,
   type LeaveTypeUpdateBody,
   type Problem,
   localized,
@@ -22,7 +23,6 @@ import {
   FormAlert,
   FormField,
   ReadOnlyFields,
-  StatusBadge,
   applyProblem,
   fieldErrorOf,
   toast,
@@ -108,11 +108,11 @@ function LeaveTypeText({ leaveType }: Readonly<{ leaveType: LeaveType }>) {
           {
             label: t('leaveType.field.active'),
             value:
-              leaveType.archived_at === null ? (
-                <StatusBadge table="leave_types" code={leaveType.status} />
-              ) : (
-                t('leaveType.list.archived')
-              ),
+              leaveType.archived_at !== null
+                ? t('leaveType.list.archived')
+                : leaveType.status === LeaveTypeStatus.ACTIVE
+                  ? t('status.leave_types.ACTIVE')
+                  : t('status.leave_types.INACTIVE'),
           },
         ]}
       />
