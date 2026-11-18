@@ -4,7 +4,8 @@
     "company": "Company",
     "additional": "Additional settings",
     "maintenance": "Maintenance mode",
-    "branches": "Branches"
+    "branches": "Branches",
+    "leaveTypes": "Leave types"
   },
   "company": {
     "title": "Company",

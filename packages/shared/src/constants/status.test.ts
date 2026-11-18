@@ -16,6 +16,7 @@ import {
   DiscountType,
   EmployeeStatus,
   LateEntryReason,
+  LeaveTypeStatus,
   LocationType,
   LoginMethod,
   PaymentMethodKind,
@@ -145,6 +146,8 @@ describe('status constants = the CHECK lists of db/source', () => {
     ['AttachmentKind', AttachmentKind, 'attachments', 'kind'],
     // add-company-profile task 1.5 — Company.status
     ['CompanyStatus', CompanyStatus, 'companies', 'status'],
+    // add-leave-types task 1.4 — the `status` of the leave-type schemas
+    ['LeaveTypeStatus', LeaveTypeStatus, 'leave_types', 'status'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
   });
