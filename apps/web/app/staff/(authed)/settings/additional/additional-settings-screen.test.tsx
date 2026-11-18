@@ -86,6 +86,7 @@ describe('add-settings-store · settings · The Additional settings screen', () 
       'Sales & payments',
       'Closing',
       'Payroll & attendance',
+      'Website',
       'Dashboard',
       'System',
     ]);
