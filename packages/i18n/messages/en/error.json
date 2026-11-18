@@ -63,14 +63,5 @@
   "segment_overlap": "These times overlap.",
   "end_before_start": "The end must be after the start.",
   "cross_branch_gap": "Needs a {needed}-minute gap when changing branch ({branchA} ends {endA}, {branchB} starts {startB}).",
-  "self_action": "You can't change your own shifts for today — ask another manager.",
-  "closure_overlap": "These dates overlap another closure of this branch.",
-  "date_in_past": "This date has already passed.",
-  "closure_started": "This closure has already started — only its end date and notices can change.",
-  "closure_past": "This closure has ended and can no longer be changed.",
-  "range_too_long": "The range is too long — at most {max_days} days.",
-  "closes_before_opens": "The closing time must be after the opening time.",
-  "times_required": "Enter the opening and closing times.",
-  "times_not_allowed": "A closed day has no times.",
-  "overnight_not_allowed": "Opening hours can't run past midnight."
+  "self_action": "You can't change your own shifts for today — ask another manager."
 }

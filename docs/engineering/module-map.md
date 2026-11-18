@@ -48,7 +48,6 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
 | `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
 | `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`     |
-| `platform`     | `branch_opening_hours`, `branch_closures` — the website's hours and closures (P8.WEB.04 / 06 – 08)                          | `add-website-management`    |
 
 Two ports carry the Part 4 history to `booking` without an import of `sales` (walk-in design D1):
 `CustomerActivity`, declared by `booking` and implemented by `sales`, answers the visit and sale
@@ -60,14 +59,6 @@ The website refresh (API-PUB-03 · ADR-006) has one owner: `platform/website` �
 tags)`, which every writer of website data calls inside its write transaction; it raises
 `site.content_changed` and queues `site.revalidate` (no table of its own). Added by
 `add-company-profile`, whose company edit is its first caller.
-
-The website management of `add-website-management` (design D1) lives in `platform/website` too and
-reads four other modules through public reads they add to their `index.ts`. Those modules build on
-`platform`, so each registers its read into a `platform/website` port at start-up, as `people` does
-for the settings store: `booking` — `BookingReads.bookedInRange` (BOOKED bookings inside a closure);
-`catalog` — `ServiceCatalog.countOnWebsite`; `people` — `PublicPeople.activeProfiles` and
-`PeopleDirectory.branchesForWebsite`; `scheduling` — `TodayShifts.branchesOf` (shared with
-`add-schedule-patterns`; the first change to merge creates it).
 
 ## Advisory lock keys
 

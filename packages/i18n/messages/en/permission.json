@@ -4,9 +4,5 @@
     "create": "Add customers",
     "update": "Edit customers",
     "delete": "Deactivate and archive customers"
-  },
-  "website": {
-    "view": "View the website",
-    "update": "Edit the website"
   }
 }

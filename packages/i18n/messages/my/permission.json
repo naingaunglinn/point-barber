@@ -4,9 +4,5 @@
     "create": "ဧည့်သည် ထည့်ခွင့်",
     "update": "ဧည့်သည် ပြင်ခွင့်",
     "delete": "ဧည့်သည် ပိတ် / archive လုပ်ခွင့်"
-  },
-  "website": {
-    "view": "Website ကြည့်ခွင့်",
-    "update": "Website ပြင်ခွင့်"
   }
 }

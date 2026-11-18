@@ -1,10 +1,5 @@
 import { SETTING_ENTRIES } from './settings.generated.js';
-import {
-  type MaintenanceSetting,
-  type SiteAnnouncement,
-  type TextMmEn,
-  valueSchema,
-} from './values.js';
+import { type MaintenanceSetting, type TextMmEn, valueSchema } from './values.js';
 
 // The setting catalogue (D-PLT-16 "typo = build error" · add-settings-store design D2). API and web
 // code name a key only through SettingKey, so a key that is not in definitions/settings.json fails
@@ -27,18 +22,11 @@ type ValueOf<E> = E extends { readonly type: 'number' }
       ? boolean
       : E extends { readonly type: 'text_mm_en' }
         ? TextMmEn | null
-        : E extends { readonly type: 'uuid' }
-          ? string | null
-          : E extends { readonly key: 'system.maintenance' }
-            ? MaintenanceSetting
-            : E extends { readonly key: 'site.announcement' }
-              ? SiteAnnouncement | null
-              : never;
+        : E extends { readonly key: 'system.maintenance' }
+          ? MaintenanceSetting
+          : never;
 
-/**
- * number / choice → the number (a choice: one of its choices), boolean, `{ mm, en } | null`, a uuid or
- * null, the maintenance value, the site announcement or null.
- */
+/** number / choice → the number (a choice: one of its choices), boolean, `{ mm, en } | null`, the maintenance value. */
 export type SettingValue<K extends SettingKey> = ValueOf<EntryOf<K>>;
 
 /** The keys whose effective values any signed-in staff member reads (P1.SET.02 · `/me.settings`). */

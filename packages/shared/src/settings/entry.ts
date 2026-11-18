@@ -8,18 +8,10 @@ import { z } from 'zod';
 export const SETTING_KEY_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
 
 /**
- * The types with a value schema (design D2). Part 1 also names `time` and `ref:<table>`; the change
- * that adds the first key of such a type adds it here with its schema. `uuid`: the two image keys of
- * add-website-management (Part 8 §17).
+ * The types this change gives a value schema (design D2). Part 1 also names `time`, `uuid` and
+ * `ref:<table>`; the change that adds the first key of such a type adds it here with its schema.
  */
-export const settingTypeSchema = z.enum([
-  'number',
-  'boolean',
-  'choice',
-  'text_mm_en',
-  'json',
-  'uuid',
-]);
+export const settingTypeSchema = z.enum(['number', 'boolean', 'choice', 'text_mm_en', 'json']);
 
 export const settingScopeSchema = z.enum(['company', 'branch']);
 
@@ -32,8 +24,6 @@ export const settingValidationSchema = z.strictObject({
   max: z.int().optional(),
   choices: z.array(z.int()).min(1).optional(),
   max_length: z.int().min(1).optional(),
-  /** The shortest Myanmar text; 1 when absent — 0 for the site texts (add-website-management). */
-  min_length: z.int().min(0).optional(),
   nullable: z.boolean().optional(),
 });
 
