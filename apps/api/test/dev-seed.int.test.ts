@@ -72,9 +72,10 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (49) + Manager 6 Part 1 + 3 Part 3 + 13 Part 4 + 2 schedule + Barber 2 Part 3
-      // + 2 Part 4 (add-walkin-visit-checkout · add-schedule-patterns · add-customer-management).
-      role_permissions: 77,
+      // Admin every code (53) + Manager 6 Part 1 + 2 service + 3 Part 3 + 13 Part 4 + 2 schedule
+      // + Barber 2 Part 3 + 2 Part 4 (add-walkin-visit-checkout · add-schedule-patterns ·
+      // add-customer-management · add-service-catalogue).
+      role_permissions: 83,
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,
@@ -232,6 +233,25 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       { role: 'Manager', code: 'customer.create' },
       { role: 'Manager', code: 'customer.update' },
       { role: 'Manager', code: 'customer.view' },
+    ]);
+  });
+
+  // add-service-catalogue task 1.4 — design D3.
+  it('module 100 gives service.view and service.update to a Manager role created before Part 2, once', async () => {
+    await prisma.$executeRaw`
+      DELETE FROM role_permissions rp USING roles r, permissions p
+      WHERE rp.role_id = r.id AND rp.permission_id = p.id AND r.name_en = 'Manager'
+        AND p.module = 'service'`;
+    await runSeed(t.app, FIXTURES);
+    await runSeed(t.app, FIXTURES);
+    const rows = await prisma.$queryRaw<{ role: string; code: string }[]>`
+      SELECT r.name_en AS role, p.code FROM role_permissions rp
+      JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id
+      WHERE p.module = 'service' AND r.name_en IN ('Manager', 'Barber')
+      ORDER BY r.name_en, p.code`;
+    expect(rows).toStrictEqual([
+      { role: 'Manager', code: 'service.update' },
+      { role: 'Manager', code: 'service.view' },
     ]);
   });
 });

@@ -5,6 +5,10 @@ import { JOIN_DATE, PEOPLE } from './020-people.mjs';
 import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
 import {
+  FIRST_ROW as SERVICE_GRANT_ROW,
+  GRANTS as SERVICE_GRANTS,
+} from './100-part2-service-grants.mjs';
+import {
   FIRST_ROW as CUSTOMER_FIRST_ROW,
   GRANTS as CUSTOMER_GRANTS,
 } from './170-customer-grants.mjs';
@@ -159,6 +163,24 @@ describe('fixture 310-schedule-grants (task 1.6)', () => {
     expect(SCHEDULE_GRANT_ROW).toBeGreaterThan(
       MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
     );
+  });
+});
+
+// add-service-catalogue task 1.4 — module 100 adds the Part 2 service codes to the fixture Manager role
+// (Part 2 §12 · design D3); dev-seed.int.test.ts runs it on a database whose Manager role lacks them.
+describe('fixture 100-part2-service-grants (add-service-catalogue task 1.4)', () => {
+  it('gives the Manager service.view and service.update; the Barber role none', () => {
+    expect(SERVICE_GRANTS.map(({ role, codes }) => [role, [...codes]])).toStrictEqual([
+      ['Manager', ['service.view', 'service.update']],
+    ]);
+  });
+
+  it('numbers its role_permissions rows in a block of its own, apart from modules 090, 170 and 310', () => {
+    expect(SERVICE_GRANT_ROW).toBe(10001);
+    expect(SERVICE_GRANT_ROW).toBeGreaterThan(
+      MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
+    );
+    expect(SERVICE_GRANT_ROW + SERVICE_GRANTS[0].codes.length).toBeLessThan(CUSTOMER_FIRST_ROW);
   });
 });
 

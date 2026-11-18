@@ -34,8 +34,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(meResponseSchema.parse(res.body)).toBeDefined();
     // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
     // (add-walkin-visit-checkout design D3 · API Part 4 §9), its 2 Part 2 schedule codes
-    // (add-schedule-patterns task 1.3) and its 3 Part 3 customer codes (add-customer-management task
-    // 1.3 · API Part 3 §7): 24 entries.
+    // (add-schedule-patterns task 1.3), its 3 Part 3 customer codes (add-customer-management task 1.3 ·
+    // API Part 3 §7) and its 2 Part 2 service codes (add-service-catalogue design D3 · API Part 2 §12):
+    // 26 entries.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
@@ -57,6 +58,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'sale.view',
         'schedule.update',
         'schedule.view',
+        'service.update',
+        'service.view',
         'settings.update',
         'settings.view',
         'visit.delete',
@@ -76,15 +79,21 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     );
     // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
     // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
-    // 4 Part 3 customer codes (add-customer-management): 49.
-    expect(catalogue).toHaveLength(49);
-    // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management).
+    // 4 Part 3 customer codes (add-customer-management) + the 4 Part 2 service codes
+    // (add-service-catalogue design D3): 53.
+    expect(catalogue).toHaveLength(53);
+    // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management) —
+    // and the four service codes (add-service-catalogue).
     expect(catalogue.map((grant) => grant.code)).toEqual(
       expect.arrayContaining([
         'customer.view',
         'customer.create',
         'customer.update',
         'customer.delete',
+        'service.view',
+        'service.create',
+        'service.update',
+        'service.delete',
       ]),
     );
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
@@ -116,6 +125,10 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         session: { device_label: 'Android · Chrome' },
       });
       expect(body.branches_in_scope).toMatchObject([{ code: 'B3' }]);
+      // services-pricing "The Barber holds none" (add-service-catalogue design D3).
+      expect(
+        (body.grants as { code: string }[]).filter((g) => g.code.startsWith('service.')),
+      ).toStrictEqual([]);
     }
   });
 
