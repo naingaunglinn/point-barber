@@ -137,15 +137,15 @@ export class CancelReasonWrites {
       this.audit.skip();
       return toCancelReason(stored);
     }
-    const members = Object.fromEntries(changes.map((member) => [member, body[member]]));
-    const row = await this.repository.update(tx, id, members, this.clock.now());
+    const { expected_updated_at: _expected, ...sent } = body;
+    const row = await this.repository.update(tx, id, sent, this.clock.now());
     await this.audit.emit({
       action: CANCEL_REASON_UPDATE,
       entity_type: ENTITY,
       entity_id: id,
       branch_id: null,
       before: Object.fromEntries(changes.map((member) => [member, stored[member]])),
-      after: members,
+      after: Object.fromEntries(changes.map((member) => [member, sent[member]])),
     });
     return toCancelReason(row);
   }
