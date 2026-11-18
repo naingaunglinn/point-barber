@@ -17,13 +17,17 @@ export const leaveTypeKeys = {
 
 const LIVE = { staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: true } as const;
 
-/** P2.LVT.01 — both statuses; the archived types too when asked (`leave_type.view⁺`). */
-export function useLeaveTypes(includeArchived: boolean) {
+/**
+ * P2.LVT.01 — both statuses; the archived types too when asked (`leave_type.view⁺`). Not loaded for a
+ * user the screen refuses (`enabled` false).
+ */
+export function useLeaveTypes(includeArchived: boolean, enabled = true) {
   const query = `status=0&status=1${includeArchived ? '&include_archived=true' : ''}`;
   return useQuery({
     queryKey: leaveTypeKeys.list(includeArchived),
     queryFn: async () => (await api<{ items: LeaveType[] }>(`/leave-types?${query}`)).items,
     ...LIVE,
+    enabled,
   });
 }
 

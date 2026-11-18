@@ -58,7 +58,7 @@ export function LeaveTypesScreen() {
   });
   const [archived, setArchived] = useState(false);
   const [open, setOpen] = useState<{ readonly leaveType?: LeaveType } | null>(null);
-  const types = useLeaveTypes(archived);
+  const types = useLeaveTypes(archived, access.any);
 
   if (!access.any) return <RefusedPage code="forbidden" />;
 
