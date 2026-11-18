@@ -19,8 +19,13 @@ const json: unknown = JSON.parse(
 
 /** The modules of Part 1 §10; the codes of later parts are added by their changes (Part 4 §9 below). */
 const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'settings']);
-/** The Part 2 §12 modules on main so far: `schedule` (add-schedule-patterns, below). */
-const PART2_MODULES = new Set(['schedule']);
+/**
+ * The Part 2 §12 modules on main so far: `schedule` (add-schedule-patterns) and `service`
+ * (add-service-catalogue), below.
+ */
+const PART2_MODULES = new Set(['schedule', 'service']);
+/** Part 2 §12 — the `leave_type` module of add-leave-types (below). */
+const PART2_LEAVE_TYPE_MODULES = new Set(['leave_type']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
 /**
  * The Part 3 §7 modules on main so far: `customer` (add-customer-management) and `booking_cancel_reason`
@@ -102,6 +107,7 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     const modules = new Set([
       ...PART1_MODULES,
       ...PART2_MODULES,
+      ...PART2_LEAVE_TYPE_MODULES,
       ...PART3_MODULES,
       ...PART4_MODULES,
     ]);
@@ -191,7 +197,7 @@ describe('add-booking-cancel-reasons · booking · Four cancel-reason permission
 // come with add-schedule-roster.
 describe('add-schedule-patterns · scheduling · Two schedule codes exist', () => {
   it('holds the two codes of this change with their kind, level and label key', () => {
-    const schedule = PERMISSIONS.filter((entry) => PART2_MODULES.has(entry.module));
+    const schedule = PERMISSIONS.filter((entry) => entry.module === 'schedule');
     expect(
       schedule.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
     ).toStrictEqual([
@@ -203,6 +209,50 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
   it('types a schedule code', () => {
     const code: PermissionCode = 'schedule.update';
     expect(permissionLevel(code)).toBe('branch');
+  });
+});
+
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// ADR-011 · ADR-012 · D-ROLE-08 · design D3): kind crud, level company — a company master. The sync
+// that gives them to a company-admin role, and not to the seed Manager or Barber: base-seed.int.test.ts.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  it('holds the four codes with their kind, level and label key', () => {
+    const leaveType = PERMISSIONS.filter((entry) => PART2_LEAVE_TYPE_MODULES.has(entry.module));
+    expect(
+      leaveType.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['leave_type.view', 'crud · company', 'permission.leave_type.view'],
+      ['leave_type.create', 'crud · company', 'permission.leave_type.create'],
+      ['leave_type.update', 'crud · company', 'permission.leave_type.update'],
+      ['leave_type.delete', 'crud · company', 'permission.leave_type.delete'],
+    ]);
+  });
+
+  it('types a leave-type code', () => {
+    const code: PermissionCode = 'leave_type.delete';
+    expect(permissionLevel(code)).toBe('company');
+  });
+});
+
+// add-service-catalogue task 1.2 — the four `service.*` codes of Part 2 §12 with their kind and level
+// (ADR-011 · ADR-012 · API-PERM-06 #5); the sync that gives them to a company-admin role is in
+// base-seed.int.test.ts.
+describe('add-service-catalogue · the four Part 2 service codes', () => {
+  it('holds the codes, kinds and levels of the Part 2 table', () => {
+    const service = PERMISSIONS.filter((entry) => entry.module === 'service');
+    expect(
+      Object.fromEntries(service.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`])),
+    ).toStrictEqual({
+      'service.view': 'crud · mixed',
+      'service.create': 'crud · company',
+      'service.update': 'crud · mixed',
+      'service.delete': 'crud · company',
+    });
+  });
+
+  it('types a Part 2 code', () => {
+    const code: PermissionCode = 'service.update';
+    expect(permissionLevel(code)).toBe('mixed');
   });
 });
 
