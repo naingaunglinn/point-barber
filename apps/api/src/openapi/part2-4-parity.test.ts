@@ -41,7 +41,11 @@ function shapeOf(schema: Schema, components: Record<string, Schema>): Shape {
       const names = [...new Set(objects.flatMap((branch) => Object.keys(branch.properties ?? {})))];
       const properties: Record<string, Schema> = {};
       for (const name of names) {
-        const members = objects.flatMap((branch) => branch.properties?.[name] ?? []);
+        const members: Schema[] = [];
+        for (const branch of objects) {
+          const member = branch.properties?.[name];
+          if (member !== undefined) members.push(member);
+        }
         const [only] = members;
         properties[name] = members.length === 1 && only !== undefined ? only : { anyOf: members };
       }
