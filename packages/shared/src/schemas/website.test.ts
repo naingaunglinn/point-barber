@@ -134,6 +134,62 @@ const day = (dayOfWeek: number, members: Record<string, unknown> = {}) => ({
 });
 const week = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => day(dayOfWeek));
 
+// add-website-management task 2.3 — spec "An hours save is a whole valid week" (P8.WEB.04 ·
+// P8-RULE-12 · owner WM3 ★): the per-day codes, one `errors[]` item per wrong day, all together; the
+// API names the code the schema names (catalogue codes — API-ERR-03).
+const codesOf = (value: unknown) =>
+  issuesOf(branchHoursWriteSchema, value).map((issue) => [
+    issue.path.map(String).join('.'),
+    String(issue.message).replace(/^code:/, ''),
+  ]);
+
+describe('add-website-management · website · An hours save is a whole valid week', () => {
+  it('Scenario: Four wrong days at once — one code per day, together', () => {
+    const days = [
+      day(1, { is_closed: true, opens_at: '09:00', closes_at: null }),
+      day(2, { opens_at: null, closes_at: null }),
+      day(3, { opens_at: '09:00', closes_at: '00:00' }),
+      day(4, { opens_at: '21:00', closes_at: '09:00' }),
+      ...week.slice(4),
+    ];
+    expect(codesOf({ days })).toStrictEqual([
+      ['days.0', 'times_not_allowed'],
+      ['days.1', 'times_required'],
+      ['days.2', 'overnight_not_allowed'],
+      ['days.3', 'closes_before_opens'],
+    ]);
+  });
+
+  it('Scenario: One minute is enough — Friday 09:00 – 09:01 passes', () => {
+    const days = week.map((entry) =>
+      entry.day_of_week === 5 ? { ...entry, opens_at: '09:00', closes_at: '09:01' } : entry,
+    );
+    expect(branchHoursWriteSchema.safeParse({ days }).success).toBe(true);
+  });
+
+  it('equal times close before they open; a closed day with only a closing time has times', () => {
+    const days = [
+      day(1, { opens_at: '09:00', closes_at: '09:00' }),
+      day(2, { is_closed: true, opens_at: null, closes_at: '21:00' }),
+      day(3, { opens_at: '09:00', closes_at: null }),
+      ...week.slice(3),
+    ];
+    expect(codesOf({ days })).toStrictEqual([
+      ['days.0', 'closes_before_opens'],
+      ['days.1', 'times_not_allowed'],
+      ['days.2', 'times_required'],
+    ]);
+  });
+
+  it('a repeated weekday is invalid_value at days; the per-day checks still run', () => {
+    const days = [day(1), day(1, { opens_at: null }), ...week.slice(2)];
+    expect(codesOf({ days })).toStrictEqual([
+      ['days', 'invalid_value'],
+      ['days.1', 'times_required'],
+    ]);
+  });
+});
+
 describe('branchHoursWriteSchema (P8.WEB.04)', () => {
   it("Scenario: B3's week passes; a closed day carries null times", () => {
     expect(passes(branchHoursWriteSchema, { days: week })).toBe(true);
