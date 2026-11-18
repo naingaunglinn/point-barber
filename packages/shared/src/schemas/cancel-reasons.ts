@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { CANCEL_REASONS_MAX_ROWS } from '../constants/limits.js';
 import { CancelReasonStatus, CancelReasonSystemCode } from '../constants/status.js';
 import { codeOf, repeated, wireDateTime } from './wire.js';
 
@@ -64,7 +65,9 @@ export const cancelReasonUpdateSchema = z.object({
 });
 
 /** P3.CRS.05 body: the ids of every non-archived reason in the new order (the service checks the set). */
-export const cancelReasonOrderSchema = z.object({ ids: z.array(z.uuid()).min(1) });
+export const cancelReasonOrderSchema = z.object({
+  ids: z.array(z.uuid()).min(1).max(CANCEL_REASONS_MAX_ROWS),
+});
 
 /** OpenAPI Part 3 `CancelReason` (§11): the answer of every P3.CRS endpoint, strict. */
 export const cancelReasonSchema = z.strictObject({

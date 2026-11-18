@@ -114,19 +114,11 @@ describe('cancelReasonUpdateSchema (P3.CRS.03)', () => {
     ]);
   });
 
-  it('the name bounds of the create apply', () => {
-    expect(fails(update, { name_mm: ' ', expected_updated_at: AT })).toStrictEqual([
-      'name_mm:too_small',
-    ]);
-    expect(fails(update, { name_en: 'P'.repeat(151), expected_updated_at: AT })).toStrictEqual([
-      'name_en:too_big',
-    ]);
-  });
-
-  it('a sent system_code or sort_order is stripped', () => {
-    expect(
-      update.parse({ system_code: null, sort_order: 9, expected_updated_at: AT }),
-    ).toStrictEqual({ expected_updated_at: AT });
+  it('the name bounds of the create apply; a sent system_code or sort_order is stripped', () => {
+    const body = { name_mm: ' ', name_en: 'P'.repeat(151), expected_updated_at: AT };
+    expect(fails(update, body)).toStrictEqual(['name_mm:too_small', 'name_en:too_big']);
+    const stripped = { system_code: null, sort_order: 9, expected_updated_at: AT };
+    expect(update.parse(stripped)).toStrictEqual({ expected_updated_at: AT });
   });
 });
 
@@ -134,6 +126,7 @@ describe('cancelReasonOrderSchema (P3.CRS.05)', () => {
   it('takes the ids in order; empty is too_small, a non-UUID invalid_format', () => {
     expect(order.parse({ ids: [ID] })).toStrictEqual({ ids: [ID] });
     expect(fails(order, { ids: [] })).toStrictEqual(['ids:too_small']);
+    expect(fails(order, { ids: Array<string>(101).fill(ID) })).toStrictEqual(['ids:too_big']);
     expect(fails(order, { ids: [ID, 'other'] })).toStrictEqual(['ids.1:invalid_format']);
     expect(fails(order, {})).toStrictEqual(['ids:invalid_type']);
   });

@@ -33,15 +33,10 @@ const reasons = async () =>
     await prisma.booking_cancel_reasons.findMany({
       orderBy: [{ sort_order: 'asc' }, { name_mm: 'asc' }],
     })
-  ).map((r) => [
-    r.name_mm,
-    r.name_en,
-    r.requires_note,
-    r.system_code,
-    r.sort_order,
-    r.status,
-    r.archived_at !== null,
-  ]);
+  ).map((r) => {
+    const archived = r.archived_at !== null;
+    return [r.name_mm, r.name_en, r.requires_note, r.system_code, r.sort_order, r.status, archived];
+  });
 const createRows = () =>
   prisma.audit_events.findMany({ where: { action: 'booking_cancel_reason.create' } });
 const ACTIVE = CancelReasonStatus.ACTIVE;
@@ -111,16 +106,20 @@ describe('add-booking-cancel-reasons · booking · Every company starts with the
     expect(await createRows()).toHaveLength(4);
   });
 
-  it('a company with reasons but no system row gets the no-show row only, placed last', async () => {
+  it('without a system row the no-show row alone comes back, after the last non-archived row', async () => {
     await start();
-    // The state the planner's second branch covers: rows exist, none with system_code 1.
+    // The planner's second branch: rows exist, none with system_code 1; "Other" (4) is archived.
     await prisma.booking_cancel_reasons.deleteMany({ where: { system_code: NO_SHOW } });
+    await prisma.booking_cancel_reasons.updateMany({
+      where: { name_mm: 'Other' },
+      data: { archived_at: new Date() },
+    });
     await start();
     expect((await reasons()).map(([name, , , code, sort]) => [name, code, sort])).toStrictEqual([
       ['Customer ပြောင်းချင်', null, 1],
       ['Barber မအား', null, 2],
+      ['Customer မလာ', NO_SHOW, 3],
       ['Other', null, 4],
-      ['Customer မလာ', NO_SHOW, 5],
     ]);
     expect(await createRows()).toHaveLength(5);
   });

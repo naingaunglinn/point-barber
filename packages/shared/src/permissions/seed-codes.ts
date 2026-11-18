@@ -29,3 +29,15 @@ export const BARBER_PART4_CODES = ['sale.late_entry', 'sale.create'] as const;
  * seed role gets none. `schedule.create` / `schedule.delete` come with add-schedule-roster.
  */
 export const MANAGER_SCHEDULE_CODES = ['schedule.view', 'schedule.update'] as const;
+
+/**
+ * Part 3 §7 (owner #9 · add-customer-management task 1.3): the Manager reads, adds and edits customers,
+ * the Barber reads and adds them; `customer.delete` stays with the Admin. Fixture module 170 adds them
+ * to roles created before Part 3.
+ */
+export const MANAGER_PART3_CUSTOMER_CODES = [
+  'customer.view',
+  'customer.create',
+  'customer.update',
+] as const;
+export const BARBER_PART3_CUSTOMER_CODES = ['customer.view', 'customer.create'] as const;
