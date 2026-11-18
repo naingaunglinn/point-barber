@@ -15,5 +15,6 @@ import { LeaveTypesRepository } from './repositories/leave-types.repository.js';
   imports: [PlatformModule, PeopleModule],
   controllers: [LeaveTypesController],
   providers: [LeaveTypes, LeaveTypesRepository],
+  exports: [LeaveTypes],
 })
 export class SchedulingModule {}

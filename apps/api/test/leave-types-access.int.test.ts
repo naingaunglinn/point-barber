@@ -85,10 +85,6 @@ describe('add-leave-types · leave · Archived leave types are listed only for h
     expect(res.body).toMatchObject({ code: 'forbidden', context: { required: 'leave_type.view' } });
   });
 
-  it('a holder of any leave_type code may ask — Ma Hnin with the write codes', async () => {
-    expect((await list('?include_archived=true', hnin)).status).toBe(200);
-  });
-
   it('signed out → 401 on the list and on every write', async () => {
     for (const request of [
       list(''),

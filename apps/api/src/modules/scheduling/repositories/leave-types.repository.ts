@@ -68,6 +68,14 @@ export class LeaveTypesRepository {
     return rows.length === 0 ? null : rowSchema.parse(rows[0]);
   }
 
+  /** The company's type locked FOR SHARE until commit — LeaveTypes.lockActive (design D1 / D5). */
+  async lockShared(tx: Tx, companyId: string, id: string): Promise<LeaveTypeRow | null> {
+    const rows = await tx.$queryRaw<unknown[]>`
+      SELECT ${COLUMNS} FROM leave_types
+      WHERE id = ${id}::uuid AND company_id = ${companyId}::uuid FOR SHARE`;
+    return rows.length === 0 ? null : rowSchema.parse(rows[0]);
+  }
+
   /** LT1: the highest `sort_order` of the non-archived types + 1, or 1 when there is none. */
   async nextSortOrder(tx: Tx, companyId: string): Promise<number> {
     const rows = await tx.$queryRaw<unknown[]>`

@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto';
+
 import { leaveTypeSchema } from '@point/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { LT, TRAINING, leaveTypeRow } from './helpers/leave-types.js';
+import { LT, TRAINING } from './helpers/leave-types.js';
 import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 
 // add-leave-types task 2.3 — leave spec "Any staff member lists the leave types in their order" and the
@@ -32,15 +34,7 @@ const setStatus = (id: string, status: number) =>
 
 describe('add-leave-types · leave · Any staff member lists the leave types in their order', () => {
   it("Scenario: The request form's list", async () => {
-    expect(
-      (await list('', aung)).map(({ name_en, sort_order, is_paid, status, archived_at }) => ({
-        name_en,
-        sort_order,
-        is_paid,
-        status,
-        archived_at,
-      })),
-    ).toStrictEqual([
+    expect(await list('', aung)).toMatchObject([
       { name_en: 'Paid leave', sort_order: 1, is_paid: true, status: 1, archived_at: null },
       { name_en: 'Sick leave', sort_order: 2, is_paid: false, status: 1, archived_at: null },
       { name_en: 'Unpaid leave', sort_order: 3, is_paid: false, status: 1, archived_at: null },
@@ -60,7 +54,10 @@ describe('add-leave-types · leave · Any staff member lists the leave types in 
   });
 
   it('Scenario: Equal positions are ordered by the Myanmar name', async () => {
-    const training = await leaveTypeRow(t.prisma, { ...TRAINING, sort_order: 2 });
+    const { id: company_id } = await t.prisma.companies.findFirstOrThrow();
+    const { id: training } = await t.prisma.leave_types.create({
+      data: { id: randomUUID(), company_id, ...TRAINING, sort_order: 2 },
+    });
     // ဆ (U+1006) sorts before သ (U+101E) in code-point order.
     expect(await names('')).toStrictEqual(['Paid leave', 'Sick leave', 'Training', 'Unpaid leave']);
     await t.prisma.leave_types.update({

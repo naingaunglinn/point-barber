@@ -4,10 +4,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { LT, TRAINING, resetLeaveTypes } from './helpers/leave-types.js';
 import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 
-// add-leave-types tasks 2.4 and 2.5 — leave spec "Create a leave type", "A new leave type without a
-// position is placed last" (LT1), "Leave-type names are unique among non-archived types" and "Edit a
-// leave type with optimistic concurrency" (P2.LVT.02 / 03 · API-IDEM-04 · API-SHAPE-04 · design D5 –
-// D7). U Kyaw Zin on Monday 05/Oct/2026 from 9:30 AM; each test starts from the three fixture types.
+// add-leave-types tasks 2.4 / 2.5 — leave spec "Create a leave type", "… placed last" (LT1), "… names are
+// unique among non-archived types", "Edit … with optimistic concurrency" (P2.LVT.02 / 03 · API-IDEM-04 ·
+// design D5 – D7). U Kyaw Zin, Monday 05/Oct/2026 from 9:30 AM; each test starts from the fixture types.
 const at = (time: string) => new Date(`2026-10-05T${time}+06:30`);
 let t: SeededApp;
 let cookie = '';
@@ -42,9 +41,11 @@ const created = async (body: object) => {
 describe('add-leave-types · leave · Create a leave type', () => {
   it('Scenario: The admin adds Training', async () => {
     const res = await create(TRAINING);
-    expect(res.status).toBe(201);
     const training = leaveTypeSchema.parse(res.body);
-    expect(res.headers.location).toBe(`/api/v1/leave-types/${training.id}`);
+    expect([res.status, res.headers.location]).toStrictEqual([
+      201,
+      `/api/v1/leave-types/${training.id}`,
+    ]);
     expect(training).toStrictEqual({
       id: training.id,
       ...TRAINING,
@@ -176,16 +177,10 @@ describe('add-leave-types · leave · Edit a leave type with optimistic concurre
   it('Scenario: An archived type — 404, as an unknown id', async () => {
     const training = await created(TRAINING);
     await archive(training.id);
-    const res = await patch(training.id, {
-      name_en: 'Course',
-      expected_updated_at: training.updated_at,
-    });
-    expect(res.status).toBe(404);
-    expect(res.body).toMatchObject({ code: 'not_found' });
-    const unknown = await patch('0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e70', {
-      name_en: 'Course',
-      expected_updated_at: training.updated_at,
-    });
-    expect(unknown.status).toBe(404);
+    const body = { name_en: 'Course', expected_updated_at: training.updated_at };
+    for (const id of [training.id, '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e70']) {
+      const res = await patch(id, body);
+      expect([res.status, res.body.code]).toStrictEqual([404, 'not_found']);
+    }
   });
 });

@@ -16,8 +16,11 @@ import { ProblemException } from '../../../common/http/problem.exception.js';
 import { isUuid, uuidV7 } from '../../../common/http/uuid-v7.js';
 import { CurrentCompany } from '../../people/index.js';
 import { Audit } from '../../platform/index.js';
-import { LeaveTypesRepository } from '../repositories/leave-types.repository.js';
-import { changedMembers, sameMillisecond } from './leave-type-changes.js';
+import {
+  type LeaveTypeWrite,
+  LeaveTypesRepository,
+} from '../repositories/leave-types.repository.js';
+import { activeOrNull, changedMembers, sameMillisecond, zawgyiFields } from './leave-type-rules.js';
 import { type LeaveTypeRow, toLeaveType } from './leave-type-mapper.js';
 
 // The leave-type endpoints of add-leave-types (P2.LVT.01 – 04 · design D1 / D2 / D5). One
@@ -31,6 +34,12 @@ export const LEAVE_TYPE_ARCHIVE = 'leave_type.archive';
 
 const ENTITY = 'leave_types';
 const notFound = () => new ProblemException(ErrorCode.NOT_FOUND, 404);
+
+/** 400 zawgyi_text with one `errors[]` item per name typed in Zawgyi (API-SHAPE-05 · design D4). */
+function assertNoZawgyi(members: LeaveTypeWrite): void {
+  const errors = zawgyiFields(members);
+  if (errors.length > 0) throw new ProblemException(ErrorCode.ZAWGYI_TEXT, 400, { errors });
+}
 
 /** The stored members — the `after_data` of a create (design D7). */
 const storedMembers = (row: LeaveTypeRow) => ({
@@ -79,6 +88,7 @@ export class LeaveTypes {
   /** P2.LVT.02 — a new ACTIVE type, placed last without `sort_order` (LT1 · design D5). */
   create(body: LeaveTypeCreateBody): Promise<LeaveType> {
     return this.runner.run(async (tx) => {
+      assertNoZawgyi(body);
       const now = this.clock.now();
       const companyId = await this.company.id(tx);
       const row = await this.repository.insert(tx, {
@@ -112,6 +122,7 @@ export class LeaveTypes {
         throw new ProblemException(ErrorCode.CONFLICT, 409);
       }
       const { expected_updated_at: _expected, ...members } = body;
+      assertNoZawgyi(members);
       const { before, after } = changedMembers(stored, members);
       if (Object.keys(after).length === 0) {
         this.audit.skip();
@@ -154,6 +165,16 @@ export class LeaveTypes {
       });
       return toLeaveType(row);
     });
+  }
+
+  /**
+   * For add-leave-requests (#32 — design D1 / D5): inside the caller's transaction, the type locked FOR
+   * SHARE until commit when it is ACTIVE and not archived, else null. A new PENDING leave and an archive
+   * then serialise on the type row: the archive's FOR UPDATE waits for the leave's commit and sees it.
+   */
+  async lockActive(tx: Tx, id: string): Promise<LeaveTypeRow | null> {
+    if (!isUuid(id)) return null;
+    return activeOrNull(await this.repository.lockShared(tx, await this.company.id(tx), id));
   }
 
   /** The type row locked first (design D5); 404 for an id that is no leave type of the company. */
