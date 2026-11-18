@@ -4,7 +4,8 @@
     "company": "ကုမ္ပဏီ",
     "additional": "ထပ်ဆောင်း ဆက်တင်",
     "maintenance": "Maintenance mode",
-    "branches": "ဆိုင်ခွဲများ"
+    "branches": "ဆိုင်ခွဲများ",
+    "leaveTypes": "ခွင့်အမျိုးအစားများ"
   },
   "company": {
     "title": "ကုမ္ပဏီ",

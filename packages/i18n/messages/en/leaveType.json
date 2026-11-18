@@ -1,0 +1,38 @@
+{
+  "list": {
+    "title": "Leave types",
+    "new": "New leave type",
+    "column": {
+      "name": "Name",
+      "paid": "Paid",
+      "status": "Status"
+    },
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "archived": "Archived",
+    "emptyFiltered": "No leave types match this filter."
+  },
+  "form": {
+    "titleNew": "New leave type",
+    "titleEdit": "Edit leave type"
+  },
+  "field": {
+    "name": "Name",
+    "nameTaken": "A leave type with this name already exists.",
+    "isPaid": "Paid leave",
+    "isPaidHelp": "Changes apply from the next payroll run. Finalized runs keep their figures.",
+    "active": "Active",
+    "activeHelp": "Inactive types are not offered when staff request leave. Leave already requested keeps its type."
+  },
+  "toast": {
+    "saved": "Leave type saved"
+  },
+  "action": {
+    "archive": "Archive"
+  },
+  "archive": {
+    "title": "Archive leave type",
+    "consequence": "{name} will no longer be listed or offered. Past leave keeps this type. This can't be undone.",
+    "confirm": "Archive leave type"
+  }
+}
