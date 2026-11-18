@@ -22,6 +22,8 @@ export const NAMESPACES = [
   // `permission.<code>` (AD-L10N-02) — add-customer-management task 1.2 · add-service-catalogue task
   // 1.2: the first to merge creates it; each change adds its codes' labels.
   'permission',
+  // add-attachments-upload task 1.2 — `attachment.field.<member>`, the labels of the 409 attachment_in_use.
+  'attachment',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

@@ -56,7 +56,12 @@ describe('typed keys', () => {
     for (const key of keysOf(messages)) {
       const value = valueOf(messages, key);
       const names = [...value.matchAll(/\{(\w+)\}/g)].map(([, name = '']) => name);
-      const output = t(key, Object.fromEntries(names.map((name) => [name, `<${name}>`])));
+      // An ICU `select` argument (`{reason, select, ...}`) takes one of its options: `other`.
+      const selects = [...value.matchAll(/\{(\w+), select,/g)].map(([, name = '']) => name);
+      const output = t(key, {
+        ...Object.fromEntries(selects.map((name) => [name, 'other'])),
+        ...Object.fromEntries(names.map((name) => [name, `<${name}>`])),
+      });
       for (const name of names) expect(output, key).toContain(`<${name}>`);
       expect(output, key).not.toMatch(/[{}]/);
     }

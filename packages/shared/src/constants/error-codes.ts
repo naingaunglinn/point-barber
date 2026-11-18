@@ -86,6 +86,11 @@ export const ErrorCode = {
   END_BEFORE_START: 'end_before_start',
   CROSS_BRANCH_GAP: 'cross_branch_gap',
   SELF_ACTION: 'self_action',
+  // add-attachments-upload — API-ERR-02 · Part 8 P8-RULE-03 · P8.ATT.05 (task 1.2; texts in the brief):
+  // a file that cannot be linked, context `{ attachment_id, reason }` (422), and the removal of the
+  // file a single-image field still uses, context `{ field }` (409). zawgyi_text above is reused.
+  ATTACHMENT_INVALID: 'attachment_invalid',
+  ATTACHMENT_IN_USE: 'attachment_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
