@@ -19,6 +19,14 @@ export function settingDefinitionProblems(json: unknown): string[] {
   if (!Array.isArray(json)) return ['settings.json: not an array of entries'];
   const problems: string[] = [];
   const seen = new Set<string>();
+  // The defaults and types of the well-formed entries: a cross-key bound names a number key, and the
+  // defaults keep it (add-customer-management design D9).
+  const wellFormed = json.flatMap((value: unknown) => {
+    const parsed = settingEntrySchema.safeParse(value);
+    return parsed.success ? [parsed.data] : [];
+  });
+  const defaults = Object.fromEntries(wellFormed.map((entry) => [entry.key, entry.default]));
+  const types = new Map(wellFormed.map((entry) => [entry.key, entry.type]));
   json.forEach((value: unknown, index) => {
     const name = keyOf(value, index);
     const parsed = settingEntrySchema.safeParse(value);
@@ -32,9 +40,13 @@ export function settingDefinitionProblems(json: unknown): string[] {
     const entry = parsed.data;
     if (seen.has(entry.key)) problems.push(`${entry.key}: declared twice`);
     seen.add(entry.key);
+    for (const bound of [entry.validation.min_key, entry.validation.max_key]) {
+      if (bound !== undefined && (entry.type !== 'number' || types.get(bound) !== 'number'))
+        problems.push(`${entry.key}: the bound ${bound} is not a number setting`);
+    }
     let defaultPasses: boolean;
     try {
-      defaultPasses = valueSchema(entry).safeParse(entry.default).success;
+      defaultPasses = valueSchema(entry, defaults).safeParse(entry.default).success;
     } catch (error) {
       problems.push(`${entry.key}: ${error instanceof Error ? error.message : String(error)}`);
       return;
