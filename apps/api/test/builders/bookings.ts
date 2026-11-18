@@ -48,7 +48,15 @@ export async function seedCancelReasons(prisma: PrismaService): Promise<CancelRe
     const id = found?.id ?? randomUUID();
     if (found === null) {
       await prisma.booking_cancel_reasons.create({
-        data: { id, company_id: company.id, name_mm, name_en, sort_order, system_code, requires_note },
+        data: {
+          id,
+          company_id: company.id,
+          name_mm,
+          name_en,
+          sort_order,
+          system_code,
+          requires_note,
+        },
       });
     }
     ids.set(key, id);
@@ -66,9 +74,17 @@ export interface BookingSpec {
   /** Ma Su unless given. */
   readonly customer?: { readonly id: string; readonly name: string };
   /** The booked services in `sort_order`; none = a 30-minute booking without items. */
-  readonly items?: readonly { readonly service: string; readonly price: Mmk; readonly minutes: number }[];
+  readonly items?: readonly {
+    readonly service: string;
+    readonly price: Mmk;
+    readonly minutes: number;
+  }[];
   /** A CANCELLED booking's reason and actor; the CHANGE reason by U Kyaw Zin unless given. */
-  readonly cancel?: { readonly reason: string; readonly actor: CancelActor; readonly by?: FixturePerson };
+  readonly cancel?: {
+    readonly reason: string;
+    readonly actor: CancelActor;
+    readonly by?: FixturePerson;
+  };
 }
 
 /** One booking (with its items), entered by U Kyaw Zin; a CANCELLED one carries its cancel fields. */

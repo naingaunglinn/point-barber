@@ -1,12 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-  type RefundKind,
-  SaleStatus,
-  VisitStatus,
-  businessDateOf,
-  type Mmk,
-} from '@point/shared';
+import { type RefundKind, SaleStatus, VisitStatus, businessDateOf, type Mmk } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 
 import type { PrismaService } from '../../src/common/database/prisma.service.js';
@@ -31,7 +25,10 @@ function receiptParts(receipt: string): { year: number; month: number; seq: numb
 const dateColumn = (at: Date): Date => new Date(`${businessDateOf(at)}T00:00:00Z`);
 
 async function paymentMethod(prisma: PrismaService, code: 'CASH' | 'KBZPAY'): Promise<string> {
-  const row = await prisma.payment_methods.findFirstOrThrow({ where: { code }, select: { id: true } });
+  const row = await prisma.payment_methods.findFirstOrThrow({
+    where: { code },
+    select: { id: true },
+  });
   return row.id;
 }
 

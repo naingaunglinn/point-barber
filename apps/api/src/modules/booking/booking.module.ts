@@ -5,6 +5,7 @@ import { PlatformModule } from '../platform/index.js';
 import { CustomersController } from './customers/customers.controller.js';
 import { Customers } from './customers/customers.js';
 import { BookingsRepository } from './repositories/bookings.repository.js';
+import { CustomerBookingsRepository } from './repositories/customer-bookings.repository.js';
 import { CustomersRepository } from './repositories/customers.repository.js';
 
 // Bounded context `booking` (ADR-001 · docs/engineering/module-map.md): Part 3 customers, bookings,
@@ -14,7 +15,7 @@ import { CustomersRepository } from './repositories/customers.repository.js';
 @Module({
   imports: [PlatformModule, PeopleModule],
   controllers: [CustomersController],
-  providers: [CustomersRepository, BookingsRepository, Customers],
+  providers: [CustomersRepository, BookingsRepository, CustomerBookingsRepository, Customers],
   exports: [Customers],
 })
 export class BookingModule implements OnModuleInit {

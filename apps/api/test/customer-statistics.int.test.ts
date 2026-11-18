@@ -38,7 +38,8 @@ beforeAll(async () => {
 });
 afterAll(() => s.close());
 
-const totals = (scope: ReadScope, customerId = MA_SU) => activity.totals(s.prisma, customerId, scope);
+const totals = (scope: ReadScope, customerId = MA_SU) =>
+  activity.totals(s.prisma, customerId, scope);
 
 /** The list's piece (design D3) for one customer: what the list and the sort read. */
 async function aggregateOf(scope: ReadScope, customerId = MA_SU) {
@@ -249,12 +250,10 @@ describe('add-customer-management · customers · the last finished visits the p
 
   it('the performers come from delivery — VisitsPort.readMany answers the visit rows', async () => {
     const visits = await recent(KYAW_ZIN);
-    const read = await s.app
-      .get(VisitsRegistry)
-      .visits.readMany(
-        s.prisma,
-        visits.map((visit) => visit.visit_id),
-      );
+    const read = await s.app.get(VisitsRegistry).visits.readMany(
+      s.prisma,
+      visits.map((visit) => visit.visit_id),
+    );
     expect(new Map(read.map((visit) => [visit.id, visit.performed_by_employee_id]))).toStrictEqual(
       new Map(visits.map((visit) => [visit.visit_id, visit.performed_by_employee_id])),
     );

@@ -80,7 +80,11 @@ const REFUNDS: Readonly<Record<string, FinishedSaleSpec['refunds']>> = {
   ],
 };
 
-const haircut = (price: bigint) => ({ service: services.HAIRCUT, price: price as Mmk, minutes: 30 });
+const haircut = (price: bigint) => ({
+  service: services.HAIRCUT,
+  price: price as Mmk,
+  minutes: 30,
+});
 const SHAVE = { service: services.SHAVE, price: 3_000n as Mmk, minutes: 15 };
 
 export interface CustomerHistory {

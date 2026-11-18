@@ -56,10 +56,26 @@ describe('add-branch-management · the BranchUsage counters (task 3.5)', () => {
         `2026-10-${String(n).padStart(2, '0')}T${String(hour).padStart(2, '0')}:00:00+06:30`,
       );
     await bookingAt(t.prisma, { branch: B.B2, status: BookingStatus.BOOKED, startsAt: day(1, 10) }); // in the past
-    await bookingAt(t.prisma, { branch: B.B2, status: BookingStatus.STARTED, startsAt: day(5, 11) });
-    await bookingAt(t.prisma, { branch: B.B2, status: BookingStatus.BOOKED, startsAt: day(20, 12) }); // in the future
-    await bookingAt(t.prisma, { branch: B.B2, status: BookingStatus.CANCELLED, startsAt: day(6, 13) });
-    await bookingAt(t.prisma, { branch: B.B2, status: BookingStatus.COMPLETED, startsAt: day(4, 14) });
+    await bookingAt(t.prisma, {
+      branch: B.B2,
+      status: BookingStatus.STARTED,
+      startsAt: day(5, 11),
+    });
+    await bookingAt(t.prisma, {
+      branch: B.B2,
+      status: BookingStatus.BOOKED,
+      startsAt: day(20, 12),
+    }); // in the future
+    await bookingAt(t.prisma, {
+      branch: B.B2,
+      status: BookingStatus.CANCELLED,
+      startsAt: day(6, 13),
+    });
+    await bookingAt(t.prisma, {
+      branch: B.B2,
+      status: BookingStatus.COMPLETED,
+      startsAt: day(4, 14),
+    });
     await saleAt(t.prisma, B.B2, SaleStatus.OPEN, day(5, 9));
     await saleAt(t.prisma, B.B2, SaleStatus.CANCELLED, day(5, 9));
     await saleAt(t.prisma, B.B2, SaleStatus.FINISHED, day(5, 9));
@@ -134,7 +150,11 @@ describe('add-branch-management · organization · A branch that is still in use
 
   it('Scenario: Finished records do not count', async () => {
     // B4 now holds a CANCELLED booking and a CANCELLED sale; add a COMPLETED booking and a FINISHED sale.
-    await bookingAt(t.prisma, { branch: b4, status: BookingStatus.COMPLETED, startsAt: new Date('2026-10-05T08:00:00+06:30') });
+    await bookingAt(t.prisma, {
+      branch: b4,
+      status: BookingStatus.COMPLETED,
+      startsAt: new Date('2026-10-05T08:00:00+06:30'),
+    });
     await saleAt(t.prisma, b4, SaleStatus.FINISHED, new Date('2026-10-05T08:40:00+06:30'));
     const res = await setStatus(b4, { status: 0 });
     expect(res.status).toBe(200);

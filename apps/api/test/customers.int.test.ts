@@ -29,7 +29,13 @@ beforeAll(async () => {
   runner = s.app.get(TransactionRunner);
   customers = s.app.get(Customers);
   lastVisits = [];
+  const unused = (): never => {
+    throw new Error('not read by these tests');
+  };
   customers.useActivity({
+    visitAggregate: unused,
+    totals: unused,
+    recentVisits: unused,
     lastVisitAt: (_db, customerId, branchIds) => {
       lastVisits.push({ customerId, branchIds });
       return Promise.resolve(
