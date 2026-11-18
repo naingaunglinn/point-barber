@@ -77,22 +77,41 @@ export interface ValueSchemaEntry {
     readonly choices?: readonly number[];
     readonly max_length?: number;
     readonly nullable?: boolean;
+    readonly min_key?: string;
+    readonly max_key?: string;
   };
 }
+
+/**
+ * The effective values a cross-key bound reads, by key (add-customer-management design D9 · owner CM3):
+ * `min_key` floors the value at that key's value (`too_small`), `max_key` caps it (`too_big`), each
+ * checked after the entry's own limits. Without a value for the key there is no cross-key bound — the
+ * definitions check and the screens' row check pass none.
+ */
+export type ValueBounds = Readonly<Record<string, unknown>>;
+
+const boundOf = (bounds: ValueBounds, key: string | undefined): number | undefined => {
+  const value = key === undefined ? undefined : bounds[key];
+  return typeof value === 'number' ? value : undefined;
+};
 
 /** The `json` keys and their schema; a `json` key without one is a programming error. */
 const JSON_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   'system.maintenance': maintenanceBodySchema,
 };
 
-/** The Zod schema of a value of `entry` (design D2). */
-export function valueSchema(entry: ValueSchemaEntry): z.ZodType {
+/** The Zod schema of a value of `entry` (design D2), with the cross-key bounds of `bounds`. */
+export function valueSchema(entry: ValueSchemaEntry, bounds: ValueBounds = {}): z.ZodType {
   const { validation } = entry;
   switch (entry.type) {
     case 'number': {
       let schema = z.int();
       if (validation.min !== undefined) schema = schema.min(validation.min);
       if (validation.max !== undefined) schema = schema.max(validation.max);
+      const floor = boundOf(bounds, validation.min_key);
+      if (floor !== undefined) schema = schema.min(floor);
+      const ceiling = boundOf(bounds, validation.max_key);
+      if (ceiling !== undefined) schema = schema.max(ceiling);
       return schema;
     }
     case 'choice': {
