@@ -195,6 +195,26 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
   });
 });
 
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// ADR-011 · ADR-012 · D-ROLE-09 · P1-RULE-12 · design D3): the catalogue sync gives the four codes to
+// the company-admin role; the seed Manager and Barber get none.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  it('Scenario: After the catalogue sync, Admin holds the four codes, Manager and Barber none', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const leaveType = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('leave_type.'));
+    expect(leaveType('Admin')).toStrictEqual([
+      'leave_type.create',
+      'leave_type.delete',
+      'leave_type.update',
+      'leave_type.view',
+    ]);
+    expect(leaveType('Manager')).toStrictEqual([]);
+    expect(leaveType('Barber')).toStrictEqual([]);
+  });
+});
+
 describe('add-foundation-auth-access · access · A company admin holds all five role codes at company scope and receives every new code', () => {
   it('Scenario: The seed admin qualifies · A manager with one role code does not qualify', async () => {
     await firstStart();

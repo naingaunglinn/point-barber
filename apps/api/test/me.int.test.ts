@@ -80,8 +80,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
     // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
     // 4 Part 3 customer codes (add-customer-management) + the 4 Part 2 service codes
-    // (add-service-catalogue design D3): 53.
-    expect(catalogue).toHaveLength(53);
+    // (add-service-catalogue design D3) + the 4 Part 2 leave-type codes (add-leave-types): 57.
+    expect(catalogue).toHaveLength(57);
     // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management) —
     // and the four service codes (add-service-catalogue).
     expect(catalogue.map((grant) => grant.code)).toEqual(
@@ -182,6 +182,32 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     const res = await me((await t.signIn('E004')).cookie);
     const requestId = res.headers['x-request-id'] as string;
     expect(await t.prisma.audit_events.count({ where: { request_id: requestId } })).toBe(0);
+  });
+});
+
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// D-ROLE-09 · design D3): U Kyaw Zin's list includes the four codes at company scope, whatever other
+// codes the changes merged before or after add to it; Ma Hnin and Ko Aung hold none.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  const leaveTypeGrants = (grants: { code: string }[]) =>
+    grants.filter((grant) => grant.code.startsWith('leave_type.'));
+
+  it('Scenario: The Admin holds the four codes', async () => {
+    const res = await me((await t.signIn('E001')).cookie);
+    expect(res.status).toBe(200);
+    expect(leaveTypeGrants(res.body.grants as { code: string }[])).toStrictEqual(
+      ['leave_type.create', 'leave_type.delete', 'leave_type.update', 'leave_type.view'].map(
+        (code) => ({ code, scope_type: 1, branch_ids: [] }),
+      ),
+    );
+  });
+
+  it('Scenario: The Manager and the Barber hold none', async () => {
+    for (const person of ['E002', 'E004'] as const) {
+      const res = await me((await t.signIn(person)).cookie);
+      expect(res.status).toBe(200);
+      expect(leaveTypeGrants(res.body.grants as { code: string }[])).toStrictEqual([]);
+    }
   });
 });
 

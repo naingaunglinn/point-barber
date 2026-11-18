@@ -24,6 +24,8 @@ export const NAMESPACES = [
   'permission',
   // add-attachments-upload task 1.2 — `attachment.field.<member>`, the labels of the 409 attachment_in_use.
   'attachment',
+  // add-leave-types task 1.8 — design D10 (texts proposed for the owner's review, S18).
+  'leaveType',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
