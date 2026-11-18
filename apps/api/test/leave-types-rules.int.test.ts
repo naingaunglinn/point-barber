@@ -105,14 +105,8 @@ describe('add-leave-types · leave · Zawgyi names are refused', () => {
 
 describe('add-leave-types · leave · LeaveTypes.lockActive and the archive', () => {
   it('an archive waits for a transaction holding the type with a PENDING leave, then answers 409', async () => {
-    let release = () => {};
-    const held = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    let taken = () => {};
-    const locked = new Promise<void>((resolve) => {
-      taken = resolve;
-    });
+    const held = Promise.withResolvers<void>();
+    const locked = Promise.withResolvers<void>();
     const request = t.app.get(TransactionRunner).run(async (tx) => {
       expect(await t.app.get(LeaveTypes).lockActive(tx, training)).toMatchObject({ id: training });
       await tx.leaves.create({
@@ -126,10 +120,10 @@ describe('add-leave-types · leave · LeaveTypes.lockActive and the archive', ()
           requested_by_user_id: FIXTURE_IDS.users.E005,
         },
       });
-      taken();
-      await held;
+      locked.resolve();
+      await held.promise;
     });
-    await locked;
+    await locked.promise;
     let answered = false;
     const archive = t.http
       .post(`/api/v1/leave-types/${training}/archive`)
@@ -140,7 +134,7 @@ describe('add-leave-types · leave · LeaveTypes.lockActive and the archive', ()
       });
     await new Promise((resolve) => setTimeout(resolve, 500));
     expect(answered).toBe(false);
-    release();
+    held.resolve();
     await request;
     const res = await archive;
     expect(res.status).toBe(409);
