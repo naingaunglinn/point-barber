@@ -39,15 +39,16 @@ function shapeOf(schema: Schema, components: Record<string, Schema>): Shape {
     const objects = branches.filter((branch) => branch.properties !== undefined);
     if (objects.length > 1) {
       const names = [...new Set(objects.flatMap((branch) => Object.keys(branch.properties ?? {})))];
+      const properties: Record<string, Schema> = {};
+      for (const name of names) {
+        const members = objects.flatMap((branch) => branch.properties?.[name] ?? []);
+        const [only] = members;
+        properties[name] = members.length === 1 && only !== undefined ? only : { anyOf: members };
+      }
       return {
         types: ['object'],
         required: names.filter((name) => objects.every((branch) => branch.required.includes(name))),
-        properties: Object.fromEntries(
-          names.map((name) => {
-            const members = objects.flatMap((branch) => branch.properties?.[name] ?? []);
-            return [name, members.length === 1 ? members[0] : { anyOf: members }];
-          }),
-        ),
+        properties,
       };
     }
     const values = branches.flatMap((branch) => branch.values ?? []);
