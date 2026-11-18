@@ -9,6 +9,7 @@ export { PermissionCatalogue, type SyncResult } from './catalogue/permission-cat
 export { CompanyProfile } from './company/company-profile.js';
 export { CurrentCompany } from './company/current-company.js';
 export { Assignments } from './directory/assignments.js';
+export { type AssignmentPeriod } from './repositories/assignments.repository.js';
 export { BranchCodes } from './directory/branch-codes.js';
 export { type BranchHeader, BranchHeaders } from './directory/branch-headers.js';
 export { DisplayNames } from './directory/display-names.js';
