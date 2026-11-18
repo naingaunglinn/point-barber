@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { type Mmk, subtractMoney } from '@point/shared';
 
-import type { Prisma } from '../../../generated/prisma/client.js';
 import type { ReadScope } from '../../../common/access/read-scope.js';
-import type { Tx } from '../../../common/database/transaction-runner.js';
+import type { SqlPiece, Tx } from '../../../common/database/transaction-runner.js';
 import type { CustomerActivity, CustomerTotals, RecentVisit } from '../../booking/index.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
 import { CustomerActivityRepository } from '../repositories/customer-activity.repository.js';
@@ -23,7 +22,7 @@ export class SalesCustomerActivity implements CustomerActivity {
     return (await this.repository.visitsOf(db, customerId, scope))?.last_visit_at ?? null;
   }
 
-  visitAggregate(scope: ReadScope): Prisma.Sql {
+  visitAggregate(scope: ReadScope): SqlPiece {
     return this.repository.visitAggregate(scope);
   }
 

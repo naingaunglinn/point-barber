@@ -11,10 +11,9 @@ import {
   toMmtIso,
 } from '@point/shared';
 
-import type { Prisma } from '../../../generated/prisma/client.js';
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import { Clock } from '../../../common/clock/clock.js';
-import type { Tx } from '../../../common/database/transaction-runner.js';
+import type { SqlPiece, Tx } from '../../../common/database/transaction-runner.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { CurrentCompany } from '../../people/index.js';
@@ -63,7 +62,7 @@ export interface CustomerTotals {
 export interface CustomerActivity {
   lastVisitAt(db: Tx, customerId: string, branchIds: ReadScope): Promise<Date | null>;
   /** `customer_id, last_visit_at, visit_count` per customer — the list joins and sorts on it (D3). */
-  visitAggregate(scope: ReadScope): Prisma.Sql;
+  visitAggregate(scope: ReadScope): SqlPiece;
   totals(db: Tx, customerId: string, scope: ReadScope): Promise<CustomerTotals>;
   /** The last `window` FINISHED visits, newest first, with their performers (D6). */
   recentVisits(
