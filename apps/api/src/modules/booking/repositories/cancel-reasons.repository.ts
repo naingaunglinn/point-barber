@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CancelReasonSystemCode } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { CANCEL_REASONS_MAX_ROWS } from '../../../common/limits.js';
 import type {
   CancelReasonPreset,
   CancelReasonSeedState,
@@ -74,7 +75,10 @@ export class CancelReasonsRepository {
     await tx.booking_cancel_reasons.create({ data: { ...row, created_at: at, updated_at: at } });
   }
 
-  /** P3.CRS.01 — by `sort_order`, `name_mm`, `id` (design D7); archived rows only when asked. */
+  /**
+   * P3.CRS.01 — by `sort_order`, `name_mm`, `id` (design D7); archived rows only when asked; at most
+   * CANCEL_REASONS_MAX_ROWS (CG-PERF-02 — a short master list, no paging).
+   */
   list(
     db: Tx,
     companyId: string,
@@ -87,6 +91,7 @@ export class CancelReasonsRepository {
         ...(filter.includeArchived ? {} : { archived_at: null }),
       },
       orderBy: [{ sort_order: 'asc' }, { name_mm: 'asc' }, { id: 'asc' }],
+      take: CANCEL_REASONS_MAX_ROWS,
       select: ROW,
     });
   }
