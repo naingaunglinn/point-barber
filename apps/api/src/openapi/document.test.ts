@@ -66,8 +66,11 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
   it('serves under /api/v1 with the two paths of this change and the company of add-company-profile', () => {
     expect(document.servers).toStrictEqual([{ url: '/api/v1' }]);
     expect(Object.keys(document.paths as object).sort()).toStrictEqual([
-      // add-booking-cancel-reasons A2 — P3.CRS.01 / 02.
+      // add-booking-cancel-reasons A2 / A3 — P3.CRS.01 – 05.
       '/booking-cancel-reasons',
+      '/booking-cancel-reasons/order',
+      '/booking-cancel-reasons/{id}',
+      '/booking-cancel-reasons/{id}/archive',
       // add-branch-management task 3.12 — P1.BR.02 – 05.
       '/branches',
       '/branches/{id}',
@@ -100,6 +103,14 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
     const paths = document.paths as Record<string, Record<string, { operationId?: string }>>;
     expect(paths['/booking-cancel-reasons']?.get?.operationId).toBe('cancelReasonList');
     expect(paths['/booking-cancel-reasons']?.post?.operationId).toBe('cancelReasonCreate');
+    // A3 — P3.CRS.03 – 05.
+    expect(paths['/booking-cancel-reasons/order']?.put?.operationId).toBe('cancelReasonReorder');
+    expect(paths['/booking-cancel-reasons/{id}']?.patch?.operationId).toBe('cancelReasonUpdate');
+    expect(paths['/booking-cancel-reasons/{id}/archive']?.post?.operationId).toBe(
+      'cancelReasonArchive',
+    );
+    expect(schemas.CancelReasonUpdate?.required).toStrictEqual(['expected_updated_at']);
+    expect(schemas.CancelReasonOrder?.required).toStrictEqual(['ids']);
     expect(schemas.CancelReason?.required).toEqual(
       expect.arrayContaining([
         'id',
