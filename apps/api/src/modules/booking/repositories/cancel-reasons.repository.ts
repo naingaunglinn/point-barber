@@ -48,6 +48,16 @@ export interface CancelReasonInsert {
   readonly status: number;
 }
 
+/** The members a PATCH or an archive writes (P3.CRS.03 · P3.CRS.04). */
+export interface CancelReasonUpdateMembers {
+  readonly name_mm?: string;
+  readonly name_en?: string | null;
+  readonly requires_note?: boolean;
+  readonly status?: number;
+  readonly sort_order?: number;
+  readonly archived_at?: Date;
+}
+
 @Injectable()
 export class CancelReasonsRepository {
   /** What the seed planner reads (design D3) — counted in SQL, so no row list and no bound to reach. */
@@ -117,6 +127,49 @@ export class CancelReasonsRepository {
       _max: { sort_order: true },
     });
     return (max.sort_order ?? 0) + 1;
+  }
+
+  /** The company's reason locked FOR UPDATE until commit (design D4); null when there is none. */
+  async lockById(tx: Tx, companyId: string, id: string): Promise<CancelReasonRow | null> {
+    const locked = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM booking_cancel_reasons
+      WHERE id = ${id}::uuid AND company_id = ${companyId}::uuid
+      FOR UPDATE`;
+    return locked.length === 0
+      ? null
+      : tx.booking_cancel_reasons.findUniqueOrThrow({ where: { id }, select: ROW });
+  }
+
+  /**
+   * Every non-archived reason of the company locked FOR UPDATE in `id` order (design D4 — reorder), in
+   * list order. One more than the bound is read, so a company past it fails the set check.
+   */
+  async lockActive(tx: Tx, companyId: string): Promise<CancelReasonRow[]> {
+    const locked = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM booking_cancel_reasons
+      WHERE company_id = ${companyId}::uuid AND archived_at IS NULL
+      ORDER BY id
+      LIMIT ${CANCEL_REASONS_MAX_ROWS + 1}
+      FOR UPDATE`;
+    return tx.booking_cancel_reasons.findMany({
+      where: { id: { in: locked.map((row) => row.id) } },
+      orderBy: [{ sort_order: 'asc' }, { name_mm: 'asc' }, { id: 'asc' }],
+      select: ROW,
+    });
+  }
+
+  /** The members given and `updated_at` = `at` (P3.CRS.03 · P3.CRS.04 · P3.CRS.05). */
+  update(
+    tx: Tx,
+    id: string,
+    members: CancelReasonUpdateMembers,
+    at: Date,
+  ): Promise<CancelReasonRow> {
+    return tx.booking_cancel_reasons.update({
+      where: { id },
+      data: { ...members, updated_at: at },
+      select: ROW,
+    });
   }
 
   create(tx: Tx, row: CancelReasonInsert, at: Date): Promise<CancelReasonRow> {
