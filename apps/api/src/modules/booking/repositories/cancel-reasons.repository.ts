@@ -48,6 +48,27 @@ export interface CancelReasonInsert {
   readonly status: number;
 }
 
+/** A reason as the public surface answers it (design D1 — `CancelReasons.find` / `.noShow`). */
+export interface CancelReasonRef {
+  readonly id: string;
+  readonly name_mm: string;
+  readonly name_en: string | null;
+  readonly requires_note: boolean;
+  readonly system_code: number | null;
+  readonly status: number;
+  readonly archived_at: Date | null;
+}
+
+const REF = {
+  id: true,
+  name_mm: true,
+  name_en: true,
+  requires_note: true,
+  system_code: true,
+  status: true,
+  archived_at: true,
+} as const;
+
 /** The members a PATCH or an archive writes (P3.CRS.03 · P3.CRS.04). */
 export interface CancelReasonUpdateMembers {
   readonly name_mm?: string;
@@ -127,6 +148,22 @@ export class CancelReasonsRepository {
       _max: { sort_order: true },
     });
     return (max.sort_order ?? 0) + 1;
+  }
+
+  /** The company's reason with this id, archived or not (design D1); null when there is none. */
+  findRef(db: Tx, companyId: string, id: string): Promise<CancelReasonRef | null> {
+    return db.booking_cancel_reasons.findFirst({
+      where: { id, company_id: companyId },
+      select: REF,
+    });
+  }
+
+  /** The company's `system_code` 1 row (D-BKG-17 — the base seed adds it); null when there is none. */
+  findNoShow(db: Tx, companyId: string): Promise<CancelReasonRef | null> {
+    return db.booking_cancel_reasons.findFirst({
+      where: { company_id: companyId, system_code: CancelReasonSystemCode.NO_SHOW },
+      select: REF,
+    });
   }
 
   /** The company's reason locked FOR UPDATE until commit (design D4); null when there is none. */
