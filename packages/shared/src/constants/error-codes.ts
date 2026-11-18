@@ -86,6 +86,10 @@ export const ErrorCode = {
   END_BEFORE_START: 'end_before_start',
   CROSS_BRANCH_GAP: 'cross_branch_gap',
   SELF_ACTION: 'self_action',
+  // add-leave-types — Part 2 §13b · API-ERR-02 (task 1.3 — design D4 / D10): an archive refused while a
+  // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
+  // are reused.
+  LEAVE_TYPE_IN_USE: 'leave_type_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
