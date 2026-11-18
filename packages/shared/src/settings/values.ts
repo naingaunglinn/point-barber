@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { siteContentWriteSchema } from '../schemas/website.js';
 import type { Instant } from '../time/instant.js';
 import { toMmtIso } from '../time/mmt-iso.js';
 import type { SettingType } from './entry.js';
@@ -59,13 +60,19 @@ export const maintenanceBodySchema = z.object({
 export type MaintenanceBody = z.input<typeof maintenanceBodySchema>;
 export type MaintenanceValue = z.output<typeof maintenanceBodySchema>;
 
-/** A `text_mm_en` value: `mm` 1 – `maxLength` after trimming, `en` ≤ `maxLength`, empty → null. */
-export function textMmEnSchema(maxLength: number) {
+/**
+ * A `text_mm_en` value: `mm` `minLength` (default 1) – `maxLength` after trimming, `en` ≤ `maxLength`,
+ * empty → null. The site texts allow an empty Myanmar text (add-website-management reading 2).
+ */
+export function textMmEnSchema(maxLength: number, minLength = 1) {
   return z.object({
-    mm: z.string().trim().min(1).max(maxLength),
+    mm: z.string().trim().min(minLength).max(maxLength),
     en: optionalText(maxLength),
   });
 }
+
+/** `site.announcement` (Part 8 §17): the announcement of the content save, or null. */
+export type SiteAnnouncement = NonNullable<z.output<typeof siteContentWriteSchema>['announcement']>;
 
 /** What valueSchema reads of an entry — a settings.json entry or its typed copy. */
 export interface ValueSchemaEntry {
@@ -76,6 +83,7 @@ export interface ValueSchemaEntry {
     readonly max?: number;
     readonly choices?: readonly number[];
     readonly max_length?: number;
+    readonly min_length?: number;
     readonly nullable?: boolean;
   };
 }
@@ -83,6 +91,7 @@ export interface ValueSchemaEntry {
 /** The `json` keys and their schema; a `json` key without one is a programming error. */
 const JSON_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   'system.maintenance': maintenanceBodySchema,
+  'site.announcement': siteContentWriteSchema.shape.announcement,
 };
 
 /** The Zod schema of a value of `entry` (design D2). */
@@ -107,9 +116,11 @@ export function valueSchema(entry: ValueSchemaEntry): z.ZodType {
       if (validation.max_length === undefined) {
         throw new Error(`the text setting ${entry.key} has no max_length`);
       }
-      const schema = textMmEnSchema(validation.max_length);
+      const schema = textMmEnSchema(validation.max_length, validation.min_length);
       return validation.nullable === true ? schema.nullable() : schema;
     }
+    case 'uuid':
+      return validation.nullable === true ? z.uuid().nullable() : z.uuid();
     case 'json': {
       const schema = JSON_SCHEMAS[entry.key];
       if (schema === undefined)
