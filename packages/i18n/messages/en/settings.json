@@ -39,6 +39,7 @@
   },
   "group": {
     "booking": "Booking",
+    "schedule": "Schedule & leave",
     "sales": "Sales & payments",
     "closing": "Closing",
     "attendance": "Payroll & attendance",
@@ -55,6 +56,12 @@
       "label": "Advance window",
       "help": "How many days ahead customers and staff can book. 0 = today only.",
       "impact": "Applies to new bookings from now; existing bookings stay, even outside the new window."
+    }
+  },
+  "schedule": {
+    "cross_branch_gap_minutes": {
+      "label": "Gap between shifts at two branches",
+      "help": "Minutes a barber needs between a shift at one branch and a shift at another on the same day."
     }
   },
   "home_service": {

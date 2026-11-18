@@ -37,7 +37,7 @@ describe('add-settings-store · settings · Setting definitions live in one file
     const res = await get('E001', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(16);
     for (const item of items) {
       expect([item.key, item.source, item.company_value]).toStrictEqual([
         item.key,
@@ -63,6 +63,8 @@ describe('add-settings-store · settings · The settings of this change and thei
       'booking.slot_interval_minutes': 15,
       'home_service.transport_fee_amount': 0,
       'home_service.travel_minutes': 30,
+      // add-schedule-patterns task 1.4 — D-SCH-02 · Part 2 §14.
+      'schedule.cross_branch_gap_minutes': 60,
       'receipt.auto_print': false,
       'receipt.printer_width_mm': 58,
       'receipt.thank_you_text': null,
@@ -108,7 +110,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'home_service.travel_minutes',
       'receipt.printer_width_mm',
     ]);
-    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(12);
+    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(13);
   });
 });
 
@@ -188,7 +190,7 @@ describe('add-settings-store · settings · The settings list shows each key wit
     const res = await get('E002', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(16);
     expect(itemOf({ items }, 'home_service.transport_fee_amount')).toMatchObject({
       company_value: 2000,
       effective: 2000,

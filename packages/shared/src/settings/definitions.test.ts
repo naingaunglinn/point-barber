@@ -14,7 +14,7 @@ import { type MessageTree, settingDefinitionProblems, settingTextProblems } from
 
 // add-settings-store tasks 1.1 – 1.3 — the definition file (D-PLT-16 · P1-RULE-08 · design D2 / D3):
 // the entry shape, the key pattern of the DB CHECK, unique keys, every default within its own
-// validation, the typed copy kept current, and the fifteen entries (design D3, and its note).
+// validation, the typed copy kept current, and the sixteen entries (design D3, and its note).
 const shared = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const definitionsFile = join(shared, 'definitions/settings.json');
 const json = z
@@ -135,14 +135,16 @@ describe('add-settings-store · settings · Setting definitions live in one file
 });
 
 // Design D3 — the fourteen entries, and attendance.default_radius_meters of add-branch-management,
-// which merged after this change (design D3 note · add-branch-management design D5).
+// which merged after this change (design D3 note · add-branch-management design D5), and
+// schedule.cross_branch_gap_minutes of add-schedule-patterns (task 1.4 · Schedule & leave).
 describe('add-settings-store · settings · The settings of this change and their defaults', () => {
-  it('holds the fifteen keys of design D3 and its note in AD-SET-01 group order, by key inside a module', () => {
+  it('holds the sixteen keys of design D3 and its note in AD-SET-01 group order, by key inside a module', () => {
     expect(SETTINGS.map((entry) => `${entry.module} ${entry.key}`)).toStrictEqual([
       'booking booking.advance_window_days',
       'booking booking.slot_interval_minutes',
       'booking home_service.transport_fee_amount',
       'booking home_service.travel_minutes',
+      'schedule schedule.cross_branch_gap_minutes',
       'sales receipt.auto_print',
       'sales receipt.printer_width_mm',
       'sales receipt.thank_you_text',
@@ -171,6 +173,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'receipt.auto_print': false, // REC-37
       'dashboard.show_own_earnings_all': false, // D-DSH-03
       'home_service.travel_minutes': 30, // D-SCH-03
+      'schedule.cross_branch_gap_minutes': 60, // D-SCH-02 (add-schedule-patterns)
       // New in this change: no thank-you line (owner SS1); maintenance off (D-PLT-08).
       'receipt.thank_you_text': null,
       'system.maintenance': { enabled: false },
@@ -235,6 +238,7 @@ describe('add-settings-store · settings · The settings of this change and thei
       'booking.slot_interval_minutes': { unit: 'minutes', choices: [5, 10, 15, 30] },
       'home_service.transport_fee_amount': { unit: 'MMK', min: 0 },
       'home_service.travel_minutes': { unit: 'minutes', min: 0 },
+      'schedule.cross_branch_gap_minutes': { unit: 'minutes', min: 0 },
       'receipt.auto_print': {},
       'receipt.printer_width_mm': { unit: 'mm', choices: [58, 80] },
       'receipt.thank_you_text': { max_length: 200, nullable: true },
