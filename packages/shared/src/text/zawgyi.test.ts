@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { ZawgyiDetector } from './myanmar-tools/zawgyi-detector.js';
 import { isZawgyi, normalizeMyanmarText } from './zawgyi.js';
 
 // AD-FORM-13 · AD-L10N-07 · design D11: Zawgyi typed into a shared text input is converted to
@@ -70,5 +71,82 @@ describe('isZawgyi', () => {
     expect(isZawgyi(ZAWGYI_ADDRESS, { probability: () => 0.949 })).toBe(false);
     // Text without Myanmar script is never Zawgyi, whatever the detector says.
     expect(isZawgyi('Point Barbershop', { probability: () => 1 })).toBe(false);
+  });
+});
+
+// fix(add-company-profile) 18/Nov/2026, lead: short Unicode text scores ≥ 0.95 with the detector, so it
+// was refused (`zawgyi_text`) or rewritten by the input — မိုးရွာ became မိုးရှာ. Text is taken for Zawgyi
+// only when it also holds a sequence Unicode never stores.
+const detector = new ZawgyiDetector();
+
+describe('isZawgyi — short Unicode Myanmar text', () => {
+  // The P3.CRS.02 scenario names (add-booking-cancel-reasons), shipped `my` labels and spec text.
+  const UNICODE_SCORED_AS_ZAWGYI = [
+    'မိုးရွာ', // 0.9507 — add-booking-cancel-reasons tasks 3.3
+    'ဘာသာစကား', // 0.9547 — my/settings.json
+    'ငါးခု', // 0.9772 — my/devui.json
+    '၏', // 0.9841 — my/devui.json
+    'အမြဲ။', // 0.9986 — the highest-scoring short Unicode text in point-sdd
+    'ကို မကိုးကားပါနဲ့။', // 0.9990 — the highest-scoring Unicode text in point-sdd
+  ];
+
+  it('the detector alone scores these Unicode texts at 0.95 or more', () => {
+    for (const text of UNICODE_SCORED_AS_ZAWGYI) {
+      expect(detector.getZawgyiProbability(text), text).toBeGreaterThanOrEqual(0.95);
+    }
+  });
+
+  it('they are not Zawgyi', () => {
+    for (const text of UNICODE_SCORED_AS_ZAWGYI) {
+      expect(isZawgyi(text), text).toBe(false);
+    }
+  });
+
+  it('nor are the other cancel-reason names and ရွာ', () => {
+    for (const text of ['ရွာ', 'Customer မလာ', 'Barber မအား', 'Customer နေမကောင်း', 'အခြား']) {
+      expect(isZawgyi(text), text).toBe(false);
+    }
+  });
+
+  it('well-formed Unicode is not Zawgyi, whatever the detector says', () => {
+    for (const text of [...UNICODE_SCORED_AS_ZAWGYI, UNICODE_MYANMAR, UNICODE_ADDRESS, 'ကျွန်ုပ်']) {
+      expect(isZawgyi(text, { probability: () => 1 }), text).toBe(false);
+    }
+  });
+
+  it('the input leaves မိုးရွာ as typed', () => {
+    expect(normalizeMyanmarText('မိုးရွာ')).toEqual({ text: 'မိုးရွာ', converted: false });
+  });
+});
+
+describe('isZawgyi — Zawgyi is still found', () => {
+  // Real Zawgyi words, each with one sequence Unicode never stores; the detector scores each ≥ 0.95.
+  const SHORT_ZAWGYI: readonly (readonly [string, string, string])[] = [
+    ['\u1031\u1015\u1038', 'ပေး', 'ေ typed before its consonant'],
+    ['\u1018\u101a\u1039', 'ဘယ်', 'U+1039 as the visible asat'],
+    ['\u1019\u103a\u102c\u1038', 'များ', 'U+103A as the medial ya, before a vowel sign'],
+    ['\u103b\u1015', 'ပြ', 'the medial typed before its consonant'],
+    ['\u1014\u1032\u1094', 'နဲ့', 'a Zawgyi glyph code point'],
+    ['\u1015\u1036\u102f', 'ပုံ', 'ံ typed before ု'],
+  ];
+
+  it('short words, one per sequence — and the input converts them', () => {
+    for (const [zawgyi, unicode, sequence] of SHORT_ZAWGYI) {
+      expect(isZawgyi(zawgyi), sequence).toBe(true);
+      expect(normalizeMyanmarText(zawgyi), sequence).toEqual({ text: unicode, converted: true });
+    }
+  });
+
+  it('ေမာင္ and ေဘာင္ခ်ာ (add-attachments-upload) are Zawgyi', () => {
+    expect(normalizeMyanmarText('\u1031\u1019\u102c\u1004\u1039')).toEqual({
+      text: 'မောင်',
+      converted: true,
+    });
+    expect(normalizeMyanmarText('ေဘာင္ခ်ာ')).toEqual({ text: 'ဘောင်ချာ', converted: true });
+  });
+
+  it('the long address and the threshold are unchanged', () => {
+    expect(isZawgyi(ZAWGYI_ADDRESS)).toBe(true);
+    expect(isZawgyi('\u103b\u1015', { probability: () => 0.949 })).toBe(false);
   });
 });
