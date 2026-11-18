@@ -45,7 +45,10 @@ describe('add-schedule-patterns · scheduling · A save replaces the set it star
       days: [1, 2, 3, 4, 5].map((d) => day(d, '10:00', '19:00')),
     });
     expect(plan.effective_to).toBeNull();
-    expect(plan.close).toStrictEqual({ ids: KO_AUNG.map((row) => row.id), effective_to: '2026-10-11' });
+    expect(plan.close).toStrictEqual({
+      ids: KO_AUNG.map((row) => row.id),
+      effective_to: '2026-10-11',
+    });
     expect(plan.insert.map((s) => `${s.day_of_week} ${s.start_time}-${s.end_time}`)).toStrictEqual([
       '1 10:00-19:00',
       '2 10:00-19:00',
@@ -62,7 +65,13 @@ describe('add-schedule-patterns · scheduling · A save replaces the set it star
       nextFrom: null,
       from: '2026-10-12',
       to: undefined,
-      days: [day(1, '10:00', '19:00'), day(2, '10:00', '19:00'), day(3, '10:00', '19:00'), day(4, '10:00', '19:00'), day(5, '10:00', '17:00')],
+      days: [
+        day(1, '10:00', '19:00'),
+        day(2, '10:00', '19:00'),
+        day(3, '10:00', '19:00'),
+        day(4, '10:00', '19:00'),
+        day(5, '10:00', '17:00'),
+      ],
     });
     expect(plan.close).toBeNull();
     expect(plan.archive).toStrictEqual(['oct-5']);
@@ -98,14 +107,28 @@ describe('add-schedule-patterns · scheduling · A save replaces the set it star
         .effective_to,
     ).toBe('2026-10-25');
     expect(
-      planSave({ old: KO_AUNG, nextFrom: '2026-10-26', from: '2026-10-12', to: '2026-10-20', days: [] })
-        .effective_to,
+      planSave({
+        old: KO_AUNG,
+        nextFrom: '2026-10-26',
+        from: '2026-10-12',
+        to: '2026-10-20',
+        days: [],
+      }).effective_to,
     ).toBe('2026-10-20');
   });
 
   it('Scenario: Every day off — the old set ends on 18/Oct and nothing is inserted', () => {
-    const plan = planSave({ old: KO_AUNG, nextFrom: null, from: '2026-10-19', to: undefined, days: [] });
-    expect(plan.close).toStrictEqual({ ids: KO_AUNG.map((row) => row.id), effective_to: '2026-10-18' });
+    const plan = planSave({
+      old: KO_AUNG,
+      nextFrom: null,
+      from: '2026-10-19',
+      to: undefined,
+      days: [],
+    });
+    expect(plan.close).toStrictEqual({
+      ids: KO_AUNG.map((row) => row.id),
+      effective_to: '2026-10-18',
+    });
     expect([plan.insert, plan.changed]).toStrictEqual([[], true]);
   });
 

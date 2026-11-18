@@ -93,7 +93,12 @@ export class PatternsRepository {
   }
 
   /** Sets the end of the rows (`null` = open again): a set closed at `D − 1`, or a kept row retimed. */
-  async setEnd(tx: Tx, ids: readonly string[], effectiveTo: string | null, at: Date): Promise<void> {
+  async setEnd(
+    tx: Tx,
+    ids: readonly string[],
+    effectiveTo: string | null,
+    at: Date,
+  ): Promise<void> {
     if (ids.length === 0) return;
     await tx.$executeRaw`
       UPDATE schedule_patterns SET effective_to = ${effectiveTo}::date, updated_at = ${at}

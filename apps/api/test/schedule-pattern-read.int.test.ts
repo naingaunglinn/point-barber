@@ -22,7 +22,9 @@ afterAll(() => s.close());
 const read = async (who: FixturePerson, employeeId: string, query = '') => {
   const cookie = cookies.get(who) ?? (await s.signIn(who)).cookie;
   cookies.set(who, cookie);
-  return s.http.get(`/api/v1/employees/${employeeId}/schedule-pattern${query}`).set('Cookie', cookie);
+  return s.http
+    .get(`/api/v1/employees/${employeeId}/schedule-pattern${query}`)
+    .set('Cookie', cookie);
 };
 
 const sixDays = (start: string, end: string) =>
@@ -46,7 +48,10 @@ describe('add-schedule-patterns · scheduling · Reading a pattern set', () => {
   it('Scenario: Own pattern without a code', async () => {
     const res = await read('E004', E.E004);
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ effective_from: '2026-09-01', days: sixDays('09:00', '21:00') });
+    expect(res.body).toMatchObject({
+      effective_from: '2026-09-01',
+      days: sixDays('09:00', '21:00'),
+    });
   });
 
   it('Scenario: No pattern yet — every day off (owner PT1)', async () => {

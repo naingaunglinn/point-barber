@@ -65,9 +65,7 @@ export function planSave(input: {
   const inPlace = old.length > 0 && old.every((row) => row.effective_from === from);
   if (!inPlace) {
     const close =
-      old.length === 0
-        ? null
-        : { ids: old.map((row) => row.id), effective_to: plusDays(from, -1) };
+      old.length === 0 ? null : { ids: old.map((row) => row.id), effective_to: plusDays(from, -1) };
     return {
       effective_to: effectiveTo,
       close,

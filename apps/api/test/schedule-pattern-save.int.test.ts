@@ -53,7 +53,9 @@ const rowsOf = async (employeeId: string): Promise<Row[]> =>
     FROM schedule_patterns WHERE employee_id = ${employeeId}::uuid
     ORDER BY effective_from, day_of_week, start_time`;
 const rowCount = async () =>
-  Number((await s.prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM schedule_patterns`)[0]?.n);
+  Number(
+    (await s.prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM schedule_patterns`)[0]?.n,
+  );
 const auditRows = async (employeeId: string) =>
   s.prisma.audit_events.findMany({
     where: { action: 'schedule.pattern_set', entity_id: employeeId },
@@ -256,9 +258,9 @@ describe('add-schedule-patterns · scheduling · A save replaces the set it star
     });
     expect(res.body.days).toHaveLength(5);
     const rows = await rowsOf(E.E004);
-    expect(rows.filter((row) => row.from === '2026-09-01').map((row) => [row.day, row.to])).toStrictEqual(
-      [1, 2, 3, 4, 5, 6].map((day) => [day, '2026-10-11']),
-    );
+    expect(
+      rows.filter((row) => row.from === '2026-09-01').map((row) => [row.day, row.to]),
+    ).toStrictEqual([1, 2, 3, 4, 5, 6].map((day) => [day, '2026-10-11']));
   });
 
   it('the save writes one schedule.pattern_set row at B3 with the set before and after', async () => {
@@ -279,12 +281,20 @@ describe('add-schedule-patterns · scheduling · A save replaces the set it star
     });
     expect(res.status).toBe(200);
     const rows = (await rowsOf(E.E004)).filter((row) => row.from === '2026-10-12');
-    expect(rows.filter((row) => row.day < 5).map((row) => row.id)).toStrictEqual(kept.map((row) => row.id));
-    expect(rows.filter((row) => row.day === 5).map((row) => [row.hours, row.archived])).toStrictEqual([
+    expect(rows.filter((row) => row.day < 5).map((row) => row.id)).toStrictEqual(
+      kept.map((row) => row.id),
+    );
+    expect(
+      rows.filter((row) => row.day === 5).map((row) => [row.hours, row.archived]),
+    ).toStrictEqual([
       ['10:00-17:00', false],
       ['10:00-19:00', true],
     ]);
-    expect((await rowsOf(E.E004)).filter((row) => row.from === '2026-09-01').every((row) => row.to === '2026-10-11')).toBe(true);
+    expect(
+      (await rowsOf(E.E004))
+        .filter((row) => row.from === '2026-09-01')
+        .every((row) => row.to === '2026-10-11'),
+    ).toBe(true);
   });
 
   it('Saving the same set again — 200, no row changed and no audit row added', async () => {
@@ -322,7 +332,9 @@ describe('add-schedule-patterns · scheduling · A save replaces the set it star
       days: week([1, 2, 3, 4, 5, 6], B3, '10:00', '20:00'),
     });
     expect([res.status, res.body.effective_to]).toStrictEqual([200, '2026-10-25']);
-    expect((await rowsOf(E.E008)).filter((row) => row.from === '2026-10-26')).toStrictEqual(laterRows);
+    expect((await rowsOf(E.E008)).filter((row) => row.from === '2026-10-26')).toStrictEqual(
+      laterRows,
+    );
   });
 
   it('Scenario: Every day off — Ko Htet from 19/Oct with days = []; his set ends on 18/Oct', async () => {
