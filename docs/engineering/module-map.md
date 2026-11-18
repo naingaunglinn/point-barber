@@ -40,14 +40,21 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `delivery`     | `visits`                                                                                                                    | `add-walkin-visit-checkout` |
 | `sales`        | `sales`, `sale_items`, `receipt_counters`, `payment_methods`, `payments`, `refunds`                                         | `add-walkin-visit-checkout` |
 | `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout` |
+| `booking`      | nothing new — reads `bookings`, `booking_items`, `booking_cancel_reasons` (customer statistics, timeline, archive guard)    | `add-customer-management`   |
 | `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout` |
 | `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`        |
-| `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
+| `catalog`      | `service_categories`, `services`, `branch_services`, `service_prices` (close only) · reads `employee_service_eligibilities` | `add-service-catalogue`     |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
 | `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
 | `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`     |
 | `scheduling`   | `leave_types` — P2.LVT.02 – 04 (reads `leaves` for the archive's PENDING check)                                             | `add-leave-types`           |
+
+Two ports carry the Part 4 history to `booking` without an import of `sales` (walk-in design D1):
+`CustomerActivity`, declared by `booking` and implemented by `sales`, answers the visit and sale
+figures of a customer; `VisitsPort`, declared by `sales` and implemented by `delivery`, answers the
+visit fields. `add-customer-management` extends both (its design D1): `CustomerActivity` gains the visit
+aggregate, the totals, the recent visits and the timeline entries; `VisitsPort` gains `readMany`.
 
 The website refresh (API-PUB-03 · ADR-006) has one owner: `platform/website` — `SiteContent.touch(tx,
 tags)`, which every writer of website data calls inside its write transaction; it raises

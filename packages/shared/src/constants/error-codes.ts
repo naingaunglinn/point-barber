@@ -69,11 +69,23 @@ export const ErrorCode = {
   // already_exists is shared with the catalogue changes (first merge declares it — design D10).
   ALREADY_EXISTS: 'already_exists',
   BRANCH_IN_USE: 'branch_in_use',
+  // add-customer-management — Part 3 §9 · API-ERR-02 (task 1.4): an archive refused while BOOKED /
+  // STARTED bookings exist, context `{ count }` (P3.CUS.07 · P3-RULE-02). already_exists, conflict and
+  // zawgyi_text above are reused.
+  CUSTOMER_HAS_ACTIVE_BOOKINGS: 'customer_has_active_bookings',
   // add-settings-store — API-ERR-02 · Part 1 §11b · P1-RULE-08 · API-AUTH-06 (task 1.8): a write of a
   // read-only key or a branch override of a company-only key; maintenance mode for a caller who may not
   // pass (texts owner-approved 05/Nov/2026, S18).
   SETTING_SCOPE: 'setting_scope',
   MAINTENANCE: 'maintenance',
+  // add-schedule-patterns — Part 2 §13b · API-ERR-02 (task 2.2; texts proposed in design S18): segment
+  // times out of order or overlapping (field codes of a 400 `validation`), the cross-branch travel gap
+  // (D-SCH-02) and an own change of today's shifts (422 everywhere — owner C11). effective_date_past
+  // waits for its text.
+  SEGMENT_OVERLAP: 'segment_overlap',
+  END_BEFORE_START: 'end_before_start',
+  CROSS_BRANCH_GAP: 'cross_branch_gap',
+  SELF_ACTION: 'self_action',
   // add-leave-types — Part 2 §13b · API-ERR-02 (task 1.3 — design D4 / D10): an archive refused while a
   // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
   // are reused.
