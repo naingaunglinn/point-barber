@@ -1,15 +1,40 @@
 #!/bin/sh
-# Typecheck and unit tests before every push — the fallback of design D17 (task 7.7). They were
-# steps 3 and 4 of the Claude Code after-edit hook; with them a single-file edit in apps/api took a
-# median 12.7 s, over D17's 10 s target, so the hook keeps Prettier and ESLint and they run here.
-# CI jobs `static` and `unit` are the gate; this only catches a failure before it reaches the PR.
+# Typecheck and the unit tests related to the pushed change, before every push.
+# It began as the fallback of design D17 (task 7.7), which ran the full unit suite here. On 18/Nov/2026
+# the owner chose to run only the tests related to the changed files: the full suite (2,700+ tests,
+# 7–10 min on the developers' machines) held every push that long, one at a time (point-sdd issue #40,
+# comment 6967910510). CI jobs `static` and `unit` still run everything and stay the required gate;
+# this only catches a failure before it reaches the PR.
 # Git sends one line per pushed ref on stdin: <local ref> <local sha> <remote ref> <remote sha>.
 # A deleted branch has an all-zero local sha, so a push that only deletes sends no code to check.
 set -e
 commits=no
+full=no
+changed=''
 while read -r _local_ref local_sha _remote_ref _remote_sha; do
-  case $local_sha in *[!0]*) commits=yes ;; esac
+  case $local_sha in *[!0]*) ;; *) continue ;; esac
+  commits=yes
+  # The files this branch changes against main. Without a merge base (no origin/main, an unrelated
+  # history) nothing narrows the run, so the whole suite runs.
+  if base=$(git merge-base origin/main "$local_sha" 2>/dev/null); then
+    changed="$changed
+$(git diff --name-only --diff-filter=ACMR "$base" "$local_sha")"
+  else
+    full=yes
+  fi
 done
 [ "$commits" = yes ] || exit 0
 pnpm run typecheck
-pnpm run test
+# A change to what every test resolves or how it runs (dependencies, TypeScript or Vitest settings)
+# can break any test, so it sends the push through the full suite.
+if [ "$full" = yes ] || printf '%s\n' "$changed" | grep -Eq '(^|/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig[^/]*\.json|vitest[^/]*\.config\.[cm]?[jt]s)$'; then
+  pnpm run test
+  exit 0
+fi
+# Source files only. A language or catalogue JSON file is imported almost everywhere, so passing it here
+# would select about half the suite (126 files for one error.json line, 18/Nov/2026); CI checks it.
+files=$(printf '%s\n' "$changed" | grep -E '\.[cm]?[jt]sx?$' || true)
+[ -n "$files" ] || exit 0
+# One repository path per word: the paths in this repository contain no spaces.
+# shellcheck disable=SC2086
+pnpm exec vitest related --run --passWithNoTests $files
