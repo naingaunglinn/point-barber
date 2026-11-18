@@ -109,7 +109,12 @@ describe('isZawgyi — short Unicode Myanmar text', () => {
   });
 
   it('well-formed Unicode is not Zawgyi, whatever the detector says', () => {
-    for (const text of [...UNICODE_SCORED_AS_ZAWGYI, UNICODE_MYANMAR, UNICODE_ADDRESS, 'ကျွန်ုပ်']) {
+    for (const text of [
+      ...UNICODE_SCORED_AS_ZAWGYI,
+      UNICODE_MYANMAR,
+      UNICODE_ADDRESS,
+      'ကျွန်ုပ်',
+    ]) {
       expect(isZawgyi(text, { probability: () => 1 }), text).toBe(false);
     }
   });
