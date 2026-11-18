@@ -1,4 +1,11 @@
-import { type Grant, type LeaveType, type MeResponse, ScopeType, leaveTypeSchema } from '@point/shared';
+import {
+  type Grant,
+  type LeaveType,
+  LeaveTypeStatus,
+  type MeResponse,
+  ScopeType,
+  leaveTypeSchema,
+} from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 
 import { meOf } from './pos-fixtures';
@@ -33,7 +40,7 @@ const type = (
 ): LeaveType =>
   leaveTypeSchema.parse({
     id,
-    status: 1,
+    status: LeaveTypeStatus.ACTIVE,
     archived_at: null,
     updated_at: '2026-10-05T09:00:00.000+06:30',
     ...members,

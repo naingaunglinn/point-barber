@@ -22,10 +22,12 @@ const LIVE = { staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: tru
  * user the screen refuses (`enabled` false).
  */
 export function useLeaveTypes(includeArchived: boolean, enabled = true) {
-  const query = `status=0&status=1${includeArchived ? '&include_archived=true' : ''}`;
   return useQuery({
     queryKey: leaveTypeKeys.list(includeArchived),
-    queryFn: async () => (await api<{ items: LeaveType[] }>(`/leave-types?${query}`)).items,
+    queryFn: async () => {
+      const archived = includeArchived ? '&include_archived=true' : '';
+      return (await api<{ items: LeaveType[] }>(`/leave-types?status=0&status=1${archived}`)).items;
+    },
     ...LIVE,
     enabled,
   });

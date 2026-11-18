@@ -5,6 +5,7 @@ import { useId, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import {
+  ClientMessageCode,
   ErrorCode,
   type LeaveType,
   type LeaveTypeCreateBody,
@@ -55,7 +56,8 @@ import {
 
 type Refusal = Pick<Problem, 'code' | 'request_id'>;
 const NO_ANSWER: Refusal = { code: 'unknown', request_id: '' };
-const refusalOf = (error: unknown): Refusal => (error instanceof ApiProblem ? error.problem : NO_ANSWER);
+const refusalOf = (error: unknown): Refusal =>
+  error instanceof ApiProblem ? error.problem : NO_ANSWER;
 
 export interface LeaveTypeDialogProps {
   /** The type being edited; absent for New leave type. */
@@ -71,7 +73,8 @@ export function LeaveTypeDialog(props: LeaveTypeDialogProps) {
   const t = useTranslations();
   // After Reload the form starts again from the stored type (AD-RT-02).
   const [leaveType, setLeaveType] = useState(props.leaveType);
-  const title = leaveType === undefined ? t('leaveType.form.titleNew') : t('leaveType.form.titleEdit');
+  const title =
+    leaveType === undefined ? t('leaveType.form.titleNew') : t('leaveType.form.titleEdit');
   const readOnly = leaveType !== undefined && (!props.canUpdate || leaveType.archived_at !== null);
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : props.onClose())} title={title}>
@@ -141,6 +144,8 @@ function LeaveTypeForm({ leaveType: stored, canArchive, onClose, onReload }: Lea
   const status = useTextField(form, 'status');
   const errors = form.formState.errors;
   const nameError = fieldErrorOf(errors, 'name_mm') ?? fieldErrorOf(errors, 'name_en');
+  // Nothing chosen is `invalid_type` from the schema; the field says it is required (the brief).
+  const paidError = fieldErrorOf(errors, 'is_paid');
 
   const submit = form.handleSubmit(async (body) => {
     setAlert(null);
@@ -240,7 +245,11 @@ function LeaveTypeForm({ leaveType: stored, canArchive, onClose, onReload }: Lea
           ]}
           value={paid.value === '' ? null : paid.value}
           onChange={paid.onChange}
-          error={fieldErrorOf(errors, 'is_paid')}
+          error={
+            paidError !== undefined && paid.value === ''
+              ? { code: ClientMessageCode.REQUIRED }
+              : paidError
+          }
         />
         <p className="text-sm text-muted-foreground">{t('leaveType.field.isPaidHelp')}</p>
       </div>
@@ -250,7 +259,11 @@ function LeaveTypeForm({ leaveType: stored, canArchive, onClose, onReload }: Lea
           <ChoiceGroup
             label={t('leaveType.field.active')}
             options={[
-              { value: STATUS.ACTIVE, label: t('status.leave_types.ACTIVE'), testId: 'leave-type-active' },
+              {
+                value: STATUS.ACTIVE,
+                label: t('status.leave_types.ACTIVE'),
+                testId: 'leave-type-active',
+              },
               {
                 value: STATUS.INACTIVE,
                 label: t('status.leave_types.INACTIVE'),
@@ -293,7 +306,9 @@ function LeaveTypeForm({ leaveType: stored, canArchive, onClose, onReload }: Lea
         <ConfirmDialog
           open={confirming}
           title={t('leaveType.archive.title')}
-          consequence={t('leaveType.archive.consequence', { name: localized(stored, 'name', locale) })}
+          consequence={t('leaveType.archive.consequence', {
+            name: localized(stored, 'name', locale),
+          })}
           confirmLabel={t('leaveType.archive.confirm')}
           irreversible
           destructive

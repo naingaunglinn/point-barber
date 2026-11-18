@@ -64,9 +64,7 @@ export function LeaveTypesScreen() {
 
   const statuses = filter.status ?? [];
   const rows = (types.data ?? []).filter((type) =>
-    type.archived_at === null
-      ? statuses.length === 0 || statuses.includes(type.status)
-      : archived,
+    type.archived_at === null ? statuses.length === 0 || statuses.includes(type.status) : archived,
   );
   const name = (type: LeaveType) => localized(type, 'name', locale);
   const paid = (type: LeaveType) => (type.is_paid ? t('list.paid') : t('list.unpaid'));

@@ -2,7 +2,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { LeaveType } from '@point/shared';
+import { type LeaveType, LeaveTypeStatus } from '@point/shared';
 import { toast } from '@point/ui';
 
 import { LEAVE_PEOPLE, TYPES } from '../../../../../test/leave-type-fixtures';
@@ -40,8 +40,7 @@ const listOf = (items: readonly LeaveType[], routes: Parameters<typeof routeFetc
     [`GET ${LIST}&include_archived=true`]: json(200, { items }),
     ...routes,
   });
-const names = () =>
-  screen.queryAllByTestId(/^leave-type-row-/).map((cell) => cell.textContent);
+const names = () => screen.queryAllByTestId(/^leave-type-row-/).map((cell) => cell.textContent);
 const sent = (method: string, path: string) => {
   const call = fetchMock.mock.calls.find(
     ([url, init]) => String(url) === path && init?.method === method,
@@ -65,7 +64,9 @@ describe('add-leave-types · leave · The leave-type list shows every type in it
       'Unpaid',
       'Unpaid',
     ]);
-    expect(screen.getByTestId('leave-types-list').querySelector('[data-slot="status-badge"]')).toBeNull();
+    expect(
+      screen.getByTestId('leave-types-list').querySelector('[data-slot="status-badge"]'),
+    ).toBeNull();
     expect(screen.getByTestId('leave-type-new').textContent).toBe('New leave type');
   });
 
@@ -75,11 +76,13 @@ describe('add-leave-types · leave · The leave-type list shows every type in it
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.kyawZin, locale: 'my' });
     await screen.findByTestId(`leave-type-row-${TYPES.paid.id}`);
     expect(names()).toStrictEqual(['လစာရခွင့်', 'ဆေးခွင့်', 'လစာမဲ့ခွင့်']);
-    expect(screen.getByTestId(`leave-type-row-${TYPES.sick.id}`).closest('[data-slot="card"]')).not.toBeNull();
+    expect(
+      screen.getByTestId(`leave-type-row-${TYPES.sick.id}`).closest('[data-slot="card"]'),
+    ).not.toBeNull();
   });
 
   it('the Inactive chip shows an INACTIVE type with its badge; Archived adds the archived ones', async () => {
-    const sickOff = { ...TYPES.sick, status: 0 as const };
+    const sickOff = { ...TYPES.sick, status: LeaveTypeStatus.INACTIVE };
     const archived = { ...TYPES.training, archived_at: '2026-10-05T10:00:00+06:30' };
     listOf([TYPES.paid, sickOff, TYPES.unpaid, archived]);
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.kyawZin });
@@ -87,12 +90,16 @@ describe('add-leave-types · leave · The leave-type list shows every type in it
     expect(names()).toStrictEqual(['Paid leave', 'Unpaid leave']);
     fireEvent.click(screen.getByRole('button', { name: 'Inactive' }));
     await waitFor(() => expect(names()).toContain('Sick leave'));
-    const sickRow = screen.getByTestId(`leave-type-row-${TYPES.sick.id}`).closest('tr') as HTMLElement;
+    const sickRow = screen
+      .getByTestId(`leave-type-row-${TYPES.sick.id}`)
+      .closest('tr') as HTMLElement;
     expect(within(sickRow).getByText('Inactive')).toBeTruthy();
     fireEvent.click(screen.getByTestId('leave-types-archived'));
     const training = await screen.findByTestId(`leave-type-row-${TYPES.training.id}`);
     expect(within(training.closest('tr') as HTMLElement).getByText('Archived')).toBeTruthy();
-    expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain(`${LIST}&include_archived=true`);
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain(
+      `${LIST}&include_archived=true`,
+    );
   });
 
   it('an empty filtered list says so; a failed load shows the error with Retry', async () => {
@@ -108,7 +115,10 @@ describe('add-leave-types · leave · The leave-type list shows every type in it
   it('Scenario: Ko Aung opens /settings/leave-types — the forbidden page', () => {
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.aung });
     expect(screen.getByTestId('refused-page')).toBeTruthy();
-    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('/leave-types'), expect.anything());
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining('/leave-types'),
+      expect.anything(),
+    );
   });
 });
 
@@ -121,7 +131,9 @@ describe('add-leave-types · leave · The leave-type form creates and edits a ty
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.kyawZin });
     fireEvent.click(await screen.findByTestId('leave-type-new'));
     await screen.findByTestId('leave-type-form');
-    fireEvent.change(screen.getByTestId('leave-type-name-mm'), { target: { value: 'သင်တန်းခွင့်' } });
+    fireEvent.change(screen.getByTestId('leave-type-name-mm'), {
+      target: { value: 'သင်တန်းခွင့်' },
+    });
     fireEvent.change(screen.getByTestId('leave-type-name-en'), { target: { value: 'Training' } });
     fireEvent.click(screen.getByTestId('leave-type-paid'));
     fireEvent.click(screen.getByTestId('leave-type-save'));
@@ -138,10 +150,14 @@ describe('add-leave-types · leave · The leave-type form creates and edits a ty
     listOf([TYPES.paid]);
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.kyawZin });
     fireEvent.click(await screen.findByTestId('leave-type-new'));
-    fireEvent.change(await screen.findByTestId('leave-type-name-mm'), { target: { value: 'သင်တန်းခွင့်' } });
+    fireEvent.change(await screen.findByTestId('leave-type-name-mm'), {
+      target: { value: 'သင်တန်းခွင့်' },
+    });
     fireEvent.click(screen.getByTestId('leave-type-save'));
     await waitFor(() =>
-      expect(within(screen.getByTestId('leave-type-field-is_paid')).getByText(/required/i)).toBeTruthy(),
+      expect(
+        within(screen.getByTestId('leave-type-field-is_paid')).getByText(/required/i),
+      ).toBeTruthy(),
     );
     expect(sent('POST', '/api/v1/leave-types')).toBeUndefined();
   });
@@ -152,7 +168,9 @@ describe('add-leave-types · leave · The leave-type form creates and edits a ty
     });
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.kyawZin });
     fireEvent.click(await screen.findByTestId('leave-type-new'));
-    fireEvent.change(await screen.findByTestId('leave-type-name-mm'), { target: { value: 'ဆေးခွင့်' } });
+    fireEvent.change(await screen.findByTestId('leave-type-name-mm'), {
+      target: { value: 'ဆေးခွင့်' },
+    });
     fireEvent.click(screen.getByTestId('leave-type-unpaid'));
     fireEvent.click(screen.getByTestId('leave-type-save'));
     expect(await screen.findByText('A leave type with this name already exists.')).toBeTruthy();
@@ -179,7 +197,9 @@ describe('add-leave-types · leave · The leave-type form creates and edits a ty
       expected_updated_at: TYPES.sick.updated_at,
     });
     expect((screen.getByTestId('leave-type-name-en') as HTMLInputElement).value).toBe('Sick');
-    expect(screen.getByText('Someone saved this just now. Reload to see the latest version.')).toBeTruthy();
+    expect(
+      screen.getByText('Someone saved this just now. Reload to see the latest version.'),
+    ).toBeTruthy();
   });
 
   it('without company-scope leave_type.update the values are text, with no Save', async () => {
