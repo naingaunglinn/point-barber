@@ -79,6 +79,28 @@ export class CustomerActivityRepository {
     return totalsRowSchema.parse(rows[0]);
   }
 
+  /**
+   * Every sale of the customer in the scope, for the timeline: one customer's sales, merged and cut in
+   * memory with the visit fields (design D10 · R6), so no page bound here.
+   */
+  timelineSales(db: Tx, customerId: string, scope: ReadScope) {
+    return db.sales.findMany({
+      where: {
+        customer_id: customerId,
+        ...(scope === 'all' ? {} : { branch_id: { in: [...scope] } }),
+      },
+      select: {
+        id: true,
+        visit_id: true,
+        status: true,
+        branch_id: true,
+        receipt_number: true,
+        total_amount: true,
+        finished_at: true,
+      },
+    });
+  }
+
   /** The last `window` finished visit sales of the customer, newest first (`finished_at`, `id`). */
   async recentVisitSales(
     db: Tx,

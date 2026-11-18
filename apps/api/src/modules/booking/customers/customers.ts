@@ -1,24 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import {
+  type CursorPage,
+  type CustomerDto,
+  type CustomerListItemDto,
+  type CustomerListQuery,
   type CustomerLookupDto,
   CustomerStatus,
+  type CustomerTimelineQuery,
   type E164,
   ErrorCode,
   type Mmk,
+  type SaleStatus,
+  type VisitStatus,
   maskPhone,
   normalizeDigits,
   normalizePhone,
+  parseCustomerQuery,
+  type TimelineEntryDto,
   toMmtIso,
+  toMmtIsoMillis,
 } from '@point/shared';
 
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import { Clock } from '../../../common/clock/clock.js';
 import type { SqlPiece, Tx } from '../../../common/database/transaction-runner.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
-import { uuidV7 } from '../../../common/http/uuid-v7.js';
+import { isUuid, uuidV7 } from '../../../common/http/uuid-v7.js';
 import { CurrentCompany } from '../../people/index.js';
 import { Audit } from '../../platform/index.js';
-import { type CustomerRow, CustomersRepository } from '../repositories/customers.repository.js';
+import {
+  type CustomerListRow,
+  type CustomerRow,
+  CustomersRepository,
+} from '../repositories/customers.repository.js';
+import { decodeListCursor, decodeTimelineCursor, encodeListCursor } from './customer-cursors.js';
+import { CustomerStats } from './customer-stats.js';
+import { CustomerTimeline } from './customer-timeline.js';
 import type { RecentVisit } from './preferred-barber.js';
 
 // One customer identity function (P3-RULE-01 · D-CUS-02 / 03 · add-walkin-visit-checkout design D1):
@@ -71,7 +88,46 @@ export interface CustomerActivity {
     scope: ReadScope,
     window: number,
   ): Promise<readonly RecentVisit[]>;
+  /** Every visit of the customer's sales and every FINISHED visit-less sale, in no order (D10). */
+  timelineEntries(db: Tx, customerId: string, scope: ReadScope): Promise<readonly ActivityEntry[]>;
 }
+
+/** A timeline entry of `sales`: a visit at `started_at`, a visit-less FINISHED sale at `finished_at`. */
+export type ActivityEntry =
+  | {
+      readonly type: 'visit';
+      readonly id: string;
+      readonly at: Date;
+      readonly branch_id: string;
+      readonly status: VisitStatus;
+      readonly employee_id: string;
+      /** Set only once the sale is FINISHED. */
+      readonly receipt_number: string | null;
+      readonly total_amount: Mmk | null;
+    }
+  | {
+      readonly type: 'sale';
+      readonly id: string;
+      readonly at: Date;
+      readonly branch_id: string;
+      readonly status: SaleStatus;
+      readonly receipt_number: string;
+      readonly total_amount: Mmk;
+    };
+
+const notFound = (): ProblemException => new ProblemException(ErrorCode.NOT_FOUND, 404);
+
+/** `CustomerListItem` — the counts are the caller's read scope's (P3.CUS.01 · P3-RULE-03). */
+const toListItem = (row: CustomerListRow): CustomerListItemDto => ({
+  id: row.id,
+  name: row.name,
+  phone: row.phone,
+  phone_normalized: row.phone_normalized,
+  status: row.status,
+  archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
+  last_visit_at: row.last_visit_at === null ? null : toMmtIso(row.last_visit_at),
+  visit_count: row.visit_count,
+});
 
 const ref = (row: CustomerRow): CustomerRef => ({
   id: row.id,
@@ -90,6 +146,8 @@ export class Customers {
     private readonly company: CurrentCompany,
     private readonly audit: Audit,
     private readonly clock: Clock,
+    private readonly stats: CustomerStats,
+    private readonly timelines: CustomerTimeline,
   ) {}
 
   /** Called once by the sales module at start-up; booking never imports sales. */
@@ -206,10 +264,7 @@ export class Customers {
     const row = await this.repository.findByPhone(db, await this.company.id(db), normalized);
     if (row === null) return { customer: null };
     if (row.archived_at !== null) return { customer: null, archived: true };
-    if (this.activity === undefined) {
-      throw new Error('Customers: no CustomerActivity registered (SalesModule not loaded)');
-    }
-    const lastVisit = await this.activity.lastVisitAt(db, row.id, scope);
+    const lastVisit = await this.port().lastVisitAt(db, row.id, scope);
     return {
       customer: {
         id: row.id,
@@ -221,5 +276,90 @@ export class Customers {
         upcoming_bookings: [],
       },
     };
+  }
+
+  /**
+   * P3.CUS.01 — the company's customers by status (default ACTIVE), archived ones on request, `q`
+   * by name or phone (owner CM1); sorted, keyset-paged, `total` of the filter (design D3).
+   */
+  async list(
+    db: Tx,
+    query: CustomerListQuery,
+    scope: ReadScope,
+  ): Promise<CursorPage<CustomerListItemDto>> {
+    const filter = {
+      companyId: await this.company.id(db),
+      status: query.status,
+      includeArchived: query.include_archived,
+      query: parseCustomerQuery(query.q),
+    };
+    const after = query.cursor === undefined ? null : decodeListCursor(query.cursor, query.sort);
+    const visits = this.port().visitAggregate(scope);
+    const rows = await this.repository.listPage(db, filter, query.sort, after, query.limit, visits);
+    const items = rows.slice(0, query.limit);
+    const last = items.at(-1);
+    const key =
+      query.sort === 'name'
+        ? null
+        : query.sort === '-created_at'
+          ? last?.created_key
+          : last?.visit_key;
+    return {
+      items: items.map(toListItem),
+      next_cursor:
+        rows.length > query.limit && last !== undefined
+          ? encodeListCursor({ sort: query.sort, key, name: last.name, id: last.id })
+          : null,
+      total: await this.repository.listTotal(db, filter),
+    };
+  }
+
+  /** P3.CUS.04 — any customer of the company, archived ones included; statistics in the scope. */
+  async detail(db: Tx, id: string, scope: ReadScope): Promise<CustomerDto> {
+    const row = await this.customerOf(db, id);
+    const { stats, upcoming } = await this.stats.of(db, this.port(), id, scope, this.clock.now());
+    return {
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      phone_normalized: row.phone_normalized,
+      status: row.status as CustomerDto['status'],
+      archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
+      last_visit_at: stats.last_visit_at,
+      visit_count: stats.visit_count,
+      notes: row.notes,
+      stats,
+      upcoming_bookings: upcoming,
+      created_at: toMmtIso(row.created_at),
+      // The edit stamp carries milliseconds (design D8 · API-IDEM-04).
+      updated_at: toMmtIsoMillis(row.updated_at),
+    };
+  }
+
+  /** P3.CUS.09 — bookings, visits and visit-less sales in the scope, newest first (design D10). */
+  async timeline(
+    db: Tx,
+    id: string,
+    query: CustomerTimelineQuery,
+    scope: ReadScope,
+  ): Promise<CursorPage<TimelineEntryDto>> {
+    await this.customerOf(db, id);
+    const before = query.cursor === undefined ? null : decodeTimelineCursor(query.cursor);
+    return this.timelines.page(db, this.port(), id, scope, before, query.limit);
+  }
+
+  /** The company's customer of `id`; 404 for an id that is no uuid or names no customer. */
+  private async customerOf(db: Tx, id: string) {
+    if (!isUuid(id)) throw notFound();
+    const row = await this.repository.byId(db, await this.company.id(db), id);
+    if (row === null) throw notFound();
+    return row;
+  }
+
+  private port(): CustomerActivity {
+    if (this.activity === undefined) {
+      throw new Error('Customers: no CustomerActivity registered (SalesModule not loaded)');
+    }
+    return this.activity;
   }
 }

@@ -7,6 +7,8 @@ import { CancelReasonReads } from './cancel-reasons/cancel-reason-reads.js';
 import { CancelReasonSeed } from './cancel-reasons/cancel-reason-seed.js';
 import { CancelReasonWrites } from './cancel-reasons/cancel-reason-writes.js';
 import { CancelReasonsController } from './cancel-reasons/cancel-reasons.controller.js';
+import { CustomerStats } from './customers/customer-stats.js';
+import { CustomerTimeline } from './customers/customer-timeline.js';
 import { CustomersController } from './customers/customers.controller.js';
 import { Customers } from './customers/customers.js';
 import { BookingsRepository } from './repositories/bookings.repository.js';
@@ -26,6 +28,8 @@ import { CustomersRepository } from './repositories/customers.repository.js';
     CustomersRepository,
     BookingsRepository,
     CustomerBookingsRepository,
+    CustomerStats,
+    CustomerTimeline,
     Customers,
     CancelReasonsRepository,
     CancelReasonSeed,

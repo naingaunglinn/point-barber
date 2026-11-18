@@ -36,6 +36,7 @@ beforeAll(async () => {
     visitAggregate: unused,
     totals: unused,
     recentVisits: unused,
+    timelineEntries: unused,
     lastVisitAt: (_db, customerId, branchIds) => {
       lastVisits.push({ customerId, branchIds });
       return Promise.resolve(

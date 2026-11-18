@@ -68,4 +68,50 @@ export class CustomerBookingsRepository {
     });
     return assertWithinCeiling(rows, 'CustomerBookingsRepository.upcoming');
   }
+
+  /**
+   * The customer's bookings in the scope strictly older than `before` (`(starts_at, id)`), newest
+   * first, at most `take` — with their items' prices and service names in `sort_order`, the
+   * transport fee and the cancel reason (design D10).
+   */
+  timelineEntries(
+    db: Tx,
+    customerId: string,
+    scope: ReadScope,
+    before: { readonly at: Date; readonly id: string } | null,
+    take: number,
+  ) {
+    return db.bookings.findMany({
+      where: {
+        customer_id: customerId,
+        ...atBranches(scope),
+        ...(before === null
+          ? {}
+          : {
+              OR: [
+                { starts_at: { lt: before.at } },
+                { starts_at: before.at, id: { lt: before.id } },
+              ],
+            }),
+      },
+      orderBy: [{ starts_at: 'desc' }, { id: 'desc' }],
+      take,
+      select: {
+        id: true,
+        starts_at: true,
+        branch_id: true,
+        status: true,
+        booked_employee_id: true,
+        transport_fee_amount: true,
+        booking_items: {
+          orderBy: { sort_order: 'asc' },
+          select: {
+            unit_price_amount: true,
+            services: { select: { name_mm: true, name_en: true } },
+          },
+        },
+        booking_cancel_reasons: { select: { name_mm: true, name_en: true, system_code: true } },
+      },
+    });
+  }
 }
