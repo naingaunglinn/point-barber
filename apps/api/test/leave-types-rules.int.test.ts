@@ -24,7 +24,9 @@ let training = '';
 
 beforeAll(async () => {
   t = await startSeededApp({ now: at('10:00:00') });
-  [kyawZin, aung] = (await Promise.all([t.signIn('E001'), t.signIn('E004')])).map((s) => s.cookie);
+  const [admin, barber] = await Promise.all([t.signIn('E001'), t.signIn('E004')]);
+  kyawZin = admin.cookie;
+  aung = barber.cookie;
 });
 afterAll(async () => {
   await t.close();
