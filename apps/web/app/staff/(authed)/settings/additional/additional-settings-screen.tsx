@@ -20,14 +20,7 @@ import { useSettings } from '../../../../../lib/settings/queries';
 // into them stays. The page title is the screen's name (WCAG 2.4.2 · AD-A11Y-01).
 
 type Module =
-  | 'booking'
-  | 'schedule'
-  | 'sales'
-  | 'closing'
-  | 'attendance'
-  | 'dashboard'
-  | 'system'
-  | 'customer';
+  'booking' | 'schedule' | 'sales' | 'closing' | 'attendance' | 'dashboard' | 'system' | 'customer';
 
 /** The rows by module, in the order the list gives them (settings.json order). */
 function groupsOf(items: readonly SettingView[]): { module: Module; items: SettingView[] }[] {
