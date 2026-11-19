@@ -1,4 +1,4 @@
-import { meResponseSchema } from '@point/shared';
+import { PERMISSIONS, meResponseSchema } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -32,11 +32,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(res.status).toBe(200);
     expect(res.headers['cache-control']).toBe('no-store');
     expect(meResponseSchema.parse(res.body)).toBeDefined();
-    // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
-    // (add-walkin-visit-checkout design D3 · API Part 4 §9), its 2 Part 2 schedule codes
-    // (add-schedule-patterns task 1.3), its 3 Part 3 customer codes (add-customer-management task 1.3 ·
-    // API Part 3 §7) and its 2 Part 2 service codes (add-service-catalogue design D3 · API Part 2 §12):
-    // 26 entries.
+    // The Part 1 codes of the scenario plus the codes later parts give the seed Manager role (the
+    // MANAGER list of base-seed.int.test.ts), sorted: a change that adds one adds its line, no count.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
@@ -77,12 +74,11 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     const catalogue = (res.body.grants as { code: string }[]).filter(
       (g) => !g.code.startsWith('fixture.'),
     );
-    // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
-    // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
-    // 4 Part 3 customer codes (add-customer-management) + the 4 Part 2 service codes
-    // (add-service-catalogue design D3) + the 4 Part 2 leave-type codes (add-leave-types) + the 4
-    // cancel-reason codes (add-booking-cancel-reasons): 61.
-    expect(catalogue).toHaveLength(61);
+    // Every code of the catalogue, each once: the catalogue sync gives each new code to the
+    // company-admin role (P1-RULE-12 · add-walkin-visit-checkout design D3) — owner 18/Nov/2026, #40.
+    expect(catalogue.map((grant) => grant.code).sort()).toStrictEqual(
+      PERMISSIONS.map((entry) => entry.code).sort(),
+    );
     // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management) —
     // the four service codes (add-service-catalogue); booking "Four cancel-reason permission codes exist
     // at company level" — Scenario: The admin holds the four codes (Ma Hnin's list above and Ko Aung's
