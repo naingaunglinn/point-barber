@@ -4,6 +4,7 @@ import { PeopleModule } from '../people/index.js';
 import { PlatformModule } from '../platform/index.js';
 import { LeaveTypesController } from './leave-types/leave-types.controller.js';
 import { LeaveTypes } from './leave-types/leave-types.js';
+import { PatternValidator } from './patterns/pattern-validator.js';
 import { LeaveTypesRepository } from './repositories/leave-types.repository.js';
 
 // Bounded context `scheduling` (ADR-001 · docs/engineering/module-map.md): Part 2 patterns, shifts,
@@ -14,7 +15,7 @@ import { LeaveTypesRepository } from './repositories/leave-types.repository.js';
 @Module({
   imports: [PlatformModule, PeopleModule],
   controllers: [LeaveTypesController],
-  providers: [LeaveTypes, LeaveTypesRepository],
+  providers: [PatternValidator, LeaveTypes, LeaveTypesRepository],
   exports: [LeaveTypes],
 })
 export class SchedulingModule {}
