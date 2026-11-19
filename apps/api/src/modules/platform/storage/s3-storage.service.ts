@@ -9,9 +9,11 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { AppConfig } from '../../../common/config/config.js';
 import {
+  type PresignGetOptions,
   StorageObjectMissing,
   type StorageService,
   type StoredObjectInfo,
@@ -24,6 +26,10 @@ import {
 export interface S3Sender {
   send(command: object): Promise<unknown>;
 }
+
+/** RFC 5987 `value-chars`: encodeURIComponent also keeps `'()*`, which a header parameter must encode. */
+const encodeFileName = (name: string): string =>
+  encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
 const isMissing = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -48,6 +54,8 @@ export interface S3Timeouts {
 export class S3StorageService implements StorageService {
   private readonly bucket: string;
   private readonly client: S3Sender;
+  /** Builds links only: its endpoint is the one a browser reaches (S3_PUBLIC_ENDPOINT, else S3_ENDPOINT). */
+  private readonly signer: S3Client;
 
   constructor(config: AppConfig, client?: S3Sender, timeouts: S3Timeouts = S3_TIMEOUTS) {
     const env = config.env;
@@ -65,6 +73,15 @@ export class S3StorageService implements StorageService {
           secretAccessKey: env.S3_SECRET_ACCESS_KEY,
         },
       });
+    this.signer = new S3Client({
+      endpoint: env.S3_PUBLIC_ENDPOINT ?? env.S3_ENDPOINT,
+      region: env.S3_REGION,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.S3_ACCESS_KEY_ID,
+        secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+      },
+    });
   }
 
   /**
@@ -115,5 +132,17 @@ export class S3StorageService implements StorageService {
 
   async delete(key: string): Promise<void> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+  }
+
+  presignGet(key: string, options: PresignGetOptions): Promise<string> {
+    const disposition =
+      options.downloadName === undefined
+        ? undefined
+        : `attachment; filename*=UTF-8''${encodeFileName(options.downloadName)}`;
+    return getSignedUrl(
+      this.signer,
+      new GetObjectCommand({ Bucket: this.bucket, Key: key, ResponseContentDisposition: disposition }),
+      { expiresIn: options.expiresInSeconds },
+    );
   }
 }

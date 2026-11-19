@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 
 import {
   type DetectedFileType,
@@ -47,7 +47,7 @@ export class ImageNotDecodable extends Error {
 
 type Format = DetectedFileType['format'];
 
-function encode(image: sharp.Sharp, format: Format): sharp.Sharp {
+function encode(image: Sharp, format: Format): Sharp {
   switch (format) {
     case 'PNG':
       return image.png({ compressionLevel: PNG_COMPRESSION_LEVEL });

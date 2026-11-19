@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 
 import {
+  type PresignGetOptions,
   StorageObjectMissing,
   type StorageService,
   type StoredObjectInfo,
@@ -34,6 +35,13 @@ export class InMemoryStorageService implements StorageService {
   delete(key: string): Promise<void> {
     this.objects.delete(key);
     return Promise.resolve();
+  }
+
+  /** A fake link for tests (design D1): `memory://<key>?expires=<n>`, with `&download=<name>` when asked. */
+  presignGet(key: string, options: PresignGetOptions): Promise<string> {
+    const download =
+      options.downloadName === undefined ? '' : `&download=${encodeURIComponent(options.downloadName)}`;
+    return Promise.resolve(`memory://${key}?expires=${options.expiresInSeconds}${download}`);
   }
 
   keys(): string[] {

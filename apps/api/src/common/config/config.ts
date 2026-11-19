@@ -48,6 +48,7 @@ export function loadAppConfig(): AppConfig {
     S3_BUCKET_APP: process.env.S3_BUCKET_APP,
     S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
     S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+    S3_PUBLIC_ENDPOINT: process.env.S3_PUBLIC_ENDPOINT,
   });
   return { env };
 }

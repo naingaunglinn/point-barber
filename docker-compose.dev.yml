@@ -35,6 +35,8 @@ services:
       MAIL_ALLOW_REAL: 'false'
       # The bucket of this stack (the host-run API keeps S3_ENDPOINT=http://localhost:9000 of .env).
       S3_ENDPOINT: http://minio:9000
+      # Signed links are opened by the browser, which cannot resolve `minio` (add-attachments-upload D9).
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
     depends_on:
       - minio
 

@@ -187,3 +187,51 @@ describe('S3StorageService — a bucket that never answers (CG-ERR-06 · guideli
     }
   });
 });
+
+// add-attachments-upload task 2.6 — P8.ATT.04 · ADR-014 decision 4 · design D9: a link is signed locally,
+// lives the given seconds, names the host a browser reaches, and carries the download name encoded.
+describe('presignGet', () => {
+  const link = async (cfg: AppConfig, options: { downloadName?: string } = {}) =>
+    new URL(
+      await new S3StorageService(cfg, new StubS3()).presignGet(KEY, { expiresInSeconds: 300, ...options }),
+    );
+  const withPublic = (S3_PUBLIC_ENDPOINT?: string) =>
+    ({ env: { ...config.env, S3_PUBLIC_ENDPOINT } }) as unknown as AppConfig;
+
+  it('expires after 300 seconds, in the bucket path, signed, with no bucket call', async () => {
+    const client = new StubS3();
+    const url = new URL(
+      await new S3StorageService(config, client).presignGet(KEY, { expiresInSeconds: 300 }),
+    );
+    expect(url.searchParams.get('X-Amz-Expires')).toBe('300');
+    expect(url.searchParams.get('X-Amz-Signature')).toMatch(/^[0-9a-f]{64}$/);
+    expect(url.pathname).toBe(`/point-test/${KEY}`);
+    expect(url.searchParams.has('response-content-disposition')).toBe(false);
+    expect(client.sent).toHaveLength(0);
+  });
+
+  it('uses S3_ENDPOINT when S3_PUBLIC_ENDPOINT is not set, and S3_PUBLIC_ENDPOINT when it is', async () => {
+    expect((await link(config)).origin).toBe('http://localhost:9000');
+    expect((await link(withPublic('https://files.point.test'))).origin).toBe('https://files.point.test');
+  });
+
+  it('asks the browser to save the file: attachment; filename*=UTF-8 with the name percent-encoded', async () => {
+    const url = await link(config, { downloadName: 'nrc front.pdf' });
+    expect(url.searchParams.get('response-content-disposition')).toBe(
+      "attachment; filename*=UTF-8''nrc%20front.pdf",
+    );
+  });
+
+  it("encodes the characters a header parameter must not carry: quote, parentheses, asterisk, Myanmar letters", async () => {
+    const url = await link(config, { downloadName: "a'(b)*.pdf မြန်မာ" });
+    const disposition = url.searchParams.get('response-content-disposition') ?? '';
+    expect(disposition).toMatch(/^attachment; filename\*=UTF-8''[A-Za-z0-9%._-]+$/);
+    expect(disposition).toContain('%27%28b%29%2A.pdf%20');
+  });
+
+  it('the in-memory fake answers memory://<key>?expires=<n>', async () => {
+    expect(await new InMemoryStorageService().presignGet(KEY, { expiresInSeconds: 300 })).toBe(
+      `memory://${KEY}?expires=300`,
+    );
+  });
+});
