@@ -19,6 +19,7 @@ import { repeated } from './list-query.js';
 import {
   codeOf,
   employeeRefSchema,
+  repeated,
   userRefSchema,
   wireAmount,
   wireDate,
