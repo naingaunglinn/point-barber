@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus, LIST_LIMIT_MAX } from '@point/shared';
+import { BookingStatus } from '@point/shared';
 
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
@@ -55,7 +55,6 @@ export class CustomerBookingsRepository {
       },
       orderBy: [{ starts_at: 'asc' }, { id: 'asc' }],
       select: { id: true, starts_at: true, branch_id: true, booked_employee_id: true },
-      take: LIST_LIMIT_MAX,
     });
   }
 }

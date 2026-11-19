@@ -7,10 +7,13 @@
 
 /** part3 — D-BKG-18. */
 export const BookingStatus = { CANCELLED: 0, BOOKED: 1, STARTED: 2, COMPLETED: 3 } as const;
+export type BookingStatus = (typeof BookingStatus)[keyof typeof BookingStatus];
 /** part4 — D-VIS-07 · D-VIS-09. */
 export const VisitStatus = { INCOMPLETE: 0, STARTED: 1, COMPLETED: 2, FINISHED: 3 } as const;
+export type VisitStatus = (typeof VisitStatus)[keyof typeof VisitStatus];
 /** part4 — FINISHED is immutable (D-VIS-08). */
 export const SaleStatus = { CANCELLED: 0, OPEN: 1, FINISHED: 2 } as const;
+export type SaleStatus = (typeof SaleStatus)[keyof typeof SaleStatus];
 /** part4. */
 export const DiscountRequestStatus = {
   CANCELLED: 0,
