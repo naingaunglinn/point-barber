@@ -51,7 +51,7 @@ const rowsOf = async (employeeId: string): Promise<Row[]> =>
            to_char(start_time, 'HH24:MI') || '-' || to_char(end_time, 'HH24:MI') AS hours,
            effective_from::text AS "from", effective_to::text AS "to", archived_at IS NOT NULL AS archived
     FROM schedule_patterns WHERE employee_id = ${employeeId}::uuid
-    ORDER BY effective_from, day_of_week, start_time`;
+    ORDER BY effective_from, day_of_week, start_time, archived_at IS NOT NULL, id`;
 const rowCount = async () =>
   Number(
     (await s.prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM schedule_patterns`)[0]?.n,
