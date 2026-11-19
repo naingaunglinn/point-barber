@@ -28,6 +28,7 @@ export * from './phone/phone.js';
 export * from './schemas/attachments.js';
 export * from './schemas/auth.js';
 export * from './schemas/branches.js';
+export * from './schemas/cancel-reasons.js';
 export * from './schemas/catalog.js';
 export * from './schemas/catalogue-code.js';
 export * from './schemas/company.js';
