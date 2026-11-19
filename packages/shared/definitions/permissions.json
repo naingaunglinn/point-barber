@@ -547,5 +547,23 @@
     "level": "shared",
     "label_key": "permission.customer.delete",
     "description": "customer · delete — Inactive / Active, archive, restore — P3.CUS.06 / 07 / 08"
+  },
+  {
+    "code": "website.view",
+    "module": "website",
+    "action": "view",
+    "kind": "crud",
+    "level": "mixed",
+    "label_key": "permission.website.view",
+    "description": "website · view (site content, hours, closures, team overview, share preview, booking QR + poster) — P8.WEB.01/03/05/09/10/11, P8.EXP.01"
+  },
+  {
+    "code": "website.update",
+    "module": "website",
+    "action": "update",
+    "kind": "crud",
+    "level": "mixed",
+    "label_key": "permission.website.update",
+    "description": "website · update (company scope: site content, revalidate, every branch's hours / closures · branch scope: own branches' hours / closures — owner F7) — P8.WEB.02/04/06/07/08/12"
   }
 ]
