@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BookingStatus } from '@point/shared';
+import { BookingStatus, CancelReasonSystemCode } from '@point/shared';
 
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
@@ -7,9 +7,6 @@ import type { Tx } from '../../../common/database/transaction-runner.js';
 // A customer's bookings as the customer statistics read them (add-customer-management design D1 / D6 ·
 // P3-RULE-03): booking owns `bookings` and `booking_cancel_reasons`; the read scope is the booking's
 // branch. Nothing here writes.
-
-/** `booking_cancel_reasons.system_code` 1 NO_SHOW (DB Part 3 · D-BKG-17). */
-const NO_SHOW = 1;
 
 /** A BOOKED booking from now on (OpenAPI Part 3 `UpcomingBooking`). */
 export interface UpcomingBookingRow {
@@ -39,7 +36,10 @@ export class CustomerBookingsRepository {
     };
     const cancelled = await db.bookings.count({ where });
     const noShow = await db.bookings.count({
-      where: { ...where, booking_cancel_reasons: { is: { system_code: NO_SHOW } } },
+      where: {
+        ...where,
+        booking_cancel_reasons: { is: { system_code: CancelReasonSystemCode.NO_SHOW } },
+      },
     });
     return { cancelled, no_show: noShow };
   }
