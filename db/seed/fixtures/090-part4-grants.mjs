@@ -9,7 +9,7 @@ import {
 } from '../../../packages/shared/src/permissions/seed-codes.ts';
 import { fixtureRowId } from '../../../packages/shared/src/testing/fixture-ids.ts';
 
-const GRANTS = [
+export const GRANTS = [
   { role: 'Manager', codes: MANAGER_PART4_CODES },
   { role: 'Barber', codes: BARBER_PART4_CODES },
 ];

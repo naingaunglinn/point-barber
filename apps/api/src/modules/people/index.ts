@@ -9,6 +9,7 @@ export { PermissionCatalogue, type SyncResult } from './catalogue/permission-cat
 export { CompanyProfile } from './company/company-profile.js';
 export { CurrentCompany } from './company/current-company.js';
 export { Assignments } from './directory/assignments.js';
+export { type AssignmentPeriod } from './repositories/assignments.repository.js';
 export { BranchCodes } from './directory/branch-codes.js';
 export { type BranchHeader, BranchHeaders } from './directory/branch-headers.js';
 export { DisplayNames } from './directory/display-names.js';
@@ -17,5 +18,5 @@ export { PeopleModule } from './people.module.js';
 export { PeopleSeedLock, type PilotPeopleResult, PilotPeople } from './pilot/pilot-people.js';
 export { CompanyAdmin, ROLE_CODES } from './roles/company-admin.js';
 export { FirstAdmin, type FirstAdminInput, FirstAdminRefused } from './roles/first-admin.js';
-export { MANAGER_SEED_CODES } from './roles/seed-roles.js';
+export { MANAGER_SEED_CODES, SEED_ROLES } from './roles/seed-roles.js';
 export { BaseSeed } from './seed/base-seed.js';

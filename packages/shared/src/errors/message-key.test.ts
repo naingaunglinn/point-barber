@@ -36,6 +36,17 @@ describe('errorMessageKey', () => {
   });
 });
 
+// add-service-catalogue task 2.2 — the three Part 2 §13b codes this change raises (API-ERR-02); the
+// category count is the context member `count` (P2.CAT.04).
+describe('errorMessageKey — add-service-catalogue', () => {
+  it.each(['category_in_use', 'options_required', 'use_options_endpoint'])(
+    '%s → error.%s',
+    (code) => {
+      expect(errorMessageKey(code)).toBe(`error.${code}`);
+    },
+  );
+});
+
 describe('fieldMessageKey — the table of design D9', () => {
   it('a catalogue code named by the schema → error.<that code>', () => {
     for (const code of ['phone_invalid', 'amount_invalid', 'reason_required', 'date_invalid']) {
