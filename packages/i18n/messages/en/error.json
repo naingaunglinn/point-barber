@@ -67,5 +67,8 @@
   "self_action": "You can't change your own shifts for today — ask another manager.",
   "attachment_invalid": "{reason, select, not_found {This file was not found. Upload it again.} not_yours {This file was uploaded by someone else. Upload it again.} expired {This file was uploaded more than 24 hours ago. Upload it again.} already_linked {This file is already used somewhere else. Upload it again.} type_not_allowed {This kind of file cannot be used here.} too_many {There are too many files here.} other {This file cannot be used. Upload it again.}}",
   "attachment_in_use": "This file is the current {field}. It cannot be removed — replace it with a new one.",
+  "category_in_use": "This category still has {count} services that are not archived.",
+  "options_required": "A service priced by options needs its options.",
+  "use_options_endpoint": "Option pricing is set with the service's options, not here.",
   "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first."
 }

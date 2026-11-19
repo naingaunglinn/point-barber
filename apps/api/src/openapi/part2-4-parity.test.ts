@@ -114,10 +114,31 @@ function expectParity(contractIn: Schema, generatedIn: Schema, path: string): vo
     expectParity(member, members[name] as Schema, `${path}.${name}`);
 }
 
+/**
+ * add-service-catalogue task 2.1 — contract members this code does not build yet, so the request
+ * schemas strip them (proposal "Parts of locked contracts that are absent" · design D13 / D14): the
+ * option set (add-option-services) and the service image (task group 9, after add-attachments-upload).
+ */
+const ABSENT: Record<string, readonly string[]> = {
+  ServiceCreate: ['options', 'image_attachment_id'],
+  ServiceUpdate: ['image_attachment_id'],
+};
+
+/** The contract schema `name` without its ABSENT members. */
+function contractOf(name: string): Schema {
+  const contract = PART2_4_SCHEMAS[name] as Schema;
+  const absent = ABSENT[name] ?? [];
+  if (absent.length === 0) return contract;
+  const properties = Object.entries(contract.properties as Record<string, Schema>).filter(
+    ([member]) => !absent.includes(member),
+  );
+  return { ...contract, properties: Object.fromEntries(properties) };
+}
+
 describe('generated response schemas = OpenAPI Part 2 / 3 / 4 (add-walkin-visit-checkout task 2.5)', () => {
   it.each(Object.keys(PART2_4_SCHEMAS))('%s', (name) => {
     expect(generated[name], name).toBeDefined();
-    expectParity(PART2_4_SCHEMAS[name] as Schema, generated[name] as Schema, name);
+    expectParity(contractOf(name), generated[name] as Schema, name);
   });
 
   it('a nullable member stays nullable and a required one required (the check bites)', () => {
