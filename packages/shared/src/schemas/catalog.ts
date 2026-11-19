@@ -8,8 +8,8 @@ import {
   ServicePricingMode,
   ServiceStatus,
 } from '../constants/status.js';
-import { listQuerySchema, repeated } from './list-query.js';
-import { codeOf, wireAmount, wireDate, wireDateTime } from './wire.js';
+import { listQuerySchema } from './list-query.js';
+import { codeOf, repeated, wireAmount, wireDate, wireDateTime } from './wire.js';
 
 // The service list and price quote DTOs of add-walkin-visit-checkout (tasks 2.4, 2.6), one per schema
 // of point-sdd docs/api/openapi/part2-catalogue-scheduling.yaml v1.4 (API-ERR-03). The quote is built
