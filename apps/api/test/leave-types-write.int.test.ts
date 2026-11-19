@@ -57,8 +57,10 @@ describe('add-leave-types · leave · Create a leave type', () => {
   });
 
   it('Scenario: Name limits', async () => {
-    expect((await create({ name_mm: 'က'.repeat(100), is_paid: true })).status).toBe(201);
-    const long = await create({ name_mm: 'က'.repeat(101), is_paid: true });
+    // 'က' repeated is read as Zawgyi (the detector), so the 100 characters vary.
+    const hundred = `${'ကခဂ'.repeat(33)}က`;
+    expect((await create({ name_mm: hundred, is_paid: true })).status).toBe(201);
+    const long = await create({ name_mm: `${hundred}ခ`, is_paid: true });
     expect(long.status).toBe(400);
     expect(long.body.errors[0]).toStrictEqual({
       field: 'name_mm',

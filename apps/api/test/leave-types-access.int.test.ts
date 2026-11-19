@@ -28,15 +28,18 @@ const list = (query: string, caller?: Caller) => {
 };
 const sick = () => t.prisma.leave_types.findUniqueOrThrow({ where: { id: LT.SICK_LEAVE } });
 /** The three writes of the spec with valid bodies, each with the code it needs. */
-const writes = async (caller: Caller): Promise<(readonly [string, Test])[]> => {
+const writes = async (caller: Caller): Promise<(readonly [string, () => Test])[]> => {
   const { updated_at: stored } = await sick();
   const body = { is_paid: true, expected_updated_at: stored.toISOString() };
-  const requests: [string, Test][] = [
-    ['leave_type.create', t.http.post('/api/v1/leave-types').send(TRAINING)],
-    ['leave_type.update', t.http.patch(`/api/v1/leave-types/${LT.SICK_LEAVE}`).send(body)],
-    ['leave_type.delete', t.http.post(`/api/v1/leave-types/${LT.SICK_LEAVE}/archive`)],
+  // Built one at a time: supertest closes the shared server when a request ends.
+  const requests: [string, () => Test][] = [
+    ['leave_type.create', () => t.http.post('/api/v1/leave-types').send(TRAINING)],
+    ['leave_type.update', () => t.http.patch(`/api/v1/leave-types/${LT.SICK_LEAVE}`).send(body)],
+    ['leave_type.delete', () => t.http.post(`/api/v1/leave-types/${LT.SICK_LEAVE}/archive`)],
   ];
-  return requests.map(([code, request]) => [code, request.set('Cookie', caller.cookie)] as const);
+  return requests.map(
+    ([code, request]) => [code, () => request().set('Cookie', caller.cookie)] as const,
+  );
 };
 const expectNothingWritten = async (before: object) => {
   expect(await sick()).toStrictEqual(before);
@@ -48,7 +51,7 @@ describe('add-leave-types · leave · Leave-type writes need a company-scope gra
   it('Scenario: A barber without the code — 403 forbidden naming the code; he still lists', async () => {
     const before = await sick();
     for (const [code, request] of await writes(aung)) {
-      const res = await request;
+      const res = await request();
       expect(res.status, code).toBe(403);
       expect(res.body, code).toMatchObject({ code: 'forbidden', context: { required: code } });
     }
@@ -61,7 +64,7 @@ describe('add-leave-types · leave · Leave-type writes need a company-scope gra
       await addCodeToRole(t.prisma, 'Manager', code);
     const before = await sick();
     for (const [code, request] of await writes(hnin)) {
-      const res = await request;
+      const res = await request();
       expect(res.status, code).toBe(403);
       expect(res.body, code).toMatchObject({ code: 'company_scope_required' });
     }
@@ -87,11 +90,11 @@ describe('add-leave-types · leave · Archived leave types are listed only for h
 
   it('signed out → 401 on the list and on every write', async () => {
     for (const request of [
-      list(''),
-      t.http.post('/api/v1/leave-types').send(TRAINING),
-      t.http.post(`/api/v1/leave-types/${LT.SICK_LEAVE}/archive`),
+      () => list(''),
+      () => t.http.post('/api/v1/leave-types').send(TRAINING),
+      () => t.http.post(`/api/v1/leave-types/${LT.SICK_LEAVE}/archive`),
     ]) {
-      const res = await request;
+      const res = await request();
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({ code: 'unauthenticated' });
     }
