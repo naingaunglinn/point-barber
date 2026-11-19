@@ -151,5 +151,9 @@
   "branches": {
     "INACTIVE": "Inactive",
     "ACTIVE": "Active"
+  },
+  "leave_types": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive"
   }
 }

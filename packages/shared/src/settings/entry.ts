@@ -35,6 +35,12 @@ export const settingValidationSchema = z.strictObject({
   /** The shortest Myanmar text; 1 when absent — 0 for the site texts (add-website-management). */
   min_length: z.int().min(0).optional(),
   nullable: z.boolean().optional(),
+  /**
+   * The key whose effective value bounds this one from below / above (add-customer-management design
+   * D9 · owner CM3 — `customer.preferred_barber_min_visits` ≤ `customer.preferred_barber_window`).
+   */
+  min_key: z.string().optional(),
+  max_key: z.string().optional(),
 });
 
 export const settingEntrySchema = z
