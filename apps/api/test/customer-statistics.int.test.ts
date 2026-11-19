@@ -1,9 +1,12 @@
-import { BookingStatus, type Mmk, RefundKind, VisitStatus } from '@point/shared';
+import { randomUUID } from 'node:crypto';
+
+import { BookingStatus, type Mmk, RefundKind, VisitStatus, businessDateOf } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { ReadScope } from '../src/common/access/read-scope.js';
 import { Clock } from '../src/common/clock/clock.js';
+import { READ_ROW_CEILING } from '../src/common/limits.js';
 import { CustomerBookingsRepository } from '../src/modules/booking/repositories/customer-bookings.repository.js';
 import { SalesCustomerActivity } from '../src/modules/sales/customer-activity/sales-customer-activity.js';
 import { VisitsRegistry } from '../src/modules/sales/index.js';
@@ -17,7 +20,8 @@ import { type SeededApp, seededApp } from './helpers/seeded.js';
 // count only the caller's read scope" (P3-RULE-03 · D-PLT-04), "No-shows and cancellations are counted
 // from the bookings" (owner CM2), "The detail lists the customer's upcoming bookings in the read scope"
 // (D-PLT-15) and the visits the preferred barber is picked from (D-CUS-08). The read scope is the
-// caller's: Ma Hnin B3, Ko Htet B1, U Kyaw Zin every branch.
+// caller's: Ma Hnin B3, Ko Htet B1, U Kyaw Zin every branch. The cases of a describe build on each
+// other's inserts (the 63,000 case needs the incomplete visit before it), so the file runs whole and in order.
 const { branches, employees, customers: fixtureCustomers } = FIXTURE_IDS;
 const MA_SU = fixtureCustomers.MA_SU;
 const MA_HNIN: ReadScope = [branches.B3];
@@ -216,6 +220,46 @@ describe('add-customer-management · customers · The detail lists the customer�
     });
     expect((await upcoming(MA_HNIN)).map((booking) => booking.id)).toStrictEqual([atNine]);
   });
+
+  // CG-PERF-02: no source caps the list, so it is a ceiling read — N rows answer, N + 1 fail loudly.
+  it('the ceiling: 1,000 upcoming bookings answer, one more fails loudly', async () => {
+    const customer = await addCustomer(s.prisma, 'KO_PHYO');
+    let written = 0;
+    const book = async (count: number) => {
+      const rows = Array.from({ length: count }, (_, index) => {
+        const startsAt = new Date(
+          mmt('2026-11-01', '09:00').getTime() + (written + index) * 60_000,
+        );
+        const endsAt = new Date(startsAt.getTime() + 60_000);
+        return {
+          id: randomUUID(),
+          branch_id: branches.B3,
+          customer_id: customer,
+          customer_name: 'Ko Phyo',
+          booked_employee_id: employees.E004,
+          channel: 2,
+          created_by_user_id: FIXTURE_IDS.users.E001,
+          starts_at: startsAt,
+          ends_at: endsAt,
+          block_starts_at: startsAt,
+          block_ends_at: endsAt,
+          business_date: new Date(`${businessDateOf(startsAt)}T00:00:00Z`),
+          status: BookingStatus.BOOKED,
+          manage_token_hash: `test-${randomUUID()}`,
+        };
+      });
+      written += count;
+      await s.prisma.bookings.createMany({ data: rows });
+    };
+    await book(READ_ROW_CEILING);
+    expect(await bookings.upcoming(s.prisma, customer, KYAW_ZIN, now())).toHaveLength(
+      READ_ROW_CEILING,
+    );
+    await book(1);
+    await expect(bookings.upcoming(s.prisma, customer, KYAW_ZIN, now())).rejects.toThrow(
+      'CustomerBookingsRepository.upcoming: more than 1000 rows (READ_ROW_CEILING)',
+    );
+  }, 60_000);
 });
 
 describe('add-customer-management · customers · the last finished visits the preferred barber is picked from', () => {

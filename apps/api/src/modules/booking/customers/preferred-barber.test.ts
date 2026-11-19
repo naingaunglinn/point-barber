@@ -62,4 +62,16 @@ describe('pickPreferred — D-CUS-08 · owner #6', () => {
     ];
     expect(pickPreferred(visits, 2)).toBe(KO_AUNG);
   });
+
+  it('the minimum may equal the window — min 5 with 5 visits by one barber → that barber', () => {
+    const visits = [
+      visit('2026-09-28', KO_AUNG),
+      visit('2026-09-25', KO_AUNG),
+      visit('2026-09-21', KO_AUNG),
+      visit('2026-09-14', KO_AUNG),
+      visit('2026-09-07', KO_AUNG),
+    ];
+    expect(pickPreferred(visits, 5)).toBe(KO_AUNG);
+    expect(pickPreferred([...visits.slice(0, 4), visit('2026-09-07', KO_MIN)], 5)).toBeNull();
+  });
 });

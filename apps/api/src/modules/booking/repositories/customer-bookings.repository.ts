@@ -3,6 +3,7 @@ import { BookingStatus, CancelReasonSystemCode } from '@point/shared';
 
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
 
 // A customer's bookings as the customer statistics read them (add-customer-management design D1 / D6 ·
 // P3-RULE-03): booking owns `bookings` and `booking_cancel_reasons`; the read scope is the booking's
@@ -44,9 +45,17 @@ export class CustomerBookingsRepository {
     return { cancelled, no_show: noShow };
   }
 
-  /** BOOKED bookings with `starts_at` at or after `now`, soonest first (proposal reading 10). */
-  upcoming(db: Tx, customerId: string, scope: ReadScope, now: Date): Promise<UpcomingBookingRow[]> {
-    return db.bookings.findMany({
+  /**
+   * BOOKED bookings with `starts_at` at or after `now`, soonest first (proposal reading 10). No source
+   * caps the list, so it is a ceiling read (CG-PERF-02): more than READ_ROW_CEILING fails loudly.
+   */
+  async upcoming(
+    db: Tx,
+    customerId: string,
+    scope: ReadScope,
+    now: Date,
+  ): Promise<UpcomingBookingRow[]> {
+    const rows = await db.bookings.findMany({
       where: {
         customer_id: customerId,
         status: BookingStatus.BOOKED,
@@ -55,6 +64,8 @@ export class CustomerBookingsRepository {
       },
       orderBy: [{ starts_at: 'asc' }, { id: 'asc' }],
       select: { id: true, starts_at: true, branch_id: true, booked_employee_id: true },
+      take: READ_ROW_CEILING + 1,
     });
+    return assertWithinCeiling(rows, 'CustomerBookingsRepository.upcoming');
   }
 }
