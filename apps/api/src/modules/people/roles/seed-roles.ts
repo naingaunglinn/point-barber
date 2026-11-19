@@ -46,7 +46,8 @@ export const BARBER_PART3_SEED_CODES = BARBER_PART3_CUSTOMER_CODES;
 /** Part 2 §12 — `schedule.view`, `schedule.update` (packages/shared — the fixture module 310 reads it). */
 export const MANAGER_SCHEDULE_SEED_CODES = MANAGER_SCHEDULE_CODES;
 
-const SEED_ROLES = [
+/** The three seed roles; the dev-seed test derives the role_permissions it expects from them. */
+export const SEED_ROLES = [
   { name_en: 'Admin', name_mm: 'အက်ဒမင်', codes: 'all' },
   {
     name_en: 'Manager',
