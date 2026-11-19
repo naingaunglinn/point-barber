@@ -26,8 +26,10 @@ done
 [ "$commits" = yes ] || exit 0
 pnpm run typecheck
 # A change to what every test resolves or how it runs (dependencies, TypeScript or Vitest settings)
-# can break any test, so it sends the push through the full suite.
-if [ "$full" = yes ] || printf '%s\n' "$changed" | grep -Eq '(^|/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig[^/]*\.json|vitest[^/]*\.config\.[cm]?[jt]s)$'; then
+# can break any test, so it sends the push through the full suite. So does a change under `.githooks/`
+# or `tools/`: the hook, guard and lint tests read those files from disk, which `vitest related`
+# (imports only) cannot see.
+if [ "$full" = yes ] || printf '%s\n' "$changed" | grep -Eq '(^|/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig[^/]*\.json|vitest[^/]*\.config\.[cm]?[jt]s)$|^(\.githooks|tools)/'; then
   pnpm run test
   exit 0
 fi
