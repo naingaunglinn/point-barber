@@ -223,7 +223,7 @@ describe('add-customer-management · customers · The detail lists the customer�
 
   // CG-PERF-02: no source caps the list, so it is a ceiling read — N rows answer, N + 1 fail loudly.
   it('the ceiling: 1,000 upcoming bookings answer, one more fails loudly', async () => {
-    const customer = await addCustomer(s.prisma, 'KO_PHYO');
+    const customer = await addCustomer(s.prisma, 'DAW_MYA');
     let written = 0;
     const book = async (count: number) => {
       const rows = Array.from({ length: count }, (_, index) => {
@@ -235,7 +235,7 @@ describe('add-customer-management · customers · The detail lists the customer�
           id: randomUUID(),
           branch_id: branches.B3,
           customer_id: customer,
-          customer_name: 'Ko Phyo',
+          customer_name: 'Daw Mya',
           booked_employee_id: employees.E004,
           channel: 2,
           created_by_user_id: FIXTURE_IDS.users.E001,
