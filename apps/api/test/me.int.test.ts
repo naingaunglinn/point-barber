@@ -80,7 +80,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
       PERMISSIONS.map((entry) => entry.code).sort(),
     );
     // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management) —
-    // and the four service codes (add-service-catalogue).
+    // the four service codes (add-service-catalogue); booking "Four cancel-reason permission codes exist
+    // at company level" — Scenario: The admin holds the four codes (Ma Hnin's list above and Ko Aung's
+    // below hold none).
     expect(catalogue.map((grant) => grant.code)).toEqual(
       expect.arrayContaining([
         'customer.view',
@@ -91,6 +93,10 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'service.create',
         'service.update',
         'service.delete',
+        'booking_cancel_reason.view',
+        'booking_cancel_reason.create',
+        'booking_cancel_reason.update',
+        'booking_cancel_reason.delete',
       ]),
     );
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });

@@ -53,6 +53,7 @@ const TABLES = [
   'schedule_patterns',
   // add-leave-types (fixture module 150)
   'leave_types',
+  'booking_cancel_reasons',
 ] as const;
 
 async function counts(): Promise<Record<string, number>> {
@@ -121,6 +122,8 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       schedule_patterns: 31,
       // add-leave-types module 150 — spec-fixtures §10.3: Paid leave, Sick leave, Unpaid leave.
       leave_types: 3,
+      // add-booking-cancel-reasons — the four presets of the base seed (design D3), no fixture module.
+      booking_cancel_reasons: 4,
     });
     await runSeed(t.app, FIXTURES);
     expect(await counts()).toStrictEqual(first);

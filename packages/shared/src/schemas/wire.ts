@@ -33,6 +33,16 @@ export function codeOf<const T extends Record<string, number>>(set: T) {
   return z.literal(keys.map((key) => set[key]));
 }
 
+/**
+ * A repeatable query member (`status=1&status=2`): one value arrives as a string, several as a list.
+ * Moved here from sales.ts (P4.VIS.02) for the cancel-reason list (P3.CRS.01).
+ */
+export const repeated = <T extends z.ZodType>(item: T) =>
+  z.preprocess((value): unknown[] => {
+    const list: unknown[] = Array.isArray(value) ? value : [value];
+    return list;
+  }, z.array(item));
+
 /** `{ id, display_name }` — an employee (the performer, the collector); not Part 1's `EmployeeRef`. */
 export const employeeRefSchema = z.strictObject({ id: z.uuid(), display_name: z.string() });
 
