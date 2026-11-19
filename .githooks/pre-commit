@@ -1,0 +1,7 @@
+#!/bin/sh
+# Secret scan of the staged changes when gitleaks is installed (CG-SEC-05, design D19).
+# CI job `static` is the gate; this hook only catches a secret earlier.
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks git --pre-commit --staged --redact --no-banner
+fi
+echo "pre-commit: gitleaks not installed — secret scan skipped (CI runs it)"

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Conventional Commit header only (CG-GIT-02, design D15). The full PR-title rule runs in CI.
+exec node tools/git-hooks/commit-msg.mjs "$1"

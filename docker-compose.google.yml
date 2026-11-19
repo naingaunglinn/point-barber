@@ -1,0 +1,24 @@
+# The manual Google sign-in test only (add-foundation-auth-access design D7 · task 8.9), on top of the
+# dev stack:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.google.yml up -d
+# Google accepts redirect addresses only on a public domain or localhost, so the staff origin is
+# http://localhost:3000 here: the Caddyfile's staff block answers on that address (APP_ORIGIN) and the
+# alias block of infra/caddy/dev/ is not loaded, so proxy.ts sees the host of APP_ORIGIN. Chrome only —
+# it keeps Secure cookies on localhost; SESSION_COOKIE_SECURE stays true. GOOGLE_CLIENT_ID and
+# GOOGLE_CLIENT_SECRET come from .env (the OAuth client's redirect URI:
+# http://localhost:3000/api/v1/auth/google/callback). Use a database with the base seed only and a
+# first admin made for a real Google address with `pnpm admin:create` (P1-RULE-14).
+services:
+  caddy:
+    environment:
+      APP_ORIGIN: http://localhost:3000
+    volumes:
+      - ./infra/caddy/google:/etc/caddy/conf.d:ro
+
+  api:
+    environment:
+      APP_ORIGIN: http://localhost:3000
+
+  web:
+    environment:
+      APP_ORIGIN: http://localhost:3000

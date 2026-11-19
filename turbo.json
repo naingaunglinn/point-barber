@@ -1,0 +1,42 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "agentGuidance": false,
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build", "generate"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "public/fonts/**", "public/vendor/**"]
+    },
+    "build:catalogue": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "public/fonts/**", "public/vendor/**"]
+    },
+    "lint": {},
+    "typecheck": {
+      "dependsOn": ["^build", "generate"]
+    },
+    "test": {},
+    "test:int": {
+      "cache": false,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "MIGRATE_DATABASE_URL",
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "MAILPIT_API_URL"
+      ],
+      "dependsOn": ["^build", "generate"]
+    },
+    "e2e": {
+      "cache": false,
+      "passThroughEnv": ["E2E_*", "PLAYWRIGHT_*", "CI"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build", "generate"]
+    },
+    "generate": {
+      "cache": false
+    }
+  }
+}

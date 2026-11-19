@@ -1,0 +1,37 @@
+name: Setup Node and pnpm
+description: Node from .nvmrc, pnpm from package.json packageManager (corepack), pnpm store and Turborepo caches, frozen install (CG-DEP-03).
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+
+    - name: Enable pnpm (corepack, version from packageManager)
+      shell: bash
+      run: |
+        corepack enable
+        pnpm --version
+
+    - name: Locate the pnpm store
+      id: store
+      shell: bash
+      run: echo "dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+    - name: pnpm store cache
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.store.outputs.dir }}
+        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-store-${{ runner.os }}-
+
+    - name: Turborepo cache
+      uses: actions/cache@v6
+      with:
+        path: .turbo
+        key: turbo-${{ runner.os }}-${{ github.sha }}
+        restore-keys: turbo-${{ runner.os }}-
+
+    - name: Install (frozen lockfile)
+      shell: bash
+      run: pnpm install --frozen-lockfile

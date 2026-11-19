@@ -1,0 +1,44 @@
+# dependencies / build
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# environment and secrets — never commit (CG-SEC-05, CG-GIT-06)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+
+# local tooling
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# generated files and data dumps
+apps/web/public/fonts/
+apps/web/public/vendor/
+apps/web/catalogue-flag.generated.ts
+*.dump
+*.sql.gz
+
+# added by add-repo-scaffold (PR-A)
+*.tsbuildinfo
+.eslintcache
+.vitest/
+
+# Generated Prisma client (db/schema.prisma → prisma generate)
+apps/api/src/generated/
+deploy-history.log
+
+# Server deploy lock (infra/deploy/lib.sh take_lock).
+.deploy.lock

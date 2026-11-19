@@ -1,0 +1,9 @@
+# Development only (design D12): http://localhost:3000 answers with the staff-host rules and sends
+# Host: app.point.test upstream, so the "Local development" server of openapi/part1-foundation.yaml
+# keeps working. For read-only API calls (GET): once add-foundation-auth-access is merged, a
+# changing request through this alias fails the CSRF origin check, and the Secure session cookie
+# needs https://app.point.test.
+http://localhost:3000 {
+	import common
+	import staff_routes app.point.test
+}

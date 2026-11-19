@@ -1,0 +1,21 @@
+{
+  "banner": "Maintenance mode is ON",
+  "banner_link": "Turn off",
+  "screen": {
+    "intro": "While it's on, only company-wide admins can work. Everyone else sees a notice.",
+    "until": "Expected end",
+    "until_date": "Date",
+    "until_time": "Time",
+    "until_help": "Shown to staff only. Maintenance stays on until you turn it off.",
+    "message": "Message to staff",
+    "message_help": "Optional, up to 200 characters each. If one is empty, the other is shown.",
+    "saved_on": "Maintenance mode is ON. Staff now see the notice.",
+    "saved_off": "Maintenance mode is OFF. Staff can work again."
+  },
+  "notice": {
+    "title": "Under maintenance",
+    "body": "The app is closed for a short time. Anything you were saving was not saved — do it again when it's back.",
+    "until": "Expected back at {datetime}",
+    "retry": "Try again"
+  }
+}

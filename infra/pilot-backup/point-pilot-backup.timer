@@ -1,0 +1,13 @@
+# Every night at 03:00 MMT (ADR-002's backup time · add-staging-deploy design D12). Persistent=true
+# runs a night that was missed while the server was off, once it is back.
+#   systemctl list-timers point-pilot-backup.timer
+[Unit]
+Description=Point pilot backup every night at 03:00 MMT
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Asia/Yangon
+Persistent=true
+Unit=point-pilot-backup.service
+
+[Install]
+WantedBy=timers.target

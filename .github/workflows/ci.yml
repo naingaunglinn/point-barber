@@ -1,0 +1,420 @@
+# CI for point-barber (design D15 · ADR-001 action item 4 · system-design §4.1).
+# PR-A brought the jobs static, unit and pr-title; PR-B adds db; PR-C adds integration; PR-E adds
+# images and e2e (stack and health — PR-I adds the Playwright tests and the secret check);
+# add-shared-ui-components adds the three-zone unit run and the job catalogue.
+# The PostgreSQL service and its variables are declared once, in job db, and reused by anchor.
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  static:
+    name: static
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # gitleaks scans the pushed commits
+
+      - uses: ./.github/actions/setup
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Guards
+        run: pnpm guards
+
+      - name: db/source matches its manifest (D4.11)
+        run: node db/scripts/check-source.mjs --manifest-only
+
+      - name: Secret scan (gitleaks, pushed commits — CG-SEC-05)
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          v="$GITLEAKS_VERSION"
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${v}/gitleaks_${v}_linux_x64.tar.gz"
+          curl -sSfL -o checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${v}/gitleaks_${v}_checksums.txt"
+          grep " gitleaks_${v}_linux_x64.tar.gz\$" checksums.txt | awk '{print $1"  gitleaks.tar.gz"}' | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          cd "$GITHUB_WORKSPACE"
+          if [ "$EVENT" = "pull_request" ]; then
+            range="${PR_BASE}..${PR_HEAD}"
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            range="${PUSH_BEFORE}..${PUSH_AFTER}"
+          else
+            range=""
+          fi
+          if [ -n "$range" ]; then
+            "$RUNNER_TEMP/gitleaks" git --redact --no-banner --log-opts="$range" .
+          else
+            "$RUNNER_TEMP/gitleaks" git --redact --no-banner .
+          fi
+
+  unit:
+    name: unit
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Prisma client (the API unit tests import it — gitignored, generated)
+        run: pnpm --filter api generate
+
+      - name: Unit tests (Vitest — incl. guard, lint-rule and runner tests)
+        run: pnpm test
+
+      # CG-TIME-04 · add-shared-ui-components design D13: the time, format and date-component suites
+      # again under TZ=UTC, TZ=Asia/Yangon and TZ=America/Los_Angeles, with the same expected values.
+      - name: Unit tests under three time zones
+        run: pnpm test:zones
+
+  catalogue:
+    name: catalogue
+    runs-on: ubuntu-24.04
+    # About 4 minutes on green runs; a hung build or browser ends the job instead of holding the runner.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      # The catalogue build of apps/web (add-shared-ui-components design D12 · D13): its own package
+      # script sets the catalogue flag, so this job never names it; turbo builds the packages first.
+      - name: Catalogue build
+        run: pnpm exec turbo run build:catalogue --filter=web
+
+      - name: Chromium for Playwright
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+
+      # `next start` alone — no API, no database — on port 3100, staff host localhost and site host
+      # 127.0.0.1 (e2e/dev-ui/playwright.config.ts starts it): every project of design D13.
+      - name: Playwright on /dev/ui
+        run: pnpm --filter e2e e2e:catalogue
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: catalogue-playwright-report
+          path: e2e/dev-ui/playwright-report/
+
+  db:
+    name: db
+    runs-on: ubuntu-24.04
+    services: &postgres-service
+      postgres:
+        image: postgres:16.15-bookworm
+        env:
+          POSTGRES_USER: point
+          POSTGRES_PASSWORD: point_ci
+          POSTGRES_DB: point
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U point"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env: &postgres-env
+      PGHOST: localhost
+      PGPORT: 5432
+      PGPASSWORD: point_ci
+      POSTGRES_USER: point
+      POSTGRES_DB: point
+      POINT_APP_DB_PASSWORD: app_ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Connection strings (owner for migrations, point_app for the API — D4.4)
+        run: |
+          echo "MIGRATE_DATABASE_URL=postgresql://point:${PGPASSWORD}@localhost:5432/point" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://point_app:${POINT_APP_DB_PASSWORD}@localhost:5432/point" >> "$GITHUB_ENV"
+
+      - name: psql client
+        run: psql --version || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+
+      - name: Role point_app (db/bootstrap/00-roles.sh)
+        run: sh db/bootstrap/00-roles.sh
+
+      - name: Migrate (the one entry point — D4.6)
+        run: node db/scripts/migrate.mjs
+
+      - name: Baseline, role and audit checks
+        run: node db/scripts/check-baseline.mjs
+
+      - name: Committed schema = the database (D4.5)
+        run: pnpm db:check-introspection
+
+      - name: Constraint tests (each file on its own migrated database — D4.9)
+        run: pnpm db:test
+
+  integration:
+    name: integration
+    runs-on: ubuntu-24.04
+    # PostgreSQL as in job `db`, plus Mailpit: the mail tests deliver over SMTP and read the message
+    # back through Mailpit's API (add-foundation-auth-access task 2.10 · ADR-007). MinIO starts in a
+    # step below (add-walkin-visit-checkout task 3.5).
+    services:
+      postgres:
+        image: postgres:16.15-bookworm
+        env:
+          POSTGRES_USER: point
+          POSTGRES_PASSWORD: point_ci
+          POSTGRES_DB: point
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U point"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.31.4
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGPASSWORD: point_ci
+      POSTGRES_USER: point
+      POSTGRES_DB: point
+      POINT_APP_DB_PASSWORD: app_ci
+      SMTP_HOST: localhost
+      MAIL_TRANSPORT: mailpit
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Connection strings (owner for migrations, point_app for the API — D4.4)
+        run: |
+          echo "MIGRATE_DATABASE_URL=postgresql://point:${PGPASSWORD}@localhost:5432/point" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://point_app:${POINT_APP_DB_PASSWORD}@localhost:5432/point" >> "$GITHUB_ENV"
+
+      - name: psql client
+        run: psql --version || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+
+      - name: Role point_app (db/bootstrap/00-roles.sh)
+        run: sh db/bootstrap/00-roles.sh
+
+      - name: Migrate (the one entry point — D4.6)
+        run: node db/scripts/migrate.mjs
+
+      # The S3 API of the storage round trip (ADR-014 · add-walkin-visit-checkout task 3.5). A step, not
+      # a service: a service container cannot be given the `server /data` command. The pinned image and
+      # development credentials of docker-compose.dev.yml (VERSIONS.md); the test creates its bucket.
+      - name: MinIO (S3 API for test/storage.int.test.ts)
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minio-dev -e MINIO_ROOT_PASSWORD=minio-dev-only \
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/live; then exit 0; fi
+            sleep 1
+          done
+          echo "::error::minio never became live"
+          exit 1
+
+      # The DocumentRenderer's browser (ADR-013 · add-walkin-visit-checkout tasks 9.5 – 9.8): the headless
+      # shell of the pinned playwright-core, with its system libraries.
+      - name: Chromium headless shell (test/document-renderer.int.test.ts)
+        run: pnpm --filter api exec playwright-core install --with-deps --only-shell chromium
+
+      - name: API integration tests (real app, real PostgreSQL 16, connected as point_app — D15)
+        run: pnpm test:int
+
+  images:
+    name: images
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build api, web and backup with the commit as APP_VERSION (no push — D15)
+        run: |
+          set -euo pipefail
+          v="${GITHUB_SHA::12}"
+          echo "APP_VERSION=$v" >> "$GITHUB_ENV"
+          docker build -f apps/api/Dockerfile --build-arg APP_VERSION="$v" -t "point-api:$v" .
+          docker build -f apps/web/Dockerfile --build-arg APP_VERSION="$v" -t "point-web:$v" .
+          docker build --build-arg APP_VERSION="$v" -t "point-backup:$v" infra/backup
+
+      # The same checks run on the release images before they are pushed (add-staging-deploy D4).
+      - name: Image checks (version, contents, first-admin command, receipt render, Sentry SDKs)
+        run: bash tools/ci/check-images.sh "$APP_VERSION"
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-24.04
+    env:
+      COMPOSE: docker compose -f docker-compose.yml -f docker-compose.dev.yml
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Hosts-file lines for the local origins (D12)
+        run: echo "127.0.0.1 point.test app.point.test postgres" | sudo tee -a /etc/hosts
+
+      - name: .env from .env.example, with generated internal keys and sign-in secrets
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          sed -i "s|^INTERNAL_SSR_KEY=.*|INTERNAL_SSR_KEY=$(openssl rand -hex 32)|" .env
+          sed -i "s|^INTERNAL_OPS_KEY=.*|INTERNAL_OPS_KEY=$(openssl rand -hex 32)|" .env
+          sed -i "s|^OTP_HMAC_SECRET=.*|OTP_HMAC_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^AUDIT_HASH_SECRET=.*|AUDIT_HASH_SECRET=$(openssl rand -hex 32)|" .env
+          sed -i "s|^MAIL_PAYLOAD_KEY=.*|MAIL_PAYLOAD_KEY=$(openssl rand -base64 32)|" .env
+          sed -i "s|^APP_VERSION=.*|APP_VERSION=${GITHUB_SHA::12}|" .env
+          # The fake ingest origin of the error-reporting tests (add-staging-deploy D8 / D10).
+          sed -i "s|^CADDY_CSP_CONNECT=.*|CADDY_CSP_CONNECT=https://o0.ingest.sentry.io|" .env
+
+      - name: Build its own images (independent of job images — D15)
+        run: $COMPOSE build
+
+      - name: Stack up with the dev override
+        run: $COMPOSE up -d
+
+      - name: Migrate (the one entry point — D4.6)
+        run: $COMPOSE run --rm migrate
+
+      - name: Wait for health ok through the staff host
+        run: |
+          for i in $(seq 1 60); do
+            body=$(curl -sk --max-time 5 https://app.point.test/api/v1/health || true)
+            if echo "$body" | grep -q '"status":"ok"'; then echo "$body"; exit 0; fi
+            sleep 2
+          done
+          echo "::error::health never answered ok (last body: ${body:-none})"
+          exit 1
+
+      - uses: ./.github/actions/setup
+
+      - name: Chromium for Playwright (the only browser — task 8.1)
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+
+      - name: Playwright — smoke, edge and catalogue (404) specs against the stack (D15 · D18)
+        env:
+          E2E_COMPOSE: ${{ env.COMPOSE }}
+        run: pnpm e2e
+
+      # Spec "The web container never holds INTERNAL_OPS_KEY" (API-SHAPE-02 · task 8.6).
+      - name: Secret distribution — each internal key only in its two holders
+        # Independent of Playwright's result: one run reports both (PR #9 review).
+        if: ${{ !cancelled() }}
+        run: |
+          set -uo pipefail
+          failed=0
+          expect() { # service variable present|absent
+            # Actions runs this with `bash -e`; printenv exiting 1 is an expected answer here, so its
+            # exit code is captured instead of ending the step.
+            code=0
+            out=$($COMPOSE exec -T "$1" printenv "$2") || code=$?
+            if [ "$3" = present ] && [ "$code" -eq 0 ] && [ -n "$out" ]; then echo "ok    $1 holds $2"
+            elif [ "$3" = absent ] && [ "$code" -eq 1 ] && [ -z "$out" ]; then echo "ok    $1 has no $2"
+            else echo "::error::$1 $2: expected $3, printenv exited $code"; failed=1; fi
+          }
+          expect web    INTERNAL_OPS_KEY absent
+          expect api    INTERNAL_OPS_KEY present
+          expect backup INTERNAL_OPS_KEY present
+          expect api    INTERNAL_SSR_KEY present
+          expect web    INTERNAL_SSR_KEY present
+          expect backup INTERNAL_SSR_KEY absent
+          exit $failed
+
+      - name: Container logs
+        if: failure()
+        run: $COMPOSE logs --no-color --timestamps > compose-logs.txt
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+
+      - name: Upload container logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compose-logs
+          path: compose-logs.txt
+
+  # add-staging-deploy design D17 (tasks 6.8-6.10, 7.1): deploy.sh, rollback.sh, entry.sh and the
+  # pilot backup against a real server stack — a local registry, a local origin with release tags and
+  # the staging override. The scenarios are in tools/ci/deploy-script-test.sh.
+  deploy-script:
+    name: deploy-script
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Deploy, rollback and entry scenarios
+        run: bash tools/ci/deploy-script-test.sh
+
+      - name: Server stack logs
+        if: failure()
+        run: |
+          w="$RUNNER_TEMP/deploy-script/point"
+          docker compose --project-directory "$w" -f "$w/docker-compose.yml" \
+            -f "$w/docker-compose.staging.yml" logs --no-color --timestamps > deploy-script-logs.txt || true
+
+      - name: Upload server stack logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deploy-script-logs
+          path: deploy-script-logs.txt
+
+  pr-title:
+    name: pr-title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # Title and branch reach the scripts only through the environment, never the shell text.
+      - name: PR title is a Conventional Commit with the change id (CG-GIT-02)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.head_ref }}
+        run: node tools/guards/check-pr-title.mjs
+
+      - name: Branch name (CG-GIT-01)
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+        run: node tools/guards/check-branch-name.mjs

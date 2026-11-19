@@ -1,0 +1,57 @@
+{
+  "branch": {
+    "code": "PX1",
+    "name_mm": "နမူနာ ဆိုင်ခွဲ",
+    "name_en": "Example Branch",
+    "address_mm": "အမှတ် ၁၊ နမူနာ လမ်း",
+    "address_en": "No. 1, Example Road"
+  },
+  "people": [
+    {
+      "employee_code": "X01",
+      "email": "barber.one@example.com",
+      "name_mm": "နမူနာ ဘာဘာ တစ်",
+      "name_en": "Example Barber One",
+      "role": "Barber"
+    },
+    {
+      "employee_code": "X02",
+      "email": "barber.two@example.com",
+      "name_mm": "နမူနာ ဘာဘာ နှစ်",
+      "name_en": "Example Barber Two",
+      "role": "Barber"
+    },
+    {
+      "employee_code": "X03",
+      "email": "manager.one@example.com",
+      "name_mm": "နမူနာ မန်နေဂျာ",
+      "name_en": "Example Manager",
+      "role": "Manager"
+    }
+  ],
+  "categories": [
+    {
+      "name_mm": "နမူနာ ဝန်ဆောင်မှု",
+      "name_en": "Example Services",
+      "services": [
+        {
+          "name_mm": "နမူနာ ညှပ်",
+          "name_en": "Example Cut",
+          "duration_minutes": 30,
+          "price": 5000,
+          "barber_prices": [{ "employee_code": "X01", "price": 6000 }]
+        },
+        {
+          "name_mm": "နမူနာ ရိတ်",
+          "name_en": "Example Shave",
+          "duration_minutes": 15,
+          "price": 2500
+        }
+      ]
+    }
+  ],
+  "kbzpay": {
+    "reference_regex": "^EX[0-9]{8}$",
+    "examples": ["EX12345678", "EX87654321"]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "list": {
+    "title": "Branches",
+    "new": "New branch",
+    "column": {
+      "code": "Code",
+      "name": "Name",
+      "phone": "Phone",
+      "website": "Website",
+      "status": "Status"
+    },
+    "shown": "Shown",
+    "hidden": "Hidden",
+    "emptyFiltered": "No branches match this filter."
+  },
+  "form": {
+    "section": {
+      "branch": "Branch",
+      "location": "Address and location",
+      "website": "Website"
+    },
+    "conflict": "This branch was changed by someone else. Reload to see the changes.",
+    "reload": "Reload"
+  },
+  "field": {
+    "code": "Code",
+    "codeHelp": "1–10 capital letters or digits, for example B4. It can't be changed later.",
+    "codeTaken": "A branch with this code already exists.",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "radius": "Attendance radius",
+    "radiusHelp": "Staff can clock in within this distance of the shop, 10–2,000 m. Leave empty to use the company setting.",
+    "mapUrl": "Map link",
+    "mapUrlHelp": "Google Maps link for \"Directions\". Leave empty to build it from latitude and longitude.",
+    "isPublic": "Show on website",
+    "websiteUrl": "Website",
+    "social": {
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "viber": "Viber",
+      "instagram": "Instagram",
+      "youtube": "YouTube",
+      "other": "Other links",
+      "label": "Label",
+      "url": "Link",
+      "add": "Add link",
+      "remove": "Remove link"
+    }
+  },
+  "detail": {
+    "activeEmployees": "{count} staff assigned today"
+  },
+  "toast": {
+    "saved": "Branch saved"
+  },
+  "action": {
+    "deactivate": "Deactivate",
+    "reactivate": "Re-activate"
+  },
+  "deactivate": {
+    "title": "Deactivate branch",
+    "consequence": "{name} will be hidden from the website and from booking. Its records stay, and you can re-activate it later.",
+    "reason": "Reason (optional)",
+    "confirm": "Deactivate branch",
+    "keep": "Keep active"
+  }
+}

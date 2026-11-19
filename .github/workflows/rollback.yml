@@ -1,0 +1,47 @@
+# Roll the pilot server back to a release it ran before (add-staging-deploy design D6 ·
+# docs/ops/rollback.md). Started by hand only (Actions → Rollback → Run workflow, input `tag`) — never
+# by a pull request (tools/test/release-workflows.test.mjs). The server refuses a tag that its deploy
+# history does not list as `ok`, and never migrates.
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to go back to, e.g. v0.1.0 (must be deployed "ok" on the server)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: rollback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: pilot
+    # The deploy job's group (release.yml): one deploy or rollback at a time on the server.
+    concurrency:
+      group: pilot-deploy
+      cancel-in-progress: false
+    steps:
+      - name: rollback <tag> through the server's forced command
+        env:
+          TAG: ${{ inputs.tag }}
+          PILOT_SSH_HOST: ${{ secrets.PILOT_SSH_HOST }}
+          PILOT_SSH_KEY: ${{ secrets.PILOT_SSH_KEY }}
+          PILOT_SSH_KNOWN_HOSTS: ${{ secrets.PILOT_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          # The server checks the pattern again (entry.sh); this only fails early with a clear message.
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::$TAG is not a release tag (v<major>.<minor>.<patch>)"; exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PILOT_SSH_KEY" > ~/.ssh/pilot
+          printf '%s\n' "$PILOT_SSH_KNOWN_HOSTS" > ~/.ssh/pilot_known_hosts
+          chmod 600 ~/.ssh/pilot ~/.ssh/pilot_known_hosts
+          ssh -i ~/.ssh/pilot -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/pilot_known_hosts -o BatchMode=yes \
+            "deploy@$PILOT_SSH_HOST" "rollback $TAG"

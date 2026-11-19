@@ -1,0 +1,4 @@
+# OpenSpec pointer (ADR-016). The specs live in the sibling repository point-sdd, registered on each machine as
+# the OpenSpec store "point-sdd":  openspec store register ../point-sdd --id point-sdd
+# Keep this folder free of changes/ and specs/ — with them OpenSpec would treat it as a real root.
+store: point-sdd
