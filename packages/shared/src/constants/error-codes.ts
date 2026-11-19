@@ -92,6 +92,12 @@ export const ErrorCode = {
   // An effective date before today (P2-RULE-04) — shared with the dated writes of #14 / #15; its text is a
   // ★ proposal under the owner's standing rule of 01/Nov/2026 (add-schedule-patterns A3).
   EFFECTIVE_DATE_PAST: 'effective_date_past',
+  // add-service-catalogue — Part 2 §13b · API-ERR-02 (task 2.2): a category archive refused while
+  // non-archived services use it, context `{ count }` (P2.CAT.04); option pricing sent to the create
+  // (P2.SVC.02) or to the update (P2.SVC.04) instead of the options endpoint (P2-RULE-02).
+  CATEGORY_IN_USE: 'category_in_use',
+  OPTIONS_REQUIRED: 'options_required',
+  USE_OPTIONS_ENDPOINT: 'use_options_endpoint',
   // add-leave-types — Part 2 §13b · API-ERR-02 (task 1.3 — design D4 / D10): an archive refused while a
   // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
   // are reused.
