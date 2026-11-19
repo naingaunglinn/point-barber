@@ -4,7 +4,8 @@
     "company": "Company",
     "additional": "Additional settings",
     "maintenance": "Maintenance mode",
-    "branches": "Branches"
+    "branches": "Branches",
+    "leaveTypes": "Leave types"
   },
   "company": {
     "title": "Company",
@@ -43,7 +44,8 @@
     "closing": "Closing",
     "attendance": "Payroll & attendance",
     "dashboard": "Dashboard",
-    "system": "System"
+    "system": "System",
+    "customer": "Customers"
   },
   "booking": {
     "slot_interval_minutes": {
@@ -126,6 +128,16 @@
     "maintenance": {
       "label": "Maintenance mode",
       "help": "Shown here only. Turn it on or off on its own screen."
+    }
+  },
+  "customer": {
+    "preferred_barber_window": {
+      "label": "Preferred barber — visits looked at",
+      "help": "How many of the customer's latest finished visits are checked."
+    },
+    "preferred_barber_min_visits": {
+      "label": "Preferred barber — visits needed",
+      "help": "A barber who did at least this many of those visits is shown as the preferred barber."
     }
   },
   "choice": {
