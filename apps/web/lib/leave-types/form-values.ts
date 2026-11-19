@@ -61,7 +61,8 @@ export function updateBody(
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {};
   if (values.name_mm !== stored.name_mm) body.name_mm = values.name_mm;
-  if (values.name_en !== stored.name_en) body.name_en = blank(values.name_en) ? null : values.name_en;
+  if (values.name_en !== stored.name_en)
+    body.name_en = blank(values.name_en) ? null : values.name_en;
   if (values.is_paid !== stored.is_paid) body.is_paid = values.is_paid === PAID.PAID;
   if (values.status !== stored.status) body.status = Number(values.status);
   body.expected_updated_at = expectedUpdatedAt;
