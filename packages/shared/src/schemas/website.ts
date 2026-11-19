@@ -67,6 +67,7 @@ const hoursDay = {
   opens_at: timeOfDaySchema.nullable(),
   closes_at: timeOfDaySchema.nullable(),
 };
+const hoursDaySchema = z.object(hoursDay);
 
 type HoursDay = z.infer<z.ZodObject<typeof hoursDay>>;
 
@@ -91,12 +92,13 @@ export function hoursDayCode(day: HoursDay): ErrorCode | null {
  */
 export const branchHoursWriteSchema = z
   .object({
-    days: z.array(z.object(hoursDay)).length(WebsiteLimits.WEEK_DAYS),
+    days: z.array(hoursDaySchema).length(WebsiteLimits.WEEK_DAYS),
     expected_updated_at: wireDateTime.nullable().optional(),
   })
   .superRefine((body, ctx) => {
+    // zod runs a refinement after a shape issue too: the week rules wait for a week of the right shape.
     const weekdays = new Set(body.days.map((day) => day.day_of_week));
-    if (weekdays.size !== body.days.length) {
+    if (body.days.length === WebsiteLimits.WEEK_DAYS && weekdays.size !== body.days.length) {
       ctx.addIssue({
         code: 'custom',
         path: ['days'],
@@ -104,7 +106,8 @@ export const branchHoursWriteSchema = z
       });
     }
     body.days.forEach((day, index) => {
-      const code = hoursDayCode(day);
+      // A day whose own members are malformed (a time that is no `HH:mm`) already has its shape issue.
+      const code = hoursDaySchema.safeParse(day).success ? hoursDayCode(day) : null;
       if (code !== null) {
         ctx.addIssue({
           code: 'custom',
