@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { CustomerStatus } from '../constants/status.js';
+import { BookingStatus, CustomerStatus, SaleStatus, VisitStatus } from '../constants/status.js';
 import { normalizeDigits } from '../text/digits.js';
 import { listQuerySchema } from './list-query.js';
-import { codeOf, wireDateTime } from './wire.js';
+import { codeOf, employeeRefSchema, wireAmount, wireDateTime } from './wire.js';
 
 // The customer lookup DTO of add-walkin-visit-checkout (task 2.4) — point-sdd
 // docs/api/openapi/part3-customers-booking.yaml v1.1 `CustomerLookup` (P3.CUS.02 · API-ERR-03).
@@ -163,3 +163,95 @@ export const customerTimelineQuerySchema = listQuerySchema;
 
 export type CustomerListQuery = z.infer<typeof customerListQuerySchema>;
 export type CustomerTimelineQuery = z.infer<typeof customerTimelineQuerySchema>;
+
+/** OpenAPI Part 3 `CustomerListItem` — counts in the caller's read scope (P3-RULE-03). */
+export const customerListItemSchema = z.strictObject({
+  id: z.uuid(),
+  name: z.string(),
+  phone: z.string(),
+  phone_normalized: z.string().regex(/^\+[1-9][0-9]{6,14}$/),
+  status: codeOf(CustomerStatus),
+  archived_at: wireDateTime.nullable(),
+  last_visit_at: wireDateTime.nullable(),
+  visit_count: z.int().min(0),
+});
+
+/** OpenAPI Part 3 `CustomerStats` — computed on every read (P3-RULE-03 · D-CUS-08 · owner CM2). */
+export const customerStatsSchema = z.strictObject({
+  visit_count: z.int().min(0),
+  total_spent_amount: wireAmount,
+  last_visit_at: wireDateTime.nullable(),
+  no_show_count: z.int().min(0),
+  cancelled_count: z.int().min(0),
+  preferred_employee: employeeRefSchema.nullable(),
+  scope_note: z.enum(['read_scope', 'company']),
+});
+
+/** OpenAPI Part 3 `Customer` (P3.CUS.03 – 08): the list item plus notes, stats and upcoming bookings. */
+export const customerSchema = z.strictObject({
+  ...customerListItemSchema.shape,
+  notes: z.string().nullable(),
+  stats: customerStatsSchema,
+  upcoming_bookings: z.array(upcomingBookingSchema),
+  created_at: wireDateTime,
+  updated_at: wireDateTime,
+});
+
+const timelineBase = { id: z.uuid(), at: wireDateTime, branch_id: z.uuid() };
+
+/** The reason of a CANCELLED booking (DB Part 3 `booking_cancel_reasons`). */
+export const timelineCancelReasonSchema = z.strictObject({
+  name_mm: z.string(),
+  name_en: z.string().nullable(),
+  system_code: z.int().nullable(),
+});
+
+/**
+ * OpenAPI Part 3 `TimelineEntry` on `type` (P3.CUS.09 · design D10): a booking at `starts_at`, a visit
+ * at `started_at` (receipt and amount only once its sale is FINISHED), a visit-less FINISHED sale at
+ * `finished_at`.
+ */
+export const timelineEntrySchema = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('booking'),
+    ...timelineBase,
+    status: codeOf(BookingStatus),
+    employee: employeeRefSchema,
+    services_label_mm: z.string().nullable(),
+    services_label_en: z.string().nullable(),
+    total_amount: wireAmount,
+    cancel_reason: timelineCancelReasonSchema.nullable(),
+  }),
+  z.strictObject({
+    type: z.literal('visit'),
+    ...timelineBase,
+    status: codeOf(VisitStatus),
+    employee: employeeRefSchema,
+    receipt_number: z.string().nullable(),
+    total_amount: wireAmount.nullable(),
+  }),
+  z.strictObject({
+    type: z.literal('sale'),
+    ...timelineBase,
+    status: codeOf(SaleStatus),
+    receipt_number: z.string(),
+    total_amount: wireAmount,
+  }),
+]);
+
+/** The `context` of 409 `already_exists` for a phone (P3.CUS.03 / 05): the holder, never its phone. */
+export const alreadyExistsContextSchema = z.strictObject({
+  customer_id: z.uuid(),
+  status: codeOf(CustomerStatus),
+  archived: z.boolean(),
+});
+
+/** The `context` of 409 `customer_has_active_bookings` (P3.CUS.07). */
+export const activeBookingsContextSchema = z.strictObject({ count: z.int().min(1) });
+
+export type CustomerListItemDto = z.infer<typeof customerListItemSchema>;
+export type CustomerStatsDto = z.infer<typeof customerStatsSchema>;
+export type CustomerDto = z.infer<typeof customerSchema>;
+export type TimelineEntryDto = z.infer<typeof timelineEntrySchema>;
+export type AlreadyExistsContext = z.infer<typeof alreadyExistsContextSchema>;
+export type ActiveBookingsContext = z.infer<typeof activeBookingsContextSchema>;
