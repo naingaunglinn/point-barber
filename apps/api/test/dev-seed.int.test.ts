@@ -1,10 +1,14 @@
+import { readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { PERMISSIONS } from '@point/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { runSeed } from '../src/cli/run-seed.js';
 import { PrismaService } from '../src/common/database/prisma.service.js';
+import { SEED_ROLES } from '../src/modules/people/index.js';
 import { type FreshDatabase, freshDatabase } from './helpers/databases.js';
 import { type TestApp, startTestApp } from './helpers/test-app.js';
 
@@ -49,6 +53,7 @@ const TABLES = [
   'schedule_patterns',
   // add-leave-types (fixture module 150)
   'leave_types',
+  'booking_cancel_reasons',
 ] as const;
 
 async function counts(): Promise<Record<string, number>> {
@@ -63,8 +68,35 @@ async function counts(): Promise<Record<string, number>> {
   return Object.fromEntries(entries);
 }
 
+/** The `GRANTS` a fixture module exports: the codes it adds to a role created before them. */
+const fixtureGrants = z.array(z.object({ role: z.string(), codes: z.array(z.string()) }));
+
+/**
+ * The codes each role holds after `pnpm db:seed` on a fresh database, sorted (owner 18/Nov/2026, #40):
+ * Admin every catalogue code; Manager and Barber their seed-role codes plus the `GRANTS` of every
+ * fixture module that exports some, loaded as runSeed loads them. A new code changes no number here.
+ */
+async function expectedRoleCodes(): Promise<Record<string, string[]>> {
+  const roles = new Map<string, Set<string>>(
+    SEED_ROLES.map((role) => [
+      role.name_en,
+      new Set<string>(role.codes === 'all' ? PERMISSIONS.map((entry) => entry.code) : role.codes),
+    ]),
+  );
+  const files = readdirSync(FIXTURES).filter((name) => /^\d{3}-[a-z0-9-]+\.mjs$/.test(name));
+  for (const file of files) {
+    const module: unknown = await import(pathToFileURL(join(FIXTURES, file)).href);
+    if (typeof module !== 'object' || module === null || !('GRANTS' in module)) continue;
+    for (const grant of fixtureGrants.parse(module.GRANTS)) {
+      for (const code of grant.codes) roles.get(grant.role)?.add(code);
+    }
+  }
+  return Object.fromEntries([...roles].map(([role, codes]) => [role, [...codes].sort()]));
+}
+
 describe('pnpm db:seed (tasks 3.6–3.8)', () => {
   it('writes the base seed and the fixture rows; a second run changes no row count', async () => {
+    const roleCodes = Object.values(await expectedRoleCodes());
     await runSeed(t.app, FIXTURES);
     const first = await counts();
     expect(first).toStrictEqual({
@@ -74,11 +106,8 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       employees: 9,
       employee_branches: 11,
       roles: 3,
-      // Admin every code (59) + Manager 6 Part 1 + 2 service + 3 Part 3 + 13 Part 4 + 2 schedule + 2 website
-      // + Barber 2 Part 3 + 2 Part 4 (add-walkin-visit-checkout · add-schedule-patterns ·
-      // add-customer-management · add-service-catalogue · add-leave-types: 4 Admin codes ·
-      // add-website-management: 2 Admin + 2 Manager).
-      role_permissions: 91,
+      // One row per code of expectedRoleCodes(); the next test checks them code by code.
+      role_permissions: roleCodes.reduce((sum, codes) => sum + codes.length, 0),
       employee_roles: 8,
       employee_role_branches: 7,
       service_categories: 1,
@@ -93,9 +122,22 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       schedule_patterns: 31,
       // add-leave-types module 150 — spec-fixtures §10.3: Paid leave, Sick leave, Unpaid leave.
       leave_types: 3,
+      // add-booking-cancel-reasons — the four presets of the base seed (design D3), no fixture module.
+      booking_cancel_reasons: 4,
     });
     await runSeed(t.app, FIXTURES);
     expect(await counts()).toStrictEqual(first);
+  });
+
+  it('gives Admin every catalogue code, Manager and Barber their seed codes and fixture grants', async () => {
+    const rows = await prisma.$queryRaw<{ role: string; code: string }[]>`
+      SELECT r.name_en AS role, p.code FROM role_permissions rp
+      JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id`;
+    const held = new Map<string, string[]>();
+    for (const row of rows) held.set(row.role, [...(held.get(row.role) ?? []), row.code]);
+    expect(
+      Object.fromEntries([...held].map(([role, codes]) => [role, [...codes].sort()])),
+    ).toStrictEqual(await expectedRoleCodes());
   });
 
   it('gives U Kyaw Zin the Admin role at company scope and Ma Hnin the Manager role for B3', async () => {
