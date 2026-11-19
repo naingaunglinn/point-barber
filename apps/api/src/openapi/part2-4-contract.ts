@@ -192,6 +192,141 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
     },
     required: ['id', 'name', 'phone', 'status', 'upcoming_bookings'],
   },
+  // add-customer-management task 1.7 — copied on 16/Nov/2026 from part3-customers-booking.yaml v1.2.0
+  // (CM1 – CM5): the customer DTOs and bodies of P3.CUS.01 / 03 – 09. Part 3 gives the two 409 contexts
+  // no schema of their own; they are written from the `Problem.context` description ("already_exists →
+  // customer_id, status, archived; customer_has_active_bookings → count").
+  CustomerCreate: {
+    type: 'object',
+    required: ['name', 'phone'],
+    properties: {
+      name: { type: 'string' },
+      phone: { type: 'string' },
+      notes: { type: ['string', 'null'] },
+    },
+  },
+  CustomerUpdate: {
+    type: 'object',
+    required: ['expected_updated_at'],
+    properties: {
+      name: { type: 'string' },
+      phone: { type: 'string' },
+      notes: { type: ['string', 'null'] },
+      expected_updated_at: { type: 'string', format: 'date-time' },
+    },
+  },
+  CustomerListItem: {
+    type: 'object',
+    required: ['id', 'name', 'phone', 'phone_normalized', 'status', 'visit_count'],
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      name: { type: 'string' },
+      phone: { type: 'string' },
+      phone_normalized: { type: 'string' },
+      status: { type: 'integer', enum: [0, 1] },
+      archived_at: { type: ['string', 'null'], format: 'date-time' },
+      last_visit_at: { type: ['string', 'null'], format: 'date-time' },
+      visit_count: { type: 'integer' },
+    },
+  },
+  CustomerStats: {
+    type: 'object',
+    required: [
+      'visit_count',
+      'total_spent_amount',
+      'no_show_count',
+      'cancelled_count',
+      'preferred_employee',
+      'scope_note',
+    ],
+    properties: {
+      visit_count: { type: 'integer' },
+      total_spent_amount: { type: 'integer' },
+      last_visit_at: { type: ['string', 'null'], format: 'date-time' },
+      no_show_count: { type: 'integer' },
+      cancelled_count: { type: 'integer' },
+      preferred_employee: {
+        oneOf: [
+          {
+            type: 'object',
+            required: ['id', 'display_name'],
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              display_name: { type: 'string' },
+            },
+          },
+          { type: 'null' },
+        ],
+      },
+      scope_note: { type: 'string', enum: ['read_scope', 'company'] },
+    },
+  },
+  Customer: {
+    allOf: [
+      { $ref: '#/components/schemas/CustomerListItem' },
+      {
+        type: 'object',
+        required: ['stats', 'upcoming_bookings', 'created_at', 'updated_at'],
+        properties: {
+          notes: { type: ['string', 'null'] },
+          stats: { $ref: '#/components/schemas/CustomerStats' },
+          upcoming_bookings: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/UpcomingBooking' },
+          },
+          created_at: { type: 'string', format: 'date-time' },
+          updated_at: { type: 'string', format: 'date-time' },
+        },
+      },
+    ],
+  },
+  TimelineEntry: {
+    type: 'object',
+    required: ['type', 'id', 'at', 'branch_id', 'status'],
+    properties: {
+      type: { type: 'string', enum: ['booking', 'visit', 'sale'] },
+      id: { type: 'string', format: 'uuid' },
+      at: { type: 'string', format: 'date-time' },
+      branch_id: { type: 'string', format: 'uuid' },
+      status: { type: 'integer' },
+      employee: {
+        type: 'object',
+        required: ['id', 'display_name'],
+        properties: { id: { type: 'string', format: 'uuid' }, display_name: { type: 'string' } },
+      },
+      services_label_mm: { type: ['string', 'null'] },
+      services_label_en: { type: ['string', 'null'] },
+      total_amount: { type: ['integer', 'null'] },
+      receipt_number: { type: ['string', 'null'] },
+      cancel_reason: {
+        oneOf: [
+          {
+            type: 'object',
+            properties: {
+              name_mm: { type: 'string' },
+              name_en: { type: ['string', 'null'] },
+              system_code: { type: ['integer', 'null'] },
+            },
+          },
+          { type: 'null' },
+        ],
+      },
+    },
+  },
+  AlreadyExistsContext: {
+    type: 'object',
+    required: ['customer_id', 'status', 'archived'],
+    properties: {
+      customer_id: { type: 'string', format: 'uuid' },
+      status: { type: 'integer', enum: [0, 1] },
+      archived: { type: 'boolean' },
+    },
+  },
+  ActiveBookingsContext: {
+    type: 'object',
+    required: ['count'],
+    properties: { count: { type: 'integer' } },
+  },
   SaleItem: {
     type: 'object',
     properties: {

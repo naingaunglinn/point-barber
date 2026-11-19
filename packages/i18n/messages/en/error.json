@@ -66,5 +66,6 @@
   "self_action": "You can't change your own shifts for today — ask another manager.",
   "category_in_use": "This category still has {count} services that are not archived.",
   "options_required": "A service priced by options needs its options.",
-  "use_options_endpoint": "Option pricing is set with the service's options, not here."
+  "use_options_endpoint": "Option pricing is set with the service's options, not here.",
+  "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first."
 }
