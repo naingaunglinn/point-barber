@@ -34,8 +34,8 @@ const PRESETS = [
 ] as const;
 
 /**
- * The company's seed cancel reasons: the rows of DB Part 3 §8 inserted when missing — until
- * add-booking-cancel-reasons (#35) seeds them, after which this only finds them.
+ * The company's seed cancel reasons: the four rows of the base seed (add-booking-cancel-reasons,
+ * merged), found by their Myanmar names; a test database without the seed gets them inserted.
  */
 export async function seedCancelReasons(prisma: PrismaService): Promise<CancelReasons> {
   const company = await prisma.companies.findFirstOrThrow({ select: { id: true } });

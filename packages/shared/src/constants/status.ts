@@ -245,3 +245,18 @@ export type CustomerStatus = (typeof CustomerStatus)[keyof typeof CustomerStatus
 /** part8 — attachments.kind; a receipt PDF / PNG is a DOCUMENT (add-walkin-visit-checkout design D10). */
 export const AttachmentKind = { DOCUMENT: 1, IMAGE: 2, IMPORT_FILE: 3 } as const;
 export type AttachmentKind = (typeof AttachmentKind)[keyof typeof AttachmentKind];
+
+// add-booking-cancel-reasons — DB Part 3 v3 `booking_cancel_reasons` (task 1.3 · design D3 · D-DB-03).
+// Not in STATUS_BY_TABLE; each set equals the CHECK list of its column in db/source (status.test.ts).
+
+/** part3 — booking_cancel_reasons.status; INACTIVE = no longer offered, past bookings keep it. */
+export const CancelReasonStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type CancelReasonStatus = (typeof CancelReasonStatus)[keyof typeof CancelReasonStatus];
+
+/**
+ * part3 — booking_cancel_reasons.system_code; NULL = a reason the admin made. NO_SHOW = the locked row
+ * the no-show timer cancels with (D-BKG-17): its names may change, never its status or note flag.
+ */
+export const CancelReasonSystemCode = { NO_SHOW: 1 } as const;
+export type CancelReasonSystemCode =
+  (typeof CancelReasonSystemCode)[keyof typeof CancelReasonSystemCode];
