@@ -50,7 +50,9 @@ export class OpeningHours {
   async weekOf(branchId: string, rows: readonly HoursRow[]): Promise<BranchHoursWeek> {
     const newest = newestOf(rows);
     const names =
-      newest === undefined ? new Map<string, string>() : await this.people.userDisplayNames([newest.updated_by_user_id]);
+      newest === undefined
+        ? new Map<string, string>()
+        : await this.people.userDisplayNames([newest.updated_by_user_id]);
     return {
       branch_id: branchId,
       configured: rows.length > 0,

@@ -69,8 +69,14 @@ export class OpeningHoursWrites {
       }
       const now = this.clock.now();
       for (const { day, row } of changed) {
-        const write = { ...valuesOf(day), day_of_week: day.day_of_week, updated_by_user_id: actor, updated_at: now };
-        if (row === undefined) await this.repository.insertDay(tx, uuidV7(now.getTime()), branchId, write);
+        const write = {
+          ...valuesOf(day),
+          day_of_week: day.day_of_week,
+          updated_by_user_id: actor,
+          updated_at: now,
+        };
+        if (row === undefined)
+          await this.repository.insertDay(tx, uuidV7(now.getTime()), branchId, write);
         else await this.repository.updateDay(tx, row.id, write);
       }
       await this.site.touch(tx, ['home', `branch:${branch.code}`]);
@@ -80,9 +86,14 @@ export class OpeningHoursWrites {
         entity_id: branchId,
         branch_id: branchId,
         before: Object.fromEntries(
-          changed.map(({ day, row }) => [String(day.day_of_week), row === undefined ? null : valuesOf(row)]),
+          changed.map(({ day, row }) => [
+            String(day.day_of_week),
+            row === undefined ? null : valuesOf(row),
+          ]),
         ),
-        after: Object.fromEntries(changed.map(({ day }) => [String(day.day_of_week), valuesOf(day)])),
+        after: Object.fromEntries(
+          changed.map(({ day }) => [String(day.day_of_week), valuesOf(day)]),
+        ),
       });
       return this.hours.weekOf(branchId, await this.repository.weekOf(branchId));
     });

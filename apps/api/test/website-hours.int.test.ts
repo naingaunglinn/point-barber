@@ -45,7 +45,10 @@ const day = (dayOfWeek: number, members: object = {}) => ({
   ...members,
 });
 const WEEK = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => day(dayOfWeek));
-const MONDAY_CLOSED = [day(1, { is_closed: true, opens_at: null, closes_at: null }), ...WEEK.slice(1)];
+const MONDAY_CLOSED = [
+  day(1, { is_closed: true, opens_at: null, closes_at: null }),
+  ...WEEK.slice(1),
+];
 
 const rowsOf = (branchId: string) =>
   s.prisma.branch_opening_hours.findMany({
@@ -101,7 +104,10 @@ describe('add-website-management · website · Hours, closures and the booking Q
 
   it('an unknown branch is 404 not_found, for a read and a write', async () => {
     const before = await written();
-    for (const res of [await read('E001', UNKNOWN_ID), await save('E001', UNKNOWN_ID, { days: WEEK })]) {
+    for (const res of [
+      await read('E001', UNKNOWN_ID),
+      await save('E001', UNKNOWN_ID, { days: WEEK }),
+    ]) {
       expect([res.status, res.body.code]).toStrictEqual([404, 'not_found']);
     }
     expect(await written()).toStrictEqual(before);

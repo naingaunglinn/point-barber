@@ -106,7 +106,11 @@ export const branchHoursWriteSchema = z
     body.days.forEach((day, index) => {
       const code = hoursDayCode(day);
       if (code !== null) {
-        ctx.addIssue({ code: 'custom', path: ['days', index], message: `${CATALOGUE_CODE_PREFIX}${code}` });
+        ctx.addIssue({
+          code: 'custom',
+          path: ['days', index],
+          message: `${CATALOGUE_CODE_PREFIX}${code}`,
+        });
       }
     });
   });

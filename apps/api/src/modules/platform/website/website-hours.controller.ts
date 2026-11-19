@@ -1,5 +1,9 @@
 import { Controller, Get, Param, Put } from '@nestjs/common';
-import { type BranchHoursWeek, type BranchHoursWriteBody, branchHoursWriteSchema } from '@point/shared';
+import {
+  type BranchHoursWeek,
+  type BranchHoursWriteBody,
+  branchHoursWriteSchema,
+} from '@point/shared';
 
 import { Can, CanView } from '../../../common/access/declarations.js';
 import { ZBody } from '../../../common/http/zod-validation.pipe.js';

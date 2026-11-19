@@ -24,11 +24,14 @@ export class WebsitePeople implements WebsitePeopleReads {
   }
 
   userDisplayNames(userIds: readonly string[]): Promise<ReadonlyMap<string, string>> {
-    return userIds.length === 0 ? Promise.resolve(new Map()) : this.registered().userDisplayNames(userIds);
+    return userIds.length === 0
+      ? Promise.resolve(new Map())
+      : this.registered().userDisplayNames(userIds);
   }
 
   private registered(): WebsitePeopleReads {
-    if (this.reads === undefined) throw new Error('WebsitePeople: nothing registered (PeopleModule not loaded)');
+    if (this.reads === undefined)
+      throw new Error('WebsitePeople: nothing registered (PeopleModule not loaded)');
     return this.reads;
   }
 }
