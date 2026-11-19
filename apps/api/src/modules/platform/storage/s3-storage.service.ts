@@ -29,7 +29,10 @@ export interface S3Sender {
 
 /** RFC 5987 `value-chars`: encodeURIComponent also keeps `'()*`, which a header parameter must encode. */
 const encodeFileName = (name: string): string =>
-  encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  encodeURIComponent(name).replace(
+    /['()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 
 const isMissing = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -141,7 +144,11 @@ export class S3StorageService implements StorageService {
         : `attachment; filename*=UTF-8''${encodeFileName(options.downloadName)}`;
     return getSignedUrl(
       this.signer,
-      new GetObjectCommand({ Bucket: this.bucket, Key: key, ResponseContentDisposition: disposition }),
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ResponseContentDisposition: disposition,
+      }),
       { expiresIn: options.expiresInSeconds },
     );
   }

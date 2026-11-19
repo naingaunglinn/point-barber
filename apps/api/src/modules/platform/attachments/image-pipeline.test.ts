@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
@@ -8,6 +10,10 @@ import { ImageNotDecodable, processImage } from './image-pipeline.js';
 
 // add-attachments-upload tasks 2.3 and 2.5 — the values of the spec scenarios (P8-RULE-03 · ADR-014
 // decision 3 · design D5). Every image is made by code at test time (D15).
+const HEIC_FIXTURE = new URL(
+  '../../../../test/fixtures/images/gradient-3024x4032.heic',
+  import.meta.url,
+);
 const JPEG = { format: 'JPEG' } as const;
 const PNG = { format: 'PNG' } as const;
 const sizeOf = async (body: Buffer) => {
@@ -24,7 +30,11 @@ describe('processImage — size', () => {
     const input = await gradientImage('jpeg', 4000, 3000, { gps: true, orientation: 1 });
     const result = await processImage(input, JPEG);
     expect(result.original).toMatchObject({ width: 2560, height: 1920 });
-    expect(await sizeOf(result.original.body)).toMatchObject({ width: 2560, height: 1920, format: 'jpeg' });
+    expect(await sizeOf(result.original.body)).toMatchObject({
+      width: 2560,
+      height: 1920,
+      format: 'jpeg',
+    });
     expect(names(result)).toEqual(['original', 'w400', 'w800', 'w1600']);
     expect(result.variants.map(({ width, height }) => [width, height])).toEqual([
       [400, 300],
@@ -52,8 +62,16 @@ describe('processImage — variants', () => {
   it('logo-a.png 600 x 600 stays a PNG with variants ["original", "w400"]', async () => {
     const result = await processImage(await gradientImage('png', 600, 600), PNG);
     expect(names(result)).toEqual(['original', 'w400']);
-    expect(await sizeOf(result.original.body)).toMatchObject({ width: 600, height: 600, format: 'png' });
-    expect(await sizeOf(result.variants[0]!.body)).toMatchObject({ width: 400, height: 400, format: 'webp' });
+    expect(await sizeOf(result.original.body)).toMatchObject({
+      width: 600,
+      height: 600,
+      format: 'png',
+    });
+    expect(await sizeOf(result.variants[0]!.body)).toMatchObject({
+      width: 400,
+      height: 400,
+      format: 'webp',
+    });
   });
 
   it('logo-b.jpg 800 x 400 makes w800 (equal width): 400 x 200 and 800 x 400', async () => {
@@ -72,7 +90,11 @@ describe('processImage — variants', () => {
 
   it('a WebP upload stays a WebP', async () => {
     const result = await processImage(await gradientImage('webp', 900, 300), { format: 'WebP' });
-    expect(await sizeOf(result.original.body)).toMatchObject({ width: 900, height: 300, format: 'webp' });
+    expect(await sizeOf(result.original.body)).toMatchObject({
+      width: 900,
+      height: 300,
+      format: 'webp',
+    });
   });
 });
 
@@ -104,6 +126,26 @@ describe('processImage — metadata and refusals', () => {
     );
   });
 
-  // Task 2.1: the pinned sharp has no HEVC decoder (design R1), so HEIC is not built here.
-  it.todo('thura-bill.heic 3024 x 4032 becomes a JPEG of 1920 x 2560 (waits for the HEIC decision)');
+  // Task 2.1 / design R1: the pinned sharp has no HEVC decoder, so HEIC goes through the WebAssembly
+  // libheif (`libheif-js`). The fixture is a generated gradient, see test/fixtures/images/README.txt.
+  it('a HEIC of 3024 x 4032 becomes a JPEG of 1920 x 2560 without metadata', async () => {
+    const input = readFileSync(HEIC_FIXTURE);
+    const result = await processImage(input, { format: 'HEIC' });
+    expect(result.original).toMatchObject({ width: 1920, height: 2560 });
+    const meta = await sharp(result.original.body).metadata();
+    expect(meta).toMatchObject({ format: 'jpeg', width: 1920, height: 2560 });
+    expect(meta.exif).toBeUndefined();
+    expect(names(result)).toEqual(['original', 'w400', 'w800', 'w1600']);
+  }, 60_000);
+
+  it('a HEIC signature with damaged content is not decodable', async () => {
+    const damaged = Buffer.concat([
+      Buffer.from([0, 0, 0, 24]),
+      Buffer.from('ftypheic'),
+      Buffer.alloc(40, 7),
+    ]);
+    await expect(processImage(damaged, { format: 'HEIC' })).rejects.toBeInstanceOf(
+      ImageNotDecodable,
+    );
+  });
 });

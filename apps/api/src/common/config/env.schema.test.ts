@@ -236,7 +236,9 @@ describe('API environment schema · sign-in, mail, jobs (design D18)', () => {
     expect(
       parseApiEnv({ ...valid, S3_PUBLIC_ENDPOINT: 'http://localhost:9000' }).S3_PUBLIC_ENDPOINT,
     ).toBe('http://localhost:9000');
-    expect(messageOf({ ...valid, S3_PUBLIC_ENDPOINT: 'localhost:9000' })).toMatch(/S3_PUBLIC_ENDPOINT/);
+    expect(messageOf({ ...valid, S3_PUBLIC_ENDPOINT: 'localhost:9000' })).toMatch(
+      /S3_PUBLIC_ENDPOINT/,
+    );
   });
 
   it('refuses an S3_ENDPOINT that is not an http(s) URL', () => {

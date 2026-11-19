@@ -59,7 +59,8 @@ export async function gradientImage(
     });
   }
   // withExif cannot set the orientation tag (sharp writes its own); withMetadata can.
-  if (options.orientation !== undefined) image = image.withMetadata({ orientation: options.orientation });
+  if (options.orientation !== undefined)
+    image = image.withMetadata({ orientation: options.orientation });
   return image.toFormat(format).toBuffer();
 }
 

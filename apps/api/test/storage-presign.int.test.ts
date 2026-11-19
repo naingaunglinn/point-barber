@@ -37,7 +37,9 @@ beforeAll(async () => {
 
 describe('presigned links on MinIO', () => {
   it('the original loads with a signed link (200) and is refused without a signature (403)', async () => {
-    const link = await storage.presignGet(row.storage_key, { expiresInSeconds: SIGNED_URL_SECONDS });
+    const link = await storage.presignGet(row.storage_key, {
+      expiresInSeconds: SIGNED_URL_SECONDS,
+    });
     const signed = await fetch(link);
     expect(signed.status).toBe(200);
     expect(signed.headers.get('content-type')).toBe('image/jpeg');
@@ -67,7 +69,9 @@ describe('presigned links on MinIO', () => {
   });
 
   it('a link with a changed key is refused (the signature covers the path)', async () => {
-    const link = await storage.presignGet(row.storage_key, { expiresInSeconds: SIGNED_URL_SECONDS });
+    const link = await storage.presignGet(row.storage_key, {
+      expiresInSeconds: SIGNED_URL_SECONDS,
+    });
     expect((await fetch(link.replace('original.jpg', 'w400.webp'))).status).toBe(403);
   });
 });

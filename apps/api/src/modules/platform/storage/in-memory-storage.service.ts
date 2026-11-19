@@ -40,7 +40,9 @@ export class InMemoryStorageService implements StorageService {
   /** A fake link for tests (design D1): `memory://<key>?expires=<n>`, with `&download=<name>` when asked. */
   presignGet(key: string, options: PresignGetOptions): Promise<string> {
     const download =
-      options.downloadName === undefined ? '' : `&download=${encodeURIComponent(options.downloadName)}`;
+      options.downloadName === undefined
+        ? ''
+        : `&download=${encodeURIComponent(options.downloadName)}`;
     return Promise.resolve(`memory://${key}?expires=${options.expiresInSeconds}${download}`);
   }
 

@@ -25,7 +25,10 @@ export function objectKey(row: VariantSource, variant: AttachmentVariant): strin
 /** `"original"` then the widths of `VARIANT_WIDTHS` that are not wider than the stored original. */
 export function variantsOf(imageWidth: number | null | undefined): AttachmentVariant[] {
   if (imageWidth === null || imageWidth === undefined) return [];
-  return ['original', ...VARIANT_WIDTHS.filter((width) => width <= imageWidth).map((w) => `w${w}` as const)];
+  return [
+    'original',
+    ...VARIANT_WIDTHS.filter((width) => width <= imageWidth).map((w) => `w${w}` as const),
+  ];
 }
 
 /** The object and content type that answer `variant` for this row. Checks no read right. */

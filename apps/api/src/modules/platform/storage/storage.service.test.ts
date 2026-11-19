@@ -193,7 +193,10 @@ describe('S3StorageService — a bucket that never answers (CG-ERR-06 · guideli
 describe('presignGet', () => {
   const link = async (cfg: AppConfig, options: { downloadName?: string } = {}) =>
     new URL(
-      await new S3StorageService(cfg, new StubS3()).presignGet(KEY, { expiresInSeconds: 300, ...options }),
+      await new S3StorageService(cfg, new StubS3()).presignGet(KEY, {
+        expiresInSeconds: 300,
+        ...options,
+      }),
     );
   const withPublic = (S3_PUBLIC_ENDPOINT?: string) =>
     ({ env: { ...config.env, S3_PUBLIC_ENDPOINT } }) as unknown as AppConfig;
@@ -212,7 +215,9 @@ describe('presignGet', () => {
 
   it('uses S3_ENDPOINT when S3_PUBLIC_ENDPOINT is not set, and S3_PUBLIC_ENDPOINT when it is', async () => {
     expect((await link(config)).origin).toBe('http://localhost:9000');
-    expect((await link(withPublic('https://files.point.test'))).origin).toBe('https://files.point.test');
+    expect((await link(withPublic('https://files.point.test'))).origin).toBe(
+      'https://files.point.test',
+    );
   });
 
   it('asks the browser to save the file: attachment; filename*=UTF-8 with the name percent-encoded', async () => {
@@ -222,7 +227,7 @@ describe('presignGet', () => {
     );
   });
 
-  it("encodes the characters a header parameter must not carry: quote, parentheses, asterisk, Myanmar letters", async () => {
+  it('encodes the characters a header parameter must not carry: quote, parentheses, asterisk, Myanmar letters', async () => {
     const url = await link(config, { downloadName: "a'(b)*.pdf မြန်မာ" });
     const disposition = url.searchParams.get('response-content-disposition') ?? '';
     expect(disposition).toMatch(/^attachment; filename\*=UTF-8''[A-Za-z0-9%._-]+$/);
