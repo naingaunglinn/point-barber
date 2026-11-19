@@ -18,5 +18,5 @@ export { PeopleModule } from './people.module.js';
 export { PeopleSeedLock, type PilotPeopleResult, PilotPeople } from './pilot/pilot-people.js';
 export { CompanyAdmin, ROLE_CODES } from './roles/company-admin.js';
 export { FirstAdmin, type FirstAdminInput, FirstAdminRefused } from './roles/first-admin.js';
-export { MANAGER_SEED_CODES } from './roles/seed-roles.js';
+export { MANAGER_SEED_CODES, SEED_ROLES } from './roles/seed-roles.js';
 export { BaseSeed } from './seed/base-seed.js';
