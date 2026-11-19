@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
 import {
+  activeBookingsContextSchema,
+  alreadyExistsContextSchema,
   archiveNoteOf,
   customerArchiveSchema,
   customerCreateSchema,
@@ -9,6 +11,7 @@ import {
   customerStatusSchema,
   customerUpdateSchema,
   normalizeCustomerMembers,
+  timelineEntrySchema,
 } from './customers.js';
 
 // add-customer-management task 1.5 — the request schemas of design D4 and their limits (P3.CUS.01 /
@@ -25,6 +28,7 @@ function issuesOf(schema: z.ZodType, value: unknown): Issue[] {
 
 const KO_PHYO = { name: 'Ko Phyo', phone: '09 4500 1122' };
 const T1 = '2026-10-05T09:10:00.000+06:30';
+const MA_SU_ID = '0199a3f2-0000-7000-800b-000000000001';
 
 describe('customerCreateSchema — "Staff add a customer with a name and a phone"', () => {
   it('Scenario: Name and notes at their limits — 255 / 2,000 pass, 256 / 2,001 are too_big', () => {
@@ -186,5 +190,51 @@ describe('customerListQuerySchema — P3.CUS.01 (owner #7 · CM1 · reading 18)'
     expect(issuesOf(customerListQuerySchema, { q: 'a'.repeat(256) })).toMatchObject([
       { path: ['q'], code: 'too_big', maximum: 255 },
     ]);
+  });
+});
+
+// add-customer-management task 1.7 — the response shapes the parity test compares with Part 3.
+describe('response schemas (task 1.7)', () => {
+  const at = '2026-09-28T10:05:00+06:30';
+  const employee = { id: MA_SU_ID, display_name: 'Ko Aung' };
+  const base = { id: MA_SU_ID, at, branch_id: MA_SU_ID };
+
+  it('a timeline entry is read on its type', () => {
+    expect(
+      timelineEntrySchema.parse({
+        type: 'visit',
+        ...base,
+        status: 3,
+        employee,
+        receipt_number: 'B3-2026-SEP-00006',
+        total_amount: 15000,
+      }).type,
+    ).toBe('visit');
+    expect(
+      timelineEntrySchema.safeParse({
+        type: 'sale',
+        ...base,
+        status: 2,
+        employee,
+        receipt_number: 'x',
+        total_amount: 1,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('the two 409 contexts carry an id, a status and a flag, or a count — never a phone', () => {
+    expect(
+      alreadyExistsContextSchema.safeParse({ customer_id: MA_SU_ID, status: 1, archived: false })
+        .success,
+    ).toBe(true);
+    expect(
+      alreadyExistsContextSchema.safeParse({
+        customer_id: MA_SU_ID,
+        status: 1,
+        archived: false,
+        phone: '+95977123456',
+      }).success,
+    ).toBe(false);
+    expect(activeBookingsContextSchema.parse({ count: 2 })).toStrictEqual({ count: 2 });
   });
 });

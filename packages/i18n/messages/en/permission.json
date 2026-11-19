@@ -5,6 +5,18 @@
     "update": "Edit customers",
     "delete": "Deactivate and archive customers"
   },
+  "service": {
+    "view": "View services and categories",
+    "create": "Add services and categories",
+    "update": "Edit services and categories",
+    "delete": "Archive services and categories"
+  },
+  "leave_type": {
+    "view": "View leave types",
+    "create": "Create leave types",
+    "update": "Edit leave types",
+    "delete": "Archive leave types"
+  },
   "website": {
     "view": "View the website",
     "update": "Edit the website"

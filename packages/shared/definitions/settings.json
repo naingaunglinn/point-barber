@@ -354,5 +354,35 @@
     "label_key": "settings.system.upload_max_mb.label",
     "help_key": "settings.system.upload_max_mb.help",
     "impact_key": null
+  },
+  {
+    "key": "customer.preferred_barber_min_visits",
+    "module": "customer",
+    "type": "number",
+    "default": 3,
+    "scope": "company",
+    "client_readable": false,
+    "validation": {
+      "min": 1,
+      "max_key": "customer.preferred_barber_window"
+    },
+    "label_key": "settings.customer.preferred_barber_min_visits.label",
+    "help_key": "settings.customer.preferred_barber_min_visits.help",
+    "impact_key": null
+  },
+  {
+    "key": "customer.preferred_barber_window",
+    "module": "customer",
+    "type": "number",
+    "default": 5,
+    "scope": "company",
+    "client_readable": false,
+    "validation": {
+      "min": 1,
+      "min_key": "customer.preferred_barber_min_visits"
+    },
+    "label_key": "settings.customer.preferred_barber_window.label",
+    "help_key": "settings.customer.preferred_barber_window.help",
+    "impact_key": null
   }
 ]

@@ -43,11 +43,12 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `booking`      | nothing new — reads `bookings`, `booking_items`, `booking_cancel_reasons` (customer statistics, timeline, archive guard)    | `add-customer-management`   |
 | `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout` |
 | `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`        |
-| `catalog`      | nothing yet — reads `services`, `service_categories`, `branch_services`, `service_prices`, `employee_service_eligibilities` | `add-walkin-visit-checkout` |
+| `catalog`      | `service_categories`, `services`, `branch_services`, `service_prices` (close only) · reads `employee_service_eligibilities` | `add-service-catalogue`     |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout` |
 | `payroll`      | nothing yet — reads `payroll_runs`                                                                                          | `add-walkin-visit-checkout` |
 | `people`       | `companies` (the profile — P1.CO.02)                                                                                        | `add-company-profile`       |
 | `scheduling`   | `schedule_patterns`, `schedule_shifts` — the pattern save and the job `shifts.generate` (queue in `db/scripts/migrate.mjs`) | `add-schedule-patterns`     |
+| `scheduling`   | `leave_types` — P2.LVT.02 – 04 (reads `leaves` for the archive's PENDING check)                                             | `add-leave-types`           |
 | `platform`     | `branch_opening_hours`, `branch_closures` — the website's hours and closures (P8.WEB.04 / 06 – 08)                          | `add-website-management`    |
 
 Two ports carry the Part 4 history to `booking` without an import of `sales` (walk-in design D1):
@@ -64,7 +65,7 @@ tags)`, which every writer of website data calls inside its write transaction; i
 The website management of `add-website-management` (design D1) lives in `platform/website` too and
 reads four other modules through public reads they add to their `index.ts`. Those modules build on
 `platform`, so each registers its read into a `platform/website` port at start-up, as `people` does
-for the settings store: `booking` — `BookingReads.bookedInRange` (BOOKED bookings inside a closure);
+for the settings store (each port and read comes with the part that first uses it, A2 – A5): `booking` — `BookingReads.bookedInRange` (BOOKED bookings inside a closure);
 `catalog` — `ServiceCatalog.countOnWebsite`; `people` — `PublicPeople.activeProfiles` and
 `PeopleDirectory.branchesForWebsite`; `scheduling` — `TodayShifts.branchesOf` (shared with
 `add-schedule-patterns`; the first change to merge creates it).

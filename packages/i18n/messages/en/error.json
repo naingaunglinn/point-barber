@@ -64,6 +64,7 @@
   "end_before_start": "The end must be after the start.",
   "cross_branch_gap": "Needs a {needed}-minute gap when changing branch ({branchA} ends {endA}, {branchB} starts {startB}).",
   "self_action": "You can't change your own shifts for today — ask another manager.",
+  "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first.",
   "closure_overlap": "These dates overlap another closure of this branch.",
   "date_in_past": "This date has already passed.",
   "closure_started": "This closure has already started — only its end date and notices can change.",

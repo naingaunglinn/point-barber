@@ -89,6 +89,8 @@ describe('add-settings-store · settings · The Additional settings screen', () 
       'Website',
       'Dashboard',
       'System',
+      // add-customer-management design D9 — the preferred-barber settings.
+      'Customers',
     ]);
     const slot = within(row('booking.slot_interval_minutes'));
     expect(slot.getAllByRole('radio')).toHaveLength(4);

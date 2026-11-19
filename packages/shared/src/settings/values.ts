@@ -4,6 +4,9 @@ import { siteContentWriteSchema } from '../schemas/website.js';
 import type { Instant } from '../time/instant.js';
 import { toMmtIso } from '../time/mmt-iso.js';
 import type { SettingType } from './entry.js';
+import { optionalText, textMmEnSchema } from './text-mm-en.js';
+
+export { textMmEnSchema };
 
 // One value schema for the app and the API (D-PLT-16 · P1-RULE-08 · API-ERR-03 · add-settings-store
 // design D2 / D9): a whole number within the entry's limits (owner SS3), one of the listed choices,
@@ -31,15 +34,6 @@ export interface MaintenanceSetting {
 /** The maintenance messages: at most 200 characters after trimming (owner SS2 · P1.SYS.03). */
 export const MAINTENANCE_MESSAGE_MAX = 200;
 
-/** A trimmed text of at most `max` characters; absent, null or empty after trimming → null. */
-const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .nullish()
-    .transform((value) => (value === undefined || value === null || value === '' ? null : value));
-
 /**
  * The body of P1.SYS.03 and the value it stores: `enabled` required; `until` an ISO 8601 time with
  * an offset, written with +06:30 (API-DATA-03), or null; each message trimmed, ≤ 200, empty → null.
@@ -60,17 +54,6 @@ export const maintenanceBodySchema = z.object({
 export type MaintenanceBody = z.input<typeof maintenanceBodySchema>;
 export type MaintenanceValue = z.output<typeof maintenanceBodySchema>;
 
-/**
- * A `text_mm_en` value: `mm` `minLength` (default 1) – `maxLength` after trimming, `en` ≤ `maxLength`,
- * empty → null. The site texts allow an empty Myanmar text (add-website-management reading 2).
- */
-export function textMmEnSchema(maxLength: number, minLength = 1) {
-  return z.object({
-    mm: z.string().trim().min(minLength).max(maxLength),
-    en: optionalText(maxLength),
-  });
-}
-
 /** `site.announcement` (Part 8 §17): the announcement of the content save, or null. */
 export type SiteAnnouncement = NonNullable<z.output<typeof siteContentWriteSchema>['announcement']>;
 
@@ -85,8 +68,23 @@ export interface ValueSchemaEntry {
     readonly max_length?: number;
     readonly min_length?: number;
     readonly nullable?: boolean;
+    readonly min_key?: string;
+    readonly max_key?: string;
   };
 }
+
+/**
+ * The effective values a cross-key bound reads, by key (add-customer-management design D9 · owner CM3):
+ * `min_key` floors the value at that key's value (`too_small`), `max_key` caps it (`too_big`), each
+ * checked after the entry's own limits. Without a value for the key there is no cross-key bound — the
+ * definitions check and the screens' row check pass none.
+ */
+export type ValueBounds = Readonly<Record<string, unknown>>;
+
+const boundOf = (bounds: ValueBounds, key: string | undefined): number | undefined => {
+  const value = key === undefined ? undefined : bounds[key];
+  return typeof value === 'number' ? value : undefined;
+};
 
 /** The `json` keys and their schema; a `json` key without one is a programming error. */
 const JSON_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
@@ -94,14 +92,18 @@ const JSON_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
   'site.announcement': siteContentWriteSchema.shape.announcement,
 };
 
-/** The Zod schema of a value of `entry` (design D2). */
-export function valueSchema(entry: ValueSchemaEntry): z.ZodType {
+/** The Zod schema of a value of `entry` (design D2), with the cross-key bounds of `bounds`. */
+export function valueSchema(entry: ValueSchemaEntry, bounds: ValueBounds = {}): z.ZodType {
   const { validation } = entry;
   switch (entry.type) {
     case 'number': {
       let schema = z.int();
       if (validation.min !== undefined) schema = schema.min(validation.min);
       if (validation.max !== undefined) schema = schema.max(validation.max);
+      const floor = boundOf(bounds, validation.min_key);
+      if (floor !== undefined) schema = schema.min(floor);
+      const ceiling = boundOf(bounds, validation.max_key);
+      if (ceiling !== undefined) schema = schema.max(ceiling);
       return schema;
     }
     case 'choice': {
