@@ -12,4 +12,7 @@ export const HEALTH_PING_TIMEOUT_MS = 2_000;
  * day close) raises them here with its source.
  */
 export const TX_MAX_WAIT_MS = 10_000;
+
+/** Declared in packages/shared (the reorder schema bounds `ids` with it); the API imports it here. */
+export { CANCEL_REASONS_MAX_ROWS } from '@point/shared';
 export const TX_TIMEOUT_MS = 30_000;

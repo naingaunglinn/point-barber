@@ -51,7 +51,8 @@ export const MANAGER_SCHEDULE_SEED_CODES = MANAGER_SCHEDULE_CODES;
 /** Part 8 §14 — `website.view`, `website.update` (packages/shared). */
 export const MANAGER_WEBSITE_SEED_CODES = MANAGER_WEBSITE_CODES;
 
-const SEED_ROLES = [
+/** The three seed roles; the dev-seed test derives the role_permissions it expects from them. */
+export const SEED_ROLES = [
   { name_en: 'Admin', name_mm: 'အက်ဒမင်', codes: 'all' },
   {
     name_en: 'Manager',
