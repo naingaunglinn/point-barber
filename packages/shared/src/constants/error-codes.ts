@@ -60,6 +60,10 @@ export const ErrorCode = {
   LOCKED: 'locked',
   // add-late-entry — P4-RULE-13 · LE-1: the four late-entry times out of order or later than now.
   LATE_ENTRY_TIME: 'late_entry_time',
+  // add-booking-cancel-reasons — Part 3 §9 · API-ERR-02 (task 2.2): 409 when a write would switch off,
+  // re-flag or archive the no-show reason (`system_code` 1 — D-BKG-17 · P3.CRS.03 / 04). Shared with
+  // add-payment-methods-admin, one neutral text (point-sdd #47). already_exists and conflict are reused.
+  SYSTEM_ROW: 'system_row',
   // add-company-profile — API-ERR-02 · Part 1 v1.7 §11b · design D10 (task 1.2): a stale
   // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).
   CONFLICT: 'conflict',
@@ -88,6 +92,10 @@ export const ErrorCode = {
   // An effective date before today (P2-RULE-04) — shared with the dated writes of #14 / #15; its text is a
   // ★ proposal under the owner's standing rule of 01/Nov/2026 (add-schedule-patterns A3).
   EFFECTIVE_DATE_PAST: 'effective_date_past',
+  // add-leave-types — Part 2 §13b · API-ERR-02 (task 1.3 — design D4 / D10): an archive refused while a
+  // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
+  // are reused.
+  LEAVE_TYPE_IN_USE: 'leave_type_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

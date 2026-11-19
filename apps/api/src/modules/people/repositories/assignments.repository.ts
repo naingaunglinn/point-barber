@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EmployeeStatus } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
 
 // Branch assignments (Part 1 — the people module owns employees and employee_branches): whether an
 // employee is ACTIVE and assigned to a branch on a Myanmar calendar date (both ends inclusive); the
@@ -39,7 +40,8 @@ export class AssignmentsRepository {
 
   /**
    * The employee's assignments overlapping `from` … `to` (both inclusive), ended ones included,
-   * ordered by effective_from, created_at, id.
+   * ordered by effective_from, created_at, id. No source caps how many assignments one employee has
+   * over time, so the read is bounded by the ceiling and fails loudly above it (CG-PERF-02 · kind C).
    */
   async overlapping(
     db: Tx,
@@ -53,8 +55,9 @@ export class AssignmentsRepository {
       },
       orderBy: [{ effective_from: 'asc' }, { created_at: 'asc' }, { id: 'asc' }],
       select: { branch_id: true, effective_from: true, effective_to: true },
+      take: READ_ROW_CEILING + 1,
     });
-    return rows.map((row) => ({
+    return assertWithinCeiling(rows, 'AssignmentsRepository.overlapping').map((row) => ({
       branch_id: row.branch_id,
       effective_from: isoDate(row.effective_from),
       effective_to: row.effective_to === null ? null : isoDate(row.effective_to),

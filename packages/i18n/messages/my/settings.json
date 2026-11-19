@@ -4,7 +4,8 @@
     "company": "ကုမ္ပဏီ",
     "additional": "ထပ်ဆောင်း ဆက်တင်",
     "maintenance": "Maintenance mode",
-    "branches": "ဆိုင်ခွဲများ"
+    "branches": "ဆိုင်ခွဲများ",
+    "leaveTypes": "ခွင့်အမျိုးအစားများ"
   },
   "company": {
     "title": "ကုမ္ပဏီ",
@@ -44,7 +45,8 @@
     "closing": "နေ့စဉ်စာရင်းပိတ်",
     "attendance": "လစာနဲ့ တက်ရောက်မှု",
     "dashboard": "Dashboard",
-    "system": "စနစ်"
+    "system": "စနစ်",
+    "customer": "ဧည့်သည်များ"
   },
   "booking": {
     "slot_interval_minutes": {
@@ -133,6 +135,16 @@
     "maintenance": {
       "label": "Maintenance mode",
       "help": "ဒီမှာ ကြည့်ရုံပါ။ ဖွင့် / ပိတ်ကို Maintenance mode စာမျက်နှာမှာ လုပ်ပါ။"
+    }
+  },
+  "customer": {
+    "preferred_barber_window": {
+      "label": "အမြဲလုပ်ပေးသူ — ကြည့်မယ့် visit အရေအတွက်",
+      "help": "ဧည့်သည်ရဲ့ နောက်ဆုံး ပြီးခဲ့တဲ့ visit ဘယ်နှစ်ခုကို ကြည့်မလဲ။"
+    },
+    "preferred_barber_min_visits": {
+      "label": "အမြဲလုပ်ပေးသူ — လိုအပ်တဲ့ visit အရေအတွက်",
+      "help": "အဲ့ visit တွေထဲက ဒီအရေအတွက် အနည်းဆုံး လုပ်ပေးခဲ့တဲ့ barber ကို အမြဲလုပ်ပေးသူ အဖြစ် ပြမယ်။"
     }
   },
   "choice": {

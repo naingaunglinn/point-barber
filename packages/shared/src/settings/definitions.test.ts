@@ -91,6 +91,25 @@ describe('add-settings-store · settings · Setting definitions live in one file
     expect(problems.every((problem) => problem.startsWith('BOOKING interval: '))).toBe(true);
   });
 
+  it('a cross-key bound names a number setting, and the defaults keep it (add-customer-management D9)', () => {
+    expect(
+      settingDefinitionProblems(
+        withEntry('customer.preferred_barber_window', {
+          validation: { min: 1, min_key: 'receipt.auto_print' },
+        }),
+      ),
+    ).toStrictEqual([
+      'customer.preferred_barber_window: the bound receipt.auto_print is not a number setting',
+    ]);
+    expect(
+      settingDefinitionProblems(withEntry('customer.preferred_barber_min_visits', { default: 6 })),
+    ).toStrictEqual([
+      // 6 > the window 5, and the window 5 < the minimum 6: the pair no longer fits.
+      'customer.preferred_barber_min_visits: the default 6 fails its validation',
+      'customer.preferred_barber_window: the default 5 fails its validation',
+    ]);
+  });
+
   it('Scenario: A default outside its own validation is refused', () => {
     expect(
       settingDefinitionProblems(withEntry('system.upload_max_mb', { default: 11 })),
@@ -156,6 +175,9 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system system.default_language',
       'system system.maintenance',
       'system system.upload_max_mb',
+      // add-customer-management design D9 — appended (Part 3 §10).
+      'customer customer.preferred_barber_min_visits',
+      'customer customer.preferred_barber_window',
     ]);
   });
 
@@ -179,6 +201,9 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system.maintenance': { enabled: false },
       // add-branch-management design D5 — Part 5 §17; a new branch's radius (P1.BR.02).
       'attendance.default_radius_meters': 100,
+      // add-customer-management design D9 — 3 of the last 5 (D-CUS-08 · owner #6).
+      'customer.preferred_barber_min_visits': 3,
+      'customer.preferred_barber_window': 5,
     });
   });
 
@@ -250,6 +275,15 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system.default_language': { choices: [1, 2] },
       'system.maintenance': {},
       'system.upload_max_mb': { unit: 'MB', min: 1, max: 10 },
+      // owner CM3 — whole numbers ≥ 1, no maximum, min ≤ window.
+      'customer.preferred_barber_min_visits': {
+        min: 1,
+        max_key: 'customer.preferred_barber_window',
+      },
+      'customer.preferred_barber_window': {
+        min: 1,
+        min_key: 'customer.preferred_barber_min_visits',
+      },
     });
   });
 

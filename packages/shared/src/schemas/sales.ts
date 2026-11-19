@@ -18,6 +18,7 @@ import { toMmtIso } from '../time/mmt-iso.js';
 import {
   codeOf,
   employeeRefSchema,
+  repeated,
   userRefSchema,
   wireAmount,
   wireDate,
@@ -389,13 +390,6 @@ export const finishRequestSchema = z.object({
   override_reason: reasonText.nullish(),
   finished_at: enteredTime.nullish(),
 });
-
-/** A repeatable query member (`status=1&status=2`): one value arrives as a string, several as a list. */
-const repeated = <T extends z.ZodType>(item: T) =>
-  z.preprocess((value): unknown[] => {
-    const list: unknown[] = Array.isArray(value) ? value : [value];
-    return list;
-  }, z.array(item));
 
 /**
  * P4.VIS.02 query: `status` repeatable, `date` a business date. With neither, the service answers the

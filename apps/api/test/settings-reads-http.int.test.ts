@@ -37,7 +37,9 @@ describe('add-settings-store · settings · Setting definitions live in one file
     const res = await get('E001', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(16);
+    // 15 keys of add-settings-store + the 2 preferred-barber keys of add-customer-management (D9) + the
+    // cross-branch gap of add-schedule-patterns.
+    expect(items).toHaveLength(18);
     for (const item of items) {
       expect([item.key, item.source, item.company_value]).toStrictEqual([
         item.key,
@@ -76,6 +78,9 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system.default_language': 1,
       'system.maintenance': { enabled: false },
       'system.upload_max_mb': 10,
+      // customers "The preferred-barber settings…" — Scenario: The defaults (add-customer-management).
+      'customer.preferred_barber_min_visits': 3,
+      'customer.preferred_barber_window': 5,
     });
   });
 
@@ -110,7 +115,8 @@ describe('add-settings-store · settings · The settings of this change and thei
       'home_service.travel_minutes',
       'receipt.printer_width_mm',
     ]);
-    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(13);
+    // 12 + the 2 company-only keys of add-customer-management (D9) + the gap of add-schedule-patterns.
+    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(15);
   });
 });
 
@@ -190,7 +196,7 @@ describe('add-settings-store · settings · The settings list shows each key wit
     const res = await get('E002', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(16);
+    expect(items).toHaveLength(18);
     expect(itemOf({ items }, 'home_service.transport_fee_amount')).toMatchObject({
       company_value: 2000,
       effective: 2000,
