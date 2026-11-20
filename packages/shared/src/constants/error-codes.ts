@@ -90,6 +90,11 @@ export const ErrorCode = {
   END_BEFORE_START: 'end_before_start',
   CROSS_BRANCH_GAP: 'cross_branch_gap',
   SELF_ACTION: 'self_action',
+  // add-attachments-upload — API-ERR-02 · Part 8 P8-RULE-03 · P8.ATT.05 (task 1.2; texts in the brief):
+  // a file that cannot be linked, context `{ attachment_id, reason }` (422), and the removal of the
+  // file a single-image field still uses, context `{ field }` (409). zawgyi_text above is reused.
+  ATTACHMENT_INVALID: 'attachment_invalid',
+  ATTACHMENT_IN_USE: 'attachment_in_use',
   // add-service-catalogue — Part 2 §13b · API-ERR-02 (task 2.2): a category archive refused while
   // non-archived services use it, context `{ count }` (P2.CAT.04); option pricing sent to the create
   // (P2.SVC.02) or to the update (P2.SVC.04) instead of the options endpoint (P2-RULE-02).

@@ -1,4 +1,5 @@
 import type { Locale } from './config';
+import attachmentEn from '../messages/en/attachment.json';
 import authEn from '../messages/en/auth.json';
 import branchEn from '../messages/en/branch.json';
 import commonEn from '../messages/en/common.json';
@@ -13,6 +14,7 @@ import receiptEn from '../messages/en/receipt.json';
 import settingsEn from '../messages/en/settings.json';
 import statusEn from '../messages/en/status.json';
 import todayEn from '../messages/en/today.json';
+import attachmentMy from '../messages/my/attachment.json';
 import authMy from '../messages/my/auth.json';
 import branchMy from '../messages/my/branch.json';
 import commonMy from '../messages/my/common.json';
@@ -45,6 +47,7 @@ const MESSAGES = {
     branch: branchEn,
     maintenance: maintenanceEn,
     permission: permissionEn,
+    attachment: attachmentEn,
     leaveType: leaveTypeEn,
   },
   my: {
@@ -61,6 +64,7 @@ const MESSAGES = {
     branch: branchMy,
     maintenance: maintenanceMy,
     permission: permissionMy,
+    attachment: attachmentMy,
     leaveType: leaveTypeMy,
   },
 } as const;

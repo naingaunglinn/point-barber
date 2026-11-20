@@ -1,6 +1,8 @@
 import {
   activeBookingsContextSchema,
   alreadyExistsContextSchema,
+  attachmentSchema,
+  attachmentUploadSchema,
   branchAssignmentSchema,
   branchCreateSchema,
   branchInUseContextSchema,
@@ -33,6 +35,7 @@ import {
   receiptLineSchema,
   receiptViewSchema,
   refundSummarySchema,
+  removeRequestSchema,
   requestLookupSchema,
   saleActionsSchema,
   saleAdjustmentSchema,
@@ -50,6 +53,7 @@ import {
   settingPutBodySchema,
   settingResetBodySchema,
   settingViewSchema,
+  signedUrlSchema,
   socialLinksSchema,
   systemStatusSchema,
   timelineEntrySchema,
@@ -472,6 +476,11 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         BranchUpdate: schema(branchUpdateSchema),
         BranchStatusRequest: schema(branchStatusSchema),
         BranchInUseContext: schema(branchInUseContextSchema),
+        // add-attachments-upload task 1.5 - P8.ATT.01 - 05 (Part 8); the paths come with the controllers (PR 3).
+        Attachment: schema(attachmentSchema),
+        AttachmentUpload: schema(attachmentUploadSchema, 'input'),
+        RemoveRequest: schema(removeRequestSchema, 'input'),
+        SignedUrl: schema(signedUrlSchema),
         // add-service-catalogue task 2.1 — the request bodies of P2.CAT.02 / 03 and P2.SVC.02 / 04
         // (Part 2 v1.6); their paths are added with the endpoints.
         CategoryCreate: schema(categoryCreateSchema, 'input'),
