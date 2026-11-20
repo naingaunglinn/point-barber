@@ -59,6 +59,9 @@ const MANAGER = [
   // Part 2 §12 (add-schedule-patterns task 1.3).
   'schedule.view',
   'schedule.update',
+  // Part 8 §14 (add-website-management task 1.2).
+  'website.view',
+  'website.update',
 ];
 // Part 3 §7 (add-customer-management task 1.3) and Part 4 §9, sorted as roleCodes() reads them.
 const BARBER = ['customer.create', 'customer.view', 'sale.create', 'sale.late_entry'];
@@ -192,6 +195,20 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
     expect(schedule('Admin')).toStrictEqual(['schedule.update', 'schedule.view']);
     expect(schedule('Manager')).toStrictEqual(['schedule.update', 'schedule.view']);
     expect(schedule('Barber')).toStrictEqual([]);
+  });
+});
+
+// add-website-management task 1.2 — spec "Website has two permission codes with the mixed level"
+// (Part 8 §14 · P8-RULE-01 · ADR-011 · ADR-012 · D-ROLE-09).
+describe('add-website-management · website · Website has two permission codes with the mixed level', () => {
+  it('Scenario: The seed roles (the role rows of a fresh database)', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const website = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('website.'));
+    expect(website('Admin')).toStrictEqual(['website.update', 'website.view']);
+    expect(website('Manager')).toStrictEqual(['website.update', 'website.view']);
+    expect(website('Barber')).toStrictEqual([]);
   });
 });
 

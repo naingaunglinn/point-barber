@@ -6,6 +6,7 @@ import {
   MANAGER_PART3_CUSTOMER_CODES,
   MANAGER_PART4_CODES,
   MANAGER_SCHEDULE_CODES,
+  MANAGER_WEBSITE_CODES,
 } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
@@ -22,7 +23,8 @@ import { CompanyRepository } from '../repositories/company.repository.js';
 // task 1.4); Manager also the two Part 2 schedule codes, Barber none (add-schedule-patterns task 1.3),
 // and the two Part 2 service codes (add-service-catalogue task 1.3). Scope is not part of a role.
 // Names: fixtures §2 and the brief's copy table (owner answer S18).
-// add-customer-management task 1.3 adds the Part 3 customer codes of both (Part 3 §7).
+// add-customer-management task 1.3 adds the Part 3 customer codes of both (Part 3 §7);
+// add-website-management task 1.2 the two Part 8 website codes of the Manager, none of the Barber.
 
 /** Part 1 §10 entries whose seed names Manager without a condition. */
 export const MANAGER_SEED_CODES = [
@@ -46,7 +48,11 @@ export const BARBER_PART3_SEED_CODES = BARBER_PART3_CUSTOMER_CODES;
 /** Part 2 §12 — `schedule.view`, `schedule.update` (packages/shared — the fixture module 310 reads it). */
 export const MANAGER_SCHEDULE_SEED_CODES = MANAGER_SCHEDULE_CODES;
 
-const SEED_ROLES = [
+/** Part 8 §14 — `website.view`, `website.update` (packages/shared). */
+export const MANAGER_WEBSITE_SEED_CODES = MANAGER_WEBSITE_CODES;
+
+/** The three seed roles; the dev-seed test derives the role_permissions it expects from them. */
+export const SEED_ROLES = [
   { name_en: 'Admin', name_mm: 'အက်ဒမင်', codes: 'all' },
   {
     name_en: 'Manager',
@@ -57,6 +63,7 @@ const SEED_ROLES = [
       ...MANAGER_PART3_SEED_CODES,
       ...MANAGER_PART4_SEED_CODES,
       ...MANAGER_SCHEDULE_SEED_CODES,
+      ...MANAGER_WEBSITE_SEED_CODES,
     ],
   },
   {

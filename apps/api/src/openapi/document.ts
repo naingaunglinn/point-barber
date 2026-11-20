@@ -10,6 +10,8 @@ import {
   branchUpdateSchema,
   cancelReasonCreateSchema,
   cancelReasonSchema,
+  categoryCreateSchema,
+  categoryUpdateSchema,
   commissionEstimateSchema,
   companySchema,
   companyUpdateSchema,
@@ -39,9 +41,12 @@ import {
   saleDiscountSchema,
   saleItemSchema,
   saleSchema,
+  serviceBranchSchema,
   serviceCategorySchema,
+  serviceCreateSchema,
   SETTING_KEY_PATTERN,
   serviceListItemSchema,
+  serviceUpdateSchema,
   settingDefinitionSchema,
   settingHistoryItemSchema,
   settingPutBodySchema,
@@ -527,6 +532,13 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         // add-booking-cancel-reasons A2 — P3.CRS.01 / 02 (Part 3 §11 `CancelReason`).
         CancelReason: schema(cancelReasonSchema),
         CancelReasonCreate: schema(cancelReasonCreateSchema, 'input'),
+        // add-service-catalogue task 2.1 — the request bodies of P2.CAT.02 / 03 and P2.SVC.02 / 04
+        // (Part 2 v1.6); their paths are added with the endpoints.
+        CategoryCreate: schema(categoryCreateSchema, 'input'),
+        CategoryUpdate: schema(categoryUpdateSchema, 'input'),
+        ServiceBranch: schema(serviceBranchSchema),
+        ServiceCreate: schema(serviceCreateSchema, 'input'),
+        ServiceUpdate: schema(serviceUpdateSchema, 'input'),
       },
     },
   };
