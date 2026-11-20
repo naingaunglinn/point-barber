@@ -14,6 +14,8 @@ import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 // and "A leave type is archived only while no PENDING leave uses it" across two connections: a
 // transaction of add-leave-requests holds the type FOR SHARE through LeaveTypes.lockActive (API-IDEM-06
 // · design D1 / D5). U Kyaw Zin and Ko Aung on Monday 05/Oct/2026.
+// The cases run in file order and share one app: `training` is created by "Unicode is stored as sent"
+// and the lock cases use it. Run the file whole, never a single case.
 const at = (time: string) => new Date(`2026-10-05T${time}+06:30`);
 /** `သင်တန်းခွင့်` typed with a Zawgyi keyboard. */
 const ZAWGYI_TRAINING = 'သင္တန္းခြင့္';

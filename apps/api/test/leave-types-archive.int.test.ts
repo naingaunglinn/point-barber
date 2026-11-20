@@ -9,6 +9,8 @@ import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 // uses it" and "Every committed leave-type write leaves one audit row" (P2.LVT.04 · D-DAT-05 ·
 // API-IDEM-01 · P2-RULE-12 · API-AUD-01 · design D5 / D7). U Kyaw Zin on Monday 05/Oct/2026; the leave
 // rows are written by the builder (the leave endpoints come with add-leave-requests).
+// The scenarios run in file order and share one app: Training is created in the first and archived
+// in it, and the later ones read that state. Run the file whole, never a single case.
 const at = (time: string) => new Date(`2026-10-05T${time}+06:30`);
 let t: SeededApp;
 let kyawZin: { readonly cookie: string; readonly sessionId: string };

@@ -3,6 +3,7 @@ import { LeaveStatus, LeaveTypeStatus } from '@point/shared';
 import { z } from 'zod';
 
 import { Prisma } from '../../../generated/prisma/client.js';
+import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import type { LeaveTypeRow } from '../leave-types/leave-type-mapper.js';
@@ -56,8 +57,11 @@ export class LeaveTypesRepository {
       SELECT ${COLUMNS} FROM leave_types
       WHERE company_id = ${companyId}::uuid AND status = ANY(${[...filter.statuses]}::smallint[])
         AND (${filter.includeArchived}::boolean OR archived_at IS NULL)
-      ORDER BY sort_order, name_mm COLLATE "C", id`;
-    return rows.map((row) => rowSchema.parse(row));
+      ORDER BY sort_order, name_mm COLLATE "C", id
+      LIMIT ${READ_ROW_CEILING + 1}`;
+    return assertWithinCeiling(rows, 'LeaveTypesRepository.list').map((row) =>
+      rowSchema.parse(row),
+    );
   }
 
   /** The company's type locked FOR UPDATE until commit (design D5); null when there is none. */
