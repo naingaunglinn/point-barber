@@ -4,6 +4,11 @@ import { BRANCHES, COMPANY } from './010-organization.mjs';
 import { JOIN_DATE, PEOPLE } from './020-people.mjs';
 import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
+import { LEAVE_TYPES, seed as seedLeaveTypes } from './150-leave-types.mjs';
+import {
+  FIRST_ROW as SERVICE_GRANT_ROW,
+  GRANTS as SERVICE_GRANTS,
+} from './100-part2-service-grants.mjs';
 import {
   FIRST_ROW as CUSTOMER_FIRST_ROW,
   GRANTS as CUSTOMER_GRANTS,
@@ -21,6 +26,7 @@ import {
   BARBER_PART4_CODES,
   MANAGER_PART4_CODES,
 } from '../../../packages/shared/src/permissions/seed-codes.ts';
+import { FIXTURE_IDS } from '../../../packages/shared/src/testing/fixture-ids.ts';
 
 // add-foundation-auth-access tasks 3.7 and 3.8 — the fixture modules hold exactly the rows of
 // docs/plan/spec-fixtures.md §1–§3 and design D16.
@@ -159,6 +165,53 @@ describe('fixture 310-schedule-grants (task 1.6)', () => {
     expect(SCHEDULE_GRANT_ROW).toBeGreaterThan(
       MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
     );
+  });
+});
+
+// add-leave-types task 1.7 — the three development leave types of docs/plan/spec-fixtures.md §10.3
+// (module 150 · design D3). The rows on a seeded database: apps/api/test/dev-seed.int.test.ts.
+describe('fixture 150-leave-types (add-leave-types task 1.7)', () => {
+  it('holds Paid leave, Sick leave and Unpaid leave of §10.3 with their paid flag', () => {
+    expect(LEAVE_TYPES.map((type) => [type.name_en, type.name_mm, type.is_paid])).toStrictEqual([
+      ['Paid leave', 'လစာရခွင့်', true],
+      ['Sick leave', 'ဆေးခွင့်', false],
+      ['Unpaid leave', 'လစာမဲ့ခွင့်', false],
+    ]);
+  });
+
+  it('writes each with its fixed id, the company, its position 1 – 3 and status 1 ACTIVE', async () => {
+    const written = [];
+    const db = {
+      query: async (_sql, values) => {
+        written.push(values);
+      },
+    };
+    await seedLeaveTypes(db, { companyId: 'company' });
+    const ids = FIXTURE_IDS.leaveTypes;
+    expect(written).toStrictEqual([
+      [ids.PAID_LEAVE, 'company', 'လစာရခွင့်', 'Paid leave', true, 1, 1],
+      [ids.SICK_LEAVE, 'company', 'ဆေးခွင့်', 'Sick leave', false, 2, 1],
+      [ids.UNPAID_LEAVE, 'company', 'လစာမဲ့ခွင့်', 'Unpaid leave', false, 3, 1],
+    ]);
+    expect(new Set(Object.values(ids)).size).toBe(3);
+  });
+});
+
+// add-service-catalogue task 1.4 — module 100 adds the Part 2 service codes to the fixture Manager role
+// (Part 2 §12 · design D3); dev-seed.int.test.ts runs it on a database whose Manager role lacks them.
+describe('fixture 100-part2-service-grants (add-service-catalogue task 1.4)', () => {
+  it('gives the Manager service.view and service.update; the Barber role none', () => {
+    expect(SERVICE_GRANTS.map(({ role, codes }) => [role, [...codes]])).toStrictEqual([
+      ['Manager', ['service.view', 'service.update']],
+    ]);
+  });
+
+  it('numbers its role_permissions rows in a block of its own, apart from modules 090, 170 and 310', () => {
+    expect(SERVICE_GRANT_ROW).toBe(10001);
+    expect(SERVICE_GRANT_ROW).toBeGreaterThan(
+      MANAGER_PART4_CODES.length + BARBER_PART4_CODES.length,
+    );
+    expect(SERVICE_GRANT_ROW + SERVICE_GRANTS[0].codes.length).toBeLessThan(CUSTOMER_FIRST_ROW);
   });
 });
 

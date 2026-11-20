@@ -1,4 +1,4 @@
-import { meResponseSchema } from '@point/shared';
+import { PERMISSIONS, meResponseSchema } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -32,10 +32,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     expect(res.status).toBe(200);
     expect(res.headers['cache-control']).toBe('no-store');
     expect(meResponseSchema.parse(res.body)).toBeDefined();
-    // The 6 Part 1 codes of the scenario plus the 13 Part 4 codes of the seed Manager role
-    // (add-walkin-visit-checkout design D3 · API Part 4 §9), its 2 Part 2 schedule codes
-    // (add-schedule-patterns task 1.3) and its 3 Part 3 customer codes (add-customer-management task
-    // 1.3 · API Part 3 §7): 24 entries.
+    // The Part 1 codes of the scenario plus the codes later parts give the seed Manager role (the
+    // MANAGER list of base-seed.int.test.ts), sorted: a change that adds one adds its line, no count.
     expect(res.body.grants).toStrictEqual(
       [
         'branch.view',
@@ -57,11 +55,15 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'sale.view',
         'schedule.update',
         'schedule.view',
+        'service.update',
+        'service.view',
         'settings.update',
         'settings.view',
         'visit.delete',
         'visit.update',
         'visit.view',
+        'website.update',
+        'website.view',
       ].map((code) => ({ code, scope_type: 2, branch_ids: [B3] })),
     );
     expect(res.body.branches_in_scope).toMatchObject([{ code: 'B3', name_en: 'Point 3.0' }]);
@@ -74,19 +76,34 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     const catalogue = (res.body.grants as { code: string }[]).filter(
       (g) => !g.code.startsWith('fixture.'),
     );
-    // 21 Part 1 codes + the 22 Part 4 codes the catalogue sync gives the company-admin role
-    // (add-walkin-visit-checkout design D3) + the 2 Part 2 schedule codes (add-schedule-patterns) + the
-    // 4 Part 3 customer codes (add-customer-management): 49.
-    expect(catalogue).toHaveLength(49);
-    // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management).
+    // Every code of the catalogue, each once: the catalogue sync gives each new code to the
+    // company-admin role (P1-RULE-12 · add-walkin-visit-checkout design D3) — owner 18/Nov/2026, #40.
+    expect(catalogue.map((grant) => grant.code).sort()).toStrictEqual(
+      PERMISSIONS.map((entry) => entry.code).sort(),
+    );
+    // customers "What each fixture person holds" — U Kyaw Zin: all four (add-customer-management) —
+    // the four service codes (add-service-catalogue); booking "Four cancel-reason permission codes exist
+    // at company level" — Scenario: The admin holds the four codes (Ma Hnin's list above and Ko Aung's
+    // below hold none).
     expect(catalogue.map((grant) => grant.code)).toEqual(
       expect.arrayContaining([
         'customer.view',
         'customer.create',
         'customer.update',
         'customer.delete',
+        'service.view',
+        'service.create',
+        'service.update',
+        'service.delete',
+        'booking_cancel_reason.view',
+        'booking_cancel_reason.create',
+        'booking_cancel_reason.update',
+        'booking_cancel_reason.delete',
       ]),
     );
+    expect(
+      catalogue.map((grant) => grant.code).filter((code) => code.startsWith('website.')),
+    ).toStrictEqual(['website.update', 'website.view']);
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
@@ -116,6 +133,13 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         session: { device_label: 'Android · Chrome' },
       });
       expect(body.branches_in_scope).toMatchObject([{ code: 'B3' }]);
+      // services-pricing "The Barber holds none" (add-service-catalogue design D3) and the Barber seed holds
+      // no website code either (add-website-management task 1.2 — Part 8 §14).
+      expect(
+        (body.grants as { code: string }[]).filter(
+          (g) => g.code.startsWith('service.') || g.code.startsWith('website.'),
+        ),
+      ).toStrictEqual([]);
     }
   });
 
@@ -169,6 +193,32 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
     const res = await me((await t.signIn('E004')).cookie);
     const requestId = res.headers['x-request-id'] as string;
     expect(await t.prisma.audit_events.count({ where: { request_id: requestId } })).toBe(0);
+  });
+});
+
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// D-ROLE-09 · design D3): U Kyaw Zin's list includes the four codes at company scope, whatever other
+// codes the changes merged before or after add to it; Ma Hnin and Ko Aung hold none.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  const leaveTypeGrants = (grants: { code: string }[]) =>
+    grants.filter((grant) => grant.code.startsWith('leave_type.'));
+
+  it('Scenario: The Admin holds the four codes', async () => {
+    const res = await me((await t.signIn('E001')).cookie);
+    expect(res.status).toBe(200);
+    expect(leaveTypeGrants(res.body.grants as { code: string }[])).toStrictEqual(
+      ['leave_type.create', 'leave_type.delete', 'leave_type.update', 'leave_type.view'].map(
+        (code) => ({ code, scope_type: 1, branch_ids: [] }),
+      ),
+    );
+  });
+
+  it('Scenario: The Manager and the Barber hold none', async () => {
+    for (const person of ['E002', 'E004'] as const) {
+      const res = await me((await t.signIn(person)).cookie);
+      expect(res.status).toBe(200);
+      expect(leaveTypeGrants(res.body.grants as { code: string }[])).toStrictEqual([]);
+    }
   });
 });
 
