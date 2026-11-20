@@ -7,6 +7,7 @@ import { CancelReasonReads } from './cancel-reasons/cancel-reason-reads.js';
 import { CancelReasonSeed } from './cancel-reasons/cancel-reason-seed.js';
 import { CancelReasonWrites } from './cancel-reasons/cancel-reason-writes.js';
 import { CancelReasonsController } from './cancel-reasons/cancel-reasons.controller.js';
+import { CancelReasons } from './cancel-reasons/cancel-reasons.js';
 import { CustomersController } from './customers/customers.controller.js';
 import { Customers } from './customers/customers.js';
 import { BookingsRepository } from './repositories/bookings.repository.js';
@@ -29,8 +30,9 @@ import { CustomersRepository } from './repositories/customers.repository.js';
     CancelReasonSeed,
     CancelReasonReads,
     CancelReasonWrites,
+    CancelReasons,
   ],
-  exports: [Customers],
+  exports: [Customers, CancelReasons],
 })
 export class BookingModule implements OnModuleInit {
   constructor(
