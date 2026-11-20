@@ -43,6 +43,7 @@ export * from './schemas/schedule.js';
 export * from './schemas/settings.js';
 export * from './schemas/system-status.js';
 export * from './schemas/wire.js';
+export * from './schemas/website.js';
 export * from './settings/catalogue.js';
 export * from './settings/definitions.js';
 export * from './settings/entry.js';

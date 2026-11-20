@@ -62,6 +62,8 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'visit.delete',
         'visit.update',
         'visit.view',
+        'website.update',
+        'website.view',
       ].map((code) => ({ code, scope_type: 2, branch_ids: [B3] })),
     );
     expect(res.body.branches_in_scope).toMatchObject([{ code: 'B3', name_en: 'Point 3.0' }]);
@@ -99,6 +101,9 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'booking_cancel_reason.delete',
       ]),
     );
+    expect(
+      catalogue.map((grant) => grant.code).filter((code) => code.startsWith('website.')),
+    ).toStrictEqual(['website.update', 'website.view']);
     for (const grant of catalogue) expect(grant).toMatchObject({ scope_type: 1, branch_ids: [] });
     expect((res.body.branches_in_scope as { id: string }[]).map((b) => b.id)).toStrictEqual([
       B1,
@@ -128,9 +133,12 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         session: { device_label: 'Android · Chrome' },
       });
       expect(body.branches_in_scope).toMatchObject([{ code: 'B3' }]);
-      // services-pricing "The Barber holds none" (add-service-catalogue design D3).
+      // services-pricing "The Barber holds none" (add-service-catalogue design D3) and the Barber seed holds
+      // no website code either (add-website-management task 1.2 — Part 8 §14).
       expect(
-        (body.grants as { code: string }[]).filter((g) => g.code.startsWith('service.')),
+        (body.grants as { code: string }[]).filter(
+          (g) => g.code.startsWith('service.') || g.code.startsWith('website.'),
+        ),
       ).toStrictEqual([]);
     }
   });
