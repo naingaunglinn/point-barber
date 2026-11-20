@@ -69,6 +69,8 @@ export const apiEnvSchema = z
     S3_BUCKET_APP: z.string().min(3),
     S3_ACCESS_KEY_ID: z.string().min(1),
     S3_SECRET_ACCESS_KEY: z.string().min(1),
+    // add-attachments-upload D9 — the host a browser reaches the bucket on, used only inside signed links.
+    S3_PUBLIC_ENDPOINT: z.url({ protocol: /^https?$/ }).optional(),
   })
   .refine((env) => env.INTERNAL_SSR_KEY !== env.INTERNAL_OPS_KEY, {
     message: 'INTERNAL_SSR_KEY and INTERNAL_OPS_KEY must be different',

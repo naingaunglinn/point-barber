@@ -9,6 +9,12 @@ import {
   type AttachmentRow,
   AttachmentsRepository,
 } from '../repositories/attachments.repository.js';
+import {
+  type AttachmentVariant,
+  objectKey,
+  variantObject,
+  type VariantSource,
+} from './variant-object.js';
 
 // Generated files (ADR-014 · P4-RULE-18 · add-walkin-visit-checkout design D10): the rows of objects
 // the API rendered and stored itself — a receipt's PDF and PNG. Uploads (staging rows, policy table,
@@ -62,6 +68,19 @@ export class Attachments {
    */
   findLive(id: string): Promise<AttachmentRow | null> {
     return this.repository.liveById(id);
+  }
+
+  /** The key of a variant object of a row (`original` is the row's own key). */
+  objectKey(row: VariantSource, variant: AttachmentVariant): string {
+    return objectKey(row, variant);
+  }
+
+  /**
+   * The object and content type that answer a variant of a row held by server code — the same rule
+   * as the signed link and the public path (AT3). Checks no read right; use the returned `mime`.
+   */
+  variantObject(row: VariantSource, variant: AttachmentVariant): { key: string; mime: string } {
+    return variantObject(row, variant);
   }
 
   /** The live rows of an entity (PDF before PNG); inside a transaction, through it. */

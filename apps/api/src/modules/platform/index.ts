@@ -5,6 +5,7 @@ export {
   Attachments,
   type GeneratedFile,
 } from './attachments/attachments.service.js';
+export { type AttachmentVariant, type VariantSource } from './attachments/variant-object.js';
 export { ReceiptFilesLock } from './attachments/receipt-files-lock.js';
 export { Audit, type AuditEvent } from './audit/audit.service.js';
 export { Audited, type AuditedOptions } from './audit/audited.js';

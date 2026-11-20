@@ -10,6 +10,9 @@ export const STAGING_HOURS = 24;
 /** The long edge of a stored image, in pixels (ADR-014 decision 3 · P8-RULE-03 · design D5). */
 export const IMAGE_LONG_EDGE_PX = 2560;
 
+/** The most pixels one input image may have (AT6 = A, owner 05/Nov/2026 · CG-SEC-08 · design D5). */
+export const IMAGE_MAX_INPUT_PIXELS = 50_000_000;
+
 /** The WebP variant widths, ascending (ADR-014 decision 3 · P8-RULE-03 · contract 11 · design D5). */
 export const VARIANT_WIDTHS = [400, 800, 1600] as const;
 
