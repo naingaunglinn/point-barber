@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BranchStatus, EmployeeStatus, UserStatus, type MeResponse } from '@point/shared';
-import { useUnsavedChanges } from '@point/ui';
+import { TextInput, useUnsavedChanges } from '@point/ui';
 
 import { json, problem, renderStaff } from '../../test/render';
 
@@ -79,7 +79,7 @@ const PHONE = 'phone';
 function Form() {
   const [value, setValue] = useState('');
   useUnsavedChanges(value !== '');
-  return <input aria-label={PHONE} value={value} onChange={(e) => setValue(e.target.value)} />;
+  return <TextInput aria-label={PHONE} value={value} onChange={setValue} />;
 }
 
 const fetchMock = vi.fn<typeof fetch>();

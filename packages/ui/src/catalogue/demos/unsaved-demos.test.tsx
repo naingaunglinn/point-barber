@@ -11,11 +11,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 
+const TITLE = 'Unsaved';
+
 describe('UnsavedChangesDemo', () => {
   it('the link asks "Discard changes?" while the field holds text, and not when it is empty', async () => {
     renderIntl(
       <DemoTitleProvider value="demo-title">
-        <h4 id="demo-title">Unsaved</h4>
+        <h4 id="demo-title">{TITLE}</h4>
         <UnsavedChangesDemo />
       </DemoTitleProvider>,
     );

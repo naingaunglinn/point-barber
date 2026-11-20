@@ -28,6 +28,21 @@ const router = vi.hoisted(() => ({
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 const QUESTION = 'Discard changes?';
+// Link and button names as values: the lint rule forbids raw text in JSX (CG-I18N-01).
+const NAME = {
+  today: 'Today',
+  deep: 'Today deep',
+  same: 'Same page',
+  newTab: 'New tab',
+  download: 'Download',
+  external: 'External',
+  start: 'Start',
+  replace: 'Replace',
+  back: 'Go back',
+  leave: 'Leave',
+  saved: 'Saved',
+  go: 'Go',
+} as const;
 const PHONE = 'Phone';
 const PHONE_LABEL = 'Phone number';
 
@@ -40,16 +55,16 @@ function Editor({ label = PHONE }: Readonly<{ label?: string }>) {
 function Links() {
   return (
     <nav>
-      <Link href="/today">Today</Link>
-      <Link href="/today?tab=2#top">Today deep</Link>
-      <Link href="/settings/company?x=1">Same page</Link>
+      <Link href="/today">{NAME.today}</Link>
+      <Link href="/today?tab=2#top">{NAME.deep}</Link>
+      <Link href="/settings/company?x=1">{NAME.same}</Link>
       <a href="/today" target="_blank">
-        New tab
+        {NAME.newTab}
       </a>
       <a href="/today" download>
-        Download
+        {NAME.download}
       </a>
-      <a href="https://example.org/today">External</a>
+      <a href="https://example.org/today">{NAME.external}</a>
     </nav>
   );
 }
@@ -59,11 +74,11 @@ function Leavers() {
   const [log, setLog] = useState('');
   return (
     <>
-      <button onClick={() => guarded.push('/visits/new')}>Start</button>
-      <button onClick={() => guarded.replace('/replaced')}>Replace</button>
-      <button onClick={() => guarded.back()}>Go back</button>
-      <button onClick={() => guarded.leave(() => setLog('left'))}>Leave</button>
-      <button onClick={() => guarded.bypass(() => guarded.push('/branches/b4'))}>Saved</button>
+      <button onClick={() => guarded.push('/visits/new')}>{NAME.start}</button>
+      <button onClick={() => guarded.replace('/replaced')}>{NAME.replace}</button>
+      <button onClick={() => guarded.back()}>{NAME.back}</button>
+      <button onClick={() => guarded.leave(() => setLog('left'))}>{NAME.leave}</button>
+      <button onClick={() => guarded.bypass(() => guarded.push('/branches/b4'))}>{NAME.saved}</button>
       <output>{log}</output>
     </>
   );
@@ -154,7 +169,7 @@ describe('A form reports its unsaved edits to one shared guard', () => {
     function Bare() {
       useUnsavedChanges(true);
       const guarded = useGuardedRouter();
-      return <button onClick={() => guarded.push('/today')}>Go</button>;
+      return <button onClick={() => guarded.push('/today')}>{NAME.go}</button>;
     }
     renderIntl(<Bare />);
     fireEvent.click(screen.getByRole('button', { name: 'Go' }));

@@ -219,13 +219,15 @@ describe('Maintenance mode: a failed load in the background, a Save with no answ
   });
 });
 
+const RAIL_TODAY = 'Rail Today';
+
 describe('add-unsaved-changes-guard task 4.3 · the maintenance form registers with the shared guard', () => {
   it('Scenario: an edited form makes a link ask "Discard changes?"', async () => {
     routeFetch(fetchMock, { [STATUS]: json(200, status()) });
     renderPos(
       <>
         <MaintenanceScreen />
-        <a href="/today">Rail Today</a>
+        <a href="/today">{RAIL_TODAY}</a>
       </>,
       { me: kyawZinMe() },
     );

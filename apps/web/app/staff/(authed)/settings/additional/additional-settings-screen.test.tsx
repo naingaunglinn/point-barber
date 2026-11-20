@@ -421,13 +421,15 @@ describe('a failed load in the background, and a Save with no answer', () => {
   });
 });
 
+const RAIL_TODAY = 'Rail Today';
+
 describe('add-unsaved-changes-guard task 4.3 · an edited row registers with the shared guard', () => {
   it('Scenario: an edited row makes a link ask "Discard changes?"; an untouched screen does not', async () => {
     routeFetch(fetchMock, { [LIST]: json(200, listOf({ only: SOME })) });
     renderPos(
       <>
         <AdditionalSettingsScreen />
-        <a href="/today">Rail Today</a>
+        <a href="/today">{RAIL_TODAY}</a>
       </>,
       { me: kyawZinMe() },
     );
