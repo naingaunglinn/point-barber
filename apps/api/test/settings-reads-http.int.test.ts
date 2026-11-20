@@ -37,7 +37,9 @@ describe('add-settings-store · settings · Setting definitions live in one file
     const res = await get('E001', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(15);
+    // 15 keys of add-settings-store + the 2 preferred-barber keys of add-customer-management (D9) + the
+    // nine site.* keys (add-website-management).
+    expect(items).toHaveLength(26);
     for (const item of items) {
       expect([item.key, item.source, item.company_value]).toStrictEqual([
         item.key,
@@ -70,10 +72,23 @@ describe('add-settings-store · settings · The settings of this change and thei
       'sales.tax_enabled': false,
       'closing.cash_difference_tolerance_amount': 0,
       'attendance.default_radius_meters': 100,
+      // add-website-management task 1.3 — Part 8 §17 defaults (spec "Defaults without rows").
+      'site.announcement': null,
+      'site.cover_attachment_id': null,
+      'site.hero_subtitle': { mm: '', en: null },
+      'site.hero_title': { mm: '', en: null },
+      'site.seo_description': null,
+      'site.seo_title': null,
+      'site.share_image_attachment_id': null,
+      'site.show_barbers': false,
+      'site.show_prices': false,
       'dashboard.show_own_earnings_all': false,
       'system.default_language': 1,
       'system.maintenance': { enabled: false },
       'system.upload_max_mb': 10,
+      // customers "The preferred-barber settings…" — Scenario: The defaults (add-customer-management).
+      'customer.preferred_barber_min_visits': 3,
+      'customer.preferred_barber_window': 5,
     });
   });
 
@@ -108,7 +123,9 @@ describe('add-settings-store · settings · The settings of this change and thei
       'home_service.travel_minutes',
       'receipt.printer_width_mm',
     ]);
-    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(12);
+    // 12 + the 2 company-only keys of add-customer-management (D9) + the nine company-only site.* keys
+    // (add-website-management).
+    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(23);
   });
 });
 
@@ -188,7 +205,7 @@ describe('add-settings-store · settings · The settings list shows each key wit
     const res = await get('E002', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(15);
+    expect(items).toHaveLength(26);
     expect(itemOf({ items }, 'home_service.transport_fee_amount')).toMatchObject({
       company_value: 2000,
       effective: 2000,

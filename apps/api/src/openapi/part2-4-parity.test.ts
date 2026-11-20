@@ -33,6 +33,28 @@ function shapeOf(schema: Schema, components: Record<string, Schema>): Shape {
   const union = (schema.oneOf ?? schema.anyOf) as Schema[] | undefined;
   if (union !== undefined) {
     const branches = union.map((branch) => shapeOf(branch, components));
+    // add-customer-management task 1.7 — a union of objects on a tag (TimelineEntry on `type`) is read
+    // as the one object Part 3 writes: every branch's members, each the union of its schemas, and
+    // required where every branch requires it.
+    const objects = branches.filter((branch) => branch.properties !== undefined);
+    if (objects.length > 1) {
+      const names = [...new Set(objects.flatMap((branch) => Object.keys(branch.properties ?? {})))];
+      const properties: Record<string, Schema> = {};
+      for (const name of names) {
+        const members: Schema[] = [];
+        for (const branch of objects) {
+          const member = branch.properties?.[name];
+          if (member !== undefined) members.push(member);
+        }
+        const [only] = members;
+        properties[name] = members.length === 1 && only !== undefined ? only : { anyOf: members };
+      }
+      return {
+        types: ['object'],
+        required: names.filter((name) => objects.every((branch) => branch.required.includes(name))),
+        properties,
+      };
+    }
     const values = branches.flatMap((branch) => branch.values ?? []);
     const [value] = branches.filter((branch) => !branch.types.includes('null'));
     return {
@@ -92,10 +114,31 @@ function expectParity(contractIn: Schema, generatedIn: Schema, path: string): vo
     expectParity(member, members[name] as Schema, `${path}.${name}`);
 }
 
+/**
+ * add-service-catalogue task 2.1 — contract members this code does not build yet, so the request
+ * schemas strip them (proposal "Parts of locked contracts that are absent" · design D13 / D14): the
+ * option set (add-option-services) and the service image (task group 9, after add-attachments-upload).
+ */
+const ABSENT: Record<string, readonly string[]> = {
+  ServiceCreate: ['options', 'image_attachment_id'],
+  ServiceUpdate: ['image_attachment_id'],
+};
+
+/** The contract schema `name` without its ABSENT members. */
+function contractOf(name: string): Schema {
+  const contract = PART2_4_SCHEMAS[name] as Schema;
+  const absent = ABSENT[name] ?? [];
+  if (absent.length === 0) return contract;
+  const properties = Object.entries(contract.properties as Record<string, Schema>).filter(
+    ([member]) => !absent.includes(member),
+  );
+  return { ...contract, properties: Object.fromEntries(properties) };
+}
+
 describe('generated response schemas = OpenAPI Part 2 / 3 / 4 (add-walkin-visit-checkout task 2.5)', () => {
   it.each(Object.keys(PART2_4_SCHEMAS))('%s', (name) => {
     expect(generated[name], name).toBeDefined();
-    expectParity(PART2_4_SCHEMAS[name] as Schema, generated[name] as Schema, name);
+    expectParity(contractOf(name), generated[name] as Schema, name);
   });
 
   it('a nullable member stays nullable and a required one required (the check bites)', () => {
@@ -107,5 +150,37 @@ describe('generated response schemas = OpenAPI Part 2 / 3 / 4 (add-walkin-visit-
     expect(() => {
       expectParity(PART2_4_SCHEMAS.Sale as Schema, broken, 'Sale');
     }).toThrow(/Sale\.visit_id type/);
+  });
+});
+
+describe('add-customer-management task 1.7 — the customer schemas = OpenAPI Part 3 v1.2', () => {
+  it.each(['CustomerCreate', 'CustomerUpdate'])(
+    '%s — members, types and exactly the required list of Part 3',
+    (name) => {
+      const actual = generated[name] as Schema;
+      expect([...((actual.required as string[] | undefined) ?? [])].sort(), name).toStrictEqual(
+        [...((PART2_4_SCHEMAS[name]?.required as string[] | undefined) ?? [])].sort(),
+      );
+    },
+  );
+
+  it('a timeline entry of one type is still checked member by member (the check bites)', () => {
+    const entry = generated.TimelineEntry as Schema;
+    const [booking, ...others] = entry.oneOf as Schema[];
+    const broken = {
+      oneOf: [
+        {
+          ...booking,
+          properties: {
+            ...(booking?.properties as Record<string, Schema>),
+            at: { type: 'integer' },
+          },
+        },
+        ...others,
+      ],
+    };
+    expect(() => {
+      expectParity(PART2_4_SCHEMAS.TimelineEntry as Schema, broken, 'TimelineEntry');
+    }).toThrow(/TimelineEntry\.at type/);
   });
 });

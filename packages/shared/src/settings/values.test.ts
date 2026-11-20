@@ -206,3 +206,95 @@ describe('add-settings-store · settings · Maintenance mode is switched by a co
     });
   });
 });
+
+// add-customer-management task 1.8 — customers "The preferred-barber settings are company values with
+// min ≤ window" (Part 3 §10 · owner CM3 ★ · design D9): whole numbers ≥ 1 with no maximum; the bound of
+// the other key comes from its effective value, after the entry's own limit.
+describe('add-customer-management · the preferred-barber settings bound each other', () => {
+  const minVisits = (value: unknown, window: number) =>
+    issuesOf(
+      valueSchema(settingEntry('customer.preferred_barber_min_visits'), {
+        'customer.preferred_barber_window': window,
+      }),
+      value,
+    );
+  const window = (value: unknown, min: number) =>
+    issuesOf(
+      valueSchema(settingEntry('customer.preferred_barber_window'), {
+        'customer.preferred_barber_min_visits': min,
+      }),
+      value,
+    );
+
+  it('Scenario: A minimum within the window — 2 and 5 pass with the window 5', () => {
+    expect(minVisits(2, 5)).toStrictEqual([]);
+    expect(minVisits(5, 5)).toStrictEqual([]);
+  });
+
+  it('Scenario: A minimum above the window — 6 is too_big with maximum 5', () => {
+    expect(minVisits(6, 5)).toMatchObject([{ code: 'too_big', maximum: 5, path: [] }]);
+  });
+
+  it('Scenario: A window below the minimum — 2 is too_small with minimum 3', () => {
+    expect(window(2, 3)).toMatchObject([{ code: 'too_small', minimum: 3, path: [] }]);
+  });
+
+  it('Scenario: Zero — the own limit comes first: too_small with minimum 1', () => {
+    expect(window(0, 3)[0]).toMatchObject({ code: 'too_small', minimum: 1 });
+    expect(minVisits(0, 5)).toMatchObject([{ code: 'too_small', minimum: 1 }]);
+  });
+
+  it('no maximum of their own; without the other value there is no cross-key bound', () => {
+    expect(window(1000, 3)).toStrictEqual([]);
+    expect(issuesOf(schemaOf('customer.preferred_barber_min_visits'), 6)).toStrictEqual([]);
+  });
+});
+
+// add-website-management task 1.3 — the value schemas of the nine `site.*` keys (Part 8 §17 · design
+// D3 · proposal reading 2). They are read-only for P1.SET.03 / 04; the website content save checks
+// its body with the same bounds (schemas/website.ts).
+describe('add-website-management · website · The site.* values', () => {
+  it('a hero text may have an empty Myanmar text; 80 / 81 characters', () => {
+    const hero = schemaOf('site.hero_title');
+    expect(hero.parse({ mm: '', en: null })).toStrictEqual({ mm: '', en: null });
+    expect(hero.parse({ mm: 'က'.repeat(80), en: null })).toMatchObject({ en: null });
+    expect(issuesOf(hero, { mm: 'က'.repeat(81), en: null })).toMatchObject([
+      { code: 'too_big', maximum: 80, path: ['mm'] },
+    ]);
+    expect(issuesOf(hero, null)).toMatchObject([{ code: 'invalid_type' }]);
+  });
+
+  it('the SEO texts are null or a text of 0 … 70 / 160 characters', () => {
+    expect(schemaOf('site.seo_title').parse(null)).toBeNull();
+    expect(
+      schemaOf('site.seo_description').parse({ mm: '', en: 'Haircuts in Yangon' }),
+    ).toStrictEqual({ mm: '', en: 'Haircuts in Yangon' });
+    expect(issuesOf(schemaOf('site.seo_title'), { mm: '', en: 'a'.repeat(71) })).toMatchObject([
+      { code: 'too_big', maximum: 70, path: ['en'] },
+    ]);
+  });
+
+  it('an image key is a UUID or null', () => {
+    const cover = schemaOf('site.cover_attachment_id');
+    expect(cover.parse(null)).toBeNull();
+    expect(cover.parse('0190c3a0-0000-7000-8000-0000000000c1')).toBe(
+      '0190c3a0-0000-7000-8000-0000000000c1',
+    );
+    expect(issuesOf(cover, 'cover-a.jpg')).toMatchObject([{ code: 'invalid_format' }]);
+  });
+
+  it('the announcement is null or { text_mm 1 … 200, text_en?, start_date, end_date }', () => {
+    const announcement = schemaOf('site.announcement');
+    expect(announcement.parse(null)).toBeNull();
+    const value = {
+      text_mm: 'ဒီနေ့ ညနေ ၆ နာရီ ပိတ်ပါမယ်',
+      text_en: 'Closing at 6:00 PM today',
+      start_date: '2026-10-05',
+      end_date: '2026-10-05',
+    };
+    expect(announcement.parse(value)).toStrictEqual(value);
+    expect(issuesOf(announcement, { ...value, text_mm: '' })).toMatchObject([
+      { code: 'too_small', path: ['text_mm'] },
+    ]);
+  });
+});

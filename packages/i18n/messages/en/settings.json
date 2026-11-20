@@ -4,7 +4,8 @@
     "company": "Company",
     "additional": "Additional settings",
     "maintenance": "Maintenance mode",
-    "branches": "Branches"
+    "branches": "Branches",
+    "leaveTypes": "Leave types"
   },
   "company": {
     "title": "Company",
@@ -42,8 +43,10 @@
     "sales": "Sales & payments",
     "closing": "Closing",
     "attendance": "Payroll & attendance",
+    "website": "Website",
     "dashboard": "Dashboard",
-    "system": "System"
+    "system": "System",
+    "customer": "Customers"
   },
   "booking": {
     "slot_interval_minutes": {
@@ -128,6 +131,16 @@
       "help": "Shown here only. Turn it on or off on its own screen."
     }
   },
+  "customer": {
+    "preferred_barber_window": {
+      "label": "Preferred barber — visits looked at",
+      "help": "How many of the customer's latest finished visits are checked."
+    },
+    "preferred_barber_min_visits": {
+      "label": "Preferred barber — visits needed",
+      "help": "A barber who did at least this many of those visits is shown as the preferred barber."
+    }
+  },
   "choice": {
     "booking": {
       "slot_interval_minutes": {
@@ -184,5 +197,34 @@
   "history": {
     "line": "{name} · {datetime} · {old} → {new}",
     "empty": "No changes yet."
+  },
+  "site": {
+    "announcement": {
+      "label": "Announcement"
+    },
+    "cover_attachment_id": {
+      "label": "Cover image"
+    },
+    "hero_subtitle": {
+      "label": "Hero subtitle"
+    },
+    "hero_title": {
+      "label": "Hero title"
+    },
+    "seo_description": {
+      "label": "SEO description"
+    },
+    "seo_title": {
+      "label": "SEO title"
+    },
+    "share_image_attachment_id": {
+      "label": "Share image"
+    },
+    "show_barbers": {
+      "label": "Show barbers"
+    },
+    "show_prices": {
+      "label": "Show prices"
+    }
   }
 }

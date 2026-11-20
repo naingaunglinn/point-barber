@@ -91,6 +91,25 @@ describe('add-settings-store · settings · Setting definitions live in one file
     expect(problems.every((problem) => problem.startsWith('BOOKING interval: '))).toBe(true);
   });
 
+  it('a cross-key bound names a number setting, and the defaults keep it (add-customer-management D9)', () => {
+    expect(
+      settingDefinitionProblems(
+        withEntry('customer.preferred_barber_window', {
+          validation: { min: 1, min_key: 'receipt.auto_print' },
+        }),
+      ),
+    ).toStrictEqual([
+      'customer.preferred_barber_window: the bound receipt.auto_print is not a number setting',
+    ]);
+    expect(
+      settingDefinitionProblems(withEntry('customer.preferred_barber_min_visits', { default: 6 })),
+    ).toStrictEqual([
+      // 6 > the window 5, and the window 5 < the minimum 6: the pair no longer fits.
+      'customer.preferred_barber_min_visits: the default 6 fails its validation',
+      'customer.preferred_barber_window: the default 5 fails its validation',
+    ]);
+  });
+
   it('Scenario: A default outside its own validation is refused', () => {
     expect(
       settingDefinitionProblems(withEntry('system.upload_max_mb', { default: 11 })),
@@ -134,11 +153,14 @@ describe('add-settings-store · settings · Setting definitions live in one file
   });
 });
 
+/** The entries of this change and its note: every module but the later changes' (website below). */
+const STORE = SETTINGS.filter((entry) => entry.module !== 'website');
+
 // Design D3 — the fourteen entries, and attendance.default_radius_meters of add-branch-management,
 // which merged after this change (design D3 note · add-branch-management design D5).
 describe('add-settings-store · settings · The settings of this change and their defaults', () => {
   it('holds the fifteen keys of design D3 and its note in AD-SET-01 group order, by key inside a module', () => {
-    expect(SETTINGS.map((entry) => `${entry.module} ${entry.key}`)).toStrictEqual([
+    expect(STORE.map((entry) => `${entry.module} ${entry.key}`)).toStrictEqual([
       'booking booking.advance_window_days',
       'booking booking.slot_interval_minutes',
       'booking home_service.transport_fee_amount',
@@ -154,11 +176,14 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system system.default_language',
       'system system.maintenance',
       'system system.upload_max_mb',
+      // add-customer-management design D9 — appended (Part 3 §10).
+      'customer customer.preferred_barber_min_visits',
+      'customer customer.preferred_barber_window',
     ]);
   });
 
   it('the twelve keys of the old DEFAULT_SETTINGS keep their values; the new ones their defaults', () => {
-    expect(Object.fromEntries(SETTINGS.map((entry) => [entry.key, entry.default]))).toStrictEqual({
+    expect(Object.fromEntries(STORE.map((entry) => [entry.key, entry.default]))).toStrictEqual({
       'booking.slot_interval_minutes': 15,
       'booking.advance_window_days': 14,
       'sales.tax_enabled': false, // D-PAY-08 — OFF
@@ -176,12 +201,15 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system.maintenance': { enabled: false },
       // add-branch-management design D5 — Part 5 §17; a new branch's radius (P1.BR.02).
       'attendance.default_radius_meters': 100,
+      // add-customer-management design D9 — 3 of the last 5 (D-CUS-08 · owner #6).
+      'customer.preferred_barber_min_visits': 3,
+      'customer.preferred_barber_window': 5,
     });
   });
 
   it('Scenario: The client-readable set — exactly the ten keys of P1.SET.02', () => {
     expect(
-      SETTINGS.filter((entry) => entry.client_readable)
+      STORE.filter((entry) => entry.client_readable)
         .map((entry) => entry.key)
         .sort(),
     ).toStrictEqual(
@@ -202,7 +230,7 @@ describe('add-settings-store · settings · The settings of this change and thei
 
   it('Scenario: Which keys allow a branch override — exactly the three branch keys', () => {
     expect(
-      SETTINGS.filter((entry) => entry.scope === 'branch').map((entry) => entry.key),
+      STORE.filter((entry) => entry.scope === 'branch').map((entry) => entry.key),
     ).toStrictEqual([
       'home_service.transport_fee_amount',
       'home_service.travel_minutes',
@@ -212,13 +240,13 @@ describe('add-settings-store · settings · The settings of this change and thei
 
   it('read-only: system.maintenance (P1.SYS.03) and the tax and service-charge switches (owner SS4)', () => {
     expect(
-      SETTINGS.filter((entry) => 'read_only' in entry && entry.read_only).map((entry) => entry.key),
+      STORE.filter((entry) => 'read_only' in entry && entry.read_only).map((entry) => entry.key),
     ).toStrictEqual(['sales.service_charge_enabled', 'sales.tax_enabled', 'system.maintenance']);
   });
 
   it('an impact note on the slot interval, the advance window, the transport fee and the tolerance', () => {
     expect(
-      SETTINGS.filter((entry) => entry.impact_key !== null).map((entry) => entry.key),
+      STORE.filter((entry) => entry.impact_key !== null).map((entry) => entry.key),
     ).toStrictEqual([
       'booking.advance_window_days',
       'booking.slot_interval_minutes',
@@ -228,9 +256,7 @@ describe('add-settings-store · settings · The settings of this change and thei
   });
 
   it('the limits of owner SS3 and the choices of D-BKG-07, D-PAY-07 and D-PLT-03', () => {
-    expect(
-      Object.fromEntries(SETTINGS.map((entry) => [entry.key, entry.validation])),
-    ).toStrictEqual({
+    expect(Object.fromEntries(STORE.map((entry) => [entry.key, entry.validation]))).toStrictEqual({
       'booking.advance_window_days': { unit: 'days', min: 0 },
       'booking.slot_interval_minutes': { unit: 'minutes', choices: [5, 10, 15, 30] },
       'home_service.transport_fee_amount': { unit: 'MMK', min: 0 },
@@ -246,6 +272,15 @@ describe('add-settings-store · settings · The settings of this change and thei
       'system.default_language': { choices: [1, 2] },
       'system.maintenance': {},
       'system.upload_max_mb': { unit: 'MB', min: 1, max: 10 },
+      // owner CM3 — whole numbers ≥ 1, no maximum, min ≤ window.
+      'customer.preferred_barber_min_visits': {
+        min: 1,
+        max_key: 'customer.preferred_barber_window',
+      },
+      'customer.preferred_barber_window': {
+        min: 1,
+        min_key: 'customer.preferred_barber_min_visits',
+      },
     });
   });
 
@@ -253,5 +288,59 @@ describe('add-settings-store · settings · The settings of this change and thei
     const value = settingDefault('system.maintenance') as { enabled: boolean };
     value.enabled = true;
     expect(settingDefault('system.maintenance')).toStrictEqual({ enabled: false });
+  });
+});
+
+// add-website-management task 1.3 — spec "The nine `site.*` keys are settings written only through the
+// website" (Part 8 §17 · P8-RULE-11 · D-PLT-16 · design D3 · proposal reading 2): module website,
+// company scope, not client-readable, read-only for P1.SET.03 / 04, the §17 defaults and bounds.
+describe('add-website-management · website · The nine site.* keys', () => {
+  const site = SETTINGS.filter((entry) => entry.module === 'website');
+
+  it('holds the nine keys after Payroll & attendance and before Dashboard (AD-SET-01), by key', () => {
+    const modules = SETTINGS.map((entry) => entry.module);
+    expect(modules.indexOf('website')).toBe(modules.lastIndexOf('attendance') + 1);
+    expect(modules.lastIndexOf('website') + 1).toBe(modules.indexOf('dashboard'));
+    expect(
+      site.map((entry) => [entry.key, entry.type, entry.default, entry.validation]),
+    ).toStrictEqual([
+      ['site.announcement', 'json', null, {}],
+      ['site.cover_attachment_id', 'uuid', null, { nullable: true }],
+      [
+        'site.hero_subtitle',
+        'text_mm_en',
+        { mm: '', en: null },
+        { max_length: 160, min_length: 0 },
+      ],
+      ['site.hero_title', 'text_mm_en', { mm: '', en: null }, { max_length: 80, min_length: 0 }],
+      [
+        'site.seo_description',
+        'text_mm_en',
+        null,
+        { max_length: 160, min_length: 0, nullable: true },
+      ],
+      ['site.seo_title', 'text_mm_en', null, { max_length: 70, min_length: 0, nullable: true }],
+      ['site.share_image_attachment_id', 'uuid', null, { nullable: true }],
+      ['site.show_barbers', 'boolean', false, {}],
+      ['site.show_prices', 'boolean', false, {}],
+    ]);
+  });
+
+  it('company scope, not client-readable, read-only, a label and no help or impact text', () => {
+    for (const entry of site) {
+      expect(entry).toMatchObject({
+        scope: 'company',
+        client_readable: false,
+        read_only: true,
+        label_key: `settings.${entry.key}.label`,
+        help_key: null,
+        impact_key: null,
+      });
+    }
+  });
+
+  it('a site default is handed out as a copy', () => {
+    expect(settingDefault('site.hero_title')).toStrictEqual({ mm: '', en: null });
+    expect(settingDefault('site.show_prices')).toBe(false);
   });
 });
