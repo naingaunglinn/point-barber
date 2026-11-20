@@ -1,9 +1,8 @@
 'use client';
 
 import { ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 
 import {
   type CompanyDto,
@@ -15,14 +14,15 @@ import {
 import {
   BilingualInput,
   Button,
-  Dialog,
   FormAlert,
   FormField,
   applyProblem,
   fieldErrorOf,
   toast,
   useAppForm,
+  useGuardedRouter,
   useTextField,
+  useUnsavedChanges,
 } from '@point/ui';
 
 import { ApiProblem } from '../../lib/api/client';
@@ -41,8 +41,9 @@ import { SocialLinksFields } from './SocialLinksFields';
 // Answers: 200 → toast and the saved values; 400 → each message under its field, focus on the first;
 // 409 `conflict` → the banner with Reload above the form, the typed values kept until Reload; 403 (the
 // grants changed meanwhile) → the client's 403 handler loads `/me` again and the screen shows the
-// values as text; any other refusal → the inline alert at the top. Back with unsaved edits asks
-// "Discard changes?"; so does closing or reloading the tab (the browser's own question).
+// values as text; any other refusal → the inline alert at the top. Leaving with unsaved edits — Back, a
+// link, closing or reloading the tab — asks through the shared guard of @point/ui (AD-FORM-08 ·
+// add-unsaved-changes-guard).
 
 // Above the bottom navigation below 768 px (its items are `min-h-14`, a 1 px top border and the
 // safe-area inset — as the checkout's Finish bar), at the bottom of the window from 768 px.
@@ -59,26 +60,19 @@ export interface CompanyFormProps {
 export function CompanyForm({ company, reload }: CompanyFormProps) {
   const t = useTranslations('settings.company');
   const tCommon = useTranslations('common');
-  const router = useRouter();
+  const router = useGuardedRouter();
   const save = useSaveCompany();
   // The version the inputs started from: the first load, the answer of a save, or Reload — never a
   // background refetch, so a stale edit still reaches the server's 409.
   const [loaded, setLoaded] = useState(company);
   const [conflict, setConflict] = useState(false);
   const [alert, setAlert] = useState<Pick<Problem, 'code' | 'request_id'> | null>(null);
-  const [leaving, setLeaving] = useState(false);
   const form: Form = useAppForm(companyUpdateSchema, { defaultValues: valuesOf(company) });
   const { isDirty, isSubmitting } = form.formState;
   const contactId = useId();
   const addressId = useId();
 
-  // Closing or reloading the tab with unsaved edits: the browser asks (AD-FORM-08).
-  useEffect(() => {
-    if (!isDirty) return;
-    const ask = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', ask);
-    return () => window.removeEventListener('beforeunload', ask);
-  }, [isDirty]);
+  useUnsavedChanges(isDirty);
 
   const startFrom = (next: CompanyDto) => {
     form.reset(valuesOf(next));
@@ -183,7 +177,7 @@ export function CompanyForm({ company, reload }: CompanyFormProps) {
             variant="ghost"
             icon={<ArrowLeft />}
             data-testid="company-back"
-            onClick={() => (isDirty ? setLeaving(true) : router.back())}
+            onClick={() => router.back()}
           >
             {tCommon('action.goBack')}
           </Button>
@@ -199,29 +193,6 @@ export function CompanyForm({ company, reload }: CompanyFormProps) {
           </Button>
         </div>
       </form>
-      <Dialog
-        open={leaving}
-        onOpenChange={setLeaving}
-        role="alertdialog"
-        title={tCommon('form.discard.title')}
-        footer={
-          <>
-            <Button data-testid="company-keep-editing" onClick={() => setLeaving(false)}>
-              {tCommon('action.keepEditing')}
-            </Button>
-            <Button
-              variant="destructive"
-              data-testid="company-discard"
-              onClick={() => {
-                setLeaving(false);
-                router.back();
-              }}
-            >
-              {tCommon('action.discard')}
-            </Button>
-          </>
-        }
-      />
     </>
   );
 }

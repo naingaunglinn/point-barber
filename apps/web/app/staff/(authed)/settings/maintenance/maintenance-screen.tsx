@@ -27,6 +27,7 @@ import {
   fieldErrorOf,
   toast,
   useAppForm,
+  useUnsavedChanges,
 } from '@point/ui';
 
 import { UntilField } from '../../../../../components/settings/maintenance/UntilField';
@@ -95,6 +96,8 @@ function MaintenanceForm({ status }: Readonly<{ status: SystemStatus }>) {
   const tNav = useTranslations('settings.nav');
   const tAction = useTranslations('settings.action');
   const form = useAppForm(formSchema, { defaultValues: defaultsOf(status) });
+  // Unsaved edits make a link, Back or the tab ask first (add-unsaved-changes-guard · AD-FORM-08).
+  useUnsavedChanges(form.formState.isDirty);
   const save = useSetMaintenance();
   const [alert, setAlert] = useState<Pick<Problem, 'code' | 'request_id'> | null>(null);
   const values = form.watch();

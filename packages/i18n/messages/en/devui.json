@@ -81,6 +81,7 @@
     "input": "Input"
   },
   "demo": {
+    "unsavedGuard": "Unsaved changes — type, then use the link",
     "uploadImage": "Photo — image types, limit 10 MB",
     "uploadDocument": "Documents — several files, images and PDF",
     "uploadImport": "Import file — CSV or XLSX",
@@ -363,6 +364,9 @@
     "branch": "Branch",
     "day": "Day",
     "series": "Series {n}"
+  },
+  "unsaved": {
+    "leave": "Leave this page"
   },
   "pickers": {
     "noTimesLeft": "No times left",
