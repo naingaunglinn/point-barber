@@ -150,6 +150,11 @@ function LeaveTypeForm({ leaveType: stored, canArchive, onClose, onReload }: Lea
   const submit = form.handleSubmit(async (body) => {
     setAlert(null);
     setConflict(false);
+    // Nothing changed: no request, so `updated_at` does not move for nothing.
+    if ('expected_updated_at' in body && Object.keys(body).length === 1) {
+      onClose();
+      return;
+    }
     try {
       await ('expected_updated_at' in body ? update.mutateAsync(body) : create.mutateAsync(body));
       toast.success(t('leaveType.toast.saved'));

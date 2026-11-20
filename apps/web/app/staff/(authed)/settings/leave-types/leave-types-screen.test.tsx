@@ -202,6 +202,15 @@ describe('add-leave-types · leave · The leave-type form creates and edits a ty
     ).toBeTruthy();
   });
 
+  it('Save with nothing changed closes the dialog and sends no request', async () => {
+    listOf([TYPES.paid, TYPES.sick]);
+    renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.kyawZin });
+    await open(TYPES.sick);
+    fireEvent.click(screen.getByTestId('leave-type-save'));
+    await waitFor(() => expect(screen.queryByTestId('leave-type-form')).toBeNull());
+    expect(sent('PATCH', `/api/v1/leave-types/${TYPES.sick.id}`)).toBeUndefined();
+  });
+
   it('without company-scope leave_type.update the values are text, with no Save', async () => {
     listOf([TYPES.paid, TYPES.sick]);
     renderPos(<LeaveTypesScreen />, { me: LEAVE_PEOPLE.viewer });
