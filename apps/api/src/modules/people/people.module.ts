@@ -145,6 +145,8 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
       },
       userDisplayNames: async (userIds) =>
         this.displayNames.ofUsers(userIds, await this.displayNames.callerLocale()),
+      employeeDisplayNames: async (employeeIds) =>
+        this.displayNames.ofEmployees(employeeIds, await this.displayNames.callerLocale()),
     });
     // The maintenance gate decides on the same grant rows as the access guard (design D9).
     this.gateGrants.use(this.grantSource);

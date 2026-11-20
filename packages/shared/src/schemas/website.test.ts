@@ -7,6 +7,7 @@ import {
   archiveRequestSchema,
   branchHoursWriteSchema,
   closureCreateSchema,
+  closureListQuerySchema,
   closureUpdateSchema,
   sharePreviewQuerySchema,
   siteContentWriteSchema,
@@ -255,6 +256,24 @@ describe('closures (P8.WEB.06 – 08)', () => {
     }
   });
 
+  it('Scenario: end before start — the issue is at end_date with the catalogue code end_before_start', () => {
+    expect(
+      issuesOf(closureCreateSchema, {
+        ...THINGYAN,
+        start_date: '2026-10-13',
+        end_date: '2026-10-12',
+      }),
+    ).toMatchObject([{ code: 'custom', message: 'code:end_before_start', path: ['end_date'] }]);
+    // One day is allowed: the end is the start.
+    expect(passes(closureCreateSchema, { ...THINGYAN, end_date: THINGYAN.start_date })).toBe(true);
+  });
+
+  it('a date that is no date has its own issue and no end-before-start issue on top', () => {
+    expect(issuesOf(closureCreateSchema, { ...THINGYAN, start_date: '13/04/2027' })).toMatchObject([
+      { path: ['start_date'] },
+    ]);
+  });
+
   it('an edit always sends expected_updated_at (API-IDEM-04)', () => {
     const body = { end_date: '2026-10-05', expected_updated_at: '2026-10-04T09:00:00.000+06:30' };
     expect(closureUpdateSchema.parse(body)).toStrictEqual(body);
@@ -319,5 +338,36 @@ describe('response members', () => {
 
   it('the bounds are the numbers of Part 8 §17', () => {
     expect(WebsiteLimits).toMatchObject({ HERO_TITLE: 80, SEO_TITLE: 70, ANNOUNCEMENT_TEXT: 200 });
+  });
+});
+
+describe('closureListQuerySchema (P8.WEB.05)', () => {
+  it('Scenario: the default list — 25 rows, archived ones left out, no filter', () => {
+    expect(closureListQuerySchema.parse({})).toStrictEqual({ limit: 25, include_archived: false });
+  });
+
+  it('limit 1 and 100 pass, 0 and 101 are refused (API-LIM-03)', () => {
+    expect(closureListQuerySchema.parse({ limit: '1' }).limit).toBe(1);
+    expect(closureListQuerySchema.parse({ limit: '100' }).limit).toBe(100);
+    for (const limit of ['0', '101']) {
+      expect(issuesOf(closureListQuerySchema, { limit })).toMatchObject([{ path: ['limit'] }]);
+    }
+  });
+
+  it('from, to, branch_id and include_archived are read from the query text', () => {
+    const query = closureListQuerySchema.parse({
+      branch_id: '0190c3a0-0000-7000-8000-000000000003',
+      from: '2026-10-01',
+      to: '2026-10-31',
+      include_archived: 'true',
+    });
+    expect(query).toMatchObject({
+      from: '2026-10-01',
+      to: '2026-10-31',
+      include_archived: true,
+    });
+    expect(issuesOf(closureListQuerySchema, { include_archived: 'yes' })).toMatchObject([
+      { path: ['include_archived'] },
+    ]);
   });
 });
