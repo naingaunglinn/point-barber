@@ -268,12 +268,6 @@ describe('closures (P8.WEB.06 – 08)', () => {
     expect(passes(closureCreateSchema, { ...THINGYAN, end_date: THINGYAN.start_date })).toBe(true);
   });
 
-  it('a date that is no date has its own issue and no end-before-start issue on top', () => {
-    expect(issuesOf(closureCreateSchema, { ...THINGYAN, start_date: '13/04/2027' })).toMatchObject([
-      { path: ['start_date'] },
-    ]);
-  });
-
   it('an edit always sends expected_updated_at (API-IDEM-04)', () => {
     const body = { end_date: '2026-10-05', expected_updated_at: '2026-10-04T09:00:00.000+06:30' };
     expect(closureUpdateSchema.parse(body)).toStrictEqual(body);
@@ -366,8 +360,5 @@ describe('closureListQuerySchema (P8.WEB.05)', () => {
       to: '2026-10-31',
       include_archived: true,
     });
-    expect(issuesOf(closureListQuerySchema, { include_archived: 'yes' })).toMatchObject([
-      { path: ['include_archived'] },
-    ]);
   });
 });

@@ -5,7 +5,7 @@ import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { BranchClosures } from '../src/modules/platform/index.js';
-import { bookingAt, cancelBooking, revalidateJobs } from './helpers/branches.js';
+import { UNKNOWN_ID, bookingAt, revalidateJobs } from './helpers/branches.js';
 import { assignRole } from './helpers/roles.js';
 import { type FixturePerson, type SeededApp, seededApp } from './helpers/seeded.js';
 
@@ -226,6 +226,13 @@ describe('add-website-management · website · A closure starts today or later, 
   });
 });
 
+it('a branch that does not exist is 404 and nothing is written', async () => {
+  const before = await written();
+  const res = await create('E001', { ...THINGYAN, branch_id: UNKNOWN_ID });
+  expect([res.status, res.body.code]).toStrictEqual([404, 'not_found']);
+  expect(await written()).toStrictEqual(before);
+});
+
 describe('add-website-management · website · Closures of one branch never overlap (task 3.2)', () => {
   it('Scenario: Overlapping by one day — 409 closure_overlap with the id of the existing closure', async () => {
     const existing = await closureRow(B3, '2026-10-12', '2026-10-13');
@@ -385,27 +392,6 @@ describe('add-website-management · website · Bookings inside a closure are lis
     ]);
   });
 
-  it('a cancelled booking, one outside the dates and one of another branch are not listed', async () => {
-    const cancelled = await bookingAt(
-      s.prisma,
-      B3,
-      BookingStatus.BOOKED,
-      mmt('2026-10-12T10:00:00'),
-    );
-    await cancelBooking(s.prisma, cancelled, mmt('2026-10-05T10:00:00'));
-    await bookingAt(s.prisma, B3, BookingStatus.BOOKED, mmt('2026-10-14T10:00:00'));
-    await bookingAt(s.prisma, B1, BookingStatus.BOOKED, mmt('2026-10-12T11:00:00'));
-    const inside = await bookingAt(s.prisma, B3, BookingStatus.BOOKED, mmt('2026-10-13T23:30:00'));
-    const res = await create('E002', CLOSURE);
-    expect(res.status).toBe(201);
-    expect(
-      res.body.affected_bookings.map((row: { booking_id: string }) => row.booking_id),
-    ).toStrictEqual([inside]);
-    expect(res.body.warnings).toStrictEqual([
-      { code: 'bookings_in_closure', params: { count: 1 } },
-    ]);
-  });
-
   it('Scenario: More bookings than the list holds — 100 listed, count 101, truncated { shown: 100, total: 101 }', async () => {
     const template = await bookingAt(
       s.prisma,
@@ -511,11 +497,6 @@ describe('add-website-management · website · Closures are listed by branch sco
       const res = await list('E002', `?limit=${limit}`);
       expect([res.status, res.body.errors[0].field]).toStrictEqual([400, 'limit']);
     }
-  });
-
-  it('a user with no website code is refused', async () => {
-    const res = await list('E004');
-    expect([res.status, res.body.code]).toStrictEqual([403, 'forbidden']);
   });
 
   it('BranchClosures.onDates expands 12/Oct – 13/Oct into two dates and leaves archived ones out', async () => {

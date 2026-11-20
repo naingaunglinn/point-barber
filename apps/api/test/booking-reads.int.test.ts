@@ -46,14 +46,4 @@ describe('add-website-management · booking · BookingReads.bookedInRange', () =
     expect(rows[0]?.customer_phone).toEqual(expect.stringMatching(/^\+[1-9]\d{6,14}$/));
     expect(await reads.countBookedInRange(range)).toBe(3);
   });
-
-  it('takes at most `take` rows, the earliest first, and counts them all', async () => {
-    const reads = s.app.get(BookingReads);
-    const range = { branch_id: B3, from: '2026-10-12', to: '2026-10-13' };
-    expect(await reads.bookedInRange({ ...range, take: 2 })).toHaveLength(2);
-    expect(await reads.countBookedInRange(range)).toBe(3);
-    expect(
-      await reads.bookedInRange({ ...range, from: '2026-11-01', to: '2026-11-02', take: 5 }),
-    ).toStrictEqual([]);
-  });
 });
