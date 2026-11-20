@@ -8,6 +8,9 @@ import { PatternWriter } from './patterns/pattern-writer.js';
 import { PatternsController } from './patterns/patterns.controller.js';
 import { ScheduleLock } from './patterns/schedule-lock.js';
 import { PatternsRepository } from './repositories/patterns.repository.js';
+import { ShiftsRepository } from './repositories/shifts.repository.js';
+import { ShiftGenerator } from './shifts/shift-generator.js';
+import { ShiftPlanner } from './shifts/shift-planner.js';
 
 // Bounded context `scheduling` (ADR-001 · docs/engineering/module-map.md): Part 2 patterns, shifts,
 // availability, leave · Part 5 attendance. add-schedule-patterns creates it (design D1, "Shared pieces")
@@ -17,6 +20,15 @@ import { PatternsRepository } from './repositories/patterns.repository.js';
 @Module({
   imports: [PlatformModule, PeopleModule],
   controllers: [PatternsController],
-  providers: [PatternsRepository, PatternValidator, PatternSets, ScheduleLock, PatternWriter],
+  providers: [
+    PatternsRepository,
+    ShiftsRepository,
+    PatternValidator,
+    PatternSets,
+    ScheduleLock,
+    ShiftPlanner,
+    ShiftGenerator,
+    PatternWriter,
+  ],
 })
 export class SchedulingModule {}
