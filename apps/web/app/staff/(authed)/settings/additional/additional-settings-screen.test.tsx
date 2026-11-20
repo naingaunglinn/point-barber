@@ -83,6 +83,7 @@ describe('add-settings-store · settings · The Additional settings screen', () 
     const groups = [...document.querySelectorAll('[data-testid^="settings-group-"] > h2')];
     expect(groups.map((heading) => heading.textContent)).toStrictEqual([
       'Booking',
+      'Schedule & leave',
       'Sales & payments',
       'Closing',
       'Payroll & attendance',

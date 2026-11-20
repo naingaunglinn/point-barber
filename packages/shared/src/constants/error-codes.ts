@@ -84,12 +84,14 @@ export const ErrorCode = {
   MAINTENANCE: 'maintenance',
   // add-schedule-patterns — Part 2 §13b · API-ERR-02 (task 2.2; texts proposed in design S18): segment
   // times out of order or overlapping (field codes of a 400 `validation`), the cross-branch travel gap
-  // (D-SCH-02) and an own change of today's shifts (422 everywhere — owner C11). effective_date_past
-  // waits for its text.
+  // (D-SCH-02) and an own change of today's shifts (422 everywhere — owner C11).
   SEGMENT_OVERLAP: 'segment_overlap',
   END_BEFORE_START: 'end_before_start',
   CROSS_BRANCH_GAP: 'cross_branch_gap',
   SELF_ACTION: 'self_action',
+  // An effective date before today (P2-RULE-04) — shared with the dated writes of #14 / #15; its text is a
+  // ★ proposal under the owner's standing rule of 01/Nov/2026 (add-schedule-patterns A3).
+  EFFECTIVE_DATE_PAST: 'effective_date_past',
   // add-service-catalogue — Part 2 §13b · API-ERR-02 (task 2.2): a category archive refused while
   // non-archived services use it, context `{ count }` (P2.CAT.04); option pricing sent to the create
   // (P2.SVC.02) or to the update (P2.SVC.04) instead of the options endpoint (P2-RULE-02).

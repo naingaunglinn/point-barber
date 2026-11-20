@@ -65,6 +65,7 @@
   "end_before_start": "The end must be after the start.",
   "cross_branch_gap": "Needs a {needed}-minute gap when changing branch ({branchA} ends {endA}, {branchB} starts {startB}).",
   "self_action": "You can't change your own shifts for today — ask another manager.",
+  "effective_date_past": "The start date can't be in the past.",
   "category_in_use": "This category still has {count} services that are not archived.",
   "options_required": "A service priced by options needs its options.",
   "use_options_endpoint": "Option pricing is set with the service's options, not here.",
