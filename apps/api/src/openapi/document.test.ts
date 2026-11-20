@@ -72,6 +72,10 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
       '/branches/{id}/status',
       '/company',
       '/health',
+      // add-leave-types task 2.11 — P2.LVT.01 – 04.
+      '/leave-types',
+      '/leave-types/{id}',
+      '/leave-types/{id}/archive',
       // add-settings-store task 3.12 — P1.SET.01 – 05.
       '/settings',
       '/settings/effective',
