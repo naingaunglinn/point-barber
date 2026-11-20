@@ -58,6 +58,16 @@ export function isBranchCodeTaken(error: unknown): boolean {
   return uniqueViolationIndex(error) === 'branches_company_id_code_idx';
 }
 
+/**
+ * A second non-archived category or service with a Myanmar name the company already has hit
+ * `service_categories_name_active` / `services_name_active` (P2.CAT.02 · P2.SVC.02 · add-service-catalogue
+ * design D8): answered 409 already_exists — the index is the final word in a race (API-IDEM-05).
+ */
+export function isCatalogueNameTaken(error: unknown): boolean {
+  const index = uniqueViolationIndex(error);
+  return index === 'service_categories_name_active' || index === 'services_name_active';
+}
+
 /** The SQLSTATE of a failed query (`55P03` lock_not_available, `23505` …), from the driver adapter. */
 export function sqlStateOf(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) return null;
