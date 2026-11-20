@@ -59,6 +59,9 @@ const MANAGER = [
   // Part 2 §12 (add-schedule-patterns task 1.3).
   'schedule.view',
   'schedule.update',
+  // Part 8 §14 (add-website-management task 1.2).
+  'website.view',
+  'website.update',
 ];
 // Part 3 §7 (add-customer-management task 1.3) and Part 4 §9, sorted as roleCodes() reads them.
 const BARBER = ['customer.create', 'customer.view', 'sale.create', 'sale.late_entry'];
@@ -192,6 +195,60 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
     expect(schedule('Admin')).toStrictEqual(['schedule.update', 'schedule.view']);
     expect(schedule('Manager')).toStrictEqual(['schedule.update', 'schedule.view']);
     expect(schedule('Barber')).toStrictEqual([]);
+  });
+});
+
+// add-website-management task 1.2 — spec "Website has two permission codes with the mixed level"
+// (Part 8 §14 · P8-RULE-01 · ADR-011 · ADR-012 · D-ROLE-09).
+describe('add-website-management · website · Website has two permission codes with the mixed level', () => {
+  it('Scenario: The seed roles (the role rows of a fresh database)', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const website = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('website.'));
+    expect(website('Admin')).toStrictEqual(['website.update', 'website.view']);
+    expect(website('Manager')).toStrictEqual(['website.update', 'website.view']);
+    expect(website('Barber')).toStrictEqual([]);
+  });
+});
+
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// ADR-011 · ADR-012 · D-ROLE-09 · P1-RULE-12 · design D3): the catalogue sync gives the four codes to
+// the company-admin role; the seed Manager and Barber get none.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  it('Scenario: After the catalogue sync, Admin holds the four codes, Manager and Barber none', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const leaveType = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('leave_type.'));
+    expect(leaveType('Admin')).toStrictEqual([
+      'leave_type.create',
+      'leave_type.delete',
+      'leave_type.update',
+      'leave_type.view',
+    ]);
+    expect(leaveType('Manager')).toStrictEqual([]);
+    expect(leaveType('Barber')).toStrictEqual([]);
+  });
+});
+
+// add-booking-cancel-reasons task 1.2 — spec "Four cancel-reason permission codes exist at company
+// level" (Part 3 §7 · ADR-011 · ADR-012 · D-ROLE-09 · P1-RULE-12): the sync gives all four to the
+// company-admin role; the Manager and Barber seed sets hold none. GET /v1/me: me.int.test.ts.
+describe('add-booking-cancel-reasons · booking · Four cancel-reason permission codes exist at company level', () => {
+  it('Scenario: The admin holds the four codes · Manager and barber hold none', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    const reasons = (role: string) =>
+      (roles[role]?.codes ?? []).filter((code) => code.startsWith('booking_cancel_reason.'));
+    expect(reasons('Admin')).toStrictEqual([
+      'booking_cancel_reason.create',
+      'booking_cancel_reason.delete',
+      'booking_cancel_reason.update',
+      'booking_cancel_reason.view',
+    ]);
+    expect(reasons('Manager')).toStrictEqual([]);
+    expect(reasons('Barber')).toStrictEqual([]);
   });
 });
 

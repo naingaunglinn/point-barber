@@ -24,9 +24,16 @@ const PART1_MODULES = new Set(['company', 'branch', 'employee', 'role', 'setting
  * (add-service-catalogue), below.
  */
 const PART2_MODULES = new Set(['schedule', 'service']);
+/** Part 2 §12 — the `leave_type` module of add-leave-types (below). */
+const PART2_LEAVE_TYPE_MODULES = new Set(['leave_type']);
 const PART4_MODULES = new Set(['visit', 'sale', 'payment', 'discount', 'payment_method']);
-/** Part 3 §7 — add-customer-management adds the `customer` module; `booking.*` come with their changes. */
-const PART3_MODULES = new Set(['customer']);
+/** The Part 8 §14 modules on main so far: `website` (add-website-management, below). */
+const PART8_MODULES = new Set(['website']);
+/**
+ * The Part 3 §7 modules on main so far: `customer` (add-customer-management) and `booking_cancel_reason`
+ * (add-booking-cancel-reasons), below; `booking.*` come with their changes.
+ */
+const PART3_MODULES = new Set(['customer', 'booking_cancel_reason']);
 
 const count = <K extends string>(values: readonly K[]) =>
   values.reduce<Record<string, number>>(
@@ -98,12 +105,14 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     ]);
   });
 
-  it('holds nothing but the codes of Parts 1, 2, 3 and 4', () => {
+  it('holds nothing but the codes of Parts 1, 2, 3, 4 and 8', () => {
     const modules = new Set([
       ...PART1_MODULES,
       ...PART2_MODULES,
+      ...PART2_LEAVE_TYPE_MODULES,
       ...PART3_MODULES,
       ...PART4_MODULES,
+      ...PART8_MODULES,
     ]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
   });
@@ -164,6 +173,28 @@ describe('add-walkin-visit-checkout · the 22 Part 4 codes', () => {
   });
 });
 
+// add-booking-cancel-reasons task 1.2 — spec "Four cancel-reason permission codes exist at company level"
+// (Part 3 §7 · ADR-011 · ADR-012 · D-ROLE-09). The sync that gives them to the company-admin role, and
+// the Manager and Barber seed roles without them: base-seed.int.test.ts.
+describe('add-booking-cancel-reasons · booking · Four cancel-reason permission codes exist at company level', () => {
+  it('holds the four codes of the Part 3 table, each crud · company with its label key', () => {
+    const reasons = PERMISSIONS.filter((entry) => entry.module === 'booking_cancel_reason');
+    expect(
+      reasons.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['booking_cancel_reason.view', 'crud · company', 'permission.booking_cancel_reason.view'],
+      ['booking_cancel_reason.create', 'crud · company', 'permission.booking_cancel_reason.create'],
+      ['booking_cancel_reason.update', 'crud · company', 'permission.booking_cancel_reason.update'],
+      ['booking_cancel_reason.delete', 'crud · company', 'permission.booking_cancel_reason.delete'],
+    ]);
+  });
+
+  it('types a cancel-reason code', () => {
+    const code: PermissionCode = 'booking_cancel_reason.update';
+    expect(permissionLevel(code)).toBe('company');
+  });
+});
+
 // add-schedule-patterns task 1.2 — spec "Two schedule codes exist" (Part 2 §12 · ADR-011 · ADR-012):
 // `schedule.view` and `schedule.update`, kind crud, level branch. `schedule.create` / `schedule.delete`
 // come with add-schedule-roster.
@@ -181,6 +212,28 @@ describe('add-schedule-patterns · scheduling · Two schedule codes exist', () =
   it('types a schedule code', () => {
     const code: PermissionCode = 'schedule.update';
     expect(permissionLevel(code)).toBe('branch');
+  });
+});
+
+// add-leave-types task 1.2 — spec "The leave-type module has four permission codes" (Part 2 §12 ·
+// ADR-011 · ADR-012 · D-ROLE-08 · design D3): kind crud, level company — a company master. The sync
+// that gives them to a company-admin role, and not to the seed Manager or Barber: base-seed.int.test.ts.
+describe('add-leave-types · leave · The leave-type module has four permission codes', () => {
+  it('holds the four codes with their kind, level and label key', () => {
+    const leaveType = PERMISSIONS.filter((entry) => PART2_LEAVE_TYPE_MODULES.has(entry.module));
+    expect(
+      leaveType.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['leave_type.view', 'crud · company', 'permission.leave_type.view'],
+      ['leave_type.create', 'crud · company', 'permission.leave_type.create'],
+      ['leave_type.update', 'crud · company', 'permission.leave_type.update'],
+      ['leave_type.delete', 'crud · company', 'permission.leave_type.delete'],
+    ]);
+  });
+
+  it('types a leave-type code', () => {
+    const code: PermissionCode = 'leave_type.delete';
+    expect(permissionLevel(code)).toBe('company');
   });
 });
 
@@ -210,7 +263,7 @@ describe('add-service-catalogue · the four Part 2 service codes', () => {
 // with their seed" (Part 3 §7 · ADR-011 · ADR-012 · D-ROLE-08).
 describe('add-customer-management · the four Part 3 customer codes', () => {
   it('holds the codes, kinds and levels of the Part 3 table — every one shared', () => {
-    const part3 = PERMISSIONS.filter((entry) => PART3_MODULES.has(entry.module));
+    const part3 = PERMISSIONS.filter((entry) => entry.module === 'customer');
     expect(
       Object.fromEntries(part3.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`])),
     ).toStrictEqual({
@@ -225,6 +278,25 @@ describe('add-customer-management · the four Part 3 customer codes', () => {
   it('types a Part 3 code', () => {
     const code: PermissionCode = 'customer.update';
     expect(permissionLevel(code)).toBe('shared');
+  });
+});
+
+// add-website-management task 1.2 — spec "Website has two permission codes with the mixed level"
+// (Part 8 §14 · P8-RULE-01 · ADR-011 · ADR-012 — owner F7: one `website.update`, no branch twin).
+describe('add-website-management · website · Website has two permission codes with the mixed level', () => {
+  it('holds the two codes of this change with their kind, level and label key', () => {
+    const website = PERMISSIONS.filter((entry) => PART8_MODULES.has(entry.module));
+    expect(
+      website.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual([
+      ['website.view', 'crud · mixed', 'permission.website.view'],
+      ['website.update', 'crud · mixed', 'permission.website.update'],
+    ]);
+  });
+
+  it('types a website code', () => {
+    const code: PermissionCode = 'website.update';
+    expect(permissionLevel(code)).toBe('mixed');
   });
 });
 

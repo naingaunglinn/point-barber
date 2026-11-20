@@ -27,6 +27,7 @@ describe('language files', () => {
       'branch',
       'maintenance',
       'permission',
+      'leaveType',
     ]);
   });
 
@@ -43,6 +44,16 @@ describe('language files', () => {
   // add-service-catalogue task 1.2 — the label `permission.<code>` of each Part 2 service code.
   it.each(LOCALES)('labels the four service codes in %s', (locale) => {
     expect(Object.keys(loadMessages(locale).permission.service)).toStrictEqual([
+      'view',
+      'create',
+      'update',
+      'delete',
+    ]);
+  });
+
+  // add-leave-types task 1.2 — the label `permission.<code>` of each `leave_type.*` code (design D10).
+  it.each(LOCALES)('labels the four leave-type codes in %s', (locale) => {
+    expect(Object.keys(loadMessages(locale).permission.leave_type)).toStrictEqual([
       'view',
       'create',
       'update',
