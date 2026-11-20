@@ -280,8 +280,8 @@ describe('add-schedule-patterns · scheduling · A shift that attendance points 
       items: [{ shift_id: '0199a3f2-0000-7000-8000-000000000001', shift_date: '2026-10-05' }],
     };
     expect(scheduleWarningSchema.parse(warning)).toStrictEqual(warning);
-    expect(scheduleWarningSchema.safeParse({ code: 'shift_kept_attendance', items: [{}] }).success).toBe(
-      false,
-    );
+    expect(
+      scheduleWarningSchema.safeParse({ code: 'shift_kept_attendance', items: [{}] }).success,
+    ).toBe(false);
   });
 });

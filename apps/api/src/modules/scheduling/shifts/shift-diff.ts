@@ -48,7 +48,6 @@ export function diffDay(
   const dropped = have.filter((shift) => !wanted.has(keyOf(shift)));
   const convert = dropped.filter((shift) => attended.has(shift.id)).map((shift) => shift.id);
   const archive = dropped.filter((shift) => !attended.has(shift.id)).map((shift) => shift.id);
-  const insert =
-    convert.length > 0 ? [] : want.filter((shift) => !present.has(keyOf(shift)));
+  const insert = convert.length > 0 ? [] : want.filter((shift) => !present.has(keyOf(shift)));
   return { archive, convert, insert };
 }

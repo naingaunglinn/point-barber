@@ -73,7 +73,9 @@ export class ShiftGenerator {
     const stored = await this.shifts.inRange(tx, employeeId, from, to);
 
     const manualDays = new Set(
-      stored.filter((shift) => shift.source === SHIFT_SOURCE.MANUAL).map((shift) => shift.shift_date),
+      stored
+        .filter((shift) => shift.source === SHIFT_SOURCE.MANUAL)
+        .map((shift) => shift.shift_date),
     );
     const patternShifts = stored.filter(
       (shift) =>
@@ -124,7 +126,10 @@ export class ShiftGenerator {
           : [
               {
                 code: 'shift_kept_attendance',
-                items: convert.map((shift) => ({ shift_id: shift.id, shift_date: shift.shift_date })),
+                items: convert.map((shift) => ({
+                  shift_id: shift.id,
+                  shift_date: shift.shift_date,
+                })),
               },
             ],
     };

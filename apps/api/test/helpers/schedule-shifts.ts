@@ -71,7 +71,12 @@ export async function insertShift(
 /** A manual attendance record of `date` (09:02 clock-in) pointing at the shift (D-ATT-06). */
 export async function insertAttendance(
   s: SeededApp,
-  row: { readonly shift_id: string; readonly employee_id: string; readonly branch_id: string; readonly date: string },
+  row: {
+    readonly shift_id: string;
+    readonly employee_id: string;
+    readonly branch_id: string;
+    readonly date: string;
+  },
 ): Promise<void> {
   await s.prisma.$executeRaw`
     INSERT INTO attendance_records

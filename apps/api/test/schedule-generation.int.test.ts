@@ -72,7 +72,11 @@ describe('add-schedule-patterns · scheduling · Generation runs from today to t
       SELECT to_char(starts_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI') AS starts,
              to_char(ends_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI') AS ends, branch_id
       FROM schedule_shifts WHERE employee_id = ${E.E004}::uuid AND shift_date = '2026-10-06'::date`;
-    expect(row).toStrictEqual({ starts: '2026-10-06T02:30', ends: '2026-10-06T14:30', branch_id: B3 });
+    expect(row).toStrictEqual({
+      starts: '2026-10-06T02:30',
+      ends: '2026-10-06T14:30',
+      branch_id: B3,
+    });
   });
 
   it('Scenario: The nightly run twice — the second run writes nothing, ids and updated_at unchanged', async () => {
@@ -135,8 +139,12 @@ describe('add-schedule-patterns · scheduling · A save regenerates the employee
       WHERE employee_id = ${E.E004}::uuid AND effective_from = '2026-10-12'::date`;
     const ids = new Set(newRows.map((row) => row.id));
     const late = (await shiftsOf(s, E.E004)).filter((row) => row.date >= '2026-10-12');
-    expect(late.filter((row) => !row.archived).every((row) => ids.has(row.pattern ?? ''))).toBe(true);
-    expect(late.filter((row) => row.archived).every((row) => !ids.has(row.pattern ?? ''))).toBe(true);
+    expect(late.filter((row) => !row.archived).every((row) => ids.has(row.pattern ?? ''))).toBe(
+      true,
+    );
+    expect(late.filter((row) => row.archived).every((row) => !ids.has(row.pattern ?? ''))).toBe(
+      true,
+    );
   });
 });
 
@@ -209,7 +217,6 @@ describe('add-schedule-patterns · scheduling · Generation keeps unchanged shif
     const archivedPatterns = new Set(late.filter((row) => row.archived).map((row) => row.pattern));
     expect(inserted.some((row) => archivedPatterns.has(row.pattern))).toBe(false);
   });
-
 });
 
 describe('add-schedule-patterns · scheduling · Generation never touches a manual day', () => {
@@ -224,14 +231,25 @@ describe('add-schedule-patterns · scheduling · Generation never touches a manu
     const aungOn = (date: string) => regenerate.filter((row) => row.date === date && !row.archived);
     for (const date of ['2026-10-07', '2026-10-08']) {
       for (const row of aungOn(date)) {
-        await s.prisma.$executeRaw`UPDATE schedule_shifts SET archived_at = now() WHERE id = ${row.id}::uuid`;
+        await s.prisma
+          .$executeRaw`UPDATE schedule_shifts SET archived_at = now() WHERE id = ${row.id}::uuid`;
       }
     }
     const manual = await insertShift(s, {
-      employee_id: E.E004, branch_id: B3, date: '2026-10-07', start: '12:00', end: '21:00', source: 2,
+      employee_id: E.E004,
+      branch_id: B3,
+      date: '2026-10-07',
+      start: '12:00',
+      end: '21:00',
+      source: 2,
     });
     const removed = await insertShift(s, {
-      employee_id: E.E004, branch_id: B3, date: '2026-10-08', start: '09:00', end: '21:00', source: 2,
+      employee_id: E.E004,
+      branch_id: B3,
+      date: '2026-10-08',
+      start: '09:00',
+      end: '21:00',
+      source: 2,
       archived: true,
     });
 
@@ -248,7 +266,10 @@ describe('add-schedule-patterns · scheduling · Generation never touches a manu
     expect(rows.filter((row) => row.date === '2026-10-08' && !row.archived)).toStrictEqual([]);
     expect(rows.find((row) => row.id === removed)).toMatchObject({ archived: true, source: 2 });
     const others = rows.filter(
-      (row) => !row.archived && row.date >= '2026-10-05' && !['2026-10-07', '2026-10-08'].includes(row.date),
+      (row) =>
+        !row.archived &&
+        row.date >= '2026-10-05' &&
+        !['2026-10-07', '2026-10-08'].includes(row.date),
     );
     expect(others).toHaveLength(17);
     expect(others.every((row) => row.hours === '10:00-19:00' && row.source === 1)).toBe(true);
@@ -265,7 +286,12 @@ describe('add-schedule-patterns · scheduling · A shift that attendance points 
   it('Scenario: Already clocked in — S1 of today becomes MANUAL with its times; the 06 … 26 Oct shifts are regenerated', async () => {
     const [s1] = (await activeShifts(s, E.E004)).filter((row) => row.date === '2026-10-05');
     expect(s1?.hours).toBe('09:00-21:00');
-    await insertAttendance(s, { shift_id: s1?.id ?? '', employee_id: E.E004, branch_id: B3, date: '2026-10-05' });
+    await insertAttendance(s, {
+      shift_id: s1?.id ?? '',
+      employee_id: E.E004,
+      branch_id: B3,
+      date: '2026-10-05',
+    });
 
     const res = await save('E001', E.E004, {
       effective_from: '2026-10-05',

@@ -53,7 +53,12 @@ export class ShiftsRepository {
       UNION
       SELECT schedule_shift_id AS id FROM attendance_exceptions
       WHERE schedule_shift_id = ANY(${shiftIds}::uuid[])`;
-    return new Set(z.array(z.object({ id: z.uuid() })).parse(rows).map((row) => row.id));
+    return new Set(
+      z
+        .array(z.object({ id: z.uuid() }))
+        .parse(rows)
+        .map((row) => row.id),
+    );
   }
 
   async archive(tx: Tx, ids: readonly string[], at: Date): Promise<void> {

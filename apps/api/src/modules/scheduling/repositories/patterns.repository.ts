@@ -66,7 +66,12 @@ export class PatternsRepository {
    * The non-archived rows effective anywhere in `from` … `to` — the sets the generator plans from
    * (design D4 step 2); one date's set is the part of them effective on that date.
    */
-  async effectiveIn(db: Tx, employeeId: string, from: string, to: string): Promise<StoredSegment[]> {
+  async effectiveIn(
+    db: Tx,
+    employeeId: string,
+    from: string,
+    to: string,
+  ): Promise<StoredSegment[]> {
     const rows = await db.$queryRaw<unknown[]>`
       ${SELECT}
       WHERE employee_id = ${employeeId}::uuid AND archived_at IS NULL

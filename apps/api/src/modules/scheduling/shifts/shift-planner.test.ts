@@ -42,7 +42,7 @@ describe('add-schedule-patterns · scheduling · A segment becomes a shift only 
     expect(rest).toStrictEqual([]);
     expect(shift?.branch_id).toBe(B3);
     expect(shift?.shift_date).toBe('2026-10-06');
-    expect(shift?.schedule_pattern_id).toBe('row-2-03-09:00');
+    expect(shift?.schedule_pattern_id).toBe('row-2-b3-09:00');
     expect(iso(shift?.starts_at ?? new Date(0))).toBe('2026-10-06T02:30:00.000Z');
     expect(iso(shift?.ends_at ?? new Date(0))).toBe('2026-10-06T14:30:00.000Z');
   });

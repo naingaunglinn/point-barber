@@ -13,7 +13,13 @@ const want = (start: string, end: string, pattern = 'p1', branch = 'b3'): Planne
   ends_at: at(end),
   schedule_pattern_id: pattern,
 });
-const have = (id: string, start: string, end: string, pattern = 'p1', branch = 'b3'): HaveShift => ({
+const have = (
+  id: string,
+  start: string,
+  end: string,
+  pattern = 'p1',
+  branch = 'b3',
+): HaveShift => ({
   id,
   branch_id: branch,
   starts_at: at(start),
@@ -28,7 +34,11 @@ describe('add-schedule-patterns · scheduling · Generation keeps unchanged shif
   });
 
   it('Scenario: Same times, new set — a new pattern row id archives the shift and inserts a new one', () => {
-    const plan = diffDay([want('09:00', '21:00', 'p2')], [have('s1', '09:00', '21:00', 'p1')], new Set());
+    const plan = diffDay(
+      [want('09:00', '21:00', 'p2')],
+      [have('s1', '09:00', '21:00', 'p1')],
+      new Set(),
+    );
     expect(plan.archive).toStrictEqual(['s1']);
     expect(plan.insert.map((shift) => shift.schedule_pattern_id)).toStrictEqual(['p2']);
     expect(plan.convert).toStrictEqual([]);
@@ -67,7 +77,11 @@ describe('add-schedule-patterns · scheduling · Generation keeps unchanged shif
   });
 
   it('Scenario: Already clocked in — an attended shift the set drops is converted, and the day gets no insert', () => {
-    const plan = diffDay([want('10:00', '19:00', 'p2')], [have('s1', '09:00', '21:00')], new Set(['s1']));
+    const plan = diffDay(
+      [want('10:00', '19:00', 'p2')],
+      [have('s1', '09:00', '21:00')],
+      new Set(['s1']),
+    );
     expect(plan).toStrictEqual({ archive: [], convert: ['s1'], insert: [] });
   });
 
