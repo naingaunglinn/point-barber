@@ -22,6 +22,8 @@ export interface VisitForSale {
 
 export interface VisitsPort {
   read(db: Tx, visitId: string): Promise<VisitForSale | null>;
+  /** The visits of the ids that exist, in no order (add-customer-management design D1 / D6 / D10). */
+  readMany(db: Tx, visitIds: readonly string[]): Promise<VisitForSale[]>;
   lockForUpdate(tx: Tx, visitId: string): Promise<VisitForSale>;
   /** `recordedAt` = now; earlier than `finishedAt` never, later for a late entry. */
   markFinished(tx: Tx, visitId: string, finishedAt: Date, recordedAt: Date): Promise<void>;
