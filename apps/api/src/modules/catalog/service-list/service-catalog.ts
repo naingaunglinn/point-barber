@@ -3,7 +3,10 @@ import {
   type CursorPage,
   LocationType,
   type ServiceCategoryDto,
+  ServiceCategoryStatus,
   type ServiceListItemDto,
+  ServiceStatus,
+  type ServiceCategoriesQuery,
   type ServicesQuery,
   todayMmt,
   toMmtIso,
@@ -29,10 +32,13 @@ import {
  * and where it lacks a price is branch data, so both lists keep only the caller's read scope. With a
  * `branch_id` the duration range is that branch's — the START chips and the picker are per branch.
  */
-function toItem(row: ServiceListRow, scope: ReadScope, branchId?: string): ServiceListItemDto {
-  const branchIds = row.branch_services
-    .map((sold) => sold.branch_id)
-    .filter((id) => inReadScope(scope, id));
+export function toListItem(
+  row: ServiceListRow,
+  scope: ReadScope,
+  branchId?: string,
+): ServiceListItemDto {
+  const soldRows = row.branch_services.filter((sold) => sold.status === ServiceStatus.ACTIVE);
+  const branchIds = soldRows.map((sold) => sold.branch_id).filter((id) => inReadScope(scope, id));
   const rangeOf = branchId === undefined ? branchIds : [branchId];
   // Sold there, but no branch-level BRANCH price effective today: the quote would answer
   // not_sold_here (an OPTIONS service counts as priced when any of its variants is).
@@ -42,7 +48,7 @@ function toItem(row: ServiceListRow, scope: ReadScope, branchId?: string): Servi
       .map((price) => price.branch_id),
   );
   const durations = [
-    ...row.branch_services
+    ...soldRows
       .filter((sold) => rangeOf.includes(sold.branch_id))
       .map((sold) => sold.duration_minutes),
     ...row.service_prices
@@ -77,12 +83,18 @@ export class ServiceCatalog {
     private readonly clock: Clock,
   ) {}
 
+  /**
+   * `serviceScope` = the branches the caller's `service.*` codes reach; only `sold=all` reads it, and only
+   * for a caller who passed the management check (a `branch_id` outside it is the empty page — P2-RULE-11).
+   */
   async listServices(
     db: Tx,
     query: ServicesQuery,
     scope: ReadScope,
+    serviceScope: ReadScope = [],
   ): Promise<CursorPage<ServiceListItemDto>> {
-    if (query.branch_id !== undefined && !inReadScope(scope, query.branch_id)) {
+    const branchScope = query.sold === 'all' ? serviceScope : scope;
+    if (query.branch_id !== undefined && !inReadScope(branchScope, query.branch_id)) {
       return { items: [], next_cursor: null, total: null };
     }
     const rows = await this.repository.services(db, {
@@ -90,6 +102,10 @@ export class ServiceCatalog {
       category_id: query.category_id,
       pricing_mode: query.pricing_mode,
       q: query.q,
+      statuses: query.status ?? [ServiceStatus.ACTIVE],
+      include_archived: query.include_archived,
+      picker: query.status === undefined && !query.include_archived && query.sold === 'here',
+      sold: query.sold,
       today: todayMmt(this.clock.now()),
       after: query.cursor === undefined ? undefined : decodeCursor(query.cursor),
       take: query.limit + 1,
@@ -97,14 +113,31 @@ export class ServiceCatalog {
     const page = rows.slice(0, query.limit);
     const last = page.at(-1);
     return {
-      items: page.map((row) => toItem(row, scope, query.branch_id)),
+      items: page.map((row) => ({
+        ...toListItem(row, scope, query.branch_id),
+        ...(query.sold === 'all'
+          ? {
+              sold_here: row.branch_services.some(
+                (sold) =>
+                  sold.branch_id === query.branch_id && sold.status === ServiceStatus.ACTIVE,
+              ),
+            }
+          : {}),
+      })),
       next_cursor: rows.length > query.limit && last !== undefined ? encodeCursor(last.id) : null,
       total: null,
     };
   }
 
-  async listCategories(db: Tx): Promise<{ items: ServiceCategoryDto[] }> {
-    const rows = await this.repository.categories(db);
+  async listCategories(
+    db: Tx,
+    query: ServiceCategoriesQuery,
+  ): Promise<{ items: ServiceCategoryDto[] }> {
+    const rows = await this.repository.categories(db, {
+      statuses: query.status ?? [ServiceCategoryStatus.ACTIVE],
+      include_archived: query.include_archived,
+    });
+    const counts = query.include_counts ? await this.repository.serviceCounts(db) : null;
     return {
       items: rows.map((row) => ({
         id: row.id,
@@ -112,6 +145,7 @@ export class ServiceCatalog {
         name_en: row.name_en,
         sort_order: row.sort_order,
         status: row.status as ServiceCategoryDto['status'],
+        ...(counts === null ? {} : { service_count: counts.get(row.id) ?? 0 }),
         archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
         updated_at: toMmtIso(row.updated_at),
       })),

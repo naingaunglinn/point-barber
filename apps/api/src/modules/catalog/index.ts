@@ -11,3 +11,4 @@ export {
 } from './price-quote/price-quote.js';
 export { type PilotCatalogueKeys, PilotCatalogue } from './pilot/pilot-catalogue.js';
 export { ServiceCatalog } from './service-list/service-catalog.js';
+export { ServiceDetail, type ServiceViewer } from './service-detail/service-detail.js';

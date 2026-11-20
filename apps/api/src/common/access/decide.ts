@@ -1,7 +1,8 @@
-import { ErrorCode } from '@point/shared';
+import { ErrorCode, type FieldError } from '@point/shared';
 
 import type { CanDeclaration, CanViewDeclaration } from './declarations.js';
 import { type GrantSet, reaches } from './grant-set.js';
+import { parseBranchPath } from './paths.js';
 
 // The access decision of design D11 — a pure function, so its table is tested row by row without a
 // request (task 4.6). AccessGuard resolves the target and calls it; nothing else decides access.
@@ -32,9 +33,30 @@ export type Decision =
        * but not for the target branch (row 9 — API-PERM-03 v1.6).
        */
       readonly required?: string;
+      /**
+       * One item per uncovered element of a `[]` path with `scopeError: 'out_of_scope'`, naming it as
+       * `items[<n>].branch_id` (P2.SVC.06 · API-ERR-01); absent for every other refusal.
+       */
+      readonly errors?: readonly FieldError[];
     };
 
 const ALLOW: Decision = { allow: true };
+
+/** The elements of a `[]` path the caller does not reach, as field errors; none for any other path. */
+function uncovered(
+  declaration: CanDeclaration,
+  branchIds: readonly string[],
+  reach: (branchId: string) => boolean,
+): readonly FieldError[] {
+  if (declaration.branch === undefined) return [];
+  const path = parseBranchPath(declaration.branch);
+  if (path.kind !== 'list') return [];
+  return branchIds.flatMap((branchId, index) =>
+    reach(branchId)
+      ? []
+      : [{ field: `${path.list}[${index}].${path.field}`, code: ErrorCode.OUT_OF_SCOPE }],
+  );
+}
 const READS = new Set(['GET', 'HEAD']);
 
 /**
@@ -103,7 +125,13 @@ export function decide(
       // Row 9: `forbidden` names the code, as for a caller without it (API-PERM-03 v1.6: "403
       // `forbidden` (`context.required`)"); `out_of_scope` only where a part's endpoint names it.
       if (!view && declaration.scopeError === 'out_of_scope') {
-        return { allow: false, status: 403, code: ErrorCode.OUT_OF_SCOPE };
+        const errors = uncovered(declaration, branchIds, reach);
+        return {
+          allow: false,
+          status: 403,
+          code: ErrorCode.OUT_OF_SCOPE,
+          ...(errors.length === 0 ? {} : { errors }),
+        };
       }
       const required = view ? `${declaration.module}.view` : declaration.code;
       return { allow: false, status: 403, code: ErrorCode.FORBIDDEN, required };
