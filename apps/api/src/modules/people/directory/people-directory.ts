@@ -3,7 +3,9 @@ import { type BranchAssignment, type BranchSummary, todayMmt } from '@point/shar
 
 import type { LoadedTarget } from '../../../common/access/resolvers.js';
 import { Clock } from '../../../common/clock/clock.js';
+import type { Tx } from '../../../common/database/transaction-runner.js';
 import { AccessRepository } from '../repositories/access.repository.js';
+import { AssignmentsRepository } from '../repositories/assignments.repository.js';
 import { PeopleRepository } from '../repositories/people.repository.js';
 
 // What other modules may ask about people (add-foundation-auth-access design D1). More reads join
@@ -17,7 +19,16 @@ export class PeopleDirectory {
     private readonly repository: PeopleRepository,
     private readonly access: AccessRepository,
     private readonly clock: Clock,
+    private readonly assignments: AssignmentsRepository,
   ) {}
+
+  /**
+   * `employees.status` of an employee (EmployeeStatus), read in the caller's transaction; null when
+   * there is no such employee (add-schedule-patterns design D1 — P2-RULE-07: shifts only when ACTIVE).
+   */
+  statusOf(db: Tx, employeeId: string): Promise<number | null> {
+    return this.assignments.statusOf(db, employeeId);
+  }
 
   /**
    * The primary branch of an employee today (Myanmar Time): the active assignment with the earliest
