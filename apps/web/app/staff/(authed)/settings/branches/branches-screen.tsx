@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode } from 'react';
 
@@ -17,6 +17,7 @@ import {
   type CardFields,
   PageHeader,
   filterFromSearch,
+  useGuardedRouter,
 } from '@point/ui';
 
 import { BranchStatusBadge } from '../../../../../components/branches/BranchStatusBadge';
@@ -57,7 +58,7 @@ function CodeCell({ code }: Readonly<{ code: string }>) {
 export function BranchesScreen() {
   const t = useTranslations('branch.list');
   const locale = useLocale() as Locale;
-  const router = useRouter();
+  const router = useGuardedRouter();
   const search = useSearchParams();
   const access = useBranchAccess();
   const me = useMe().data;
