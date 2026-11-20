@@ -151,5 +151,9 @@
   "branches": {
     "INACTIVE": "ပိတ်ထား",
     "ACTIVE": "ဖွင့်ထား"
+  },
+  "leave_types": {
+    "ACTIVE": "ဖွင့်ထား",
+    "INACTIVE": "ပိတ်ထား"
   }
 }

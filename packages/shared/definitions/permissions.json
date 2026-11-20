@@ -189,6 +189,42 @@
     "description": "settings · update (incl. reset, maintenance mode; company values + maintenance = company scope, branch overrides = branch in scope) — P1.SET.03/04, P1.SYS.03"
   },
   {
+    "code": "service.view",
+    "module": "service",
+    "action": "view",
+    "kind": "crud",
+    "level": "mixed",
+    "label_key": "permission.service.view",
+    "description": "service · view (services and categories — master read-only at branch scope) — Settings › Services & categories menu, P2.CAT.01 / P2.SVC.01 management filters"
+  },
+  {
+    "code": "service.create",
+    "module": "service",
+    "action": "create",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.service.create",
+    "description": "service · create — P2.CAT.02, P2.SVC.02"
+  },
+  {
+    "code": "service.update",
+    "module": "service",
+    "action": "update",
+    "kind": "crud",
+    "level": "mixed",
+    "label_key": "permission.service.update",
+    "description": "service · update (details, website fields, options, order = company master; sale + duration per branch = branch) — P2.CAT.03/05, P2.SVC.04/07, P2.OPT.02 · P2.SVC.06"
+  },
+  {
+    "code": "service.delete",
+    "module": "service",
+    "action": "delete",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.service.delete",
+    "description": "service · delete (archive service / category) — P2.CAT.04, P2.SVC.05"
+  },
+  {
     "code": "schedule.view",
     "module": "schedule",
     "action": "view",
@@ -205,6 +241,42 @@
     "level": "branch",
     "label_key": "permission.schedule.update",
     "description": "schedule · update (pattern set, edit shift, generate, day reset) — P2.PAT.02, P2.SHF.04/06/08"
+  },
+  {
+    "code": "leave_type.view",
+    "module": "leave_type",
+    "action": "view",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.leave_type.view",
+    "description": "leave_type · view — menu; P2.LVT.01 include_archived"
+  },
+  {
+    "code": "leave_type.create",
+    "module": "leave_type",
+    "action": "create",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.leave_type.create",
+    "description": "leave_type · create — P2.LVT.02"
+  },
+  {
+    "code": "leave_type.update",
+    "module": "leave_type",
+    "action": "update",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.leave_type.update",
+    "description": "leave_type · update — P2.LVT.03"
+  },
+  {
+    "code": "leave_type.delete",
+    "module": "leave_type",
+    "action": "delete",
+    "kind": "crud",
+    "level": "company",
+    "label_key": "permission.leave_type.delete",
+    "description": "leave_type · delete (archive) — P2.LVT.04"
   },
   {
     "code": "booking_cancel_reason.view",

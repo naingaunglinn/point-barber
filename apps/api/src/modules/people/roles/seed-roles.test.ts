@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BARBER_PART3_SEED_CODES,
   BARBER_SEED_CODES,
+  MANAGER_PART2_SEED_CODES,
   MANAGER_PART3_SEED_CODES,
   MANAGER_PART4_SEED_CODES,
   MANAGER_SCHEDULE_SEED_CODES,
@@ -58,6 +59,7 @@ describe('seed roles — Part 4 codes', () => {
   it('names only codes of the catalogue', () => {
     for (const code of [
       ...MANAGER_SEED_CODES,
+      ...MANAGER_PART2_SEED_CODES,
       ...MANAGER_PART4_SEED_CODES,
       ...MANAGER_SCHEDULE_SEED_CODES,
       ...BARBER_SEED_CODES,
@@ -81,6 +83,29 @@ describe('seed roles — Part 2 schedule codes', () => {
   it('the Part 1 and Part 4 Manager sets hold no schedule code of their own', () => {
     const others = [...MANAGER_SEED_CODES, ...MANAGER_PART4_SEED_CODES];
     expect(others.filter((code) => code.startsWith('schedule.'))).toStrictEqual([]);
+  });
+});
+
+// add-service-catalogue task 1.3 — Part 2 §12 "Seed: Manager (v1.3)" · D-ROLE-09 · design D3: the
+// Manager reads the catalogue and sets the sale and duration of its branches; the master writes stay
+// with the Admin, and the Barber gets no service code.
+describe('seed roles — Part 2 service codes', () => {
+  it('Manager: service.view and service.update', () => {
+    expect([...MANAGER_PART2_SEED_CODES]).toStrictEqual(['service.view', 'service.update']);
+  });
+
+  it('keeps service.create and service.delete with the Admin; the Barber holds no service code', () => {
+    const manager = [
+      ...MANAGER_SEED_CODES,
+      ...MANAGER_PART2_SEED_CODES,
+      ...MANAGER_PART3_SEED_CODES,
+      ...MANAGER_PART4_SEED_CODES,
+      ...MANAGER_SCHEDULE_SEED_CODES,
+    ];
+    expect(manager).not.toContain('service.create');
+    expect(manager).not.toContain('service.delete');
+    const barber = [...BARBER_SEED_CODES, ...BARBER_PART3_SEED_CODES];
+    expect(barber.filter((code) => code.startsWith('service.'))).toStrictEqual([]);
   });
 });
 

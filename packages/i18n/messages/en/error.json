@@ -64,5 +64,6 @@
   "segment_overlap": "These times overlap.",
   "end_before_start": "The end must be after the start.",
   "cross_branch_gap": "Needs a {needed}-minute gap when changing branch ({branchA} ends {endA}, {branchB} starts {startB}).",
-  "self_action": "You can't change your own shifts for today — ask another manager."
+  "self_action": "You can't change your own shifts for today — ask another manager.",
+  "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first."
 }
