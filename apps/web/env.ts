@@ -67,3 +67,10 @@ export function getEnv(): WebEnv {
  * NEXT_PUBLIC_API_BASE into browser code; unset (tests, a fresh checkout) it is `/api/v1`.
  */
 export const PUBLIC_API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '/api/v1';
+
+/**
+ * The staff tree's `--background` as hex (add-pwa-install design D2): next.config.ts reads it from
+ * packages/ui/tokens.css when Next.js builds and inlines it, so the standalone image needs no file at run
+ * time; the Vitest config sets it the same way for the tests.
+ */
+export const PWA_BACKGROUND = process.env.POINT_PWA_BACKGROUND;
