@@ -43,7 +43,7 @@ export class BookingsRepository {
         starts_at: true,
         booked_employee_id: true,
         customer_name: true,
-        customers: { select: { phone: true } },
+        customers: { select: { phone_normalized: true } },
       },
     });
     return rows.map((row) => ({
@@ -51,7 +51,8 @@ export class BookingsRepository {
       starts_at: row.starts_at,
       employee_id: row.booked_employee_id,
       customer_name: row.customer_name,
-      customer_phone: row.customers.phone,
+      // E.164, as stored (D-CUS-02 · proposal reading 8).
+      customer_phone: row.customers.phone_normalized,
     }));
   }
 

@@ -43,7 +43,7 @@ describe('add-website-management · booking · BookingReads.bookedInRange', () =
       employee_id: FIXTURE_IDS.employees.E004,
       customer_name: 'Ma Su',
     });
-    expect(rows[0]?.customer_phone).toEqual(expect.stringMatching(/^\+\d+$/));
+    expect(rows[0]?.customer_phone).toEqual(expect.stringMatching(/^\+[1-9]\d{6,14}$/));
     expect(await reads.countBookedInRange(range)).toBe(3);
   });
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { BookingStatus, ScopeType } from '@point/shared';
+import { BookingStatus, ScopeType, UserStatus } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -36,7 +36,6 @@ afterAll(() => s.close());
 beforeEach(async () => {
   await s.prisma.bookings.deleteMany();
   await s.prisma.branch_closures.deleteMany();
-  await s.prisma.audit_events.deleteMany({ where: { action: { startsWith: 'website.' } } });
 });
 
 const cookieOf = async (who: FixturePerson) => {
@@ -73,6 +72,9 @@ const closureRow = async (
   });
   return id;
 };
+/** The Myanmar display name — the caller's language when no language is set (AD-L10N-03). */
+const nameOf = async (employeeId: string) =>
+  (await s.prisma.employees.findUniqueOrThrow({ where: { id: employeeId } })).name_mm;
 const closures = () => s.prisma.branch_closures.findMany({ orderBy: { start_date: 'asc' } });
 const audits = () =>
   s.prisma.audit_events.findMany({
@@ -88,6 +90,7 @@ const written = async () => ({
 describe('add-website-management · website · A closure starts today or later, ends on or after its start and lasts at most 366 days (task 3.1)', () => {
   it('Scenario: Thingyan at B3 — 201, upcoming, one audit row with the branch, one refresh job', async () => {
     const jobs = (await revalidateJobs(s.prisma)).length;
+    const auditsBefore = (await audits()).length;
     const res = await create('E002', THINGYAN);
     expect(res.status).toBe(201);
     expect(res.body.closure).toMatchObject({
@@ -98,12 +101,12 @@ describe('add-website-management · website · A closure starts today or later, 
       notice_en: 'Thingyan holidays',
       state: 'upcoming',
       archived_at: null,
-      created_by: { user_id: FIXTURE_IDS.users.E002, display_name: 'Ma Hnin' },
+      created_by: { user_id: FIXTURE_IDS.users.E002, display_name: await nameOf(E002) },
     });
     expect([res.body.affected_bookings, res.body.warnings]).toStrictEqual([[], []]);
     expect(res.headers.location).toBe(`/api/v1/website/closures/${res.body.closure.id}`);
     expect(await closures()).toHaveLength(1);
-    const rows = await audits();
+    const rows = (await audits()).slice(auditsBefore);
     expect(rows).toHaveLength(1);
     expect(rows[0]?.branch_id).toBe(B3);
     const after = await revalidateJobs(s.prisma);
@@ -262,6 +265,7 @@ describe('add-website-management · website · Closures of one branch never over
   });
 
   it('two requests for the same days at once — one 201 and one 409 naming the winner (R2)', async () => {
+    const auditsBefore = (await audits()).length;
     const body = { ...THINGYAN, start_date: '2026-11-02', end_date: '2026-11-03' };
     const [a, b] = await Promise.all([create('E002', body), create('E001', body)]);
     expect([a.status, b.status].sort()).toStrictEqual([201, 409]);
@@ -272,7 +276,7 @@ describe('add-website-management · website · Closures of one branch never over
       { closure_id: winner.body.closure.id },
     ]);
     expect(await closures()).toHaveLength(1);
-    expect(await audits()).toHaveLength(1);
+    expect((await audits()).length - auditsBefore).toBe(1);
   });
 });
 
@@ -281,16 +285,21 @@ describe('add-website-management · website · Bookings inside a closure are lis
     const first = await bookingAt(s.prisma, B3, BookingStatus.BOOKED, mmt('2026-10-13T14:00:00'));
     const second = await bookingAt(s.prisma, B3, BookingStatus.BOOKED, mmt('2026-10-13T16:00:00'));
     const company = (await s.prisma.branches.findUniqueOrThrow({ where: { id: B3 } })).company_id;
-    const customer = randomUUID();
-    await s.prisma.customers.create({
-      data: {
-        id: customer,
-        company_id: company,
-        name: 'Ko Phyo',
-        phone: '+959771234567',
-        phone_normalized: '959771234567',
-      },
-    });
+    const customer = (
+      await s.prisma.customers.upsert({
+        where: {
+          company_id_phone_normalized: { company_id: company, phone_normalized: '+959771234567' },
+        },
+        update: {},
+        create: {
+          id: randomUUID(),
+          company_id: company,
+          name: 'Ko Phyo',
+          phone: '09 7712 3457',
+          phone_normalized: '+959771234567',
+        },
+      })
+    ).id;
     await s.prisma.bookings.update({
       where: { id: second },
       data: { customer_id: customer, customer_name: 'Ko Phyo', booked_employee_id: E005 },
@@ -317,6 +326,11 @@ describe('add-website-management · website · Bookings inside a closure are lis
 
   it('Scenario: Without a booking code the customer stays hidden (Ma Thida, "Website editor")', async () => {
     const { first, second } = await bookedTwo();
+    // Ma Thida is only invited in the fixture; she signs in for this scenario.
+    await s.prisma.users.update({
+      where: { id: FIXTURE_IDS.users.E008 },
+      data: { status: UserStatus.ACTIVE },
+    });
     await assignRole(s.prisma, {
       name: 'Website editor',
       employeeId: FIXTURE_IDS.employees.E008,
@@ -330,12 +344,12 @@ describe('add-website-management · website · Bookings inside a closure are lis
       {
         booking_id: first,
         starts_at: '2026-10-13T14:00:00.000+06:30',
-        booked_employee: { id: E004, display_name: 'Ko Aung' },
+        booked_employee: { id: E004, display_name: await nameOf(E004) },
       },
       {
         booking_id: second,
         starts_at: '2026-10-13T16:00:00.000+06:30',
-        booked_employee: { id: E005, display_name: 'Ko Min' },
+        booked_employee: { id: E005, display_name: await nameOf(E005) },
       },
     ]);
   });
