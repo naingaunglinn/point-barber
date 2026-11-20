@@ -1,7 +1,8 @@
 // The Part 4 codes of the seed roles (API Part 4 §9 · D-ROLE-07 · D-ROLE-09 · add-walkin-visit-checkout
 // task 1.4) and the Part 2 schedule codes of the Manager (API Part 2 §12 · add-schedule-patterns task
-// 1.3): the API's base seed gives them to the Manager and Barber roles it creates, and the development
-// fixture modules 090 and 310 add them to roles created before; add-service-catalogue adds the Part 2
+// 1.3) and its Part 8 website codes (API Part 8 §14 · add-website-management task 1.2): the API's base
+// seed gives them to the Manager and Barber roles it creates, and the development fixture modules 090
+// and 310 add them to roles created before; add-service-catalogue adds the Part 2
 // service codes of the Manager and fixture module 100 (task 1.3). This file imports nothing:
 // db/seed/fixtures/*.mjs loads it directly with Node's type stripping.
 
@@ -49,3 +50,9 @@ export const MANAGER_PART3_CUSTOMER_CODES = [
   'customer.update',
 ] as const;
 export const BARBER_PART3_CUSTOMER_CODES = ['customer.view', 'customer.create'] as const;
+
+/**
+ * Manager — the two website codes of add-website-management (Part 8 §14: Admin; Manager — branch
+ * scope reaches its own branches' hours and closures, owner F7); the Barber seed role gets none.
+ */
+export const MANAGER_WEBSITE_CODES = ['website.view', 'website.update'] as const;

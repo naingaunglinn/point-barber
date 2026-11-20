@@ -90,6 +90,12 @@ export const ErrorCode = {
   END_BEFORE_START: 'end_before_start',
   CROSS_BRANCH_GAP: 'cross_branch_gap',
   SELF_ACTION: 'self_action',
+  // add-service-catalogue — Part 2 §13b · API-ERR-02 (task 2.2): a category archive refused while
+  // non-archived services use it, context `{ count }` (P2.CAT.04); option pricing sent to the create
+  // (P2.SVC.02) or to the update (P2.SVC.04) instead of the options endpoint (P2-RULE-02).
+  CATEGORY_IN_USE: 'category_in_use',
+  OPTIONS_REQUIRED: 'options_required',
+  USE_OPTIONS_ENDPOINT: 'use_options_endpoint',
   // add-leave-types — Part 2 §13b · API-ERR-02 (task 1.3 — design D4 / D10): an archive refused while a
   // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
   // are reused.
