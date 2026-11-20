@@ -16,5 +16,9 @@
     "create": "Create leave types",
     "update": "Edit leave types",
     "delete": "Archive leave types"
+  },
+  "website": {
+    "view": "View the website",
+    "update": "Edit the website"
   }
 }
