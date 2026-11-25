@@ -50,9 +50,7 @@ describe('Attachments.variantObject', () => {
       key: `att/2026/10/${N}/original.pdf`,
       mime: 'application/pdf',
     });
-    expect(attachments.variantObject({ ...nrc, image_width: undefined }, 'w1600').key).toBe(
-      nrc.storage_key,
-    );
+    expect(attachments.variantObject(nrc, 'w1600').key).toBe(nrc.storage_key);
   });
 
   it('original returns the row key and mime', () => {

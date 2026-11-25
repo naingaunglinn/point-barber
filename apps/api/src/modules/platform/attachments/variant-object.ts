@@ -11,7 +11,7 @@ export type AttachmentVariant = (typeof ATTACHMENT_VARIANTS)[number];
 export interface VariantSource {
   readonly storage_key: string;
   readonly mime_type: string;
-  readonly image_width?: number | null;
+  readonly image_width: number | null;
 }
 
 export const VARIANT_MIME = 'image/webp';
@@ -23,8 +23,8 @@ export function objectKey(row: VariantSource, variant: AttachmentVariant): strin
 }
 
 /** `"original"` then the widths of `VARIANT_WIDTHS` that are not wider than the stored original. */
-export function variantsOf(imageWidth: number | null | undefined): AttachmentVariant[] {
-  if (imageWidth === null || imageWidth === undefined) return [];
+export function variantsOf(imageWidth: number | null): AttachmentVariant[] {
+  if (imageWidth === null) return [];
   return [
     'original',
     ...VARIANT_WIDTHS.filter((width) => width <= imageWidth).map((w) => `w${w}` as const),

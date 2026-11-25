@@ -1,4 +1,3 @@
-import { HeifDecoder } from 'libheif-js/wasm-bundle';
 import sharp, { type Sharp } from 'sharp';
 
 import {
@@ -7,6 +6,8 @@ import {
   IMAGE_MAX_INPUT_PIXELS,
   VARIANT_WIDTHS,
 } from '@point/shared';
+
+import { decodeHeic } from './heic-decoder.js';
 
 // The image pipeline of an upload (P8-RULE-03 · ADR-014 decision 3 · CG-SEC-08 · add-attachments-upload
 // design D5): decode, apply the EXIF orientation, drop all metadata, shrink to a long edge of 2,560 px,
@@ -59,46 +60,6 @@ function encode(image: Sharp, format: Format): Sharp {
   }
 }
 
-interface RawPixels {
-  readonly data: Buffer;
-  readonly width: number;
-  readonly height: number;
-}
-
-/**
- * HEIC to raw RGBA with the WebAssembly libheif (`libheif-js`, add-attachments-upload design R1): the
- * prebuilt sharp opens the container but has no HEVC decoder. The pixel limit is checked from the
- * container size BEFORE the decoder runs, so a huge file never reaches it. libheif applies the
- * transformations of the file (`irot` rotation, `imir` mirror, `clap` crop) while decoding, so the
- * pixels are already upright and no `rotate()` is needed. Only the primary image is decoded.
- */
-async function decodeHeic(buffer: Buffer): Promise<RawPixels> {
-  const meta = await sharp(buffer, { failOn: 'error' }).metadata();
-  if (
-    meta.width === undefined ||
-    meta.height === undefined ||
-    meta.width * meta.height > IMAGE_MAX_INPUT_PIXELS
-  ) {
-    throw new Error('The HEIC container is unreadable or over the pixel limit');
-  }
-  const image = new HeifDecoder().decode(buffer)[0];
-  if (image === undefined) throw new Error('The HEIC file holds no image');
-  const width = image.get_width();
-  const height = image.get_height();
-  if (width * height > IMAGE_MAX_INPUT_PIXELS)
-    throw new Error('The HEIC image is over the pixel limit');
-  const target = { data: new Uint8ClampedArray(width * height * 4), width, height };
-  const decoded = await new Promise<Uint8ClampedArray | null>((resolve) => {
-    image.display(target, (result) => resolve(result === null ? null : result.data));
-  });
-  if (decoded === null) throw new Error('The HEIC image could not be decoded');
-  return {
-    data: Buffer.from(decoded.buffer, decoded.byteOffset, decoded.byteLength),
-    width,
-    height,
-  };
-}
-
 /**
  * Decodes, cleans, shrinks and re-encodes `buffer`, and makes its variants. Sharp drops every metadata
  * block (EXIF, GPS, XMP, IPTC, thumbnails) unless asked to keep it; `rotate()` first turns the pixels
@@ -111,7 +72,7 @@ export async function processImage(
   try {
     let input: Sharp;
     if (detected.format === 'HEIC') {
-      const pixels = await decodeHeic(buffer);
+      const pixels = await decodeHeic(buffer, IMAGE_MAX_INPUT_PIXELS);
       input = sharp(pixels.data, {
         raw: { width: pixels.width, height: pixels.height, channels: 4 },
         limitInputPixels: IMAGE_MAX_INPUT_PIXELS,
