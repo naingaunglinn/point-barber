@@ -97,12 +97,13 @@ export class AttachmentUploads {
     const written: string[] = [];
     let row: AttachmentRow;
     try {
-      await this.storage.put(storage_key, original.body, type.mime);
+      // Remembered before the write: a put that fails here (a timeout) may still have stored the object.
       written.push(storage_key);
+      await this.storage.put(storage_key, original.body, type.mime);
       for (const variant of variants) {
         const key = objectKey({ storage_key }, variant.name);
-        await this.storage.put(key, variant.body, 'image/webp');
         written.push(key);
+        await this.storage.put(key, variant.body, 'image/webp');
       }
       row = await this.runner.run((tx) =>
         this.repository.insertStaging(tx, {
