@@ -2,7 +2,7 @@ import { Module, type OnApplicationBootstrap, type OnModuleInit } from '@nestjs/
 import { PERMISSIONS } from '@point/shared';
 
 import { GrantSource } from '../../common/access/grant-set.js';
-import { EMPLOYEE_TARGET, TargetResolvers } from '../../common/access/resolvers.js';
+import { EMPLOYEE_TARGET, TargetResolvers, routeKey } from '../../common/access/resolvers.js';
 import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import {
   Audit,
@@ -26,7 +26,11 @@ import { BranchCodes } from './directory/branch-codes.js';
 import { BranchHeaders } from './directory/branch-headers.js';
 import { DisplayNames } from './directory/display-names.js';
 import { PeopleDirectory } from './directory/people-directory.js';
+import { EmployeeAssignments } from './employees/employee-assignments.js';
 import { EmployeeCodes } from './employees/employee-codes.js';
+import { EmployeeDirectory } from './employees/employee-directory.js';
+import { Employees } from './employees/employees.js';
+import { EmployeesController } from './employees/employees.controller.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { AccessRepository } from './repositories/access.repository.js';
 import { AssignmentsRepository } from './repositories/assignments.repository.js';
@@ -36,6 +40,7 @@ import { BranchHeaderRepository } from './repositories/branch-header.repository.
 import { CatalogueRepository } from './repositories/catalogue.repository.js';
 import { CompanyRepository } from './repositories/company.repository.js';
 import { DisplayNameRepository } from './repositories/display-name.repository.js';
+import { EmployeeListRepository } from './repositories/employee-list.repository.js';
 import { EmployeeRepository } from './repositories/employee.repository.js';
 import { PeopleRepository } from './repositories/people.repository.js';
 import { RoleRepository } from './repositories/role.repository.js';
@@ -54,7 +59,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
 // D11).
 @Module({
   imports: [PlatformModule],
-  controllers: [OrganizationController, CompanyController, BranchesController],
+  controllers: [OrganizationController, CompanyController, BranchesController, EmployeesController],
   providers: [
     PeopleRepository,
     AccessRepository,
@@ -88,6 +93,10 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     Branches,
     // add-employee-management (design D1 / D5).
     EmployeeCodes,
+    EmployeeListRepository,
+    EmployeeDirectory,
+    Employees,
+    EmployeeAssignments,
   ],
   exports: [
     GrantSource,
@@ -129,6 +138,9 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
   onModuleInit(): void {
     this.audit.usePrimaryBranchOf((employeeId) => this.directory.primaryBranchId(employeeId));
     this.targets.register(EMPLOYEE_TARGET, (id) => this.directory.employeeTarget(id));
+    this.targets.register(routeKey('POST', '/v1/employees/:id/branches/:assignment_id/end'), (id) =>
+      this.directory.assignmentTarget(id),
+    );
     // The settings store: the one company (null before the base seed), the names behind a value
     // or a history line, and whether a branch exists (add-settings-store design D1).
     this.companyOfSettings.use(() => this.companies.companyId());

@@ -1,6 +1,11 @@
-import { ErrorCode } from '@point/shared';
+import { ErrorCode, type FieldError } from '@point/shared';
 
-import type { CanDeclaration, CanViewDeclaration } from './declarations.js';
+import type {
+  AccessCode,
+  CanDeclaration,
+  CanFieldsDeclaration,
+  CanViewDeclaration,
+} from './declarations.js';
 import { type GrantSet, reaches } from './grant-set.js';
 
 // The access decision of design D11 — a pure function, so its table is tested row by row without a
@@ -32,6 +37,8 @@ export type Decision =
        * but not for the target branch (row 9 — API-PERM-03 v1.6).
        */
       readonly required?: string;
+      /** `errors[]` of a field-grouped refusal: one entry per member whose group failed (D2). */
+      readonly errors?: readonly FieldError[];
     };
 
 const ALLOW: Decision = { allow: true };
@@ -109,4 +116,57 @@ export function decide(
       return { allow: false, status: 403, code: ErrorCode.FORBIDDEN, required };
     }
   }
+}
+
+const FORBIDDEN_CODE = ErrorCode.FORBIDDEN;
+
+/**
+ * `@CanFields` (add-employee-management design D2 · P1.EMP.04): `decide()` once per member group
+ * present in `body`, each with its own code and the employee target. One failing group refuses the
+ * whole request; `errors[]` names every member of every failed group. An unknown employee is 404
+ * before any group is decided — except for a caller who holds none of the codes, who gets the
+ * row-2 answer whether or not the target exists. A body with no member of any group passes when the
+ * caller holds any of the codes (and the target is in the scope of one of them).
+ */
+export function decideFields(
+  declaration: CanFieldsDeclaration,
+  grants: GrantSet,
+  target: Target,
+  method: string,
+  body: unknown,
+): Decision {
+  const codes = [...new Set(Object.values(declaration.fields))];
+  const forCode = (code: AccessCode): Decision =>
+    decide({ kind: 'can', code, target: declaration.target }, grants, target, method);
+  const holdsAny = codes.some((code) => grants.has(code));
+  const sent =
+    typeof body === 'object' && body !== null && !Array.isArray(body)
+      ? Object.keys(body).filter((member) => Object.hasOwn(declaration.fields, member))
+      : [];
+  if (sent.length === 0) {
+    if (!holdsAny) return forCode(codes[0] as AccessCode);
+    if (target.kind === 'missing') return { allow: false, status: 404, code: ErrorCode.NOT_FOUND };
+    const decisions = codes.filter((code) => grants.has(code)).map(forCode);
+    return decisions.find((d) => d.allow) ?? (decisions[0] as Decision);
+  }
+  // A caller with none of the codes is refused by row 2 below, whether or not the employee exists.
+  if (holdsAny && target.kind === 'missing') {
+    return { allow: false, status: 404, code: ErrorCode.NOT_FOUND };
+  }
+
+  const errors: FieldError[] = [];
+  let first: Extract<Decision, { allow: false }> | undefined;
+  for (const code of new Set(sent.map((member) => declaration.fields[member] as AccessCode))) {
+    const decision = forCode(code);
+    if (decision.allow) continue;
+    first ??= decision;
+    const required = decision.required ?? code;
+    for (const member of sent) {
+      if (declaration.fields[member] === code) {
+        errors.push({ field: member, code: FORBIDDEN_CODE, params: { required } });
+      }
+    }
+  }
+  if (first === undefined) return ALLOW;
+  return { ...first, errors };
 }

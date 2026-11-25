@@ -3,12 +3,13 @@
 export { AccessContext } from './access-context.js';
 export { AccessGuard } from './access.guard.js';
 export { AccessModule } from './access.module.js';
-export { type Decision, type Target, decide } from './decide.js';
+export { type Decision, type Target, decide, decideFields } from './decide.js';
 export {
   type AccessCode,
   type AccessDeclaration,
   type AccessModule as AccessModuleName,
   Can,
+  CanFields,
   CanView,
   type ExtraPermissionCodes,
   Internal,

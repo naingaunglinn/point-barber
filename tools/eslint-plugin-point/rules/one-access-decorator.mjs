@@ -1,5 +1,5 @@
 // point/one-access-decorator (API-PERM-02 · design D10): in a class decorated with @Controller, every
-// method that carries a NestJS route decorator declares exactly one access decorator. All six access
+// method that carries a NestJS route decorator declares exactly one access decorator. All access
 // names are listed from the start, so a later change adds a decorator without touching this rule.
 export const ROUTE_DECORATORS = [
   'Get',
@@ -12,7 +12,15 @@ export const ROUTE_DECORATORS = [
   'Options',
   'Sse',
 ];
-export const ACCESS_DECORATORS = ['Can', 'CanView', 'Staff', 'Self', 'Public', 'Internal'];
+export const ACCESS_DECORATORS = [
+  'Can',
+  'CanFields',
+  'CanView',
+  'Staff',
+  'Self',
+  'Public',
+  'Internal',
+];
 
 /** `@Get()`, `@Get`, `@common.Get()` → `Get`. */
 function decoratorName(decorator) {
