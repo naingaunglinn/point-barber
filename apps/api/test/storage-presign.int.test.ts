@@ -24,7 +24,11 @@ const config = {
 } as unknown as AppConfig;
 const storage = new S3StorageService(config);
 const id = randomUUID();
-const row = { storage_key: `att/2026/10/${id}/original.jpg`, mime_type: 'image/jpeg' };
+const row = {
+  storage_key: `att/2026/10/${id}/original.jpg`,
+  mime_type: 'image/jpeg',
+  image_width: 900,
+};
 
 beforeAll(async () => {
   await storage.ensureBucket();
