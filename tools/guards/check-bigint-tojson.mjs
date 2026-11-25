@@ -10,9 +10,11 @@ import { lineOf, report, rootFromArgs, stripComments, walk } from './lib/source.
 const SCOPES = ['apps', 'packages', 'e2e', 'tools', 'db'];
 const EXTENSIONS = ['.ts', '.tsx', '.mts', '.js', '.mjs'];
 const PROTOTYPE = String.raw`BigInt\s*\.\s*prototype`;
+// `(BigInt.prototype as any)`: TypeScript refuses the bare assignment, so a patch goes through a cast.
+const CAST = String.raw`(?:\s+as\s[^;\n]*?)?`;
 // The assignment or member form, the bracket forms, and Object.defineProperty(BigInt.prototype, …).
 const PATTERN = new RegExp(
-  String.raw`${PROTOTYPE}\s*(?:\.\s*toJSON\b|\[\s*(['"])toJSON\1\s*\])|defineProperty\s*\(\s*${PROTOTYPE}\s*,\s*(['"])toJSON\2`,
+  String.raw`${PROTOTYPE}${CAST}\s*\)?\s*(?:\.\s*toJSON\b|\[\s*(['"])toJSON\1\s*\])|defineProperty\s*\(\s*${PROTOTYPE}${CAST}\s*,\s*(['"])toJSON\2`,
   'g',
 );
 const SUBJECT = 'BigInt.prototype';

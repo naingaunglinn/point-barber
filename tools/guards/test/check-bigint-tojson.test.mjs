@@ -55,6 +55,11 @@ describe('tools/guards/check-bigint-tojson.mjs (§24 row 38 · CG-MONEY-02)', ()
     "BigInt.prototype['toJSON'] = f;",
     'BigInt . prototype . toJSON = f;',
     "Object.defineProperty(BigInt.prototype, 'toJSON', {});",
+    // TypeScript refuses the bare assignment, so a real patch is written through a cast.
+    '(BigInt.prototype as any).toJSON = f;',
+    '(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = () => "1";',
+    "(BigInt.prototype as any)['toJSON'] = f;",
+    "Object.defineProperty(BigInt.prototype as object, 'toJSON', {});",
   ])('fails on %s', (line) => {
     expect(run(tree({ 'packages/shared/src/a.ts': `${line}\n` })).status).toBe(1);
   });
@@ -67,6 +72,8 @@ describe('tools/guards/check-bigint-tojson.mjs (§24 row 38 · CG-MONEY-02)', ()
         'apps/api/src/openapi/document.ts': 'const s = z.toJSONSchema(zodSchema);\n',
         'apps/api/src/note.ts':
           '// BigInt.prototype.toJSON is banned\nDate.prototype.toJSON = f;\n',
+        'apps/api/src/other.ts':
+          'const p = (BigInt.prototype as any).toString; const s = box.toJSON();\n',
       }),
     );
     expect(status).toBe(0);
