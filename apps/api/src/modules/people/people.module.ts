@@ -26,6 +26,7 @@ import { BranchCodes } from './directory/branch-codes.js';
 import { BranchHeaders } from './directory/branch-headers.js';
 import { DisplayNames } from './directory/display-names.js';
 import { PeopleDirectory } from './directory/people-directory.js';
+import { EmployeeCodes } from './employees/employee-codes.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { AccessRepository } from './repositories/access.repository.js';
 import { AssignmentsRepository } from './repositories/assignments.repository.js';
@@ -85,6 +86,8 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     BranchesRepository,
     BranchUsage,
     Branches,
+    // add-employee-management (design D1 / D5).
+    EmployeeCodes,
   ],
   exports: [
     GrantSource,
