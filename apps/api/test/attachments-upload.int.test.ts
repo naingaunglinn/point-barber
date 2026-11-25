@@ -375,10 +375,13 @@ describe('Scenario: the original is stored under a fixed key, then the row is wr
 class FlakyStorage extends InMemoryStorageService {
   puts = 0;
   failFrom: number | null = null;
+  /** The bucket stores the object, but its answer does not arrive. */
+  storesFirst = false;
   override async put(key: string, body: Buffer, contentType: string): Promise<void> {
     this.puts += 1;
-    if (this.failFrom !== null && this.puts >= this.failFrom) throw new Error('timeout');
-    await super.put(key, body, contentType);
+    const fails = this.failFrom !== null && this.puts >= this.failFrom;
+    if (!fails || this.storesFirst) await super.put(key, body, contentType);
+    if (fails) throw new Error('timeout');
   }
 }
 
@@ -408,6 +411,18 @@ describe('Scenario: the bucket or the row fails', () => {
     const res = await post(png600, 'logo-a.png');
     memory.failFrom = null;
     expect([res.status, res.body.code]).toStrictEqual([500, ErrorCode.INTERNAL_ERROR]);
+    expect(await flaky.prisma.attachments.count()).toBe(before);
+    expect(objects()).toBe(0);
+  });
+
+  it('A write that times out after the bucket stored the object: the object is deleted too, no row', async () => {
+    const before = await flaky.prisma.attachments.count();
+    memory.failFrom = memory.puts + 1;
+    memory.storesFirst = true;
+    const res = await post(png600, 'logo-a.png');
+    memory.failFrom = null;
+    memory.storesFirst = false;
+    expect(res.status).toBe(500);
     expect(await flaky.prisma.attachments.count()).toBe(before);
     expect(objects()).toBe(0);
   });

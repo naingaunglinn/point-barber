@@ -38,11 +38,16 @@ describe('decodeHeic', () => {
     expect(good.status).toBe('fulfilled');
   }, 60_000);
 
-  it('repeated decodes do not grow the process (the worker gives its memory back)', async () => {
-    await decodeHeic(HEIC, PIXELS);
+  it('repeated decodes of a large file do not grow the process (the worker gives its memory back)', async () => {
+    // A `free` box makes the file 20 MB without changing the picture: what leaks is the copy of the FILE
+    // a decoder keeps. Measured over 12 decodes: 247 MB on the API's own thread, 51 MB with the worker.
+    const padding = Buffer.alloc(20 * 1024 * 1024);
+    padding.writeUInt32BE(padding.length, 0);
+    padding.write('free', 4, 'latin1');
+    const large = Buffer.concat([HEIC, padding]);
+    await decodeHeic(large, PIXELS);
     const before = process.memoryUsage().rss;
-    for (let round = 0; round < 6; round += 1) await decodeHeic(HEIC, PIXELS);
-    // One raw picture is 49 MB and the WASM heap holds more; kept, six of them are over 300 MB.
-    expect(process.memoryUsage().rss - before).toBeLessThan(200 * 1024 * 1024);
+    for (let round = 0; round < 12; round += 1) await decodeHeic(large, PIXELS);
+    expect(process.memoryUsage().rss - before).toBeLessThan(150 * 1024 * 1024);
   }, 120_000);
 });
