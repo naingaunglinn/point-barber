@@ -42,6 +42,7 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout`  |
 | `booking`      | nothing new — reads `bookings`, `booking_items`, `booking_cancel_reasons` (customer statistics, timeline, archive guard)    | `add-customer-management`    |
 | `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout`  |
+| `platform`     | `attachments` — the staging rows of an upload (`POST /v1/attachments`); the generated rows are above                        | `add-attachments-upload`     |
 | `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`         |
 | `catalog`      | `service_categories`, `services`, `branch_services`, `service_prices` (close only) · reads `employee_service_eligibilities` | `add-service-catalogue`      |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout`  |

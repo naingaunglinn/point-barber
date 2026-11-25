@@ -17,7 +17,10 @@ export interface VariantSource {
 export const VARIANT_MIME = 'image/webp';
 
 /** The key of a variant object: the row's own key for `original`, else `<folder>/<variant>.webp`. */
-export function objectKey(row: VariantSource, variant: AttachmentVariant): string {
+export function objectKey(
+  row: Pick<VariantSource, 'storage_key'>,
+  variant: AttachmentVariant,
+): string {
   if (variant === 'original') return row.storage_key;
   return `${row.storage_key.slice(0, row.storage_key.lastIndexOf('/'))}/${variant}.webp`;
 }
