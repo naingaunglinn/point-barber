@@ -63,11 +63,12 @@ export class Attachments {
   }
 
   /**
-   * One live row by id — the company logo of a receipt (add-company-profile design D7); the caller
-   * checks that it is the row it expects. Uploads and their checks come with add-attachments-upload.
+   * The non-deleted row with that id, or null when there is none or it is soft-deleted (add-company-profile
+   * design D7 · add-attachments-upload design D1). It checks no read right: it is for server code that
+   * asks for a row it already knows, such as the receipt's logo.
    */
   findLive(id: string): Promise<AttachmentRow | null> {
-    return this.repository.liveById(id);
+    return this.repository.findLive(id);
   }
 
   /** The key of a variant object of a row (`original` is the row's own key). */

@@ -30,6 +30,8 @@ const row = (overrides: Partial<AttachmentRow> = {}): AttachmentRow => ({
   size_bytes: 1000,
   uploaded_by_user_id: '0199a3f2-0000-7000-8002-000000000e01',
   uploaded_at: new Date('2026-10-05T09:40:00+06:30'),
+  image_width: 600,
+  image_height: 600,
   ...overrides,
 });
 
