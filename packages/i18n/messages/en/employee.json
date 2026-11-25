@@ -1,0 +1,88 @@
+{
+  "list": {
+    "new": "New employee",
+    "searchPlaceholder": "Name, phone or code",
+    "emptyFiltered": "No employees match this filter.",
+    "column": {
+      "name": "Name",
+      "code": "Code",
+      "branches": "Branches",
+      "roles": "Roles",
+      "login": "Login",
+      "status": "Status"
+    }
+  },
+  "form": {
+    "section": {
+      "employee": "Employee",
+      "login": "Login",
+      "branches": "Branches"
+    },
+    "conflict": "This employee was changed by someone else. Reload to see the changes."
+  },
+  "field": {
+    "code": "Code",
+    "codeHelp": "Leave empty to give the next number.",
+    "codeTaken": "An employee with this code already exists.",
+    "name": "Name",
+    "phone": "Phone",
+    "joinDate": "Join date",
+    "notes": "Notes",
+    "email": "Email",
+    "emailTaken": "This email is already used by another login.",
+    "sendInvite": "Send the invite now",
+    "branchRequired": "Choose at least one branch.",
+    "showOnWebsite": "Show on the website",
+    "specialty": "Specialty",
+    "rating": "Point rating",
+    "ratingNone": "Not shown",
+    "ratingHelp": "Shown on the website as \"Point rating\". Customer ratings come in a later version."
+  },
+  "tab": {
+    "profile": "Profile",
+    "branches": "Branches",
+    "access": "Access"
+  },
+  "toast": {
+    "created": "Employee added",
+    "saved": "Saved",
+    "reactivated": "Employee re-activated",
+    "inviteSent": "Invite sent",
+    "loggedOut": "Signed out of all devices"
+  },
+  "action": {
+    "deactivate": "Deactivate",
+    "resign": "Resign",
+    "terminate": "Terminate",
+    "reactivate": "Re-activate"
+  },
+  "status": {
+    "lastDay": "Last day",
+    "consequence": "{name} will be signed out of every device now and their branch assignments end on {date}. Their bookings stay where they are.",
+    "futureBookings": "These bookings still need another barber:",
+    "beforeListNote": "This list shows the next {days} days at the branches you can see. The full list comes after you confirm."
+  },
+  "branches": {
+    "add": "Add branch",
+    "end": "End",
+    "from": "From"
+  },
+  "access": {
+    "invitedAt": "Invited",
+    "lastSent": "Invite last sent",
+    "activatedAt": "Activated",
+    "lastLogin": "Last sign-in",
+    "lockedUntil": "Locked until"
+  },
+  "invite": {
+    "resend": "Resend invite",
+    "cancel": "Cancel invite",
+    "resendIn": "Try again in {seconds} seconds",
+    "cancelConsequence": "{name} will not be able to sign in with this invite. The record stays."
+  },
+  "devices": {
+    "logoutAll": "Log out all devices",
+    "logoutAllConsequence": "{name} will be signed out of {count} devices now.",
+    "keep": "Keep signed in"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "title": "ကျွန်ုပ်၏ စက်များ",
+  "thisDevice": "ဒီစက်",
+  "remove": "ဖယ်မယ်",
+  "column": {
+    "method": "ဝင်ပုံ",
+    "ip": "IP လိပ်စာ",
+    "signedIn": "ဝင်ချိန်",
+    "lastSeen": "နောက်ဆုံးသုံးချိန်"
+  },
+  "removeCurrent": {
+    "consequence": "ဒီစက်ကနေ အခု ထွက်သွားမယ်။"
+  }
+}

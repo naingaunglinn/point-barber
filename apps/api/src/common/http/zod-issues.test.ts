@@ -1,4 +1,9 @@
-import { catalogueCode } from '@point/shared';
+import {
+  catalogueCode,
+  employeeCreateSchema,
+  employeeStatusSchema,
+  employeeUpdateSchema,
+} from '@point/shared';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
@@ -55,5 +60,40 @@ describe('Zod issue → errors[] item', () => {
     for (const clientOnly of ['required', 'date_invalid', 'unknown']) {
       expect(codes).not.toContain(clientOnly);
     }
+  });
+});
+
+// add-employee-management task 1.2 — the field codes of the employee schemas (design D4): the Zod issue
+// name unchanged, the params only where a message has a placeholder.
+describe('employee field codes (add-employee-management task 1.2)', () => {
+  const fields = (zodSchema: z.ZodType, input: unknown) =>
+    toFieldErrors(zodSchema.safeParse(input).error?.issues ?? []);
+
+  it('a rating that is not a step of 0.5 → not_multiple_of, with no params', () => {
+    expect(fields(employeeUpdateSchema, { public_rating: 4.7 })).toEqual([
+      { field: 'public_rating', code: 'not_multiple_of' },
+    ]);
+  });
+
+  it('a rating outside 1 – 5 → too_small {minimum} / too_big {maximum}', () => {
+    expect(fields(employeeUpdateSchema, { public_rating: 0.5 })).toEqual([
+      { field: 'public_rating', code: 'too_small', params: { minimum: 1 } },
+    ]);
+    expect(fields(employeeUpdateSchema, { public_rating: 5.5 })).toEqual([
+      { field: 'public_rating', code: 'too_big', params: { maximum: 5 } },
+    ]);
+  });
+
+  it('a status outside 0 – 3 → invalid_value, with no params', () => {
+    expect(fields(employeeStatusSchema, { status: 4 })).toEqual([
+      { field: 'status', code: 'invalid_value' },
+    ]);
+  });
+
+  it('a wrong e-mail address → the catalogue code email_invalid; a missing name → invalid_type', () => {
+    expect(fields(employeeCreateSchema, { email: 'lin.point.test' })).toEqual([
+      { field: 'email', code: 'email_invalid' },
+      { field: 'name_mm', code: 'invalid_type', params: { expected: 'string' } },
+    ]);
   });
 });

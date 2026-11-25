@@ -1,0 +1,14 @@
+{
+  "title": "My devices",
+  "thisDevice": "This device",
+  "remove": "Remove",
+  "column": {
+    "method": "Sign-in method",
+    "ip": "IP address",
+    "signedIn": "Signed in",
+    "lastSeen": "Last seen"
+  },
+  "removeCurrent": {
+    "consequence": "You will be signed out of this device now."
+  }
+}

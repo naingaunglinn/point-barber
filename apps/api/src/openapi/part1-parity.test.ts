@@ -2,6 +2,7 @@ import {
   branchCreateSchema,
   branchStatusSchema,
   branchUpdateSchema,
+  employeeCreateSchema,
   socialLinksSchema,
 } from '@point/shared';
 import { describe, expect, it } from 'vitest';
@@ -189,6 +190,199 @@ const PART1: Record<string, Schema> = {
       photo_url: { type: ['string', 'null'] },
     },
   },
+  // add-employee-management task 1.7 — the employee schemas and bodies of Part 1 v1.8 (owner EM2: the
+  // limits the batch adds). `Warning` is Part 1's own copy (it has `items`); the document names it
+  // EmployeeWarning because Part 4 gives `Warning` another shape.
+  UserAccess: {
+    type: 'object',
+    required: ['id', 'email', 'status'],
+    properties: {
+      id: uuid,
+      email: { type: 'string', format: 'email' },
+      status: { type: 'integer', enum: [0, 1, 2] },
+      ui_language: { type: ['integer', 'null'], enum: [1, 2, null] },
+      invited_at: { type: ['string', 'null'], format: 'date-time' },
+      invite_last_sent_at: { type: ['string', 'null'], format: 'date-time' },
+      activated_at: { type: ['string', 'null'], format: 'date-time' },
+      last_login_at: { type: ['string', 'null'], format: 'date-time' },
+      login_locked_until: { type: ['string', 'null'], format: 'date-time' },
+    },
+  },
+  RoleAssignment: {
+    type: 'object',
+    required: ['id', 'role', 'scope_type', 'branch_ids', 'assigned_at'],
+    properties: {
+      id: uuid,
+      role: {
+        type: 'object',
+        required: ['id', 'name_mm'],
+        properties: { id: uuid, name_mm: { type: 'string' }, name_en: nullableText },
+      },
+      scope_type: { type: 'integer', enum: [1, 2] },
+      branch_ids: { type: 'array', items: uuid },
+      assigned_at: dateTime,
+      revoked_at: { type: ['string', 'null'], format: 'date-time' },
+    },
+  },
+  EmployeeListItem: {
+    allOf: [
+      { $ref: '#/components/schemas/EmployeeRef' },
+      {
+        type: 'object',
+        required: ['status', 'login_status', 'branches', 'roles'],
+        properties: {
+          phone: nullableText,
+          status: { type: 'integer', enum: [0, 1, 2, 3] },
+          login_status: { type: 'integer', enum: [0, 1, 2] },
+          branches: { type: 'array', items: { $ref: '#/components/schemas/BranchSummary' } },
+          roles: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { id: uuid, name_mm: { type: 'string' }, name_en: nullableText },
+            },
+          },
+          join_date: { type: ['string', 'null'], format: 'date' },
+        },
+      },
+    ],
+  },
+  Employee: {
+    allOf: [
+      { $ref: '#/components/schemas/EmployeeRef' },
+      {
+        type: 'object',
+        required: [
+          'status',
+          'public_profile',
+          'effective_show_own_earnings',
+          'user',
+          'branches',
+          'roles',
+          'created_at',
+          'updated_at',
+        ],
+        properties: {
+          phone: nullableText,
+          join_date: { type: ['string', 'null'], format: 'date' },
+          status: { type: 'integer', enum: [0, 1, 2, 3] },
+          internal_notes: nullableText,
+          public_profile: { type: 'boolean' },
+          public_specialty_mm: textUpTo(200),
+          public_specialty_en: textUpTo(200),
+          public_rating: { type: ['number', 'null'], minimum: 1, maximum: 5, multipleOf: 0.5 },
+          show_own_earnings: { type: ['boolean', 'null'] },
+          effective_show_own_earnings: { type: 'boolean' },
+          user: { $ref: '#/components/schemas/UserAccess' },
+          branches: { type: 'array', items: { $ref: '#/components/schemas/BranchAssignment' } },
+          roles: { type: 'array', items: { $ref: '#/components/schemas/RoleAssignment' } },
+          sessions_count: { type: 'integer' },
+          created_at: dateTime,
+          updated_at: dateTime,
+        },
+      },
+    ],
+  },
+  EmployeeCreate: {
+    type: 'object',
+    required: ['email', 'name_mm'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      employee_code: textUpTo(100),
+      name_mm: { type: 'string', maxLength: 255 },
+      name_en: textUpTo(255),
+      phone: textUpTo(50),
+      join_date: { type: ['string', 'null'], format: 'date' },
+      internal_notes: textUpTo(1000),
+      branch_ids: { type: 'array', maxItems: 20, items: uuid },
+      role_assignments: {
+        type: 'array',
+        maxItems: 10,
+        items: {
+          type: 'object',
+          required: ['role_id', 'scope_type'],
+          properties: {
+            role_id: uuid,
+            scope_type: { type: 'integer', enum: [1, 2] },
+            branch_ids: { type: 'array', items: uuid },
+          },
+        },
+      },
+      send_invite: { type: 'boolean' },
+    },
+  },
+  EmployeeUpdate: {
+    type: 'object',
+    properties: {
+      employee_code: { type: 'string', maxLength: 100 },
+      name_mm: { type: 'string', maxLength: 255 },
+      name_en: textUpTo(255),
+      phone: textUpTo(50),
+      photo_attachment_id: { type: ['string', 'null'], format: 'uuid' },
+      join_date: { type: ['string', 'null'], format: 'date' },
+      internal_notes: textUpTo(1000),
+      public_profile: { type: 'boolean' },
+      public_specialty_mm: textUpTo(200),
+      public_specialty_en: textUpTo(200),
+      public_rating: { type: ['number', 'null'], minimum: 1, maximum: 5, multipleOf: 0.5 },
+      show_own_earnings: { type: ['boolean', 'null'] },
+      expected_updated_at: dateTime,
+    },
+  },
+  Session: {
+    type: 'object',
+    required: ['id', 'login_method', 'created_at', 'last_seen_at', 'is_current'],
+    properties: {
+      id: uuid,
+      device_label: nullableText,
+      login_method: { type: 'integer', enum: [1, 2] },
+      ip_address: nullableText,
+      created_at: dateTime,
+      last_seen_at: dateTime,
+      is_current: { type: 'boolean' },
+    },
+  },
+  Warning: {
+    type: 'object',
+    required: ['code'],
+    properties: {
+      code: { type: 'string' },
+      params: { type: 'object', additionalProperties: true },
+      items: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    },
+  },
+  // The inline request bodies of setEmployeeStatus, assignEmployeeBranch, endEmployeeBranch,
+  // setEmployeePublicRating and revokeAllEmployeeSessions.
+  EmployeeStatusRequest: {
+    type: 'object',
+    required: ['status'],
+    properties: {
+      status: { type: 'integer', enum: [0, 1, 2, 3] },
+      effective_date: { type: 'string', format: 'date' },
+      reason: { type: 'string', maxLength: 500 },
+    },
+  },
+  BranchAssignRequest: {
+    type: 'object',
+    required: ['branch_id'],
+    properties: { branch_id: uuid, effective_from: { type: 'string', format: 'date' } },
+  },
+  BranchEndRequest: {
+    type: 'object',
+    required: ['effective_to'],
+    properties: { effective_to: { type: 'string', format: 'date' } },
+  },
+  PublicRatingRequest: {
+    type: 'object',
+    required: ['public_rating'],
+    properties: {
+      public_rating: { type: ['number', 'null'], minimum: 1, maximum: 5, multipleOf: 0.5 },
+    },
+  },
+  RevokeAllRequest: {
+    type: 'object',
+    properties: { reason: { type: 'string', maxLength: 500 } },
+  },
   MeResponse: {
     type: 'object',
     required: [
@@ -275,7 +469,7 @@ function valueBranch(schema: Schema): Schema {
   return (schema.anyOf as Schema[]).find((branch) => branch.type !== 'null') ?? schema;
 }
 
-const BOUNDS = ['maxLength', 'minimum', 'maximum', 'maxItems'] as const;
+const BOUNDS = ['maxLength', 'minimum', 'maximum', 'maxItems', 'multipleOf'] as const;
 
 function typesOf(schema: Schema): string[] {
   if (Array.isArray(schema.anyOf))
@@ -411,5 +605,93 @@ describe('add-branch-management task 1.7 — the branch schemas = OpenAPI Part 1
     for (const status of [0, 1])
       expect(branchStatusSchema.safeParse({ status }).success).toBe(true);
     expect(branchStatusSchema.safeParse({ status: 2 }).success).toBe(false);
+  });
+});
+
+describe('add-employee-management task 1.7 — the employee schemas = OpenAPI Part 1 v1.8', () => {
+  // Part 4 gives `Warning` another shape, so the document names Part 1's copy EmployeeWarning.
+  const generatedName = (name: string) => (name === 'Warning' ? 'EmployeeWarning' : name);
+
+  it.each(['UserAccess', 'RoleAssignment', 'EmployeeListItem', 'Employee', 'Session', 'Warning'])(
+    '%s',
+    (name) => {
+      const actual = generated[generatedName(name)];
+      expect(actual, name).toBeDefined();
+      expectParity(PART1[name] as Schema, actual as Schema, name);
+    },
+  );
+
+  it.each([
+    'EmployeeCreate',
+    'EmployeeUpdate',
+    'EmployeeStatusRequest',
+    'BranchAssignRequest',
+    'BranchEndRequest',
+    'PublicRatingRequest',
+    'RevokeAllRequest',
+  ])('%s — members, types, bounds and exactly the required list of Part 1', (name) => {
+    const part1 = PART1[name] as Schema;
+    const actual = generated[name] as Schema;
+    expect(actual, name).toBeDefined();
+    expectParity(part1, actual, name);
+    expect([...((actual.required as string[] | undefined) ?? [])].sort(), name).toStrictEqual(
+      [...((part1.required as string[] | undefined) ?? [])].sort(),
+    );
+  });
+
+  it('the limits the batch adds (EM2) are in the document: notes 1,000, 20 branches, 10 roles', () => {
+    const create = (generated.EmployeeCreate as Schema).properties as Record<string, Schema>;
+    const update = (generated.EmployeeUpdate as Schema).properties as Record<string, Schema>;
+    const notes = (member: Schema | undefined) =>
+      valueBranch(member as Schema).maxLength as number | undefined;
+    expect(notes(create.internal_notes)).toBe(1000);
+    expect(notes(update.internal_notes)).toBe(1000);
+    expect(create.branch_ids?.maxItems).toBe(20);
+    expect(create.role_assignments?.maxItems).toBe(10);
+  });
+
+  it('EmployeeUpdate has no email, status or user_id member', () => {
+    const members = Object.keys((generated.EmployeeUpdate as Schema).properties as object);
+    for (const name of ['email', 'status', 'user_id']) expect(members).not.toContain(name);
+  });
+
+  it('the check bites: a rating without its step fails', () => {
+    const employee = generated.Employee as Schema;
+    const members = employee.properties as Record<string, Schema>;
+    const broken = {
+      ...employee,
+      properties: {
+        ...members,
+        public_rating: { type: ['number', 'null'], minimum: 1, maximum: 5 },
+      },
+    };
+    expect(() => {
+      expectParity(PART1.Employee as Schema, broken, 'Employee');
+    }).toThrow(/Employee\.public_rating multipleOf/);
+  });
+
+  it('the Part 1 pattern of the create: the e-mail is an address, the role scope is 1 or 2', () => {
+    expect(employeeCreateSchema.safeParse({ email: 'lin.point.test', name_mm: 'x' }).success).toBe(
+      false,
+    );
+    expect(employeeCreateSchema.safeParse({ email: 'lin@point.test', name_mm: 'x' }).success).toBe(
+      true,
+    );
+    const roleItem = { role_id: '0199a3f2-0000-7000-8002-000000000001' };
+    for (const [scope_type, ok] of [
+      [1, true],
+      [2, true],
+      [0, false],
+      [3, false],
+    ] as const) {
+      expect(
+        employeeCreateSchema.safeParse({
+          email: 'lin@point.test',
+          name_mm: 'x',
+          role_assignments: [{ ...roleItem, scope_type }],
+        }).success,
+        String(scope_type),
+      ).toBe(ok);
+    }
   });
 });

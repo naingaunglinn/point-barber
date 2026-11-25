@@ -28,6 +28,10 @@ describe('language files', () => {
       'maintenance',
       'permission',
       'leaveType',
+      'employee',
+      'profile',
+      'devices',
+      'team',
     ]);
   });
 
