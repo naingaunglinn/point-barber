@@ -5,8 +5,8 @@ import { buildOpenApiDocument } from './document.js';
 // add-attachments-upload task 1.5 — the generated Attachment, AttachmentUpload, SignedUrl and
 // RemoveRequest equal OpenAPI Part 8 (API-ERR-03 · CG-API-03), copied from point-sdd
 // docs/api/openapi/part8-platform.yaml (v1.1) because CI does not check out point-sdd: members, types,
-// formats, enums, required lists and `maxLength`. `AttachmentUpload.file` is a `binary` part in the
-// contract; the Zod schema reads the file's NAME, so only its type is compared. Part 8 writes a
+// formats, enums, required lists and `maxLength`. `AttachmentUpload.file` is the file part (`format:
+// binary`), although the Zod schema reads the file's NAME. Part 8 writes a
 // nullable object as `oneOf`, Zod as `anyOf`; both are read as one schema whose types include `null`.
 
 type Schema = Record<string, unknown>;
@@ -17,7 +17,7 @@ const PART8: Record<string, Schema> = {
   AttachmentUpload: {
     required: ['file', 'purpose'],
     properties: {
-      file: { type: 'string' },
+      file: { type: 'string', format: 'binary' },
       purpose: { type: 'string', enum: ['image', 'document', 'import'] },
     },
   },
