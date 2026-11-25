@@ -24,7 +24,8 @@ export const REDACTED_KEYS = [
 
 export const REDACTED = '[redacted]';
 
-const SIGNED_URL_MEMBER = /X-Amz-(?:Signature|Credential|Security-Token)=[^&#\s"'<>]*/gi;
+// It ends before a backslash too, so it can run on a JSON line without eating an escaped quote.
+const SIGNED_URL_MEMBER = /X-Amz-(?:Signature|Credential|Security-Token)=[^&#\s"'<>\\]*/gi;
 
 /**
  * A presigned link's signature, credential and token replaced, wherever a URL stands in a text (a log

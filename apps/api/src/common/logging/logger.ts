@@ -28,40 +28,16 @@ export const REDACT_PATHS = [
   ),
 ];
 
-const SCRUB_DEPTH = 5;
-
-/**
- * A presigned link anywhere in a log call — the message or a field, up to five levels deep — loses its
- * signature, credential and token (CG-SEC-10 · add-attachments-upload design D9). Key-based redaction
- * cannot see a link inside a URL string. Errors keep their own serializer and are scrubbed as text.
- */
-export function scrubSignedUrls(value: unknown, depth = 0): unknown {
-  if (typeof value === 'string') return value.includes('X-Amz-') ? redactSignedUrls(value) : value;
-  if (value instanceof Error) {
-    value.message = redactSignedUrls(value.message);
-    if (value.stack !== undefined) value.stack = redactSignedUrls(value.stack);
-    return value;
-  }
-  if (depth >= SCRUB_DEPTH || typeof value !== 'object' || value === null) return value;
-  if (Array.isArray(value)) return value.map((item) => scrubSignedUrls(item, depth + 1));
-  const prototype: unknown = Object.getPrototypeOf(value);
-  if (prototype !== Object.prototype && prototype !== null) return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [key, scrubSignedUrls(item, depth + 1)]),
-  );
-}
-
 export function createLogger(level: string, destination?: DestinationStream): Logger {
   return pino(
     {
       level,
       base: undefined, // no pid / hostname in every line
       redact: { paths: REDACT_PATHS, censor: '[redacted]' },
-      hooks: {
-        logMethod(args, method) {
-          method.apply(this, args.map((arg) => scrubSignedUrls(arg)) as typeof args);
-        },
-      },
+      // A presigned link loses its signature, credential and token on the finished line (CG-SEC-10 ·
+      // add-attachments-upload design D9): key-based redaction cannot see a link inside a text, an error's
+      // cause or a deep object, and nothing that is logged is changed on the way.
+      hooks: { streamWrite: redactSignedUrls },
       timestamp: pino.stdTimeFunctions.isoTime,
     },
     destination,

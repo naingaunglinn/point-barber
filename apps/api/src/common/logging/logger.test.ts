@@ -86,11 +86,30 @@ describe('logger redaction · presigned links (task 3.10)', () => {
     ['a field', { url: LINK }],
     ['a nested field', { res: { body: { items: [{ url: LINK }] } } }],
     ['an error message and its stack', { err: new Error(`GET ${LINK} timed out`) }],
+    ['the cause of an error', { err: new Error('upload failed', { cause: new Error(LINK) }) }],
+    ['a DOMException (its message is read-only)', { err: new DOMException(LINK, 'TimeoutError') }],
+    ['an object deeper than any walk', { a: { b: { c: { d: { e: { f: { g: LINK } } } } } } }],
   ])('never prints the signature or the token in %s', (_, object) => {
     const text = loggedText(object);
     for (const secret of ['sig-9f8e7d6c', 'tok-77', 'minio%2Fs3'])
       expect(text).not.toContain(secret);
     expect(text).toContain('X-Amz-Expires=300');
+  });
+
+  it('a timeout error without a link is logged, not thrown', () => {
+    const error = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    expect(loggedText({ err: error })).toContain('aborted due to timeout');
+  });
+
+  it('keeps the line valid JSON when a quote or a line break follows the link', () => {
+    const lines: string[] = [];
+    const log = createLogger('info', { write: (line: string) => void lines.push(line) });
+    log.info({ html: `<a href="${LINK}">x</a>`, text: `${LINK}\nnext` }, `"${LINK}"`);
+    expect(JSON.parse(lines[0] ?? '')).toMatchObject({
+      html: expect.stringContaining('">x</a>') as string,
+      text: expect.stringContaining('\nnext') as string,
+    });
+    expect(lines[0]).not.toContain('sig-9f8e7d6c');
   });
 
   it('never prints it in the message either, and keeps a Date readable', () => {
