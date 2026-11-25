@@ -70,5 +70,14 @@
   "category_in_use": "This category still has {count} services that are not archived.",
   "options_required": "A service priced by options needs its options.",
   "use_options_endpoint": "Option pricing is set with the service's options, not here.",
-  "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first."
+  "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first.",
+  "closure_overlap": "These dates overlap another closure of this branch.",
+  "date_in_past": "This date has already passed.",
+  "closure_started": "This closure has already started — only its end date and notices can change.",
+  "closure_past": "This closure has ended and can no longer be changed.",
+  "range_too_long": "The range is too long — at most {max_days} days.",
+  "closes_before_opens": "The closing time must be after the opening time.",
+  "times_required": "Enter the opening and closing times.",
+  "times_not_allowed": "A closed day has no times.",
+  "overnight_not_allowed": "Opening hours can't run past midnight."
 }
