@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { RequestMethod } from '@nestjs/common';
 import { HTTP_CODE_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants.js';
+import { employeeUpdateSchema } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
 import { parseBranchPath } from '../../../common/access/paths.js';
@@ -74,6 +75,14 @@ describe('add-employee-management · the employee routes (design D2)', () => {
       'GET /v1/employees/:id/sessions': can('employee.access_update', target),
       'POST /v1/employees/:id/sessions/revoke-all': can('employee.access_update', target),
     });
+  });
+
+  it('every member the update schema accepts is in a group, so none is writable without its own code', () => {
+    // `expected_updated_at` is the echo token of the edit, not a value that is written.
+    const accepted = Object.keys(employeeUpdateSchema.shape).filter(
+      (member) => member !== 'expected_updated_at',
+    );
+    expect(accepted.sort()).toEqual(Object.keys(EMPLOYEE_UPDATE_FIELDS).sort());
   });
 
   it('groups the members of the update as P1.EMP.04 says', () => {
