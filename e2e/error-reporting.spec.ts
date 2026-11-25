@@ -5,7 +5,7 @@ import { expect, recordPolicyViolations, test } from './fixtures.js';
 import { APP_ORIGIN } from './hosts.js';
 import { looseObject, parseJsonText, readJson } from './helpers/json.js';
 import { signInAs } from './helpers/sign-in.js';
-import { restartApi, withServiceEnv } from './helpers/stack.js';
+import { gotoAfterRecreate, restartApi, withServiceEnv } from './helpers/stack.js';
 
 // add-staging-deploy task 5.3 — platform-runtime spec "Web app errors reach Sentry with a DSN read at
 // run time" (ADR-007 decision 3 · design D10). The same image runs twice: recreated with a DSN on the
@@ -70,10 +70,7 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
         const page = await context.newPage();
         // `/` opens Today with the query kept (add-walkin-visit-checkout task 10.1); the event's URL
         // has no query string.
-        await page.goto('/?branch=B3');
-        // The first page of the web container recreated just now: on a busy runner Today has taken
-        // more than the 5 s default (CI run 41759867794), so this one wait gets 20 s.
-        await expect(page.getByTestId('today')).toBeVisible({ timeout: 20_000 });
+        await gotoAfterRecreate(page, '/?branch=B3', page.getByTestId('today'));
         await expect(page.locator('html')).toHaveAttribute('data-error-reporting', 'ready');
         await throwUncaught(page);
         await expect.poll(() => envelopes.length).toBe(1);
@@ -105,8 +102,8 @@ test.describe('add-staging-deploy · platform-runtime · Web app errors reach Se
       if (/sentry/i.test(new URL(request.url()).host)) sentry.push(request.url());
     });
     const page = await context.newPage();
-    await page.goto('/');
-    await expect(page.getByTestId('today')).toBeVisible();
+    // The test above put the web container back just now.
+    await gotoAfterRecreate(page, '/', page.getByTestId('today'));
     await throwUncaught(page);
     // Without a DSN the client is never set up (below: no `ready`, no ingest host in the page), so
     // nothing can be sent; no wait is needed to show it (CG-TEST-09).

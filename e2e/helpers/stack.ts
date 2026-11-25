@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { PlaywrightWorkerArgs } from '@playwright/test';
+import { type Locator, type Page, type PlaywrightWorkerArgs, expect } from '@playwright/test';
 
 import { APP_ORIGIN, COMPOSE, environmentWith } from '../hosts.js';
 
@@ -90,4 +90,36 @@ export async function withServiceEnv(
     await waitReady();
     await context.dispose();
   }
+}
+
+const NETWORK_CHANGED = 'net::ERR_NETWORK_CHANGED';
+
+/**
+ * Opens `path` after a service was recreated and waits for `landmark`. Recreating a container changes
+ * the machine's network interfaces, and Chromium then aborts the requests in flight with
+ * ERR_NETWORK_CHANGED: scripts of the page are lost, so it stays blank however long the test waits (CI
+ * runs 44661586461, 45546409927 and 45585880692). Only that error loads the page again; a page that
+ * stays blank for another reason still fails.
+ */
+export async function gotoAfterRecreate(
+  page: Page,
+  path: string,
+  landmark: Locator,
+): Promise<void> {
+  let aborted = false;
+  page.on('requestfailed', (request) => {
+    if (request.failure()?.errorText === NETWORK_CHANGED) aborted = true;
+  });
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    aborted = false;
+    await page.goto(path).catch((error: unknown) => {
+      if (!String(error).includes(NETWORK_CHANGED)) throw error;
+      aborted = true;
+    });
+    await expect
+      .poll(async () => aborted || (await landmark.isVisible()), { timeout: 20_000 })
+      .toBe(true);
+    if (!aborted) return;
+  }
+  await expect(landmark).toBeVisible();
 }
