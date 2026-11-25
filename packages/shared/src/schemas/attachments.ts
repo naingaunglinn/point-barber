@@ -68,3 +68,9 @@ export const attachmentSchema = z.strictObject({
   uploaded_at: wireDateTime,
   deleted_at: wireDateTime.nullable(),
 });
+
+/** The query of P8.ATT.02: the entity whose live files are listed. */
+export const attachmentListQuerySchema = z.object({
+  entity_type: z.string().min(1).max(60),
+  entity_id: z.uuid(),
+});
