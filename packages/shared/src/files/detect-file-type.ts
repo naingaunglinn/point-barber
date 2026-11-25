@@ -92,12 +92,19 @@ function zipListsWorkbook(bytes: Uint8Array): boolean {
   return false;
 }
 
+/** How many bytes follow a UTF-8 lead byte; -1 for a byte that starts nothing (80 – C1, F5 – FF). */
+function utf8Extra(first: number): number {
+  if (first < 0x80) return 0;
+  if (first < 0xc2 || first > 0xf4) return -1;
+  return first < 0xe0 ? 1 : first < 0xf0 ? 2 : 3;
+}
+
 /** Well-formed UTF-8 (RFC 3629): no overlong form, no surrogate, nothing above U+10FFFF. */
 function isUtf8(bytes: Uint8Array): boolean {
   let at = 0;
   while (at < bytes.length) {
     const first = byteAt(bytes, at);
-    const extra = first < 0x80 ? 0 : first < 0xc2 ? -1 : first < 0xe0 ? 1 : first < 0xf0 ? 2 : 3;
+    const extra = utf8Extra(first);
     if (extra < 0 || at + extra >= bytes.length) return false;
     let value = extra === 0 ? first : first & (0x3f >> extra);
     for (let index = 1; index <= extra; index += 1) {
@@ -112,9 +119,24 @@ function isUtf8(bytes: Uint8Array): boolean {
   return true;
 }
 
-/** UTF-16 with a byte-order mark (FF FE or FE FF) and a whole number of 16-bit units. */
-const isUtf16WithBom = (bytes: Uint8Array): boolean =>
-  bytes.length % 2 === 0 && ['\xff\xfe', '\xfe\xff'].includes(asciiAt(bytes, 0, 2));
+/**
+ * Text in UTF-16 with a byte-order mark (FF FE or FE FF): a whole number of 16-bit units, every
+ * surrogate in a pair, and no U+0000 (binary content, as the NUL byte of the UTF-8 test).
+ */
+function isUtf16WithBom(bytes: Uint8Array): boolean {
+  const mark = asciiAt(bytes, 0, 2);
+  if (bytes.length % 2 !== 0 || (mark !== '\xff\xfe' && mark !== '\xfe\xff')) return false;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const little = mark === '\xff\xfe';
+  let highSurrogate = false;
+  for (let at = 2; at < bytes.length; at += 2) {
+    const unit = view.getUint16(at, little);
+    const isLow = unit >= 0xdc00 && unit <= 0xdfff;
+    if (unit === 0 || isLow !== highSurrogate) return false;
+    highSurrogate = unit >= 0xd800 && unit <= 0xdbff;
+  }
+  return !highSurrogate;
+}
 
 /**
  * The type of `bytes` for an upload of `purpose` (design D4): the signature at offset 0, then the

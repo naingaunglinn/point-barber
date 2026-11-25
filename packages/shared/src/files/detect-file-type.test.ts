@@ -119,6 +119,8 @@ describe('detectFileType', () => {
       expect(csv(0xff, 0xfe, utf16(true))).toEqual({ ok: true, type });
       expect(csv(0xfe, 0xff, utf16(false))).toEqual({ ok: true, type });
       expect(csv([...new TextEncoder().encode('အမည်,ဖုန်း\n')])).toEqual({ ok: true, type });
+      expect(csv([0xf4, 0x8f, 0xbf, 0xbf])).toEqual({ ok: true, type }); // U+10FFFF, the last one
+      expect(csv([0xff, 0xfe, 0x3d, 0xd8, 0x00, 0xde])).toEqual({ ok: true, type }); // U+1F600, a pair
     });
 
     it.each([
@@ -127,9 +129,15 @@ describe('detectFileType', () => {
       ['an overlong form (C0 80)', [0xc0, 0x80]],
       ['a surrogate in UTF-8 (ED A0 80)', [0xed, 0xa0, 0x80]],
       ['a value above U+10FFFF (F5 80 80 80)', [0xf5, 0x80, 0x80, 0x80]],
+      ['a lead byte that does not exist (F8)', [0xf8, 0x90, 0x80, 0x80]],
+      ['a lead byte that does not exist (FC)', [0xfc, 0x80, 0x80, 0x80]],
       ['a sequence cut off (E1 80)', [0xe1, 0x80]],
       ['a stray continuation byte (80)', [0x80]],
       ['UTF-16 with an odd length', [0xff, 0xfe, 0x6e]],
+      ['UTF-16 with a high surrogate alone', [0xff, 0xfe, 0x00, 0xd8, 0x41, 0x00]],
+      ['UTF-16 with a low surrogate alone', [0xff, 0xfe, 0x00, 0xdc, 0x41, 0x00]],
+      ['UTF-16 that ends in a high surrogate', [0xfe, 0xff, 0x00, 0x41, 0xd8, 0x00]],
+      ['UTF-16 with U+0000 (binary after the mark)', [0xff, 0xfe, 0x4d, 0x5a, 0x00, 0x00]],
     ])('%s is refused', (_name, content) => {
       expect(csv(content)).toEqual(refused('import'));
     });

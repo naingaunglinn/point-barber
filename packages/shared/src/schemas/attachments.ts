@@ -22,7 +22,8 @@ export const ATTACHMENT_VARIANTS = [
  * part is `invalid_type` on `file`, a name over 255 characters `too_big`.
  */
 export const attachmentUploadSchema = z.object({
-  file: z.string().min(1).max(FILE_NAME_MAX),
+  // The OpenAPI part is the file itself (Part 8 AttachmentUpload: `format: binary`).
+  file: z.string().min(1).max(FILE_NAME_MAX).meta({ format: 'binary' }),
   purpose: z.enum(UPLOAD_PURPOSES),
 });
 
