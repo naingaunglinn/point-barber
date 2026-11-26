@@ -103,14 +103,14 @@
   },
   "users": {
     "DISABLED": "ပိတ်ထား",
-    "ACTIVE": "အသုံးပြုနေ",
-    "INVITED": "ဖိတ်ထားပြီး"
+    "ACTIVE": "သုံးနေ",
+    "INVITED": "ဖိတ်ထား"
   },
   "employees": {
-    "INACTIVE": "အသုံးမပြု",
-    "ACTIVE": "အသုံးပြုနေ",
-    "RESIGNED": "နုတ်ထွက်ပြီး",
-    "TERMINATED": "ရပ်စဲပြီး"
+    "INACTIVE": "ရပ်နားထား",
+    "ACTIVE": "အလုပ်လုပ်ဆဲ",
+    "RESIGNED": "နုတ်ထွက်",
+    "TERMINATED": "ထုတ်ပယ်"
   },
   "import_jobs": {
     "CANCELLED": "ပယ်ဖျက်ပြီး",

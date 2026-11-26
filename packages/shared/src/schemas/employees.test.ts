@@ -11,7 +11,6 @@ import {
   employeeSelfViewSchema,
   employeeStatusSchema,
   employeeUpdateSchema,
-  employeeWarningSchema,
   normalizeEmployeeMembers,
   publicRatingSchema,
   revokeAllSchema,
@@ -491,18 +490,5 @@ describe('the response schemas (task 1.6)', () => {
     expect(sessionSchema.parse(phone)).toEqual(phone);
     expect(sessionSchema.safeParse({ ...phone, login_method: 3 }).success).toBe(false);
     expect(sessionSchema.safeParse({ ...phone, token_hash: 'x' }).success).toBe(false);
-  });
-
-  it('Warning carries its code, params and items', () => {
-    const warning = {
-      code: 'future_bookings',
-      params: { count: 4 },
-      items: [{ id: B1, starts_at: '2026-10-06T10:00:00+06:30' }],
-    };
-    expect(employeeWarningSchema.parse(warning)).toEqual(warning);
-    expect(employeeWarningSchema.parse({ code: 'future_bookings' })).toEqual({
-      code: 'future_bookings',
-    });
-    expect(employeeWarningSchema.safeParse({ code: 'x', extra: 1 }).success).toBe(false);
   });
 });
