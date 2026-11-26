@@ -573,6 +573,7 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
     properties: {
       code: { type: 'string' },
       params: { type: 'object', additionalProperties: true },
+      items: { type: 'array', items: { type: 'object', additionalProperties: true } },
     },
     required: ['code'],
   },

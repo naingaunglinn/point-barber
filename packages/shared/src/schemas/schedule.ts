@@ -199,6 +199,20 @@ export const patternSetSchema = z.strictObject({
 
 export type PatternSet = z.infer<typeof patternSetSchema>;
 
+/**
+ * A warning of a pattern save (P2.PAT.02 `warnings[]` · OpenAPI Part 2 `Warning` with `items`): the shifts
+ * a regeneration kept because attendance points at them (P2-RULE-07 · P5-RULE-14). `bookings_outside_shift`
+ * joins this union with the booking warning (task 5.2).
+ */
+export const shiftKeptAttendanceWarningSchema = z.strictObject({
+  code: z.literal('shift_kept_attendance'),
+  items: z.array(z.strictObject({ shift_id: z.uuid(), shift_date: wireDate })),
+});
+
+export const scheduleWarningSchema = shiftKeptAttendanceWarningSchema;
+
+export type ScheduleWarning = z.infer<typeof scheduleWarningSchema>;
+
 /** A shift; `source` = `schedule_shifts.source` (1 PATTERN · 2 MANUAL — DB Part 2 v1.3). */
 export const shiftSchema = z.strictObject({
   id: z.uuid(),

@@ -9,6 +9,7 @@ import {
   patternSetWriteSchema,
   rosterQuerySchema,
   rosterSchema,
+  scheduleWarningSchema,
   shiftSchema,
 } from './schedule.js';
 
@@ -269,5 +270,18 @@ describe('the response DTOs (OpenAPI 1.6.0)', () => {
       closures: [{ branch_id: B3, date: '2026-10-10', notice_mm: 'ပိတ်ရက်', notice_en: null }],
     };
     expect(rosterSchema.parse(roster)).toStrictEqual(roster);
+  });
+});
+
+describe('add-schedule-patterns · scheduling · A shift that attendance points at is kept — the warning', () => {
+  it('Scenario: Already clocked in — `shift_kept_attendance` carries items of { shift_id, shift_date }', () => {
+    const warning = {
+      code: 'shift_kept_attendance',
+      items: [{ shift_id: '0199a3f2-0000-7000-8000-000000000001', shift_date: '2026-10-05' }],
+    };
+    expect(scheduleWarningSchema.parse(warning)).toStrictEqual(warning);
+    expect(
+      scheduleWarningSchema.safeParse({ code: 'shift_kept_attendance', items: [{}] }).success,
+    ).toBe(false);
   });
 });

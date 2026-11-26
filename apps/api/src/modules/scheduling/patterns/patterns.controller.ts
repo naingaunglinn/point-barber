@@ -63,6 +63,6 @@ export class PatternsController {
     @Param('id') id: string,
     @ZBody(patternSetWriteSchema) body: PatternSetWrite,
   ): Promise<PatternSaved> {
-    return this.writer.save(id, body, callerGrants());
+    return this.writer.save(id, body, callerGrants(), RequestContext.current()?.employee_id);
   }
 }

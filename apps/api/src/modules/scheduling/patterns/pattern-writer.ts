@@ -3,7 +3,7 @@ import {
   ErrorCode,
   type PatternSet,
   type PatternSetWrite,
-  type WarningDto,
+  type ScheduleWarning,
   businessDateOf,
 } from '@point/shared';
 
@@ -15,6 +15,7 @@ import { ProblemException } from '../../../common/http/problem.exception.js';
 import { Assignments } from '../../people/index.js';
 import { Audit, SettingsReader } from '../../platform/index.js';
 import { PatternsRepository } from '../repositories/patterns.repository.js';
+import { ShiftGenerator } from '../shifts/shift-generator.js';
 import { planSave } from './pattern-plan.js';
 import { PatternSets, toPatternSet } from './pattern-sets.js';
 import { PatternValidator } from './pattern-validator.js';
@@ -30,15 +31,18 @@ import { ScheduleLock } from './schedule-lock.js';
 //      the first failure, `errors[]` = all.
 //   6. The rows of planSave, archives and closes before inserts.
 //   7. Nothing changed → no audit row (Audit.skip), no generation, no event.
+//   8. ShiftGenerator over max(D, today) … horizon, still under the lock.
+//   9. The own-save guard (owner C11 · PT5): the caller's own employee and the generation archived,
+//      inserted or converted a shift dated today → 422 self_action; the transaction rolls back.
 //  10. The audit row `schedule.pattern_set` with the set before and after; its branch = the segments'
 //      one branch, else the employee's primary branch (`@Audited({ target: 'employee' })`).
 //  11. The answer = the set effective on D + warnings.
-// Steps 8 (generation) and 9 (the own-save guard) come with A4; step 10's events and site touch with A5.
+// Step 10's booking warning, events and site touch come with A5.
 
 export const SCHEDULE_PATTERN_SET = 'schedule.pattern_set';
 
 export interface PatternSaved extends PatternSet {
-  readonly warnings: WarningDto[];
+  readonly warnings: ScheduleWarning[];
 }
 
 @Injectable()
@@ -50,12 +54,18 @@ export class PatternWriter {
     private readonly patterns: PatternsRepository,
     private readonly sets: PatternSets,
     private readonly validator: PatternValidator,
+    private readonly generator: ShiftGenerator,
     private readonly assignments: Assignments,
     private readonly settings: SettingsReader,
     private readonly audit: Audit,
   ) {}
 
-  save(employeeId: string, body: PatternSetWrite, grants: GrantSet): Promise<PatternSaved> {
+  save(
+    employeeId: string,
+    body: PatternSetWrite,
+    grants: GrantSet,
+    callerEmployeeId: string | undefined,
+  ): Promise<PatternSaved> {
     return this.runner.run(async (tx) => {
       const now = this.clock.now();
       const from = body.effective_from;
@@ -115,6 +125,15 @@ export class PatternWriter {
         now,
       );
 
+      const today = businessDateOf(now);
+      const generated = await this.generator.run(tx, {
+        employee_id: employeeId,
+        from: from > today ? from : today,
+      });
+      if (employeeId === callerEmployeeId && generated.changed_dates.includes(today)) {
+        throw new ProblemException(ErrorCode.SELF_ACTION, 422);
+      }
+
       const before = toPatternSet(employeeId, old);
       const after = await this.sets.effectiveOn(tx, employeeId, from);
       const branches = new Set(
@@ -129,7 +148,7 @@ export class PatternWriter {
         before: { ...before },
         after: { ...after },
       });
-      return { ...after, warnings: [] };
+      return { ...after, warnings: generated.warnings };
     });
   }
 }

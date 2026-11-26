@@ -67,6 +67,25 @@ export class PatternsRepository {
     return assertWithinCeiling(z.array(rowSchema).parse(rows), 'PatternsRepository.history');
   }
 
+  /**
+   * The non-archived rows effective anywhere in `from` … `to` — the sets the generator plans from
+   * (design D4 step 2); one date's set is the part of them effective on that date.
+   */
+  async effectiveIn(
+    db: Tx,
+    employeeId: string,
+    from: string,
+    to: string,
+  ): Promise<StoredSegment[]> {
+    const rows = await db.$queryRaw<unknown[]>`
+      ${SELECT}
+      WHERE employee_id = ${employeeId}::uuid AND archived_at IS NULL
+        AND effective_from <= ${to}::date
+        AND (effective_to IS NULL OR effective_to >= ${from}::date)
+      ORDER BY effective_from, day_of_week, start_time, id`;
+    return z.array(rowSchema).parse(rows);
+  }
+
   /** The start of the first non-archived set after `date`, or null (owner PT2). */
   async nextStartAfter(db: Tx, employeeId: string, date: string): Promise<string | null> {
     const rows = await db.$queryRaw<unknown[]>`
