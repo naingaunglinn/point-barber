@@ -26,9 +26,9 @@ const put = (key: string, body: object) =>
   s.http.put(`/api/v1/settings/${key}`).set('Cookie', cookie).send(body);
 const effective = async (key: string) => {
   const res = await s.http.get('/api/v1/settings?module=customer').set('Cookie', cookie);
-  const item = (res.body as { items: { key: string; effective: unknown; source: string }[] }).items.find(
-    (entry) => entry.key === key,
-  );
+  const item = (
+    res.body as { items: { key: string; effective: unknown; source: string }[] }
+  ).items.find((entry) => entry.key === key);
   return [item?.effective, item?.source];
 };
 const preferred = async () =>

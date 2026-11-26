@@ -411,8 +411,7 @@ const CUSTOMER_PATHS = {
       tags: ['customers'],
       operationId: 'customerList',
       summary: 'List / search customers (P3.CUS.01) — D-CUS-06/07, AD-CUS-01',
-      'x-permission':
-        'customer.view+ (shared — any scope; statistics in the caller read scope)',
+      'x-permission': 'customer.view+ (shared — any scope; statistics in the caller read scope)',
       parameters: [
         { name: 'q', in: 'query', schema: { type: 'string', maxLength: 255 } },
         {
@@ -441,7 +440,10 @@ const CUSTOMER_PATHS = {
                 type: 'object',
                 required: ['items', 'next_cursor', 'total'],
                 properties: {
-                  items: { type: 'array', items: { $ref: '#/components/schemas/CustomerListItem' } },
+                  items: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/CustomerListItem' },
+                  },
                   next_cursor: { type: ['string', 'null'] },
                   total: { type: 'integer' },
                 },

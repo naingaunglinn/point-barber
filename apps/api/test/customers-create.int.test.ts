@@ -23,7 +23,8 @@ const cookies = new Map<FixturePerson, string>();
 beforeAll(async () => {
   s = await seededApp(new Date('2026-10-05T09:10:00+06:30'));
   ids = (await customerHistory(s.prisma, ['DAW_MYA', 'U_BA'])).customers;
-  for (const person of ['E001', 'E004'] as const) cookies.set(person, (await s.signIn(person)).cookie);
+  for (const person of ['E001', 'E004'] as const)
+    cookies.set(person, (await s.signIn(person)).cookie);
 });
 afterAll(() => s.close());
 
@@ -78,9 +79,9 @@ describe('add-customer-management · customers · Staff add a customer with a na
 
   it('Scenario: Name and notes at their limits — 255 and 2,000 are created, 256 and 2,001 refused', async () => {
     expect((await create({ name: 'n'.repeat(255), phone: '09 4500 2001' })).status).toBe(201);
-    expect((await create({ name: 'n'.repeat(256), phone: '09 4500 2002' })).body.errors[0]).toStrictEqual(
-      { field: 'name', code: 'too_big', params: { maximum: 255 } },
-    );
+    expect(
+      (await create({ name: 'n'.repeat(256), phone: '09 4500 2002' })).body.errors[0],
+    ).toStrictEqual({ field: 'name', code: 'too_big', params: { maximum: 255 } });
     expect(
       (await create({ name: 'Ko Notes', phone: '09 4500 2003', notes: 'x'.repeat(2000) })).status,
     ).toBe(201);
@@ -95,7 +96,11 @@ describe('add-customer-management · customers · Staff add a customer with a na
     const before = await count({});
     const blank = await create({ name: '   ', phone: '09 4500 3001' });
     expect(refusal(blank)).toMatchObject({ status: 400, code: 'validation' });
-    expect(blank.body.errors[0]).toMatchObject({ field: 'name', code: 'too_small', params: { minimum: 1 } });
+    expect(blank.body.errors[0]).toMatchObject({
+      field: 'name',
+      code: 'too_small',
+      params: { minimum: 1 },
+    });
     const missing = await create({ name: 'Ko Phyo' });
     expect(missing.body.errors[0]).toMatchObject({ field: 'phone', code: 'invalid_type' });
     expect(await count({})).toBe(before);
@@ -142,7 +147,7 @@ describe('add-customer-management · customers · A phone that already belongs t
   });
 });
 
-describe('add-customer-management · customers · Zawgyi text in a customer\'s name or notes is refused', () => {
+describe("add-customer-management · customers · Zawgyi text in a customer's name or notes is refused", () => {
   it('Scenario: A name typed in Zawgyi — 400 zawgyi_text on name, nothing stored', async () => {
     const res = await create({ name: ZAWGYI_NAME, phone: '09 2700 7788' });
     expect(refusal(res)).toStrictEqual({
@@ -168,15 +173,13 @@ describe('add-customer-management · customers · Zawgyi text in a customer\'s n
   });
 
   it('Scenario: A FINISH with a Zawgyi name still finishes — the walk-in identity function is unchanged', async () => {
-    const match = await s.app
-      .get(TransactionRunner)
-      .run((tx) =>
-        s.app.get(Customers).matchOrCreate(tx, {
-          phone: '09 2800 9900',
-          name: ZAWGYI_NAME,
-          actor_user_id: FIXTURE_IDS.users.E004,
-        }),
-      );
+    const match = await s.app.get(TransactionRunner).run((tx) =>
+      s.app.get(Customers).matchOrCreate(tx, {
+        phone: '09 2800 9900',
+        name: ZAWGYI_NAME,
+        actor_user_id: FIXTURE_IDS.users.E004,
+      }),
+    );
     expect(match.customer.name).toBe(ZAWGYI_NAME);
   });
 });

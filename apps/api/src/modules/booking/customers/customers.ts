@@ -442,7 +442,8 @@ export class Customers {
       };
       if (!(await this.repository.insertNew(tx, row))) {
         const holder = await this.repository.findByPhone(tx, companyId, normalized);
-        if (holder === null) throw new Error('Customers.create: the phone conflicted but has no holder');
+        if (holder === null)
+          throw new Error('Customers.create: the phone conflicted but has no holder');
         throw phoneTaken(holder);
       }
       await this.audit.emit({
@@ -499,7 +500,11 @@ export class Customers {
         }
         if (normalized !== undefined && normalized !== stored.phone_normalized) {
           wanted = normalized;
-          const holder = await this.repository.findByPhone(tx, await this.company.id(tx), normalized);
+          const holder = await this.repository.findByPhone(
+            tx,
+            await this.company.id(tx),
+            normalized,
+          );
           if (holder !== null && holder.id !== id) throw phoneTaken(holder);
         }
         await this.repository.updateMembers(tx, id, write, this.clock.now());

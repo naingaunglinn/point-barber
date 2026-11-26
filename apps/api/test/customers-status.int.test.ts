@@ -109,7 +109,9 @@ describe('add-customer-management · customers · A customer with BOOKED or STAR
     const res = await post(MA_SU, 'archive');
     expect([res.status, res.body.code]).toStrictEqual([409, 'customer_has_active_bookings']);
     expect(res.body.context).toStrictEqual({ count: 1 });
-    expect((await audits(MA_SU)).filter((row) => row.action === 'customer.archive')).toHaveLength(0);
+    expect((await audits(MA_SU)).filter((row) => row.action === 'customer.archive')).toHaveLength(
+      0,
+    );
   });
 
   it('Scenario: Only past bookings — the archive answers 200', async () => {
@@ -173,7 +175,7 @@ describe('add-customer-management · customers · Archive hides the customer and
     expect(await listed()).not.toContain(uBa);
   });
 
-  it('Scenario: The note\'s limit — 500 accepted, 501 refused on note', async () => {
+  it("Scenario: The note's limit — 500 accepted, 501 refused on note", async () => {
     const spare = await addCustomer(s.prisma, 'MA_THIRI');
     const long = await post(spare, 'archive', { note: 'n'.repeat(501) });
     expect(long.status).toBe(400);
@@ -236,7 +238,9 @@ describe('add-customer-management · customers · Restore brings an archived cus
     const res = await post(MA_SU, 'restore');
     expect(res.status).toBe(200);
     expect(res.body.updated_at).toBe(before.updated_at);
-    expect((await audits(MA_SU)).filter((row) => row.action === 'customer.restore')).toHaveLength(1);
+    expect((await audits(MA_SU)).filter((row) => row.action === 'customer.restore')).toHaveLength(
+      1,
+    );
     s.clock?.set(new Date('2026-10-01T09:00:00+06:30'));
   });
 });

@@ -134,7 +134,10 @@ describe('add-customer-management · customers · Every committed customer write
       .post(`/api/v1/customers/${MA_SU}/archive`)
       .set('Cookie', as('E001'))
       .send({});
-    expect([refused.status, refused.body.code]).toStrictEqual([409, 'customer_has_active_bookings']);
+    expect([refused.status, refused.body.code]).toStrictEqual([
+      409,
+      'customer_has_active_bookings',
+    ]);
     expect(await rowsOf(refused)).toHaveLength(0);
     const unchanged = await s.http
       .patch(`/api/v1/customers/${MA_SU}`)
