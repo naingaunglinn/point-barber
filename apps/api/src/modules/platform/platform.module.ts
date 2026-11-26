@@ -35,7 +35,10 @@ import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
 import { ClosureAccess } from './website/closure-access.js';
 import { OpeningHours } from './website/opening-hours.js';
+import { OpeningHoursWrites } from './website/opening-hours-writes.js';
 import { SiteContent } from './website/site-content.js';
+import { WebsiteHoursController } from './website/website-hours.controller.js';
+import { WebsitePeople } from './website/website-people.js';
 
 // Bounded context `platform` (ADR-001 · docs/engineering/module-map.md): system health and status,
 // the audit writer, idempotency, the rate limiter, background jobs, mail, error reporting, the settings
@@ -62,7 +65,14 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
 
 @Module({
   imports: [JobsModule, MailModule, SettingsModule],
-  controllers: [HealthController, StatusController, MaintenanceController, SettingsWriteController],
+  controllers: [
+    HealthController,
+    StatusController,
+    MaintenanceController,
+    SettingsWriteController,
+    // add-website-management — mounted part by part (website/not-built.ts): A2 the hours.
+    WebsiteHoursController,
+  ],
   providers: [
     SystemService,
     // add-settings-store — the store's write path beside the audit writer, P1.SET.03 / 04, P1.SYS.03.
@@ -83,6 +93,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     // add-website-management task 1.6 — the closure loader of P8.WEB.07 / 08 (design D2).
     BranchClosuresRepository,
     ClosureAccess,
+    // A2 — the week of opening hours and the people reads registered by people (design D1 / D5).
+    WebsitePeople,
+    OpeningHoursWrites,
     RateLimiter,
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
@@ -116,6 +129,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     IdempotentInterceptor,
     OpeningHours,
     SiteContent,
+    WebsitePeople,
     RateLimiter,
     SettingsModule,
     MaintenanceGate,

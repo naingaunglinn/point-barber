@@ -40,6 +40,7 @@ export {
   type StoredObjectInfo,
 } from './storage/storage.service.js';
 export { type OpeningDay, OpeningHours } from './website/opening-hours.js';
+export { WebsitePeople } from './website/website-people.js';
 export {
   SITE_CONTENT_CHANGED,
   SITE_REVALIDATE,

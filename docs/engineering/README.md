@@ -39,18 +39,25 @@ point-barber a change is built as one or more pull requests:
 1. **Apply:** `/opsx:apply <change-id>` on a branch `feature/<change-id>/<part>` (CG-GIT-01).
 2. **Pull request:** the title is the squash commit, `<type>(<change-id>): <subject>`
    (CG-GIT-02). The template's seven sections are filled in (CG-GIT-04).
-3. **CI green and review:** all seven jobs pass, and the other developer reviews. A review by
-   Claude Code may come first, but the approval is the other developer's (CG-REVIEW-01).
+3. **CI green and approval:** all seven jobs pass, and the other side reviews and approves
+   (CG-REVIEW-01). The other developer's Claude may approve, from that developer's account, once
+   CI is green and its review leaves no must-fix or should-fix. A person approves a PR that changes
+   a locked source, a code PR that touches money, permission or login / auth / sessions, and any PR
+   marked "needs a person".
 4. **Test cases:** `/point-generate-tests` in point-sdd produces the test-case workbook for the
    change.
 5. **Test:** the workbook is run against the last pull request's Compose stack.
 6. **NG fixed on the branch:** each failure is fixed with a commit on that same branch, then
    re-tested.
-7. **Squash merge**, only when no NG is open.
+7. **Squash merge**, only when no NG is open. Auto-merge squash-merges a pull request once it is
+   approved, green and up to date (CG-GIT-05).
 8. **Archive:** `/opsx:archive <change-id>` in point-sdd.
 
-When a change is split into several pull requests, the earlier parts merge as they are reviewed.
-The last one stays open through steps 4–6.
+A pull request has at most 1,500 counted lines (CG-GIT-03). When a change is split into several
+pull requests, the earlier parts merge as they are approved. The next part may open while the
+earlier one is in review, with the earlier part's branch as its base; once that part merges, the
+author merges `main` in, never with a force push. The last one stays open through steps 4–6 and is
+approved only when no NG is open.
 
 After each merge, the merged task numbers are ticked in point-sdd's `tasks.md` and committed there.
 
@@ -77,8 +84,9 @@ before a paid plan (coding guideline OPEN-CG-06):**
 
 - merge only when all seven jobs are green;
 - never approve your own pull request;
-- merge only when the other developer's **Approve** shows on GitHub. A comment or a chat message is
-  not an approval (CG-REVIEW-01);
+- merge only when an **Approve** from the other developer's account shows on GitHub — given by that
+  developer, or by their Claude where CG-REVIEW-01 allows. A comment or a chat message is not an
+  approval;
 - merge only when every conversation is resolved and the branch is up to date with `main`;
 - always choose **Squash and merge**;
 - never push to `main`.
