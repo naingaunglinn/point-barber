@@ -1,9 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { PageHeader } from '@point/ui';
+import { PageHeader, useGuardedRouter } from '@point/ui';
 
 import { BranchForm } from '../../../../../../components/branches/BranchForm';
 import { useBranchAccess } from '../../../../../../lib/branches/access';
@@ -18,7 +17,7 @@ import { RefusedPage } from '../../../../../../lib/session/main-query-state';
 // radius is not sent, so the API gives the company setting (design D5). Cancel goes back to the list.
 export function NewBranchScreen() {
   const t = useTranslations('branch.list');
-  const router = useRouter();
+  const router = useGuardedRouter();
   const access = useBranchAccess();
   const create = useCreateBranch();
   if (!access.create) return <RefusedPage code="forbidden" />;
@@ -30,7 +29,7 @@ export function NewBranchScreen() {
         defaultValues={emptyBranchValues()}
         schema={createFormSchema}
         save={(body) => create.mutateAsync(body)}
-        onSaved={(branch) => router.push(`/settings/branches/${branch.id}`)}
+        onSaved={(branch) => router.bypass(() => router.push(`/settings/branches/${branch.id}`))}
         onCancel={() => router.push('/settings/branches')}
       />
     </div>

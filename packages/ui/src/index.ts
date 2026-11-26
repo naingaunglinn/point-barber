@@ -3,6 +3,14 @@
 // Screens use these components, never the shadcn/ui parts of ./primitives (AD-IMPL-02).
 export { fontPreloads, type FontPreload, type Locale, type Tree } from './fonts';
 
+export {
+  isUnsavedChangesHeld,
+  UnsavedChangesProvider,
+  useGuardedRouter,
+  useUnsavedChanges,
+  type GuardedRouter,
+} from './navigation/unsaved-changes';
+
 export { ClockProvider, useNow } from './providers/clock';
 export { FormatProvider, useFormat, type FormatSettings } from './providers/format';
 export { createQueryClient, QueryProvider } from './providers/query';
