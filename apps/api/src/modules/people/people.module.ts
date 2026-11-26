@@ -12,6 +12,7 @@ import {
   RegisteredGrantSource,
   SettingBranches,
   UserNames,
+  WebsitePeople,
 } from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
 import { BranchUsage } from './branches/branch-usage.js';
@@ -121,6 +122,8 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
     private readonly settingBranches: SettingBranches,
     private readonly gateGrants: RegisteredGrantSource,
     private readonly grantSource: GrantSource,
+    private readonly websitePeople: WebsitePeople,
+    private readonly displayNames: DisplayNames,
   ) {}
 
   onModuleInit(): void {
@@ -133,6 +136,16 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
     this.settingBranches.use(
       async (branchId) => (await this.directory.branchSummaries([branchId])).length === 1,
     );
+    // The website management: a branch's code and the names behind a change (add-website-management
+    // design D1).
+    this.websitePeople.use({
+      branch: async (id) => {
+        const [branch] = await this.directory.branchSummaries([id]);
+        return branch === undefined ? null : { id: branch.id, code: branch.code };
+      },
+      userDisplayNames: async (userIds) =>
+        this.displayNames.ofUsers(userIds, await this.displayNames.callerLocale()),
+    });
     // The maintenance gate decides on the same grant rows as the access guard (design D9).
     this.gateGrants.use(this.grantSource);
     // sync.code_tables (design D10): the catalogue first, then the base seed that reads it.
