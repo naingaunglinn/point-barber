@@ -49,10 +49,7 @@ async function patch(id: string, body: object, person: FixturePerson = 'E002') {
 const post = (path: string, body: object, person: FixturePerson) =>
   s.http.post(`/api/v1/customers/${path}`).set('Cookie', cookie(person)).send(body);
 const lookup = (phone: string) =>
-  s.http
-    .get('/api/v1/customers/lookup')
-    .query({ phone })
-    .set('Cookie', cookie('E004'));
+  s.http.get('/api/v1/customers/lookup').query({ phone }).set('Cookie', cookie('E004'));
 const forbidden = (res: { status: number; body: { code?: string; context?: unknown } }) => [
   res.status,
   res.body.code,
@@ -78,7 +75,7 @@ describe('add-customer-management · customers · The write routes pass through 
     expect(await read(MA_SU)).toStrictEqual(before);
   });
 
-  it('Scenario: A B1 manager edits the one company-wide row — Ko Zaw sets Ma Su\'s notes', async () => {
+  it("Scenario: A B1 manager edits the one company-wide row — Ko Zaw sets Ma Su's notes", async () => {
     const res = await patch(MA_SU, { notes: 'Prefers a short fade' }, 'E003');
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ notes: 'Prefers a short fade' });
@@ -116,7 +113,10 @@ describe('add-customer-management · customers · Staff with customer.update cor
       .set('Cookie', cookie('E002'))
       .send({ notes: 'Without the stamp' });
     expect(res.status).toBe(400);
-    expect(res.body.errors[0]).toMatchObject({ field: 'expected_updated_at', code: 'invalid_type' });
+    expect(res.body.errors[0]).toMatchObject({
+      field: 'expected_updated_at',
+      code: 'invalid_type',
+    });
     expect(await read(MA_SU)).toStrictEqual(before);
   });
 
@@ -230,7 +230,7 @@ describe('add-customer-management · customers · A stale edit is refused', () =
   });
 });
 
-describe('add-customer-management · customers · Zawgyi text in a customer\'s name or notes is refused (update)', () => {
+describe("add-customer-management · customers · Zawgyi text in a customer's name or notes is refused (update)", () => {
   it('Scenario: A name or notes typed in Zawgyi — 400 zawgyi_text, nothing stored; Unicode is stored', async () => {
     const before = await read(koPhyo);
     const res = await patch(koPhyo, { name: ZAWGYI_NAME, notes: ZAWGYI_NAME });
@@ -243,4 +243,3 @@ describe('add-customer-management · customers · Zawgyi text in a customer\'s n
     expect((await patch(koPhyo, { name: 'မသီရိ' })).body).toMatchObject({ name: 'မသီရိ' });
   });
 });
-
