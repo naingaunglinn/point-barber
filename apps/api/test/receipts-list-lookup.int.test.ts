@@ -4,6 +4,7 @@ import {
   ErrorCode,
   LateEntryReason,
   SaleItemLineType,
+  SaleStatus,
   UiLanguage,
   receiptListPageSchema,
   receiptLookupSchema,
@@ -178,7 +179,7 @@ describe('GET /v1/receipts — the receipts of a day, without amounts (task 2.1)
 
   it('Scenario: Open and cancelled sales are not receipts', async () => {
     // The day holds one OPEN and one CANCELLED sale at B3 (beforeAll) and neither is listed.
-    expect(await prisma.sales.count({ where: { branch_id: B3, status: { in: [0, 2] } } })).toBe(2);
+    expect(await prisma.sales.count({ where: { branch_id: B3, status: { in: [SaleStatus.OPEN, SaleStatus.CANCELLED] } } })).toBe(2);
     expect(numbers((await list(MIN, `?branch_id=${B3}`)).body)).toHaveLength(3);
   });
 
