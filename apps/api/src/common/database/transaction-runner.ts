@@ -9,6 +9,9 @@ import { TransactionScope } from './transaction-scope.js';
 
 export type Tx = Prisma.TransactionClient;
 
+/** A raw-SQL query piece one module's repository hands another's (add-customer-management design D3). */
+export type SqlPiece = Prisma.Sql;
+
 // One transaction per business action, opened by the service (CG-DB-03 · API-AUD-01 · design
 // D4.8 · add-foundation-auth-access D3). Its first statement sets app.user_id, app.session_id and
 // app.request_id for this transaction only (`set_config(…, true)`, the parameterised SET LOCAL), so
