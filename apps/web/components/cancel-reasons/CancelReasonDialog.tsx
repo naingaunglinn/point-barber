@@ -19,6 +19,7 @@ import {
   Dialog,
   FormAlert,
   FormField,
+  Switch,
   applyProblem,
   fieldErrorOf,
   toast,
@@ -77,6 +78,8 @@ export function CancelReasonDialog(props: CancelReasonDialogProps) {
 function CancelReasonFormDialog({ reason: stored, onClose, onReload }: CancelReasonDialogProps) {
   const t = useTranslations();
   const formId = useId();
+  const noteLabel = `${formId}-note-label`;
+  const noteHelp = `${formId}-note-help`;
   const values = stored === undefined ? emptyCancelReasonValues() : cancelReasonValues(stored);
   const form = useAppForm<CancelReasonFormValues, CancelReasonCreate | CancelReasonUpdate>(
     stored === undefined ? createFormSchema : updateFormSchema(values, stored.updated_at),
@@ -142,7 +145,9 @@ function CancelReasonFormDialog({ reason: stored, onClose, onReload }: CancelRea
     <Dialog
       open
       onOpenChange={(open) => (open ? undefined : close())}
-      title={stored === undefined ? t('cancelReason.form.titleNew') : t('cancelReason.form.titleEdit')}
+      title={
+        stored === undefined ? t('cancelReason.form.titleNew') : t('cancelReason.form.titleEdit')
+      }
     >
       <form
         id={formId}
@@ -197,19 +202,23 @@ function CancelReasonFormDialog({ reason: stored, onClose, onReload }: CancelRea
 
         {system ? null : (
           <div className="grid gap-1" data-testid="cancel-reason-field-requires_note">
-            <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
-              <input
-                type="checkbox"
-                className="size-5 accent-primary"
+            <div className="flex min-h-11 items-center gap-3">
+              <Switch
                 checked={requiresNote}
-                onChange={(event) =>
-                  form.setValue('requires_note', event.target.checked, { shouldDirty: true })
+                onChange={(checked) =>
+                  form.setValue('requires_note', checked, { shouldDirty: true })
                 }
+                aria-labelledby={noteLabel}
+                aria-describedby={noteHelp}
                 data-testid="cancel-reason-requires-note"
               />
-              {t('cancelReason.field.requiresNote')}
-            </label>
-            <p className="text-sm text-muted-foreground">{t('cancelReason.field.requiresNoteHelp')}</p>
+              <span id={noteLabel} className="text-sm font-semibold">
+                {t('cancelReason.field.requiresNote')}
+              </span>
+            </div>
+            <p id={noteHelp} className="text-sm text-muted-foreground">
+              {t('cancelReason.field.requiresNoteHelp')}
+            </p>
           </div>
         )}
 

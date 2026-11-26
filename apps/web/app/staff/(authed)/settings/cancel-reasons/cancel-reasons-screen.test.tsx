@@ -267,7 +267,7 @@ describe('add-booking-cancel-reasons · booking · The cancel-reason form shows 
     fireEvent.click(screen.getByTestId('cancel-reason-save'));
     await waitFor(() =>
       expect(sent('PATCH', `/api/v1/booking-cancel-reasons/${REASONS.barber.id}`)).toStrictEqual({
-        status: 0,
+        status: CancelReasonStatus.INACTIVE,
         expected_updated_at: REASONS.barber.updated_at,
       }),
     );
