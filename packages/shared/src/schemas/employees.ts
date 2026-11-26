@@ -25,10 +25,12 @@ export const EmployeeLimits = {
   CODE_MAX: 100,
   NAME_MAX: 255,
   PHONE_MAX: 50,
+  /** owner EM2 (★ A, add-employee-management proposal): no locked source bounds it; CG-API-03 needs one. */
   NOTES_MAX: 1000,
   SPECIALTY_MAX: 200,
   REASON_MAX: 500,
   QUERY_MAX: 100,
+  /** owner EM2 (★ A): `branch_ids` ≤ 20 and `role_assignments` ≤ 10 — no locked source gives them. */
   BRANCH_IDS_MAX: 20,
   ROLE_ASSIGNMENTS_MAX: 10,
   RATING_MIN: 1,
