@@ -78,7 +78,9 @@ function Leavers() {
       <button onClick={() => guarded.replace('/replaced')}>{NAME.replace}</button>
       <button onClick={() => guarded.back()}>{NAME.back}</button>
       <button onClick={() => guarded.leave(() => setLog('left'))}>{NAME.leave}</button>
-      <button onClick={() => guarded.bypass(() => guarded.push('/branches/b4'))}>{NAME.saved}</button>
+      <button onClick={() => guarded.bypass(() => guarded.push('/branches/b4'))}>
+        {NAME.saved}
+      </button>
       <output>{log}</output>
     </>
   );
@@ -156,7 +158,9 @@ describe('A form reports its unsaved edits to one shared guard', () => {
         <Editor label={PHONE_LABEL} />
       </Page>,
     );
-    fireEvent.change(screen.getByRole('textbox', { name: PHONE_LABEL }), { target: { value: 'a' } });
+    fireEvent.change(screen.getByRole('textbox', { name: PHONE_LABEL }), {
+      target: { value: 'a' },
+    });
     expect(isUnsavedChangesHeld()).toBe(true);
     type('b');
     fireEvent.change(screen.getByRole('textbox', { name: PHONE_LABEL }), { target: { value: '' } });
@@ -350,7 +354,9 @@ describe('Back asks before it leaves a page with unsaved edits', () => {
     type('');
     expect(back).toHaveBeenCalledTimes(1);
     // That popstate is the guard's own: no question.
-    await act(() => new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true })));
+    await act(
+      () => new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true })),
+    );
     expect(question()).toBeNull();
     expect(window.location.pathname).toBe('/settings/company');
   });
@@ -395,7 +401,9 @@ describe('Back asks before it leaves a page with unsaved edits', () => {
     type('x');
     await act(() => traverse(-1));
     await screen.findByRole('alertdialog', { name: QUESTION });
-    const landed = new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
+    const landed = new Promise((resolve) =>
+      window.addEventListener('popstate', resolve, { once: true }),
+    );
     await answer('Discard');
     await act(() => landed);
     expect(window.location.pathname).toBe('/more');
@@ -405,7 +413,9 @@ describe('Back asks before it leaves a page with unsaved edits', () => {
     renderIntl(<Page />);
     type('x');
     fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
-    const landed = new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
+    const landed = new Promise((resolve) =>
+      window.addEventListener('popstate', resolve, { once: true }),
+    );
     await answer('Discard');
     await act(() => landed);
     expect(window.location.pathname).toBe('/more');

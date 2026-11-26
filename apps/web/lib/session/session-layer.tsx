@@ -108,10 +108,7 @@ export function SessionLayer({
   );
 }
 
-function SessionBoundary({
-  locale,
-  children,
-}: Readonly<{ locale: Locale; children: ReactNode }>) {
+function SessionBoundary({ locale, children }: Readonly<{ locale: Locale; children: ReactNode }>) {
   const me = useMe();
   const client = useQueryClient();
   const router = useRouter();

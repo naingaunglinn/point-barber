@@ -61,7 +61,12 @@ interface Live {
   /** The address of the history entry the user is on, to tell a drawer's Back from the page's. */
   here: string;
   question: Question | null;
+  /** The wait for the popstate of a Discard's `history.go(-2)`; `null` when none is pending (D4). */
+  leaving: number | null;
 }
+
+/** How long a Discard waits for the page before it to appear; an out-of-range `go()` raises nothing. */
+const LEAVE_WAIT_MS = 300;
 
 const GuardContext = createContext<Guard | null>(null);
 
@@ -108,6 +113,7 @@ export function UnsavedChangesProvider({ children }: Readonly<{ children: ReactN
     skipPops: 0,
     here: '',
     question: null,
+    leaving: null,
   });
 
   const controls = useMemo(() => {
@@ -137,6 +143,15 @@ export function UnsavedChangesProvider({ children }: Readonly<{ children: ReactN
       }
       state.entry = null;
       window.history.go(-2);
+      // The form as the first entry of its tab (a link opened in a new tab, a deep link) has no page before
+      // it: `go(-2)` is out of range and nothing happens. Then the user is still on the guard entry with the
+      // edits, so the guard arms again (review of #89).
+      state.leaving = window.setTimeout(() => {
+        state.leaving = null;
+        if (!state.held) return;
+        state.disarmed = false;
+        state.entry = window.location.href;
+      }, LEAVE_WAIT_MS);
     };
     const bypass = (action: () => void) => {
       state.disarmed = true;
@@ -198,6 +213,17 @@ export function UnsavedChangesProvider({ children }: Readonly<{ children: ReactN
     window.history.back();
   }, [holds]);
 
+  // Nothing outlives the provider: not the pending Discard wait, not the module flag the session layer reads.
+  useEffect(() => {
+    const state = live.current;
+    anyHeld = state.held;
+    return () => {
+      if (state.leaving !== null) window.clearTimeout(state.leaving);
+      state.leaving = null;
+      anyHeld = false;
+    };
+  }, []);
+
   // Links, Back and the tab: one listener each, for the life of the provider.
   useEffect(() => {
     const state = live.current;
@@ -215,6 +241,9 @@ export function UnsavedChangesProvider({ children }: Readonly<{ children: ReactN
     };
 
     const onPopState = () => {
+      // The page before the form appeared: the Discard went somewhere.
+      if (state.leaving !== null) window.clearTimeout(state.leaving);
+      state.leaving = null;
       const previous = state.here;
       state.here = window.location.href;
       if (state.skipPops > 0) {
@@ -289,7 +318,11 @@ export function UnsavedChangesProvider({ children }: Readonly<{ children: ReactN
             <Button data-testid="unsaved-keep-editing" onClick={() => answer(false)}>
               {t('action.keepEditing')}
             </Button>
-            <Button variant="destructive" data-testid="unsaved-discard" onClick={() => answer(true)}>
+            <Button
+              variant="destructive"
+              data-testid="unsaved-discard"
+              onClick={() => answer(true)}
+            >
               {t('action.discard')}
             </Button>
           </>

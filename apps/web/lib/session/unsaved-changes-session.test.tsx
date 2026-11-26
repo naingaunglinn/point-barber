@@ -83,8 +83,7 @@ function Form() {
 }
 
 const fetchMock = vi.fn<typeof fetch>();
-const logouts = () =>
-  fetchMock.mock.calls.filter(([url]) => url === '/api/v1/auth/logout').length;
+const logouts = () => fetchMock.mock.calls.filter(([url]) => url === '/api/v1/auth/logout').length;
 
 beforeEach(() => {
   fetchMock.mockReset();

@@ -21,7 +21,7 @@ function Form() {
   return (
     <div className="flex max-w-sm flex-col gap-2">
       <TextInput aria-labelledby={titleId} value={value} onChange={setValue} />
-      <Link href={OTHER_PAGE} className="text-sm underline">
+      <Link href={OTHER_PAGE} className="inline-flex min-h-11 items-center text-sm underline">
         {t('leave')}
       </Link>
     </div>
