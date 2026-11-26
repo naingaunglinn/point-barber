@@ -20,7 +20,10 @@
     "next": "Next",
     "previous": "Previous",
     "more": "More",
-    "search": "Search"
+    "search": "Search",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "saveOrder": "Save order"
   },
   "format": {
     "unit": {

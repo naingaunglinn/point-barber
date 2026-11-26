@@ -57,6 +57,16 @@ describe('siteContentWriteSchema (P8.WEB.02 · Part 8 §17)', () => {
     expect(siteContentWriteSchema.parse(DEFAULTS).hero_title).toStrictEqual({ mm: '', en: null });
   });
 
+  it('an empty or blank English text reads back as null, as the settings value does (one source)', () => {
+    for (const en of ['', '  ']) {
+      const body = siteContentWriteSchema.parse(
+        content({ hero_title: { mm: '', en }, seo_description: { mm: '', en } }),
+      );
+      expect(body.hero_title).toStrictEqual({ mm: '', en: null });
+      expect(body.seo_description).toStrictEqual({ mm: '', en: null });
+    }
+  });
+
   it('Scenario: An SEO description in English only (no minimum); texts are trimmed', () => {
     const body = siteContentWriteSchema.parse(
       content({ seo_description: { mm: '', en: ' Haircuts in Yangon ' } }),
