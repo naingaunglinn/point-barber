@@ -24,8 +24,9 @@ import type { Response } from 'express';
 
 import { AccessContext } from '../../../common/access/access-context.js';
 import { Can, CanView, Staff } from '../../../common/access/declarations.js';
-import { toReadScope } from '../../../common/access/read-scope.js';
+import { type ReadScope, toReadScope } from '../../../common/access/read-scope.js';
 import { PrismaService } from '../../../common/database/prisma.service.js';
+import { RequestContext } from '../../../common/http/request-context.js';
 import { ZBody, ZQuery } from '../../../common/http/zod-validation.pipe.js';
 import { Audited } from '../../platform/index.js';
 import {
@@ -37,6 +38,16 @@ import {
   CUSTOMER_UPDATE,
   Customers,
 } from './customers.js';
+
+/**
+ * The statistics in a write's answer are in the caller's read scope; a `@Can` route sets no scope of its
+ * own, so it is the grant set the access guard built (the scope of `@Staff()`).
+ */
+function callerReadScope(): ReadScope {
+  const grants = RequestContext.current()?.grants;
+  if (grants === undefined) throw new Error('customers: the access guard built no grant set');
+  return toReadScope(grants.readScope);
+}
 
 // P3.CUS.02 — the phone lookup of the Finish step (AD-FORM-10 · add-walkin-visit-checkout design D2):
 // an operational read for every staff member; `last_visit_at` counts only the read scope's branches.
@@ -91,7 +102,7 @@ export class CustomersController {
     @ZBody(customerCreateSchema) body: CustomerCreateBody,
     @Res({ passthrough: true }) res: Response,
   ): Promise<CustomerDto> {
-    const customer = await this.customers.create(body, toReadScope(AccessContext.scope()));
+    const customer = await this.customers.create(body, callerReadScope());
     res.location(`/api/v1/customers/${customer.id}`);
     return customer;
   }
@@ -104,7 +115,7 @@ export class CustomersController {
     @Param('id') id: string,
     @ZBody(customerUpdateSchema) body: CustomerUpdateBody,
   ): Promise<CustomerDto> {
-    return this.customers.update(id, body, toReadScope(AccessContext.scope()));
+    return this.customers.update(id, body, callerReadScope());
   }
 
   /** P3.CUS.06 — `customer.delete`: Inactive or Active. */
@@ -116,7 +127,7 @@ export class CustomersController {
     @Param('id') id: string,
     @ZBody(customerStatusSchema) body: CustomerStatusBody,
   ): Promise<CustomerDto> {
-    return this.customers.setStatus(id, body, toReadScope(AccessContext.scope()));
+    return this.customers.setStatus(id, body, callerReadScope());
   }
 
   /** P3.CUS.07 — `customer.delete`: hides the customer, keeps the row. */
@@ -128,7 +139,7 @@ export class CustomersController {
     @Param('id') id: string,
     @ZBody(customerArchiveSchema) body: CustomerArchiveBody,
   ): Promise<CustomerDto> {
-    return this.customers.archive(id, body, toReadScope(AccessContext.scope()));
+    return this.customers.archive(id, body, callerReadScope());
   }
 
   /** P3.CUS.08 — `customer.delete`: an archived customer back as ACTIVE. */
@@ -137,6 +148,6 @@ export class CustomersController {
   @Can('customer.delete', { level: 'shared' })
   @Audited({ actions: [CUSTOMER_RESTORE] })
   restore(@Param('id') id: string): Promise<CustomerDto> {
-    return this.customers.restore(id, toReadScope(AccessContext.scope()));
+    return this.customers.restore(id, callerReadScope());
   }
 }
