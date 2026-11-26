@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { ErrorCode, ServiceCategoryStatus, ServiceStatus } from '@point/shared';
+import { ErrorCode, ScopeType, ServiceCategoryStatus, ServiceStatus } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -10,6 +10,7 @@ import {
   restoreCatalogue,
   snapshotCatalogue,
 } from './helpers/catalogue-reset.js';
+import { assignRole } from './helpers/roles.js';
 import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 import { walkinHttp } from './helpers/walkin-http.js';
 
@@ -40,6 +41,20 @@ beforeAll(async () => {
   t = await startSeededApp({ now: new Date(NOW) });
   build = await catalogueBuilder(t.prisma);
   snapshot = await snapshotCatalogue(t.prisma);
+  // The seed Manager holds service.view and service.update only; the create and archive reach scenarios assume
+  // the codes ticked at branch scope by an admin, so Ma Hnin (B3) and Ko Zaw (B1) get a test role with them.
+  for (const [employeeId, branchId] of [
+    [employees.E002, branches.B3],
+    [employees.E003, branches.B1],
+  ] as const) {
+    await assignRole(t.prisma, {
+      name: 'Catalogue master (test)',
+      employeeId,
+      codes: ['service.create', 'service.delete'],
+      scope: ScopeType.BRANCHES,
+      branchIds: [branchId],
+    });
+  }
   for (const who of [ADMIN, HNIN, ZAW, AUNG, MIN] as const)
     cookies[who] = (await t.signIn(who)).cookie;
 });
@@ -53,8 +68,9 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   t.clock?.set(new Date(NOW));
-  await build.cleanup();
+  // The services the endpoints made go first (they point at the builder's categories), then the builder's rows.
   await restoreCatalogue(t.prisma, snapshot);
+  await build.cleanup();
   await t.prisma.service_categories.updateMany({
     where: { id: serviceCategories.SERVICES },
     data: { status: ServiceCategoryStatus.ACTIVE, archived_at: null },
@@ -217,14 +233,13 @@ describe('Create a service (task 5.2 · P2.SVC.02 · SC2 ★ · SC3 ★ · desig
       KIDS_HAIRCUT(serviceCategories.SERVICES, { branches: AT_B3 }),
     );
     expect(res.body.sort_order).toBe(4);
+    // The API list shows it (the POS leaves it out until it has a price — unpriced_branch_ids).
     expect(names((await get(MIN, `/services?branch_id=${branches.B3}`)).body)).toStrictEqual([
       'Haircut',
       'Shave',
       'Hair wash',
+      'Kids haircut',
     ]);
-    expect(
-      names((await get(ADMIN, `/services?branch_id=${branches.B3}&status=0&status=1`)).body),
-    ).toContain('Kids haircut');
   });
 
   it('Scenario: Buffer at 120 is 201, one minute over is 400 too_big with maximum 120', async () => {
@@ -381,7 +396,7 @@ describe('Edit a service (task 5.3 · P2.SVC.04 · API-IDEM-04 · P2-RULE-03 · 
       buffer_minutes: 10,
       show_on_website: false,
       status: 0,
-      updated_at: '2026-10-05T10:05:00+06:30',
+      updated_at: '2026-10-05T10:05:00.000+06:30',
       warnings: [],
     });
     const [row, ...rest] = await newAudits('service.update');
@@ -520,7 +535,7 @@ describe('Edit a service (task 5.3 · P2.SVC.04 · API-IDEM-04 · P2-RULE-03 · 
     const api = walkinHttp(t);
     const cash = (await t.prisma.payment_methods.findFirstOrThrow({ where: { code: 'CASH' } })).id;
     const visit = await api.start('E005', [services.HAIRCUT, services.SHAVE]);
-    const sale = (await api.complete('E005', visit.id)).sale?.id ?? '';
+    const sale = visit.sale?.id ?? '';
     expect((await api.get('E005', `/sales/${sale}`)).body.total_amount).toBe(11_000);
     expect((await edit(services.SHAVE, { status: ServiceStatus.INACTIVE })).status).toBe(200);
     const again = await api.post('E005', `/sales/${sale}/items`, {
@@ -529,6 +544,7 @@ describe('Edit a service (task 5.3 · P2.SVC.04 · API-IDEM-04 · P2-RULE-03 · 
     });
     expect([again.status, again.body.code]).toStrictEqual([422, ErrorCode.SERVICE_INACTIVE]);
     expect((await api.get('E005', `/sales/${sale}`)).body.total_amount).toBe(11_000);
+    await api.complete('E005', visit.id);
     await api.pay('E005', sale, { payment_method_id: cash, amount: 11_000 });
     const finished = await api.finish('E005', sale, { expected_total_amount: 11_000 });
     expect(finished.total_amount).toBe(11_000);
@@ -577,7 +593,9 @@ describe('Archive a service (task 5.5 · P2.SVC.05 · D-DAT-05 · D-SVC-04 · P2
     expect((await post(ADMIN, `/services/${services.HAIR_WASH}/archive`)).status).toBe(200);
     expect((await api.get('E004', `/sales/${sale}`)).body).toStrictEqual(before);
     expect((await api.get('E004', `/sales/${sale}/receipt`)).body).toStrictEqual(receipt);
-    expect(before.items.map((item: { name_en?: string }) => item.name_en)).toContain('Hair wash');
+    expect(before.items.map((item: { service_id: string }) => item.service_id)).toContain(
+      services.HAIR_WASH,
+    );
   });
 
   it('an unknown or malformed id is 404 not_found; nothing is written', async () => {

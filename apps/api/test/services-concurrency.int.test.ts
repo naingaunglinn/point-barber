@@ -29,8 +29,8 @@ beforeAll(async () => {
 });
 afterAll(() => t.close());
 afterEach(async () => {
-  await build.cleanup();
   await restoreCatalogue(t.prisma, snapshot);
+  await build.cleanup();
 });
 
 const createService = (category_id: string, name_mm: string) =>
