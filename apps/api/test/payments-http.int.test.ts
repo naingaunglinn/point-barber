@@ -46,6 +46,12 @@ describe('GET /v1/payment-methods (P4.PMT.01)', () => {
       'KBZPAY',
     ]);
   });
+
+  it('Scenario: The updated_at keeps its milliseconds — a client can echo it as expected_updated_at', async () => {
+    const res = await api.get(AUNG, '/payment-methods');
+    for (const method of res.body.items as { updated_at: string }[])
+      expect(method.updated_at).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}\+06:30$/);
+  });
 });
 
 describe('POST /v1/sales/{id}/payments (P4.PAY.02)', () => {

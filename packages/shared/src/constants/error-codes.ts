@@ -64,6 +64,9 @@ export const ErrorCode = {
   // re-flag or archive the no-show reason (`system_code` 1 — D-BKG-17 · P3.CRS.03 / 04). Shared with
   // add-payment-methods-admin, one neutral text (point-sdd #47). already_exists and conflict are reused.
   SYSTEM_ROW: 'system_row',
+  // add-payment-methods-admin — API-ERR-02 · Part 4 §11 · design D5 (task 1.2): a reference format over 200
+  // characters, that does not compile or that holds a nested quantifier (P4.PMT.02 / 03 · PM6).
+  INVALID_REGEX: 'invalid_regex',
   // add-company-profile — API-ERR-02 · Part 1 v1.7 §11b · design D10 (task 1.2): a stale
   // `expected_updated_at` (API-IDEM-04 · CP3) and Zawgyi text refused by the server (API-SHAPE-05).
   CONFLICT: 'conflict',

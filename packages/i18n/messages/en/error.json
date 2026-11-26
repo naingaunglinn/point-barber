@@ -53,6 +53,7 @@
   "locked": "This record is finished and can no longer be changed.",
   "late_entry_time": "The times must be in order — started, completed, paid, finished — and not later than now.",
   "system_row": "This item is used by the system, so this change can't be made.",
+  "invalid_regex": "This format is not valid. Check the brackets and symbols.",
   "conflict": "Someone saved this just now. Reload to see the latest version.",
   "zawgyi_text": "This text is in Zawgyi. Please type it in Unicode.",
   "already_exists": "This already exists. Check the value and try again.",
