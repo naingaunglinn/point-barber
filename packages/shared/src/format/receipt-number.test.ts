@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { ReceiptCounterKind } from '../constants/status.js';
-import { formatReceiptNumber, type ReceiptNumberParts } from './receipt-number.js';
+import {
+  formatReceiptNumber,
+  normalizeReceiptNumber,
+  type ReceiptNumberParts,
+} from './receipt-number.js';
 
 // add-walkin-visit-checkout task 2.10 — `<branch code>-<YYYY>-<MMM>-<seq>`, the refund series with
 // `-RF-`, the sequence padded to five digits; never translated (D-PAY-06 · AD-FMT-06 · design D6).
@@ -41,5 +45,27 @@ describe('formatReceiptNumber', () => {
     ['an empty branch code', { branchCode: '' }],
   ])('refuses %s', (_, change: Partial<ReceiptNumberParts>) => {
     expect(() => formatReceiptNumber({ ...sale, seq: 1, ...change })).toThrow(RangeError);
+  });
+});
+
+// add-receipts-list-lookup task 1.2 — the lookup reads the number the way AD-FMT-10 says: trim, Myanmar
+// digits as 0 – 9, any case.
+describe('normalizeReceiptNumber', () => {
+  it.each([
+    [' b3-၂၀၂၆-oct-၀၀၀၀၁ ', 'B3-2026-OCT-00001'],
+    ['b3-2026-oct-00001', 'B3-2026-OCT-00001'],
+    ['B3-RF-2026-OCT-00001', 'B3-RF-2026-OCT-00001'],
+  ])('%s → %s', (text, number) => {
+    expect(normalizeReceiptNumber(text)).toBe(number);
+  });
+
+  it('nothing typed is invalid', () => {
+    expect(normalizeReceiptNumber('')).toBeNull();
+    expect(normalizeReceiptNumber('   ')).toBeNull();
+  });
+
+  it('40 characters are read, 41 are invalid', () => {
+    expect(normalizeReceiptNumber('A'.repeat(40))).toBe('A'.repeat(40));
+    expect(normalizeReceiptNumber('A'.repeat(41))).toBeNull();
   });
 });

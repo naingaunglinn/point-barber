@@ -1,4 +1,5 @@
 import { ReceiptCounterKind } from '../constants/status.js';
+import { normalizeDigits } from '../text/digits.js';
 
 // The receipt number (D-PAY-06 · AD-FMT-06 · add-walkin-visit-checkout design D6):
 // `<branch code>-<YYYY>-<MMM>-<seq>` and the refund series `<branch code>-RF-<YYYY>-<MMM>-<seq>`,
@@ -50,4 +51,17 @@ export function formatReceiptNumber({
   }
   const series = kind === ReceiptCounterKind.REFUND ? `${branchCode}-RF` : branchCode;
   return `${series}-${year}-${monthName}-${String(seq).padStart(5, '0')}`;
+}
+
+/** The longest receipt number a lookup accepts (P4.RCP.03). */
+export const RECEIPT_NUMBER_MAX_LENGTH = 40;
+
+/**
+ * The text of a receipt-number search as the stored number is written (P4.RCP.03 · AD-FMT-10): trimmed,
+ * Myanmar digits read as 0–9, upper case. `null` when nothing is left or it is longer than
+ * `RECEIPT_NUMBER_MAX_LENGTH` — the caller reports it as invalid.
+ */
+export function normalizeReceiptNumber(text: string): string | null {
+  const number = normalizeDigits(text.trim()).toUpperCase();
+  return number === '' || number.length > RECEIPT_NUMBER_MAX_LENGTH ? null : number;
 }

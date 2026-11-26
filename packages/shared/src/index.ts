@@ -39,6 +39,7 @@ export * from './schemas/leave-types.js';
 export * from './schemas/list-query.js';
 export * from './schemas/me.js';
 export * from './schemas/problem.js';
+export * from './schemas/receipts.js';
 export * from './schemas/sales.js';
 export * from './schemas/schedule.js';
 export * from './schemas/settings.js';
