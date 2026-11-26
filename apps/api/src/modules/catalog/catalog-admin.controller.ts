@@ -29,7 +29,6 @@ import {
   CategoryWrites,
 } from './category-writes/category-writes.js';
 import {
-  SERVICE_ARCHIVE,
   SERVICE_CREATE,
   SERVICE_REORDER,
   SERVICE_UPDATE,
@@ -122,14 +121,5 @@ export class CatalogAdminController {
     @ZBody(serviceUpdateSchema) body: ServiceUpdateBody,
   ): Promise<ServiceDto & { warnings: [] }> {
     return this.services.update(id, body);
-  }
-
-  /** P2.SVC.05 — an action endpoint: 200 with the row (a repeat answers the same row). */
-  @Post('services/:id/archive')
-  @HttpCode(200)
-  @Can('service.delete', { level: 'company' })
-  @Audited({ actions: [SERVICE_ARCHIVE] })
-  archiveService(@Param('id') id: string): Promise<ServiceDto & { warnings: [] }> {
-    return this.services.archive(id);
   }
 }

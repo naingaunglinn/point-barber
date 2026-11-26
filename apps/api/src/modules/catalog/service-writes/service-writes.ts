@@ -8,7 +8,6 @@ import {
   ServicePricingMode,
   type ServiceOrderBody,
   type ServiceUpdateBody,
-  toMmtIso,
   todayMmt,
 } from '@point/shared';
 
@@ -19,7 +18,6 @@ import { isUuid, uuidV7 } from '../../../common/http/uuid-v7.js';
 import { Audit } from '../../platform/index.js';
 import { CurrentCompany } from '../../people/index.js';
 import { CatalogueOrder } from '../catalogue-order.js';
-import { PriceRows } from '../price-rows/price-rows.js';
 import { ServiceListRepository } from '../repositories/service-list.repository.js';
 import {
   type ServiceChanges,
@@ -35,11 +33,10 @@ import { assertNoZawgyi } from '../zawgyi.js';
 // one TransactionRunner.run each (READ COMMITTED), locks first and checks after them (category, then service,
 // then price rows), one audit row per committed change with `branch_id` NULL (company master — P8-RULE-06).
 // Archived rows are history only: a write that names one is 404 (Recorded reading 3). An unchanged edit and a
-// repeated archive write nothing. The sale per branch (P2.SVC.06) and the site event come with group 6.
+// repeated archive write nothing. The archive (P2.SVC.05), the sale per branch (P2.SVC.06) and the site event follow.
 
 export const SERVICE_CREATE = 'service.create';
 export const SERVICE_UPDATE = 'service.update';
-export const SERVICE_ARCHIVE = 'service.archive';
 export const SERVICE_REORDER = 'service.reorder';
 
 const ENTITY = 'services';
@@ -83,7 +80,6 @@ export class ServiceWrites {
     private readonly repository: ServiceWritesRepository,
     private readonly listRepository: ServiceListRepository,
     private readonly detail: ServiceDetail,
-    private readonly prices: PriceRows,
     private readonly order: CatalogueOrder,
     private readonly audit: Audit,
     private readonly company: CurrentCompany,
@@ -189,37 +185,6 @@ export class ServiceWrites {
         after: Object.fromEntries(
           changed.map((member) => [member, shown[member as keyof typeof shown]]),
         ),
-      });
-      return { ...(await this.detail.get(tx, id, VIEWER)), warnings: [] };
-    });
-  }
-
-  /**
-   * P2.SVC.05 — the service is locked first, then its price rows are closed as of today in the same
-   * transaction (P2-RULE-04 #5 · design D6); a repeat answers the same row and writes nothing.
-   */
-  archive(id: string): Promise<ServiceDto & { warnings: [] }> {
-    return this.runner.run(async (tx) => {
-      const stored = isUuid(id) ? await this.repository.lock(tx, id) : null;
-      if (stored === null) throw notFound();
-      if (stored.archived_at !== null) {
-        this.audit.skip();
-        return { ...(await this.detail.get(tx, id, VIEWER)), warnings: [] };
-      }
-      const now = this.clock.now();
-      const closed = await this.prices.closeAsOfToday(tx, { service_id: id }, todayMmt(now), now);
-      await this.repository.update(tx, id, { archived_at: now }, now);
-      const row = await this.stored(tx, id);
-      await this.audit.emit({
-        action: SERVICE_ARCHIVE,
-        entity_type: ENTITY,
-        entity_id: id,
-        branch_id: null,
-        before: { archived_at: null },
-        after: {
-          archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
-          price_rows_closed: closed,
-        },
       });
       return { ...(await this.detail.get(tx, id, VIEWER)), warnings: [] };
     });

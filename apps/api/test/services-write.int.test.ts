@@ -14,10 +14,11 @@ import { assignRole } from './helpers/roles.js';
 import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 import { walkinHttp } from './helpers/walkin-http.js';
 
-// add-service-catalogue tasks 5.1 – 5.3, 5.5 and 5.6 — the service endpoints P2.SVC.02 / 04 / 05 / 07
+// add-service-catalogue tasks 5.1 – 5.3 and 5.6 — the service endpoints P2.SVC.02 / 04 / 07 (the archive,
+// P2.SVC.05 with the close of the price rows, follows in the next part)
 // (services-pricing spec "Company master writes need a company-scope grant", "Create a service", "Option pricing
 // is not set through these endpoints", "A service's category is never an archived one", "Edit a service's
-// details and website fields", "An inactive service is not sold from now", "Archive a service", "A reorder
+// details and website fields", "An inactive service is not sold from now", "A reorder
 // lists every non-archived sibling once", "Every catalogue write leaves one audit row"). Monday 05/Oct/2026 at
 // 10:00 AM MMT on the fixture catalogue: Services (1) with Haircut, Shave and Hair wash sold at B1 – B3.
 const { serviceCategories, branches, services, employees } = FIXTURE_IDS;
@@ -121,7 +122,7 @@ const quote = async (item: string = services.HAIRCUT) =>
     })
   ).body;
 
-describe('The reach of P2.SVC.02 / 04 / 05 / 07 (task 5.1 · P2-RULE-01 · API-PERM-07 · CG-TEST-05)', () => {
+describe('The reach of P2.SVC.02 / 04 / 07 (task 5.1 · P2-RULE-01 · API-PERM-07 · CG-TEST-05)', () => {
   const routes = [
     [
       'create',
@@ -137,7 +138,6 @@ describe('The reach of P2.SVC.02 / 04 / 05 / 07 (task 5.1 · P2-RULE-01 · API-P
       `/services/${services.HAIRCUT}`,
       () => ({ buffer_minutes: 5, expected_updated_at: '2026-10-05T09:00:00.000+06:30' }),
     ],
-    ['archive', 'service.delete', () => post, `/services/${services.HAIRCUT}/archive`, () => ({})],
     [
       'reorder',
       'service.update',
@@ -168,7 +168,7 @@ describe('The reach of P2.SVC.02 / 04 / 05 / 07 (task 5.1 · P2-RULE-01 · API-P
     },
   );
 
-  it('Scenario: The Admin at company scope — create 201, update 200, reorder 200, archive 200', async () => {
+  it('Scenario: The Admin at company scope — create 201, update 200, reorder 200', async () => {
     const created = await post(ADMIN, '/services', KIDS_HAIRCUT(serviceCategories.SERVICES));
     expect(created.status).toBe(201);
     const row = await detail(created.body.id);
@@ -185,7 +185,6 @@ describe('The reach of P2.SVC.02 / 04 / 05 / 07 (task 5.1 · P2-RULE-01 · API-P
       (await put(ADMIN, '/services/order', { category_id: serviceCategories.SERVICES, ids: order }))
         .status,
     ).toBe(200);
-    expect((await post(ADMIN, `/services/${row.id}/archive`)).status).toBe(200);
   });
 });
 
@@ -336,7 +335,7 @@ describe('Create a service (task 5.2 · P2.SVC.02 · SC2 ★ · SC3 ★ · desig
     );
     expect([dup.status, dup.body.code]).toStrictEqual([409, ErrorCode.ALREADY_EXISTS]);
     const hairWash = await detail(services.HAIR_WASH);
-    expect((await post(ADMIN, `/services/${services.HAIR_WASH}/archive`)).status).toBe(200);
+    await build.archive('services', services.HAIR_WASH);
     t.clock?.set(new Date('2026-10-05T10:05:00+06:30'));
     const again = await post(
       ADMIN,
@@ -493,7 +492,7 @@ describe('Edit a service (task 5.3 · P2.SVC.04 · API-IDEM-04 · P2-RULE-03 · 
 
   it('Scenario: Editing an archived service — 404 not_found; an unknown or malformed id too', async () => {
     const row = await detail(services.HAIR_WASH);
-    await post(ADMIN, `/services/${services.HAIR_WASH}/archive`);
+    await build.archive('services', services.HAIR_WASH);
     const archived = await patch(ADMIN, `/services/${services.HAIR_WASH}`, {
       name_en: 'Wash',
       expected_updated_at: row.updated_at,
@@ -548,62 +547,6 @@ describe('Edit a service (task 5.3 · P2.SVC.04 · API-IDEM-04 · P2-RULE-03 · 
     await api.pay('E005', sale, { payment_method_id: cash, amount: 11_000 });
     const finished = await api.finish('E005', sale, { expected_total_amount: 11_000 });
     expect(finished.total_amount).toBe(11_000);
-  });
-});
-
-describe('Archive a service (task 5.5 · P2.SVC.05 · D-DAT-05 · D-SVC-04 · P2-RULE-04 #5)', () => {
-  it('Scenario: Hair wash is archived — 200 with archived_at, the B3 list and the quote leave it out, prices closed', async () => {
-    const res = await post(ADMIN, `/services/${services.HAIR_WASH}/archive`);
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: services.HAIR_WASH, archived_at: NOW, warnings: [] });
-    expect(names((await get(MIN, `/services?branch_id=${branches.B3}`)).body)).toStrictEqual([
-      'Haircut',
-      'Shave',
-    ]);
-    expect(await quote(services.HAIR_WASH)).toMatchObject({
-      items: [{ sold: false, reason: ErrorCode.SERVICE_INACTIVE }],
-    });
-    const open = await t.prisma.service_prices.count({
-      where: { service_id: services.HAIR_WASH, archived_at: null, effective_to: null },
-    });
-    expect(open).toBe(0);
-    const [row, ...rest] = await newAudits('service.archive');
-    expect(rest).toStrictEqual([]);
-    expect(row).toMatchObject({ branch_id: null, entity_id: services.HAIR_WASH });
-  });
-
-  it('Scenario: Archive twice — 200 with the first archived_at and no second audit row', async () => {
-    await post(ADMIN, `/services/${services.HAIR_WASH}/archive`);
-    t.clock?.set(new Date('2026-10-05T10:05:00+06:30'));
-    const again = await post(ADMIN, `/services/${services.HAIR_WASH}/archive`);
-    expect([again.status, again.body.archived_at]).toStrictEqual([200, NOW]);
-    expect(await newAudits('service.archive')).toHaveLength(1);
-  });
-
-  it('Scenario: A finished sale keeps the archived service — the sale and its receipt are unchanged', async () => {
-    const api = walkinHttp(t);
-    const cash = (await t.prisma.payment_methods.findFirstOrThrow({ where: { code: 'CASH' } })).id;
-    const visit = await api.start('E004', [services.HAIRCUT, services.HAIR_WASH]);
-    const sale = (await api.complete('E004', visit.id)).sale?.id ?? '';
-    const total = (await api.get('E004', `/sales/${sale}`)).body.total_amount;
-    await api.pay('E004', sale, { payment_method_id: cash, amount: total });
-    await api.finish('E004', sale, { expected_total_amount: total });
-    const before = (await api.get('E004', `/sales/${sale}`)).body;
-    const receipt = (await api.get('E004', `/sales/${sale}/receipt`)).body;
-    expect((await post(ADMIN, `/services/${services.HAIR_WASH}/archive`)).status).toBe(200);
-    expect((await api.get('E004', `/sales/${sale}`)).body).toStrictEqual(before);
-    expect((await api.get('E004', `/sales/${sale}/receipt`)).body).toStrictEqual(receipt);
-    expect(before.items.map((item: { service_id: string }) => item.service_id)).toContain(
-      services.HAIR_WASH,
-    );
-  });
-
-  it('an unknown or malformed id is 404 not_found; nothing is written', async () => {
-    for (const id of [randomUUID(), 'not-a-uuid']) {
-      const res = await post(ADMIN, `/services/${id}/archive`);
-      expect([res.status, res.body.code]).toStrictEqual([404, ErrorCode.NOT_FOUND]);
-    }
-    expect(await newAudits('service.archive')).toHaveLength(0);
   });
 });
 
@@ -671,7 +614,7 @@ describe('Reorder the services of a category (task 5.6 · P2.SVC.07 · design D7
   });
 
   it('an archived service in the ids is a 400; an archived or unknown category is 404 not_found', async () => {
-    await post(ADMIN, `/services/${services.HAIR_WASH}/archive`);
+    await build.archive('services', services.HAIR_WASH);
     const withArchived = await put(
       ADMIN,
       '/services/order',

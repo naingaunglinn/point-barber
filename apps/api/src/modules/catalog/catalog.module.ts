@@ -9,7 +9,6 @@ import { CatalogueOrder } from './catalogue-order.js';
 import { CategoryWrites } from './category-writes/category-writes.js';
 import { CategoryWritesRepository } from './repositories/category-writes.repository.js';
 import { Eligibility } from './eligibility/eligibility.js';
-import { PriceRows } from './price-rows/price-rows.js';
 import { PriceQuote } from './price-quote/price-quote.js';
 import { CatalogRepository } from './repositories/catalog.repository.js';
 import { ServiceListRepository } from './repositories/service-list.repository.js';
@@ -33,13 +32,12 @@ import { PilotCatalogue } from './pilot/pilot-catalogue.js';
     ServiceListRepository,
     ServiceWritesRepository,
     ServiceWrites,
-    PriceRows,
     PriceQuote,
     Eligibility,
     ServiceCatalog,
     ServiceDetail,
     PilotCatalogue,
   ],
-  exports: [PriceQuote, PriceRows, Eligibility, ServiceCatalog, ServiceDetail, PilotCatalogue],
+  exports: [PriceQuote, Eligibility, ServiceCatalog, ServiceDetail, PilotCatalogue],
 })
 export class CatalogModule {}
