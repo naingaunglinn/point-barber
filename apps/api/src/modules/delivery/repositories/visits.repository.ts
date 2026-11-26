@@ -107,6 +107,10 @@ export class VisitsRepository {
     return db.visits.findUnique({ where: { id }, select: VISIT });
   }
 
+  findMany(db: Tx, ids: readonly string[]): Promise<VisitRow[]> {
+    return db.visits.findMany({ where: { id: { in: [...ids] } }, select: VISIT, take: ids.length });
+  }
+
   findByClientRequestId(db: Tx, key: string): Promise<VisitRow | null> {
     return db.visits.findUnique({ where: { client_request_id: key }, select: VISIT });
   }
