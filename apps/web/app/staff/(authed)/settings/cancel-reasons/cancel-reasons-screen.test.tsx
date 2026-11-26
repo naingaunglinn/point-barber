@@ -70,7 +70,9 @@ describe('add-booking-cancel-reasons · booking · Settings › Cancel reasons k
     expect(screen.getAllByTestId('reorder-handle')).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Save order' })).toBeNull();
     // An ACTIVE reason has no badge (AD-CMP-05 master data).
-    expect(screen.getByTestId('cancel-reasons-list').querySelector('[data-slot="status-badge"]')).toBeNull();
+    expect(
+      screen.getByTestId('cancel-reasons-list').querySelector('[data-slot="status-badge"]'),
+    ).toBeNull();
   });
 
   it('Scenario: Myanmar names — the Myanmar names, and Myanmar when the English one is empty', async () => {
@@ -124,7 +126,10 @@ describe('add-booking-cancel-reasons · booking · Settings › Cancel reasons k
 
   it('Show archived asks for include_archived and lists the archived reasons apart, as text', async () => {
     const archived = { ...REASONS.sick, archived_at: '2026-10-05T10:00:00+06:30' };
-    listOf([...SEEDED, archived]);
+    // The API leaves the archived reasons out unless include_archived=true (P3.CRS.01).
+    listOf(SEEDED, {
+      [`GET ${LIST}&include_archived=true`]: json(200, { items: [...SEEDED, archived] }),
+    });
     renderPos(<CancelReasonsScreen />, { me: REASON_PEOPLE.kyawZin });
     await ready();
     expect(screen.queryByTestId('cancel-reasons-archived-list')).toBeNull();
@@ -220,9 +225,12 @@ describe('add-booking-cancel-reasons · booking · The cancel-reason form shows 
     fireEvent.click(screen.getByTestId('cancel-reason-save'));
     await waitFor(() =>
       expect(
-        within(screen.getByTestId('cancel-reason-field-name_mm')).getByRole('alert'),
+        within(screen.getByTestId('cancel-reason-field-name_mm')).getByText(
+          'This field is required.',
+        ),
       ).toBeTruthy(),
     );
+    expect(screen.getByTestId('cancel-reason-name-mm').getAttribute('aria-invalid')).toBe('true');
     expect(sent('POST', '/api/v1/booking-cancel-reasons')).toBeUndefined();
   });
 
@@ -237,7 +245,9 @@ describe('add-booking-cancel-reasons · booking · The cancel-reason form shows 
     fireEvent.click(screen.getByTestId('cancel-reason-save'));
     const field = screen.getByTestId('cancel-reason-field-name_mm');
     await waitFor(() =>
-      expect(within(field).getByText('This already exists. Check the value and try again.')).toBeTruthy(),
+      expect(
+        within(field).getByText('This already exists. Check the value and try again.'),
+      ).toBeTruthy(),
     );
     expect(screen.getByTestId('cancel-reason-form')).toBeTruthy();
   });
@@ -292,11 +302,19 @@ describe('add-booking-cancel-reasons · booking · The cancel-reason form shows 
   });
 
   it('a 409 conflict keeps the input and offers Reload, which starts again from the stored reason', async () => {
-    const stored = { ...REASONS.barber, name_en: 'Barber is busy', updated_at: '2026-10-05T09:30:00.000+06:30' };
+    const stored = {
+      ...REASONS.barber,
+      name_en: 'Barber is busy',
+      updated_at: '2026-10-05T09:30:00.000+06:30',
+    };
     let reads = 0;
     listOf(SEEDED, {
-      [`PATCH /api/v1/booking-cancel-reasons/${REASONS.barber.id}`]: json(409, problem(409, 'conflict')),
-      [`GET ${LIST}`]: () => json(200, { items: ++reads === 1 ? SEEDED : [REASONS.change, stored] }),
+      [`PATCH /api/v1/booking-cancel-reasons/${REASONS.barber.id}`]: json(
+        409,
+        problem(409, 'conflict'),
+      ),
+      [`GET ${LIST}`]: () =>
+        json(200, { items: ++reads === 1 ? SEEDED : [REASONS.change, stored] }),
     });
     renderPos(<CancelReasonsScreen />, { me: REASON_PEOPLE.kyawZin });
     await ready();
