@@ -20,6 +20,7 @@ import {
   toast,
   useAppForm,
   useFormat,
+  useUnsavedChanges,
 } from '@point/ui';
 
 import { ApiProblem } from '../../../lib/api/client';
@@ -73,6 +74,8 @@ export function SettingForm({
   const form = useAppForm(rowSchemaOf(settingKey), {
     defaultValues: { value: draftOf(settingKey, view.effective) },
   });
+  // An edited row makes a link, Back or the tab ask first (add-unsaved-changes-guard · AD-FORM-08).
+  useUnsavedChanges(form.formState.isDirty);
   const save = useSaveSetting();
   const [pending, setPending] = useState<{ readonly value: unknown } | undefined>();
   const [alert, setAlert] = useState<Pick<Problem, 'code' | 'request_id'> | null>(null);

@@ -10,7 +10,6 @@ import {
   BilingualInput,
   Button,
   ChoiceGroup,
-  Dialog,
   FormAlert,
   FormField,
   ReadOnlyFields,
@@ -19,6 +18,7 @@ import {
   toast,
   useAppForm,
   useTextField,
+  useUnsavedChanges,
 } from '@point/ui';
 
 import { ApiProblem } from '../../lib/api/client';
@@ -37,8 +37,8 @@ import { SocialLinksEditor } from './SocialLinksEditor';
 // Save (AD-FORM-03); the server's `errors[]` land under their fields, 409 `already_exists` under *Code*
 // as `branch.field.codeTaken`, 409 `conflict` keeps the input and shows the banner with Reload, and any
 // other refusal is the inline alert at the top (AD-FORM-04). A saved form shows the toast
-// `branch.toast.saved`. Leaving with unsaved edits — Cancel, or closing or reloading the tab — asks
-// first (AD-FORM-08). On edit the code is text: it never changes (owner BR1). The action bar sticks to
+// `branch.toast.saved`. Leaving with unsaved edits — Cancel, a link, Back, or closing or reloading the tab —
+// asks first, through the shared guard of @point/ui (AD-FORM-08 · add-unsaved-changes-guard). On edit the code is text: it never changes (owner BR1). The action bar sticks to
 // the bottom (above the bottom navigation on a phone — AD-LAY-03 / 04), as on Settings › Company.
 
 // Above the bottom navigation below 768 px (its items are `min-h-14`, a 1 px top border and the
@@ -164,18 +164,13 @@ export function BranchForm<B extends BranchBody>({
   const form = useAppForm<BranchFormValues, B>(schema, { defaultValues });
   const [alert, setAlert] = useState<Refusal | null>(null);
   const [conflict, setConflict] = useState(false);
-  const [asking, setAsking] = useState(false);
   const dirty = form.formState.isDirty;
 
   useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
 
-  // Closing or reloading the tab with unsaved edits asks the browser's own question (AD-FORM-08).
-  useEffect(() => {
-    if (!dirty) return undefined;
-    const ask = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', ask);
-    return () => window.removeEventListener('beforeunload', ask);
-  }, [dirty]);
+  // Leaving with unsaved edits — Cancel, a link, Back, closing the tab — asks through the one shared guard
+  // (add-unsaved-changes-guard · AD-FORM-08); `onCancel` leaves through the guarded router.
+  useUnsavedChanges(dirty);
 
   const submit = form.handleSubmit(async (body) => {
     setAlert(null);
@@ -323,7 +318,7 @@ export function BranchForm<B extends BranchBody>({
       </BranchSection>
 
       <div className={ACTION_BAR}>
-        <Button onClick={() => (dirty ? setAsking(true) : onCancel())} data-testid="branch-cancel">
+        <Button onClick={onCancel} data-testid="branch-cancel">
           {t('common.action.cancel')}
         </Button>
         <Button
@@ -335,27 +330,6 @@ export function BranchForm<B extends BranchBody>({
           {t('common.action.save')}
         </Button>
       </div>
-
-      <Dialog
-        open={asking}
-        onOpenChange={setAsking}
-        role="alertdialog"
-        title={t('common.form.discard.title')}
-        footer={
-          <>
-            <Button onClick={() => setAsking(false)}>{t('common.action.keepEditing')}</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setAsking(false);
-                onCancel();
-              }}
-            >
-              {t('common.action.discard')}
-            </Button>
-          </>
-        }
-      />
     </form>
   );
 }

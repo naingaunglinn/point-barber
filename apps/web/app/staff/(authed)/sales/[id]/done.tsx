@@ -1,11 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { type SaleDto, type VisitDto, formatDateTime } from '@point/shared';
-import { FormAlert, LockBanner, useFormat } from '@point/ui';
+import { FormAlert, LockBanner, useFormat, useGuardedRouter } from '@point/ui';
 
 import { FinishedSale } from '../../../../../components/pos/FinishedSale';
 import { SaleLines } from '../../../../../components/pos/SaleLines';
@@ -58,7 +57,7 @@ export function Finished({
   readonly sale: SaleDto;
   readonly justFinished: boolean;
 }) {
-  const router = useRouter();
+  const router = useGuardedRouter();
   const receipt = useReceipt(sale.id, !justFinished);
   const { sharing, problem, share } = useShare(sale);
   return (
