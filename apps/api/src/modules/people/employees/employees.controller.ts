@@ -8,7 +8,7 @@ import {
   type EmployeeListQuery,
   type EmployeeStatusBody,
   type EmployeeUpdateBody,
-  type EmployeeWarning,
+  type WarningDto,
   type PublicRatingBody,
   type RevokeAllBody,
   type SessionDto,
@@ -86,7 +86,7 @@ export class EmployeesController {
   setStatus(
     @Param('id') id: string,
     @ZBody(employeeStatusSchema) body: EmployeeStatusBody,
-  ): Promise<EmployeeDto & { warnings: EmployeeWarning[] }> {
+  ): Promise<EmployeeDto & { warnings: WarningDto[] }> {
     return this.employees.setStatus(id, body);
   }
 
@@ -118,7 +118,7 @@ export class EmployeesController {
     @Param('id') id: string,
     @Param('assignment_id') assignmentId: string,
     @ZBody(branchEndSchema) body: BranchEndBody,
-  ): Promise<BranchAssignment & { warnings: EmployeeWarning[] }> {
+  ): Promise<BranchAssignment & { warnings: WarningDto[] }> {
     return this.assignments.end(id, assignmentId, body);
   }
 

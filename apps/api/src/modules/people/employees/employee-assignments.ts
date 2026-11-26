@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type {
-  BranchAssignBody,
-  BranchAssignment,
-  BranchEndBody,
-  EmployeeWarning,
-} from '@point/shared';
+import type { BranchAssignBody, BranchAssignment, BranchEndBody, WarningDto } from '@point/shared';
 
 // P1.EMP.07 / 08 (add-employee-management design D1). Task 2.4 gives the controller its surface; the
 // methods are built in the tasks of group 6 and throw until then.
@@ -18,7 +13,7 @@ export class EmployeeAssignments {
     _employeeId: string,
     _assignmentId: string,
     _body: BranchEndBody,
-  ): Promise<BranchAssignment & { warnings: EmployeeWarning[] }> {
+  ): Promise<BranchAssignment & { warnings: WarningDto[] }> {
     throw new Error('not built yet: add-employee-management task 6');
   }
 }

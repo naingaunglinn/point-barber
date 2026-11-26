@@ -4,7 +4,7 @@ import type {
   EmployeeDto,
   EmployeeStatusBody,
   EmployeeUpdateBody,
-  EmployeeWarning,
+  WarningDto,
   PublicRatingBody,
   RevokeAllBody,
   SessionDto,
@@ -32,7 +32,7 @@ export class Employees {
   setStatus(
     _id: string,
     _body: EmployeeStatusBody,
-  ): Promise<EmployeeDto & { warnings: EmployeeWarning[] }> {
+  ): Promise<EmployeeDto & { warnings: WarningDto[] }> {
     return notBuilt('5');
   }
 
