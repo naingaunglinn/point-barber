@@ -72,13 +72,27 @@ export interface CanViewDeclaration {
   readonly orSelf?: OrSelf;
 }
 
+/**
+ * `@CanFields` (add-employee-management design D2): one declaration, a code per member group of the
+ * request body. `fields` maps each body member to the code its group needs; members with the same
+ * code are one group. The target is the P1-RULE-11 target set of the employee in the route parameter.
+ */
+export interface CanFieldsDeclaration {
+  readonly kind: 'canFields';
+  readonly fields: Readonly<Record<string, AccessCode>>;
+  readonly target: EmployeeTarget;
+  readonly branch?: undefined;
+  readonly orSelf?: undefined;
+}
+
 export type AccessDeclaration =
   | { readonly kind: 'public' }
   | { readonly kind: 'internal' }
   | { readonly kind: 'staff' }
   | { readonly kind: 'self' }
   | CanDeclaration
-  | CanViewDeclaration;
+  | CanViewDeclaration
+  | CanFieldsDeclaration;
 
 type AccessDecorator = MethodDecorator & ClassDecorator;
 
@@ -88,6 +102,12 @@ const declare = (declaration: AccessDeclaration): AccessDecorator =>
 /** A valid session and the grant of `code` for the target the options name (D11). */
 export const Can = (code: AccessCode, options: CanOptions): AccessDecorator =>
   declare({ kind: 'can', code, ...options });
+
+/** A write whose body members need different codes; the group of each member is named once (D2). */
+export const CanFields = (
+  fields: Readonly<Record<string, AccessCode>>,
+  options: { readonly target: EmployeeTarget },
+): AccessDecorator => declare({ kind: 'canFields', fields, target: options.target });
 
 /** A management read: any code of `module` at any scope; a list receives the scope to filter by. */
 export const CanView = (module: AccessModule, options: CanViewOptions = {}): AccessDecorator =>

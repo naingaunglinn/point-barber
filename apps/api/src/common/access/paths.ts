@@ -18,7 +18,10 @@ export type BranchPath =
       readonly field: string;
       readonly optional: boolean;
     }
-  /** `body.items[].branch_id` — every element of the list. */
+  /**
+   * `body.items[].branch_id` — every element of the list; `body.branch_ids[]` — a list of ids, the
+   * elements themselves (`field` is then empty; add-employee-management design D2).
+   */
   | {
       readonly kind: 'list';
       readonly source: PathSource;
@@ -37,7 +40,7 @@ export type BranchPath =
 const SOURCES: readonly string[] = ['body', 'query', 'params'];
 const NAME = '[A-Za-z_][A-Za-z0-9_]*';
 const FIELD = new RegExp(`^(${SOURCES.join('|')})\\.(${NAME})$`);
-const LIST = new RegExp(`^(${SOURCES.join('|')})\\.(${NAME})\\[\\]\\.(${NAME})$`);
+const LIST = new RegExp(`^(${SOURCES.join('|')})\\.(${NAME})\\[\\](?:\\.(${NAME}))?$`);
 const ENTITY = new RegExp(`^params\\.(${NAME})(?:→|->)entity\\.(${NAME})$`);
 
 /** Parses a branch path; throws on a malformed one, which is a programming error of the route. */
@@ -88,7 +91,7 @@ export function branchIdsAt(
   const list = member(root, path.list);
   if (isBlank(list) && path.optional) return { empty: true };
   if (!Array.isArray(list)) return { empty: false, ids: [] };
-  const values = list.map((item) => member(item, path.field));
+  const values = list.map((item) => (path.field === '' ? item : member(item, path.field)));
   if (!values.every((value): value is string => typeof value === 'string' && value !== '')) {
     return { empty: false, ids: [] };
   }

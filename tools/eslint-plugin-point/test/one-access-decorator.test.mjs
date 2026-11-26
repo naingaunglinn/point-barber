@@ -97,4 +97,12 @@ describe('add-repo-scaffold · platform-runtime · Every endpoint declares exact
     const code = `@common.Controller('x')\nexport class X {\n  @common.Get()\n  handle() {}\n}\n`;
     expect(await lint(code)).toEqual([{ ruleId: 'point/one-access-decorator', line: 4 }]);
   });
+
+  it('@CanFields counts as the one access decorator, and a second one fails', async () => {
+    const one =
+      "@Controller('x')\nexport class X {\n  @Patch()\n  @CanFields({ a: 'b' }, { target: 'employee:id' })\n  handle() {}\n}\n";
+    expect(await lint(one)).toEqual([]);
+    const two = one.replace('  handle', '  @Staff()\n  handle');
+    expect(await lint(two)).toEqual([{ ruleId: 'point/one-access-decorator', line: 6 }]);
+  });
 });

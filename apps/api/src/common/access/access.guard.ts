@@ -9,8 +9,13 @@ import { Clock } from '../clock/clock.js';
 import { AppConfig } from '../config/config.js';
 import { ProblemException } from '../http/problem.exception.js';
 import { RequestContext, type RequestContextData } from '../http/request-context.js';
-import { type Target, decide } from './decide.js';
-import type { AccessDeclaration, CanDeclaration, CanViewDeclaration } from './declarations.js';
+import { type Target, decide, decideFields } from './decide.js';
+import type {
+  AccessDeclaration,
+  CanDeclaration,
+  CanFieldsDeclaration,
+  CanViewDeclaration,
+} from './declarations.js';
 import { GrantSet, GrantSource } from './grant-set.js';
 import {
   type RequestParts,
@@ -67,23 +72,35 @@ export class AccessGuard implements CanActivate {
       }
       case 'can':
       case 'canView':
+      case 'canFields':
         await this.decide(declaration, req);
         return true;
     }
   }
 
   private async decide(
-    declaration: CanDeclaration | CanViewDeclaration,
+    declaration: CanDeclaration | CanViewDeclaration | CanFieldsDeclaration,
     req: Request,
   ): Promise<void> {
     const ctx = this.caller();
     const grants = await this.grantsOf(ctx);
     const parts: RequestParts = { body: req.body as unknown, query: req.query, params: req.params };
-    const target = await this.targetOf(declaration, req, parts, {
-      userId: ctx.user_id ?? '',
-      employeeId: ctx.employee_id ?? '',
-    });
-    const decision = decide(declaration, grants, target, req.method);
+    const caller = { userId: ctx.user_id ?? '', employeeId: ctx.employee_id ?? '' };
+    let target = await this.targetOf(declaration, req, parts, caller);
+    let decision =
+      declaration.kind === 'canFields'
+        ? decideFields(declaration, grants, target, req.method, req.body)
+        : decide(declaration, grants, target, req.method);
+    // A declaration with both a target and a branch path needs both (P1.EMP.07: the scope covers the
+    // branch AND reaches the employee): the target is decided first (its 404), then the branch, which is
+    // also the one branch the request acts on.
+    if (decision.allow && declaration.kind === 'can' && declaration.target !== undefined) {
+      if (declaration.branch !== undefined) {
+        const branchOnly: CanDeclaration = { ...declaration, target: undefined, orSelf: undefined };
+        target = await this.targetOf(branchOnly, req, parts, caller);
+        decision = decide(branchOnly, grants, target, req.method);
+      }
+    }
     if (!decision.allow) {
       throw new ProblemException(decision.code, decision.status, {
         ...(decision.required === undefined ? {} : { context: { required: decision.required } }),
@@ -103,7 +120,7 @@ export class AccessGuard implements CanActivate {
 
   /** Resolves what the declaration points at, and whether the orSelf rule matches the caller. */
   private async targetOf(
-    declaration: CanDeclaration | CanViewDeclaration,
+    declaration: CanDeclaration | CanViewDeclaration | CanFieldsDeclaration,
     req: Request,
     parts: RequestParts,
     caller: Caller,

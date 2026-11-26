@@ -1,6 +1,11 @@
 import { ErrorCode, type FieldError } from '@point/shared';
 
-import type { CanDeclaration, CanViewDeclaration } from './declarations.js';
+import type {
+  AccessCode,
+  CanDeclaration,
+  CanFieldsDeclaration,
+  CanViewDeclaration,
+} from './declarations.js';
 import { type GrantSet, reaches } from './grant-set.js';
 import { parseBranchPath } from './paths.js';
 
@@ -34,8 +39,10 @@ export type Decision =
        */
       readonly required?: string;
       /**
-       * One item per uncovered element of a `[]` path with `scopeError: 'out_of_scope'`, naming it as
-       * `items[<n>].branch_id` (P2.SVC.06 · API-ERR-01); absent for every other refusal.
+       * `errors[]` of the refusal, absent for every other one: one item per member whose field group
+       * failed (`decideFields`, add-employee-management D2), or one per uncovered element of a `[]` path
+       * with `scopeError: 'out_of_scope'`, named `items[<n>].branch_id` or, for a list of ids,
+       * `branch_ids[<n>]` (P2.SVC.06 · API-ERR-01).
        */
       readonly errors?: readonly FieldError[];
     };
@@ -51,10 +58,11 @@ function uncovered(
   if (declaration.branch === undefined) return [];
   const path = parseBranchPath(declaration.branch);
   if (path.kind !== 'list') return [];
+  // A list of ids (`body.branch_ids[]`) has no member after the brackets: `branch_ids[0]`, not `branch_ids[0].`.
+  const name = (index: number) =>
+    path.field === '' ? `${path.list}[${index}]` : `${path.list}[${index}].${path.field}`;
   return branchIds.flatMap((branchId, index) =>
-    reach(branchId)
-      ? []
-      : [{ field: `${path.list}[${index}].${path.field}`, code: ErrorCode.OUT_OF_SCOPE }],
+    reach(branchId) ? [] : [{ field: name(index), code: ErrorCode.OUT_OF_SCOPE }],
   );
 }
 const READS = new Set(['GET', 'HEAD']);
@@ -137,4 +145,57 @@ export function decide(
       return { allow: false, status: 403, code: ErrorCode.FORBIDDEN, required };
     }
   }
+}
+
+const FORBIDDEN_CODE = ErrorCode.FORBIDDEN;
+
+/**
+ * `@CanFields` (add-employee-management design D2 · P1.EMP.04): `decide()` once per member group
+ * present in `body`, each with its own code and the employee target. One failing group refuses the
+ * whole request; `errors[]` names every member of every failed group. An unknown employee is 404
+ * before any group is decided — except for a caller who holds none of the codes, who gets the
+ * row-2 answer whether or not the target exists. A body with no member of any group passes when the
+ * caller holds any of the codes (and the target is in the scope of one of them).
+ */
+export function decideFields(
+  declaration: CanFieldsDeclaration,
+  grants: GrantSet,
+  target: Target,
+  method: string,
+  body: unknown,
+): Decision {
+  const codes = [...new Set(Object.values(declaration.fields))];
+  const forCode = (code: AccessCode): Decision =>
+    decide({ kind: 'can', code, target: declaration.target }, grants, target, method);
+  const holdsAny = codes.some((code) => grants.has(code));
+  const sent =
+    typeof body === 'object' && body !== null && !Array.isArray(body)
+      ? Object.keys(body).filter((member) => Object.hasOwn(declaration.fields, member))
+      : [];
+  if (sent.length === 0) {
+    if (!holdsAny) return forCode(codes[0] as AccessCode);
+    if (target.kind === 'missing') return { allow: false, status: 404, code: ErrorCode.NOT_FOUND };
+    const decisions = codes.filter((code) => grants.has(code)).map(forCode);
+    return decisions.find((d) => d.allow) ?? (decisions[0] as Decision);
+  }
+  // A caller with none of the codes is refused by row 2 below, whether or not the employee exists.
+  if (holdsAny && target.kind === 'missing') {
+    return { allow: false, status: 404, code: ErrorCode.NOT_FOUND };
+  }
+
+  const errors: FieldError[] = [];
+  let first: Extract<Decision, { allow: false }> | undefined;
+  for (const code of new Set(sent.map((member) => declaration.fields[member] as AccessCode))) {
+    const decision = forCode(code);
+    if (decision.allow) continue;
+    first ??= decision;
+    const required = decision.required ?? code;
+    for (const member of sent) {
+      if (declaration.fields[member] === code) {
+        errors.push({ field: member, code: FORBIDDEN_CODE, params: { required } });
+      }
+    }
+  }
+  if (first === undefined) return ALLOW;
+  return { ...first, errors };
 }

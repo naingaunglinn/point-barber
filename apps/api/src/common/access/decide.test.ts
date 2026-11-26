@@ -348,6 +348,23 @@ const cases: readonly [
       errors: [{ field: 'items[1].branch_id', code: 'out_of_scope' }],
     },
   ],
+  // A list of ids (`body.branch_ids[]`, add-employee-management): the element itself is named, no dot.
+  [
+    '9 · [] list of ids with out_of_scope, one branch uncovered',
+    'manager',
+    can('employee.rating_update', {
+      branch: 'body.branch_ids[]',
+      scopeError: 'out_of_scope',
+    }),
+    at([B3, B1]),
+    'POST',
+    {
+      allow: false,
+      status: 403,
+      code: 'out_of_scope',
+      errors: [{ field: 'branch_ids[1]', code: 'out_of_scope' }],
+    },
+  ],
   [
     '9 · [] path with out_of_scope, two uncovered of three',
     'manager',

@@ -76,4 +76,13 @@ export class AccessRepository {
       select: { id: true, status: true, company_id: true },
     });
   }
+
+  /** The branch of a branch assignment, when it exists. */
+  async assignmentBranch(assignmentId: string): Promise<string | null> {
+    const row = await this.db.employee_branches.findUnique({
+      where: { id: assignmentId },
+      select: { branch_id: true },
+    });
+    return row?.branch_id ?? null;
+  }
 }

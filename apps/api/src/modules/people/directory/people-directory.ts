@@ -102,4 +102,15 @@ export class PeopleDirectory {
       user_id: employee.user_id,
     };
   }
+
+  /**
+   * The branch of a branch assignment, as the access guard's loader of the route
+   * `POST /v1/employees/:id/branches/:assignment_id/end` (design D2). Null for an id that is no
+   * assignment; whether it belongs to the employee in the path is the service's check.
+   */
+  async assignmentTarget(assignmentId: string): Promise<LoadedTarget | null> {
+    if (!UUID.test(assignmentId)) return null;
+    const branchId = await this.access.assignmentBranch(assignmentId);
+    return branchId === null ? null : { branch_ids: [branchId], branch_id: branchId };
+  }
 }
