@@ -5,6 +5,7 @@ export * from './constants/limits.js';
 export * from './constants/status.js';
 export * from './constants/time.js';
 export * from './customers/query.js';
+export * from './employees/employee-code.js';
 export * from './errors/message-key.js';
 export * from './files/detect-file-type.js';
 export * from './format/date-time.js';
