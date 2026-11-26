@@ -1,11 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { type RequestLookupDto, type VisitDto, localized } from '@point/shared';
+import { useGuardedRouter } from '@point/ui';
 
 import { ArrivalStep } from '../../../../../components/pos/ArrivalStep';
 import { StaffOfflineBanner } from '../../../../../components/pos/OfflineHelp';
@@ -29,7 +29,7 @@ import { useMe } from '../../../../../lib/session/use-me';
 // The page title is the START sheet's (WCAG 2.4.2 · AD-A11Y-01 — task 13.8).
 export function NewVisitScreen() {
   const t = useTranslations('pos.start');
-  const router = useRouter();
+  const router = useGuardedRouter();
   const locale = useLocale() as Locale;
   const me = useMe().data;
   const { startBranch } = useBranch();
@@ -81,7 +81,8 @@ export function NewVisitScreen() {
       keepTimes(visit.id);
       store.visit(visit);
       setOpening(true);
-      router.push(`/sales/${visit.sale.id}`);
+      // The visit was saved: opening its sale does not ask (UG2).
+      router.bypass(() => router.push(`/sales/${visit.sale.id}`));
     },
     onFound: (found) => {
       if (found.visit_id !== null) keepTimes(found.visit_id);

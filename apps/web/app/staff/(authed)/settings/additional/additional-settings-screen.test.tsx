@@ -420,3 +420,27 @@ describe('a failed load in the background, and a Save with no answer', () => {
     expect((await autoPrint.findByRole('alert')).textContent).toContain(NO_ANSWER);
   });
 });
+
+const RAIL_TODAY = 'Rail Today';
+
+describe('add-unsaved-changes-guard task 4.3 · an edited row registers with the shared guard', () => {
+  it('Scenario: an edited row makes a link ask "Discard changes?"; an untouched screen does not', async () => {
+    routeFetch(fetchMock, { [LIST]: json(200, listOf({ only: SOME })) });
+    renderPos(
+      <>
+        <AdditionalSettingsScreen />
+        <a href="/today">{RAIL_TODAY}</a>
+      </>,
+      { me: kyawZinMe() },
+    );
+    const fee = within(await screen.findByTestId('setting-home_service.transport_fee_amount-row'));
+    const stop = (event: Event) => event.preventDefault();
+    document.addEventListener('click', stop);
+    fireEvent.click(screen.getByRole('link', { name: 'Rail Today' }));
+    noConfirmStep();
+    fireEvent.change(fee.getByRole('textbox'), { target: { value: '2000' } });
+    fireEvent.click(screen.getByRole('link', { name: 'Rail Today' }));
+    expect(await screen.findByRole('alertdialog', { name: 'Discard changes?' })).toBeTruthy();
+    document.removeEventListener('click', stop);
+  });
+});
