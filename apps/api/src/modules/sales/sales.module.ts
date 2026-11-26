@@ -15,16 +15,21 @@ import { SalesFinish } from './finish/sales-finish.js';
 import { SaleLines } from './lines/sale-lines.js';
 import { Sales } from './lines/sales.js';
 import { Payments } from './payments/payments.js';
+import { ReceiptBarbers } from './receipts/receipt-barbers.js';
 import { ReceiptFiles } from './receipts/receipt-files.js';
+import { ReceiptList } from './receipts/receipt-list.js';
 import { ReceiptLogo } from './receipts/receipt-logo.js';
+import { ReceiptLookup } from './receipts/receipt-lookup.js';
 import { ReceiptReads } from './receipts/receipt-reads.js';
 import { ReceiptRenderHandler } from './receipts/receipt-render.handler.js';
 import { RECEIPT_RENDER, type ReceiptRenderData } from './receipts/receipt-render.job.js';
 import { ReceiptViews } from './receipts/receipt-views.js';
+import { ReceiptsController } from './receipts/receipts.controller.js';
 import { VisitsRegistry } from './ports/visits-registry.js';
 import { CustomerActivityRepository } from './repositories/customer-activity.repository.js';
 import { PaymentMethodsRepository } from './repositories/payment-methods.repository.js';
 import { PaymentsRepository } from './repositories/payments.repository.js';
+import { ReceiptListRepository } from './repositories/receipt-list.repository.js';
 import { RefundsRepository } from './repositories/refunds.repository.js';
 import { SaleItemsRepository } from './repositories/sale-items.repository.js';
 import { SalesRepository } from './repositories/sales.repository.js';
@@ -49,13 +54,14 @@ import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
     CashClosingModule,
     PayrollModule,
   ],
-  controllers: [SalesController],
+  controllers: [SalesController, ReceiptsController],
   providers: [
     PaymentMethodsRepository,
     SalesRepository,
     SaleItemsRepository,
     PaymentsRepository,
     RefundsRepository,
+    ReceiptListRepository,
     CustomerActivityRepository,
     PaymentMethodSeed,
     SalesCustomerActivity,
@@ -71,6 +77,9 @@ import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
     ReceiptViews,
     ReceiptRenderHandler,
     ReceiptReads,
+    ReceiptBarbers,
+    ReceiptList,
+    ReceiptLookup,
     SaleViewers,
     SaleAccess,
     PilotPaymentMethods,

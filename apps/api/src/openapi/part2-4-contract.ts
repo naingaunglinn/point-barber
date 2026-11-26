@@ -1071,6 +1071,30 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       'payments',
     ],
   },
+  // add-receipts-list-lookup task 1.2 — P4.RCP.04 / P4.RCP.03 (OpenAPI Part 4 `ReceiptListItem` / `ReceiptLookup`).
+  ReceiptListItem: {
+    type: 'object',
+    properties: {
+      kind: { type: 'string', enum: ['sale', 'refund'] },
+      number: { type: 'string' },
+      sale_id: { type: 'string', format: 'uuid' },
+      refund_id: { type: ['string', 'null'], format: 'uuid' },
+      issued_at: { type: 'string', format: 'date-time' },
+      barbers: { type: 'array', items: { type: 'string' } },
+    },
+    required: ['kind', 'number', 'sale_id', 'issued_at', 'barbers'],
+  },
+  ReceiptLookup: {
+    type: 'object',
+    properties: {
+      kind: { type: 'string', enum: ['sale', 'refund'] },
+      sale_id: { type: 'string', format: 'uuid' },
+      refund_id: { type: ['string', 'null'], format: 'uuid' },
+      number: { type: 'string' },
+      branch_id: { type: 'string', format: 'uuid' },
+    },
+    required: ['kind', 'sale_id', 'number', 'branch_id'],
+  },
   RequestLookup: {
     type: 'object',
     properties: {
