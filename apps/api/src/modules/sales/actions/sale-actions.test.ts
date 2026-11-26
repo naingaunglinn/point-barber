@@ -24,7 +24,7 @@ const absent = { override_price: false, request_discount: false, refund: false, 
 describe('saleActions', () => {
   it('the performer of a COMPLETED visit: everything, no reason needed', () => {
     expect(
-      saleActions({ ...open(VisitStatus.COMPLETED), is_performer: true, is_recorder: true }, none),
+      saleActions({ ...open(VisitStatus.COMPLETED), is_performer: true, is_recorder: true, is_phone_unavailable_recorder: false }, none),
     ).toStrictEqual({
       edit_lines: true,
       take_payment: true,
@@ -37,14 +37,14 @@ describe('saleActions', () => {
 
   it('a STARTED visit: lines and payments, no Finish yet', () => {
     expect(
-      saleActions({ ...open(VisitStatus.STARTED), is_performer: true, is_recorder: true }, none),
+      saleActions({ ...open(VisitStatus.STARTED), is_performer: true, is_recorder: true, is_phone_unavailable_recorder: false }, none),
     ).toMatchObject({ edit_lines: true, take_payment: true, finish: false, mark_incomplete: true });
   });
 
   it('Ma Hnin with the codes for the branch: Finish through the override needs a reason', () => {
     expect(
       saleActions(
-        { ...open(VisitStatus.COMPLETED), is_performer: false, is_recorder: false },
+        { ...open(VisitStatus.COMPLETED), is_performer: false, is_recorder: false, is_phone_unavailable_recorder: false },
         manager,
       ),
     ).toStrictEqual({
@@ -60,7 +60,7 @@ describe('saleActions', () => {
   it('Ko Min, a colleague without a code: nothing', () => {
     expect(
       saleActions(
-        { ...open(VisitStatus.COMPLETED), is_performer: false, is_recorder: false },
+        { ...open(VisitStatus.COMPLETED), is_performer: false, is_recorder: false, is_phone_unavailable_recorder: false },
         none,
       ),
     ).toStrictEqual({
@@ -75,7 +75,7 @@ describe('saleActions', () => {
 
   it('the recorder who is not the performer may edit lines only', () => {
     expect(
-      saleActions({ ...open(VisitStatus.STARTED), is_performer: false, is_recorder: true }, none),
+      saleActions({ ...open(VisitStatus.STARTED), is_performer: false, is_recorder: true, is_phone_unavailable_recorder: false }, none),
     ).toMatchObject({ edit_lines: true, take_payment: false, mark_incomplete: false });
   });
 
@@ -84,9 +84,86 @@ describe('saleActions', () => {
     ['CANCELLED', SaleStatus.CANCELLED, VisitStatus.INCOMPLETE],
   ])('a %s sale: no action, whoever asks', (_, sale, visit) => {
     const actions = saleActions(
-      { sale_status: sale, visit_status: visit, is_performer: true, is_recorder: true },
+      { sale_status: sale, visit_status: visit, is_performer: true, is_recorder: true, is_phone_unavailable_recorder: false },
       manager,
     );
     expect(Object.values(actions).every((flag) => !flag)).toBe(true);
+  });
+
+  // add-proxy-recording task 3.4 — design D4 · D-VIS-06 / 12 · P4-RULE-03.
+  describe('a visit recorded for another barber', () => {
+    const proxy1 = {
+      is_performer: false,
+      is_recorder: true,
+      is_phone_unavailable_recorder: true,
+    };
+    const proxy2 = { ...proxy1, is_phone_unavailable_recorder: false };
+
+    it('the reason-1 recorder pays, finishes without a reason and may mark incomplete', () => {
+      expect(saleActions({ ...open(VisitStatus.COMPLETED), ...proxy1 }, none)).toStrictEqual({
+        edit_lines: true,
+        take_payment: true,
+        finish: true,
+        finish_needs_reason: false,
+        mark_incomplete: true,
+        ...absent,
+      });
+    });
+
+    it('the reason-1 recorder of a STARTED visit pays and marks incomplete, no Finish yet', () => {
+      expect(saleActions({ ...open(VisitStatus.STARTED), ...proxy1 }, none)).toMatchObject({
+        edit_lines: true,
+        take_payment: true,
+        finish: false,
+        mark_incomplete: true,
+      });
+    });
+
+    it('the reason-2 recorder edits lines and nothing else', () => {
+      expect(saleActions({ ...open(VisitStatus.COMPLETED), ...proxy2 }, none)).toStrictEqual({
+        edit_lines: true,
+        take_payment: false,
+        finish: false,
+        finish_needs_reason: false,
+        mark_incomplete: false,
+        ...absent,
+      });
+    });
+
+    it('the performer keeps every action on his own visit', () => {
+      expect(
+        saleActions(
+          {
+            ...open(VisitStatus.COMPLETED),
+            is_performer: true,
+            is_recorder: false,
+            is_phone_unavailable_recorder: false,
+          },
+          none,
+        ),
+      ).toMatchObject({ take_payment: true, finish: true, finish_needs_reason: false });
+    });
+
+    it('Ma Hnin with the codes still needs a reason to finish', () => {
+      expect(
+        saleActions(
+          {
+            ...open(VisitStatus.COMPLETED),
+            is_performer: false,
+            is_recorder: false,
+            is_phone_unavailable_recorder: false,
+          },
+          manager,
+        ),
+      ).toMatchObject({ finish: true, finish_needs_reason: true, mark_incomplete: true });
+    });
+
+    it('a reason-2 recorder who holds the codes finishes with a reason', () => {
+      expect(saleActions({ ...open(VisitStatus.COMPLETED), ...proxy2 }, manager)).toMatchObject({
+        take_payment: true,
+        finish: true,
+        finish_needs_reason: true,
+      });
+    });
   });
 });

@@ -4,6 +4,7 @@ import {
   ErrorCode,
   type LateEntry,
   LateEntryReason,
+  ProxyReason,
   type RequestLookupDto,
   type StartVisitRequest,
   VisitStatus,
@@ -63,8 +64,15 @@ export class Visits {
   ) {}
 
   /**
-   * P4.VIS.03 START (walk-in): the performer is the caller, the location the branch. Through
-   * Idempotency.run — a replay answers the stored visit (`replayed`), with no audit row.
+   * P4.VIS.03 START (walk-in): the location is the branch; the performer is the caller's own employee
+   * unless `performed_by_employee_id` names a colleague (add-proxy-recording design D1 – D3 · D-VIS-04
+   * / 12 · P4-RULE-02 #2). Through Idempotency.run — a replay answers the stored visit (`replayed`),
+   * with no audit row.
+   *
+   * A START for another barber needs `proxy_reason` 1 or 2 (400 `reason_required`); for oneself none
+   * (400 `validation`) — both before any lock. The assignment, the unpaid block and, on a late entry,
+   * the payroll lock are the performer's; with reason 1 the recorder must be assigned too (owner PY-A
+   * = A), because he then holds the cash (D-VIS-06).
    *
    * With `late_entry` (add-late-entry design D3 · D-VIS-13 · P4-RULE-02 / 13) the visit is yesterday's
    * paper walk-in: its checks run before the transaction, the visit date is the business date of the
@@ -81,6 +89,9 @@ export class Visits {
     if (!inReadScope(scope, body.branch_id))
       throw new ProblemException(ErrorCode.OUT_OF_SCOPE, 403);
     const late = body.late_entry ?? null;
+    const performer = body.performed_by_employee_id ?? actor.employee_id;
+    const reason = body.proxy_reason ?? null;
+    this.assertProxyReason(performer === actor.employee_id, reason);
     if (late !== null) this.assertLateEntry(viewer, body.branch_id, late);
     let warnings: WarningDto[] = [];
     const { replayed, row } = await this.runner.run((tx) =>
@@ -91,8 +102,9 @@ export class Visits {
           visit.started_by_user_id === actor.user_id &&
           visit.branch_id === body.branch_id &&
           visit.booking_id === null &&
-          // late_entry is not an identifying member (add-late-entry recorded reading 5).
-          visit.performed_by_employee_id === actor.employee_id,
+          // late_entry and proxy_reason are not identifying members (add-late-entry recorded reading 5 ·
+          // add-proxy-recording recorded reading 3); the performer is the resolved one.
+          visit.performed_by_employee_id === performer,
         create: async () => {
           const now = this.clock.now();
           const startedAt = late === null ? now : new Date(late.started_at);
@@ -100,17 +112,13 @@ export class Visits {
           await this.dayLock.assertOpen(tx, body.branch_id, date);
           if (late !== null)
             await this.payrollLock.assertNotFinalized(tx, {
-              employee_ids: [actor.employee_id],
+              employee_ids: [performer],
               dates: [date],
             });
-          const assigned = await this.assignments.isActiveAndAssigned(tx, {
-            employee_id: actor.employee_id,
-            branch_id: body.branch_id,
-            date,
-          });
-          if (!assigned) throw new ProblemException(ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422);
-          const unpaid =
-            late === null ? await this.visits.awaitingPayment(tx, actor.employee_id) : null;
+          await this.assertAssigned(tx, performer, body.branch_id, date);
+          if (reason === ProxyReason.PHONE_UNAVAILABLE)
+            await this.assertAssigned(tx, actor.employee_id, body.branch_id, date);
+          const unpaid = late === null ? await this.visits.awaitingPayment(tx, performer) : null;
           if (unpaid !== null)
             throw new ProblemException(ErrorCode.UNPAID_VISIT_OPEN, 422, {
               context: { visit_id: unpaid.id },
@@ -119,8 +127,9 @@ export class Visits {
             id: uuidV7(now.getTime()),
             client_request_id: key,
             branch_id: body.branch_id,
-            performed_by_employee_id: actor.employee_id,
+            performed_by_employee_id: performer,
             started_by_user_id: actor.user_id,
+            proxy_reason: reason,
             started_at: startedAt,
             recorded_at: now,
             business_date: date,
@@ -152,6 +161,34 @@ export class Visits {
       }),
     );
     return { replayed, visit: await this.view.of(this.prisma, row, viewer, warnings) };
+  }
+
+  /**
+   * The proxy-reason checks of START that need only the caller (design D1 · API-DATA-11): another
+   * performer needs reason 1 or 2 (400 `reason_required`); oneself takes none (400 `validation`,
+   * `errors[0].field` = `proxy_reason` — recorded reading 1).
+   */
+  private assertProxyReason(forSelf: boolean, reason: number | null): void {
+    if (!forSelf && reason === null) throw new ProblemException(ErrorCode.REASON_REQUIRED, 400);
+    if (forSelf && reason !== null)
+      throw new ProblemException(ErrorCode.VALIDATION, 400, {
+        errors: [{ field: 'proxy_reason', code: 'custom' }],
+      });
+  }
+
+  /** ACTIVE and assigned to the branch on the visit date, else 422 `not_assigned_to_branch`. */
+  private async assertAssigned(
+    tx: Tx,
+    employeeId: string,
+    branchId: string,
+    date: string,
+  ): Promise<void> {
+    const assigned = await this.assignments.isActiveAndAssigned(tx, {
+      employee_id: employeeId,
+      branch_id: branchId,
+      date,
+    });
+    if (!assigned) throw new ProblemException(ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422);
   }
 
   /**

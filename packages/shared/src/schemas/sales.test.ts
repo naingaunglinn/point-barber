@@ -306,3 +306,51 @@ describe('late-entry members (add-late-entry)', () => {
     ).toStrictEqual({ expected_total_amount: 0, finished_at: null });
   });
 });
+
+// add-proxy-recording task 1.2 — the two START members (design D1 · P4.VIS.03 · API-ERR-03). The
+// cross-field rules need the caller, so the service checks them; here only the shapes.
+describe('proxy members of START (add-proxy-recording)', () => {
+  const KO_AUNG = '0199a3f2-0000-7000-8000-0000000000e4';
+
+  it('keeps performed_by_employee_id and proxy_reason', () => {
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        performed_by_employee_id: KO_AUNG,
+        proxy_reason: 1,
+      }),
+    ).toStrictEqual({ branch_id: B3, performed_by_employee_id: KO_AUNG, proxy_reason: 1 });
+  });
+
+  it.each([1, 2, null])('proxy_reason %s is accepted', (proxy_reason) => {
+    expect(startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason }).success).toBe(true);
+  });
+
+  it('both members may be missing or null', () => {
+    expect(startVisitRequestSchema.parse({ branch_id: B3 })).toStrictEqual({ branch_id: B3 });
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        performed_by_employee_id: null,
+        proxy_reason: null,
+      }),
+    ).toStrictEqual({ branch_id: B3, performed_by_employee_id: null, proxy_reason: null });
+  });
+
+  it.each([3, 0, '1'])('proxy_reason %s is refused with invalid_union', (proxy_reason) => {
+    const result = startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason });
+    expect(result.error?.issues.map((issue) => [issue.path, issue.code])).toStrictEqual([
+      [['proxy_reason'], 'invalid_union'],
+    ]);
+  });
+
+  it('performed_by_employee_id must be a UUID', () => {
+    const result = startVisitRequestSchema.safeParse({
+      branch_id: B3,
+      performed_by_employee_id: 'ko-aung',
+    });
+    expect(result.error?.issues.map((issue) => issue.path)).toStrictEqual([
+      ['performed_by_employee_id'],
+    ]);
+  });
+});

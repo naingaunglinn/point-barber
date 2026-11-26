@@ -64,7 +64,7 @@ const day = (date: string): Date => new Date(`${date}T00:00:00Z`);
 @Injectable()
 export class VisitsRepository {
   /**
-   * A walk-in visit of the caller at the branch (status 1 STARTED, location 1 BRANCH). A late entry
+   * A walk-in visit at the branch, recorded by the caller (the performer, or a colleague with `proxy_reason`) (status 1 STARTED, location 1 BRANCH). A late entry
    * (D-VIS-13) carries its reason and note, `started_at` from paper and `recorded_at` = now, which is
    * the row's created_at (the Visit DTO's `recorded_at`).
    */
@@ -76,6 +76,7 @@ export class VisitsRepository {
       branch_id: string;
       performed_by_employee_id: string;
       started_by_user_id: string;
+      proxy_reason: number | null;
       started_at: Date;
       recorded_at: Date;
       business_date: string;
@@ -88,6 +89,7 @@ export class VisitsRepository {
         client_request_id: row.client_request_id,
         branch_id: row.branch_id,
         performed_by_employee_id: row.performed_by_employee_id,
+        proxy_reason: row.proxy_reason,
         location_type: LocationType.BRANCH,
         status: VisitStatus.STARTED,
         started_at: row.started_at,

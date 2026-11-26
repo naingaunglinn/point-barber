@@ -10,13 +10,13 @@ import {
 } from '../../../common/access/resolvers.js';
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import { isUuid } from '../../../common/http/uuid-v7.js';
-import { Sales } from '../../sales/index.js';
+import { Sales, isPhoneUnavailableRecorder } from '../../sales/index.js';
 import { type VisitRow, VisitsRepository } from '../repositories/visits.repository.js';
 
 // The access of the visit routes (add-walkin-visit-checkout design D2 · P4-RULE-03 · API-PERM-02):
 // the loader the access guard calls for `params.id→entity.branch_id` on a visit route, and delivery's
-// two actor sets. In this change the sets reduce to the performer, and for lines to the recorder too
-// (proxy recording is out). The guard runs before the pipes, so an id that is not a UUID is a missing
+// two actor sets: lines are the performer and the recorder, INCOMPLETE the performer and the recorder
+// of a reason-1 visit (add-proxy-recording design D4 · P4-RULE-03). The guard runs before the pipes, so an id that is not a UUID is a missing
 // row — 404 — never a query error.
 
 export const VISIT_ROUTES = [
@@ -43,7 +43,10 @@ export class VisitAccess {
     // INCOMPLETE (a visit id).
     orSelf.register('visit.incompleteActors', async (parts, caller) => {
       const visit = await this.visit(paramAt(parts, 'id'));
-      return visit !== null && isPerformer(visit, caller);
+      return (
+        visit !== null &&
+        (isPerformer(visit, caller) || isPhoneUnavailableRecorder(visit, caller.userId))
+      );
     });
   }
 

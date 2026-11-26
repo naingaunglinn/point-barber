@@ -19,6 +19,7 @@ export function visitForSale(visit: VisitRow): VisitForSale {
     status: visit.status,
     performed_by_employee_id: visit.performed_by_employee_id,
     started_by_user_id: visit.started_by_user_id,
+    proxy_reason: visit.proxy_reason,
     business_date: isoDate(visit.business_date),
     location_type: visit.location_type,
     is_late_entry: visit.is_late_entry,
