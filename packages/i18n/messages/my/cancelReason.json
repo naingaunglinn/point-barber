@@ -1,0 +1,36 @@
+{
+  "list": {
+    "title": "Cancel အကြောင်းပြချက်များ",
+    "label": "Cancel အကြောင်းပြချက်များ အစဉ်လိုက်",
+    "new": "Cancel အကြောင်းပြချက် ထည့်မယ်",
+    "showArchived": "Archive လုပ်ထားတာတွေ ပြမယ်",
+    "archivedHeading": "Archive လုပ်ထား",
+    "noteRequired": "မှတ်ချက် မဖြစ်မနေ",
+    "empty": "Cancel အကြောင်းပြချက် မရှိသေးပါ။",
+    "edit": "ပြင်မယ်",
+    "archive": "Archive လုပ်မယ်"
+  },
+  "system": {
+    "locked": "No-show အတွက် system က သုံးပါတယ် — နာမည်ပဲ ပြင်လို့ရပါတယ်။"
+  },
+  "form": {
+    "titleNew": "Cancel အကြောင်းပြချက် ထည့်မယ်",
+    "titleEdit": "Cancel အကြောင်းပြချက် ပြင်မယ်"
+  },
+  "field": {
+    "name": "အမည်",
+    "requiresNote": "မှတ်ချက် မဖြစ်မနေ",
+    "requiresNoteHelp": "ဒီအကြောင်းပြချက်ကို ရွေးရင် staff က မှတ်ချက် ရေးရပါမယ်။",
+    "status": "အခြေအနေ"
+  },
+  "toast": {
+    "saved": "Cancel အကြောင်းပြချက် သိမ်းပြီးပါပြီ",
+    "archived": "Cancel အကြောင်းပြချက်ကို archive လုပ်ပြီးပါပြီ",
+    "reordered": "အစဉ် သိမ်းပြီးပါပြီ"
+  },
+  "archive": {
+    "title": "Cancel အကြောင်းပြချက် Archive လုပ်မယ်",
+    "confirm": "“{name}” ကို archive လုပ်မလား။ booking cancel လုပ်တဲ့အခါ နောက်ထပ် မပြတော့ပါ။ ဒီအကြောင်းပြချက်နဲ့ cancel ပြီးသား booking တွေမှာတော့ ဆက်ရှိပါမယ်။",
+    "action": "Archive လုပ်မယ်"
+  }
+}

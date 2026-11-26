@@ -155,5 +155,9 @@
   "leave_types": {
     "ACTIVE": "ဖွင့်ထား",
     "INACTIVE": "ပိတ်ထား"
+  },
+  "booking_cancel_reasons": {
+    "ACTIVE": "ဖွင့်ထား",
+    "INACTIVE": "ပိတ်ထား"
   }
 }

@@ -155,5 +155,9 @@
   "leave_types": {
     "ACTIVE": "Active",
     "INACTIVE": "Inactive"
+  },
+  "booking_cancel_reasons": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive"
   }
 }

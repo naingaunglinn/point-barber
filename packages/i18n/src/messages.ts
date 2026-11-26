@@ -1,6 +1,7 @@
 import type { Locale } from './config';
 import authEn from '../messages/en/auth.json';
 import branchEn from '../messages/en/branch.json';
+import cancelReasonEn from '../messages/en/cancelReason.json';
 import commonEn from '../messages/en/common.json';
 import devuiEn from '../messages/en/devui.json';
 import errorEn from '../messages/en/error.json';
@@ -15,6 +16,7 @@ import statusEn from '../messages/en/status.json';
 import todayEn from '../messages/en/today.json';
 import authMy from '../messages/my/auth.json';
 import branchMy from '../messages/my/branch.json';
+import cancelReasonMy from '../messages/my/cancelReason.json';
 import commonMy from '../messages/my/common.json';
 import devuiMy from '../messages/my/devui.json';
 import errorMy from '../messages/my/error.json';
@@ -46,6 +48,7 @@ const MESSAGES = {
     maintenance: maintenanceEn,
     permission: permissionEn,
     leaveType: leaveTypeEn,
+    cancelReason: cancelReasonEn,
   },
   my: {
     common: commonMy,
@@ -62,6 +65,7 @@ const MESSAGES = {
     maintenance: maintenanceMy,
     permission: permissionMy,
     leaveType: leaveTypeMy,
+    cancelReason: cancelReasonMy,
   },
 } as const;
 

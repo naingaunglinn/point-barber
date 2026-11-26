@@ -5,7 +5,8 @@
     "additional": "ထပ်ဆောင်း ဆက်တင်",
     "maintenance": "Maintenance mode",
     "branches": "ဆိုင်ခွဲများ",
-    "leaveTypes": "ခွင့်အမျိုးအစားများ"
+    "leaveTypes": "ခွင့်အမျိုးအစားများ",
+    "cancelReasons": "Cancel အကြောင်းပြချက်များ"
   },
   "company": {
     "title": "ကုမ္ပဏီ",

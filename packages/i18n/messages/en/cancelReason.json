@@ -1,0 +1,36 @@
+{
+  "list": {
+    "title": "Cancel reasons",
+    "label": "Cancel reasons in order",
+    "new": "Add cancel reason",
+    "showArchived": "Show archived",
+    "archivedHeading": "Archived",
+    "noteRequired": "Note required",
+    "empty": "No cancel reasons yet.",
+    "edit": "Edit",
+    "archive": "Archive"
+  },
+  "system": {
+    "locked": "Used by the system for no-shows — only the names can be changed."
+  },
+  "form": {
+    "titleNew": "Add cancel reason",
+    "titleEdit": "Edit cancel reason"
+  },
+  "field": {
+    "name": "Name",
+    "requiresNote": "Note required",
+    "requiresNoteHelp": "Staff must write a note when they pick this reason.",
+    "status": "Status"
+  },
+  "toast": {
+    "saved": "Cancel reason saved",
+    "archived": "Cancel reason archived",
+    "reordered": "Order saved"
+  },
+  "archive": {
+    "title": "Archive cancel reason",
+    "confirm": "Archive “{name}”? It will no longer be offered when a booking is cancelled. Bookings already cancelled with it keep it.",
+    "action": "Archive"
+  }
+}

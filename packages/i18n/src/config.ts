@@ -24,6 +24,8 @@ export const NAMESPACES = [
   'permission',
   // add-leave-types task 1.8 — design D10 (texts proposed for the owner's review, S18).
   'leaveType',
+  // add-booking-cancel-reasons task 4.6 — design D9 (texts proposed for the owner's review, S18).
+  'cancelReason',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
