@@ -59,6 +59,14 @@ export function isBranchCodeTaken(error: unknown): boolean {
 }
 
 /**
+ * A second non-archived leave type with a Myanmar name the company already has hit
+ * leave_types_name_active (P2.LVT.02 / 03 · Part 2 §13b · add-leave-types design D5): 409 already_exists.
+ */
+export function isLeaveTypeNameTaken(error: unknown): boolean {
+  return uniqueViolationIndex(error) === 'leave_types_name_active';
+}
+
+/**
  * A second non-archived cancel reason with a Myanmar name the company already has hit
  * booking_cancel_reasons_name_active (P3.CRS.02 / 03 · add-booking-cancel-reasons design D6): the final
  * word behind the service's pre-check, answered 409 already_exists.
