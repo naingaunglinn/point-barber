@@ -167,3 +167,30 @@ describe('ProblemFilter · error reporting', () => {
     expect(reporting(new ProblemException(code, status))).not.toHaveBeenCalled();
   });
 });
+
+// add-schedule-patterns design D4 — 23P01 from `schedule_shifts_no_overlap` → 409 `shift_overlap`.
+describe('ProblemFilter · shift overlap', () => {
+  const exclusion = (originalCode: string, constraint: string) =>
+    Object.assign(new Error('raw query failed'), {
+      code: 'P2010',
+      meta: {
+        driverAdapterError: {
+          cause: {
+            originalCode,
+            originalMessage: `conflicting key value violates exclusion constraint "${constraint}"`,
+          },
+        },
+      },
+    });
+
+  it('answers 409 shift_overlap for the shifts EXCLUDE (23P01)', () => {
+    const sent = send(exclusion('23P01', 'schedule_shifts_no_overlap'));
+    expect(sent.status).toBe(409);
+    expect(sent.body).toStrictEqual(base('shift_overlap', 'Shift overlap', 409));
+  });
+
+  it('leaves another exclusion, and another SQLSTATE of that constraint, a defect (500)', () => {
+    expect(send(exclusion('23P01', 'price_no_overlap')).status).toBe(500);
+    expect(send(exclusion('23505', 'schedule_shifts_no_overlap')).status).toBe(500);
+  });
+});

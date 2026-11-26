@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
 import { Prisma } from '../../../generated/prisma/client.js';
 import type { NewSegment, StoredSegment } from '../patterns/pattern-plan.js';
 
@@ -53,13 +54,17 @@ export class PatternsRepository {
     return z.array(rowSchema).parse(rows);
   }
 
-  /** Every non-archived row of the employee — past, current and scheduled sets — by start date. */
+  /**
+   * Every non-archived row of the employee — past, current and scheduled sets — by start date; a read
+   * no source caps, so it stops at `READ_ROW_CEILING` and fails loudly above it (CG-PERF-02).
+   */
   async history(db: Tx, employeeId: string): Promise<StoredSegment[]> {
     const rows = await db.$queryRaw<unknown[]>`
       ${SELECT}
       WHERE employee_id = ${employeeId}::uuid AND archived_at IS NULL
-      ORDER BY effective_from, day_of_week, start_time, id`;
-    return z.array(rowSchema).parse(rows);
+      ORDER BY effective_from, day_of_week, start_time, id
+      LIMIT ${READ_ROW_CEILING + 1}`;
+    return assertWithinCeiling(z.array(rowSchema).parse(rows), 'PatternsRepository.history');
   }
 
   /** The start of the first non-archived set after `date`, or null (owner PT2). */
