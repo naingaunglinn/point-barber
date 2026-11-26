@@ -125,7 +125,14 @@ export class AttachmentUploads {
       throw error;
     }
     // After the commit: a failure here must not remove the objects of a row that exists.
-    const uploader = (await this.names.of([userId])).get(userId) ?? '';
+    // The row is stored: a failed name lookup must not turn it into a 500, so the name falls back to empty.
+    const uploader = await this.names
+      .of([userId])
+      .then((names) => names.get(userId) ?? '')
+      .catch((error: unknown) => {
+        this.log.warn({ err: error }, 'uploader name not read');
+        return '';
+      });
     return toAttachment(row, uploader);
   }
 

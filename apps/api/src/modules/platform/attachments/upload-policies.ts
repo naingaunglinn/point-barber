@@ -5,8 +5,10 @@ import type { AttachmentPolicies, AttachmentPolicy } from './attachment-registri
 
 // The policies this change registers (P8-RULE-03 policy table · design D8): the staging rows of an upload
 // (the uploader only — another user's row is hidden, never "forbidden"), the company logo and the employee
-// photo (any signed-in staff member reads; a file is removed only by replacing it). The policies of the
-// other `(entity_type, kind)` pairs of Part 8 are registered by the change that creates those rows.
+// photo (any signed-in staff member reads, and may ask to remove: the live row is always the current file
+// of a single-image field, so the remove ends in 409 `attachment_in_use` — spec "Remove is a soft delete…",
+// step 3). The policies of the other `(entity_type, kind)` pairs are registered by the change that creates
+// those rows.
 
 const OWN_STAGING = (kind: number): AttachmentPolicy => ({
   entity_type: STAGING_ENTITY,
@@ -25,12 +27,12 @@ export function registerUploadPolicies(
     entity_type: 'companies',
     kind: AttachmentKind.IMAGE,
     read: async (_caller, entityId) => ((await companyId()) === entityId ? 'allow' : 'hidden'),
-    remove: () => 'deny',
+    remove: async (_caller, entityId) => ((await companyId()) === entityId ? 'allow' : 'hidden'),
   });
   policies.register({
     entity_type: 'employees',
     kind: AttachmentKind.IMAGE,
     read: () => 'allow',
-    remove: () => 'deny',
+    remove: () => 'allow',
   });
 }

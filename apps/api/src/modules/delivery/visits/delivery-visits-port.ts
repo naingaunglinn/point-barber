@@ -17,6 +17,11 @@ export class DeliveryVisitsPort implements VisitsPort {
     return visit === null ? null : visitForSale(visit);
   }
 
+  async readMany(db: Tx, visitIds: readonly string[]): Promise<VisitForSale[]> {
+    if (visitIds.length === 0) return [];
+    return (await this.visits.findMany(db, visitIds)).map(visitForSale);
+  }
+
   async lockForUpdate(tx: Tx, visitId: string): Promise<VisitForSale> {
     const visit = await this.visits.lockForUpdate(tx, visitId);
     if (visit === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);

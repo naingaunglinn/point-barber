@@ -127,7 +127,8 @@ What enforces them at build time (design D10):
 What crosses the two modules of `add-foundation-auth-access` without an import cycle: `people`
 registers into `platform` at start-up (the audit writer's primary-branch rule, the steps of
 `sync.code_tables`, the `employee` target of the access guard; with `add-settings-store` the settings
-store's ports `CompanyOfSettings`, `UserNames` and `SettingBranches`) and supplies the access guard's
+store's ports `CompanyOfSettings`, `UserNames` and `SettingBranches`; with `add-attachments-upload` the
+uploader names `UploaderNames`) and supplies the access guard's
 port `GrantSource`; `auth` reads people only through `PeopleDirectory`.
 
 Lint cannot see which tables a repository writes. Rule 1's "own tables only" is kept by review; the
