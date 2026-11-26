@@ -17,6 +17,7 @@ import {
   isFinishedImmutable,
   isLeaveTypeNameTaken,
   isPaymentReferenceConflict,
+  isShiftOverlap,
 } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
 import { ErrorReporter, isReported } from '../observability/error-reporter.js';
@@ -63,6 +64,8 @@ function toProblem(error: unknown): ProblemException | null {
   if (isLeaveTypeNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
   // The same for a cancel reason's Myanmar name (add-booking-cancel-reasons design D6).
   if (isCancelReasonNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
+  // Two writers raced into the shift EXCLUDE (D-SCH-02 · Part 2 §13b): the whole transaction rolled back.
+  if (isShiftOverlap(error)) return new ProblemException(ErrorCode.SHIFT_OVERLAP, 409);
   // The second wall (add-walkin-visit-checkout design D9): a finished record reached its guard trigger.
   if (isFinishedImmutable(error)) return new ProblemException(ErrorCode.LOCKED, 423);
   // The JSON body could not be read: unparseable or above the 1 MB limit (design D7, reading 5).

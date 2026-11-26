@@ -1,4 +1,4 @@
-import { settingHistoryPageSchema, settingListSchema } from '@point/shared';
+import { SETTINGS, settingHistoryPageSchema, settingListSchema } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -38,8 +38,9 @@ describe('add-settings-store · settings · Setting definitions live in one file
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
     // 15 keys of add-settings-store + the 2 preferred-barber keys of add-customer-management (D9) + the
-    // nine site.* keys (add-website-management).
-    expect(items).toHaveLength(26);
+    // Every key of the catalogue: add-settings-store, add-customer-management, add-website-management and
+    // add-schedule-patterns (the count follows settings.json, never a hand-edited pin).
+    expect(items).toHaveLength(SETTINGS.length);
     for (const item of items) {
       expect([item.key, item.source, item.company_value]).toStrictEqual([
         item.key,
@@ -65,6 +66,8 @@ describe('add-settings-store · settings · The settings of this change and thei
       'booking.slot_interval_minutes': 15,
       'home_service.transport_fee_amount': 0,
       'home_service.travel_minutes': 30,
+      // add-schedule-patterns task 1.4 — D-SCH-02 · Part 2 §14.
+      'schedule.cross_branch_gap_minutes': 60,
       'receipt.auto_print': false,
       'receipt.printer_width_mm': 58,
       'receipt.thank_you_text': null,
@@ -123,9 +126,10 @@ describe('add-settings-store · settings · The settings of this change and thei
       'home_service.travel_minutes',
       'receipt.printer_width_mm',
     ]);
-    // 12 + the 2 company-only keys of add-customer-management (D9) + the nine company-only site.* keys
-    // (add-website-management).
-    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(23);
+    // Every company-only key of the catalogue (the count follows settings.json).
+    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(
+      SETTINGS.filter((entry) => entry.scope === 'company').length,
+    );
   });
 });
 
@@ -205,7 +209,7 @@ describe('add-settings-store · settings · The settings list shows each key wit
     const res = await get('E002', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(26);
+    expect(items).toHaveLength(SETTINGS.length);
     expect(itemOf({ items }, 'home_service.transport_fee_amount')).toMatchObject({
       company_value: 2000,
       effective: 2000,

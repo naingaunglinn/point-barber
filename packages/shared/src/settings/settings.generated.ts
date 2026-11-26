@@ -50,6 +50,18 @@ export const SETTING_ENTRIES = [
     impact_key: null,
   },
   {
+    key: 'schedule.cross_branch_gap_minutes',
+    module: 'schedule',
+    type: 'number',
+    default: 60,
+    scope: 'company',
+    client_readable: false,
+    validation: { unit: 'minutes', min: 0 },
+    label_key: 'settings.schedule.cross_branch_gap_minutes.label',
+    help_key: 'settings.schedule.cross_branch_gap_minutes.help',
+    impact_key: null,
+  },
+  {
     key: 'receipt.auto_print',
     module: 'sales',
     type: 'boolean',
