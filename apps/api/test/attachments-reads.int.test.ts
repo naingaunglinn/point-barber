@@ -236,6 +236,7 @@ describe('Scenario: a signed download link lives 5 minutes and is made for each 
     const res = await get(AUNG, `/attachments/${idOf(a)}/url`);
     expect(res.status).toBe(200);
     expect(res.body.expires_at).toBe('2026-10-05T10:10:00+06:30');
+    expect(res.headers['cache-control']).toBe('no-store');
     expect(Object.keys(res.body).sort()).toStrictEqual(['expires_at', 'url']);
     expect(urlOf(res).searchParams.get('X-Amz-Expires')).toBe('300');
     const { env } = s.app.get(AppConfig);

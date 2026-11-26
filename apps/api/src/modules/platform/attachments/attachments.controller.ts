@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Header, Param, Post, Query, Req, Res } from '@nestjs/common';
 import {
   ErrorCode,
   attachmentListQuerySchema,
@@ -77,6 +77,8 @@ export class AttachmentsController {
   /** P8.ATT.04 — a link that lives 5 minutes, made for this request. */
   @Get('attachments/:id/url')
   @Staff()
+  // The answer is a live link: no shared cache may keep it for its five minutes (CG-SEC-10).
+  @Header('Cache-Control', 'no-store')
   url(
     @Param('id') id: string,
     @ZQuery(urlQuerySchema) query: z.infer<typeof urlQuerySchema>,
