@@ -85,6 +85,14 @@ export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 
 /**
+ * part2 — leave_types.status (add-leave-types design D4 / D9): INACTIVE takes the type off the leave
+ * request form, ACTIVE brings it back (P2.LVT.01 / 03). The list's status chips and badge, so it has its
+ * table in STATUS_BY_TABLE (AD-CMP-05 master data: ACTIVE shows no badge, as for branches).
+ */
+export const LeaveTypeStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type LeaveTypeStatus = (typeof LeaveTypeStatus)[keyof typeof LeaveTypeStatus];
+
+/**
  * part3 — booking_cancel_reasons.status; INACTIVE = no longer offered, past bookings keep it. The INACTIVE
  * badge of Settings › Cancel reasons (add-booking-cancel-reasons design D9 · AD-CMP-05 master data: ACTIVE
  * shows no badge), so it has its table in STATUS_BY_TABLE.
@@ -115,6 +123,8 @@ export const STATUS_BY_TABLE = {
   backup_runs: BackupRunStatus,
   // add-branch-management — the branch screens' badge and status chips (design D9).
   branches: BranchStatus,
+  // add-leave-types — the leave-type list's status chips and badge (design D9).
+  leave_types: LeaveTypeStatus,
   // add-booking-cancel-reasons — the INACTIVE badge of the cancel-reason list (design D9).
   booking_cancel_reasons: CancelReasonStatus,
 } as const;
@@ -239,14 +249,6 @@ export type ServiceCategoryStatus =
 /** part2 — services.status. */
 export const ServiceStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
-
-/**
- * part2 — leave_types.status (add-leave-types design D4): INACTIVE takes the type off the leave request
- * form, ACTIVE brings it back (P2.LVT.01 / 03). Not in STATUS_BY_TABLE yet: the screen of part B1 decides
- * its badge; the labels `status.leave_types.*` are in the language files.
- */
-export const LeaveTypeStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
-export type LeaveTypeStatus = (typeof LeaveTypeStatus)[keyof typeof LeaveTypeStatus];
 
 /** part3 — customers.status. */
 export const CustomerStatus = { INACTIVE: 0, ACTIVE: 1 } as const;

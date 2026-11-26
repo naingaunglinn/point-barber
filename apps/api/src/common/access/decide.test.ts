@@ -330,6 +330,65 @@ const cases: readonly [
     'POST',
     forbidden('employee.rating_update'),
   ],
+  // add-service-catalogue task 3.1 (P2.SVC.06 · API-ERR-01 · design D2): a `[]` path with scopeError
+  // out_of_scope names every uncovered element, in request order, as `items[<n>].branch_id`.
+  [
+    '9 · [] path with out_of_scope, one branch uncovered',
+    'manager',
+    can('employee.rating_update', {
+      branch: 'body.items[].branch_id',
+      scopeError: 'out_of_scope',
+    }),
+    at([B3, B1]),
+    'PUT',
+    {
+      allow: false,
+      status: 403,
+      code: 'out_of_scope',
+      errors: [{ field: 'items[1].branch_id', code: 'out_of_scope' }],
+    },
+  ],
+  [
+    '9 · [] path with out_of_scope, two uncovered of three',
+    'manager',
+    can('employee.rating_update', {
+      branch: 'body.items[].branch_id',
+      scopeError: 'out_of_scope',
+    }),
+    at([B1, B3, B2]),
+    'PUT',
+    {
+      allow: false,
+      status: 403,
+      code: 'out_of_scope',
+      errors: [
+        { field: 'items[0].branch_id', code: 'out_of_scope' },
+        { field: 'items[2].branch_id', code: 'out_of_scope' },
+      ],
+    },
+  ],
+  [
+    '9 · [] path with out_of_scope, an incomplete list (no element ids)',
+    'manager',
+    can('employee.rating_update', {
+      branch: 'body.items[].branch_id',
+      scopeError: 'out_of_scope',
+    }),
+    at([]),
+    'PUT',
+    { allow: false, status: 403, code: 'out_of_scope' },
+  ],
+  [
+    '9 · [] path with out_of_scope, every branch covered',
+    'manager',
+    can('employee.rating_update', {
+      branch: 'body.items[].branch_id',
+      scopeError: 'out_of_scope',
+    }),
+    at([B3]),
+    'PUT',
+    allow,
+  ],
   [
     '9 · match any, no branch covered',
     'manager',

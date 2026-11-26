@@ -1,4 +1,4 @@
-import { ServiceStatus, servicesQuerySchema } from '@point/shared';
+import { ServiceStatus, serviceCategoriesQuerySchema, servicesQuerySchema } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -143,7 +143,7 @@ describe('ServiceCatalog.listServices (P2.SVC.01)', () => {
 
 describe('ServiceCatalog.listCategories (P2.CAT.01)', () => {
   it('the ACTIVE categories in sort order', async () => {
-    const { items } = await catalog.listCategories(prisma);
+    const { items } = await catalog.listCategories(prisma, serviceCategoriesQuerySchema.parse({}));
     expect(items.map((item) => [item.id, item.status])).toStrictEqual([
       [serviceCategories.SERVICES, ServiceStatus.ACTIVE],
     ]);

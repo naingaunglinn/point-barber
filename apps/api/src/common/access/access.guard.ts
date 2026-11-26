@@ -87,6 +87,7 @@ export class AccessGuard implements CanActivate {
     if (!decision.allow) {
       throw new ProblemException(decision.code, decision.status, {
         ...(decision.required === undefined ? {} : { context: { required: decision.required } }),
+        ...(decision.errors === undefined ? {} : { errors: decision.errors }),
       });
     }
     // The one branch the request acts on goes to the audit writer (D12).
