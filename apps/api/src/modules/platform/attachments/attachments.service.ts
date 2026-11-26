@@ -3,12 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { businessDateOf } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
+import { AppConfig } from '../../../common/config/config.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import {
   type AttachmentRow,
   AttachmentsRepository,
 } from '../repositories/attachments.repository.js';
+import { publicMediaPath, publicMediaUrl } from './public-media-path.js';
 import {
   type AttachmentVariant,
   objectKey,
@@ -18,8 +20,8 @@ import {
 
 // Generated files (ADR-014 · P4-RULE-18 · add-walkin-visit-checkout design D10): the rows of objects
 // the API rendered and stored itself — a receipt's PDF and PNG. Uploads (staging rows, policy table,
-// image pipeline) come with add-attachments-upload. The caller passes the company: platform does not
-// read the people tables.
+// image pipeline) are in attachment-uploads.ts and attachment-reads.ts. The caller passes the company:
+// platform does not read the people tables.
 
 export interface GeneratedFile {
   /** From newGeneratedKey — the id inside the storage key. */
@@ -44,6 +46,7 @@ export class Attachments {
   constructor(
     private readonly repository: AttachmentsRepository,
     private readonly clock: Clock,
+    private readonly config: AppConfig,
   ) {}
 
   /**
@@ -69,6 +72,16 @@ export class Attachments {
    */
   findLive(id: string): Promise<AttachmentRow | null> {
     return this.repository.findLive(id);
+  }
+
+  /** `/api/v1/public/media/<id>/<variant>` — what `logo_url`, `photo_url` and `image_url` hold (P8-RULE-04). */
+  publicMediaPath(attachmentId: string, variant: AttachmentVariant = 'original'): string {
+    return publicMediaPath(attachmentId, variant);
+  }
+
+  /** The same path under `SITE_ORIGIN`, for an Open Graph image. */
+  publicMediaUrl(attachmentId: string, variant: AttachmentVariant = 'original'): string {
+    return publicMediaUrl(this.config.env.SITE_ORIGIN, attachmentId, variant);
   }
 
   /** The key of a variant object of a row (`original` is the row's own key). */

@@ -16,9 +16,26 @@ export const REDACTED_KEYS = [
   'set-cookie',
   'authorization',
   'x-internal-key',
+  // The members of a presigned bucket link (CG-SEC-10 · add-attachments-upload design D9).
+  'x-amz-signature',
+  'x-amz-credential',
+  'x-amz-security-token',
 ] as const;
 
 export const REDACTED = '[redacted]';
+
+// It ends before a backslash too, so it can run on a JSON line without eating an escaped quote.
+const SIGNED_URL_MEMBER = /X-Amz-(?:Signature|Credential|Security-Token)=[^&#\s"'<>\\]*/gi;
+
+/**
+ * A presigned link's signature, credential and token replaced, wherever a URL stands in a text (a log
+ * field, an error message): the link is a secret for as long as it lives (CG-SEC-10 · ADR-014).
+ */
+export const redactSignedUrls = (text: string): string =>
+  text.replace(
+    SIGNED_URL_MEMBER,
+    (member) => `${member.slice(0, member.indexOf('=') + 1)}${REDACTED}`,
+  );
 
 const EMAIL = /[^\s@<>()"',;]+@[^\s@<>()"',;]+\.[A-Za-z]{2,}/g;
 const LONG_DIGITS = /\d{8,}/g;
@@ -27,7 +44,10 @@ const MM_PHONE = /(?:\+95[\s-]?|\b0)9(?:[\s-]?\d){6,9}\b/g;
 
 /** E-mail addresses, Myanmar mobile numbers in any spacing and runs of 8+ digits replaced. */
 export const redactText = (text: string): string =>
-  text.replace(EMAIL, REDACTED).replace(MM_PHONE, REDACTED).replace(LONG_DIGITS, REDACTED);
+  redactSignedUrls(text)
+    .replace(EMAIL, REDACTED)
+    .replace(MM_PHONE, REDACTED)
+    .replace(LONG_DIGITS, REDACTED);
 
 const DENIED = new Set<string>(REDACTED_KEYS);
 

@@ -9,6 +9,7 @@ import {
   PublicMediaRules,
   SingleImageFields,
 } from './attachments/attachment-registries.js';
+import { AttachmentReads } from './attachments/attachment-reads.js';
 import { AttachmentUploads } from './attachments/attachment-uploads.js';
 import { AttachmentsController } from './attachments/attachments.controller.js';
 import { Attachments } from './attachments/attachments.service.js';
@@ -87,8 +88,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     MaintenanceMode,
     AttachmentsRepository,
     Attachments,
-    // add-attachments-upload — the upload and the three registries of design D8.
+    // add-attachments-upload — the upload, the reads and the three registries of design D8.
     AttachmentUploads,
+    AttachmentReads,
     AttachmentPolicies,
     SingleImageFields,
     PublicMediaRules,

@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import {
   ATTACHMENT_VARIANTS,
   UPLOAD_PURPOSES,
+  attachmentListQuerySchema,
   attachmentSchema,
   attachmentUploadSchema,
   removeRequestSchema,
@@ -96,5 +97,21 @@ describe('attachmentSchema (P8.ATT.01 - 03)', () => {
     expect(attachmentSchema.safeParse({ ...LOGO, kind: 4 }).success).toBe(false);
     const image = { width: 600, height: 600, variants: ['w300'] };
     expect(attachmentSchema.safeParse({ ...LOGO, image }).success).toBe(false);
+  });
+});
+
+describe('attachmentListQuerySchema (P8.ATT.02)', () => {
+  const ID = '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e70';
+
+  it('takes an entity type and a uuid; a missing member or a bad uuid is refused', () => {
+    expect(
+      attachmentListQuerySchema.safeParse({ entity_type: 'uploads', entity_id: ID }).success,
+    ).toBe(true);
+    expect(issuesOf(attachmentListQuerySchema, { entity_id: ID })).toMatchObject([
+      { code: 'invalid_type', path: ['entity_type'] },
+    ]);
+    expect(
+      issuesOf(attachmentListQuerySchema, { entity_type: 'uploads', entity_id: 'abc' }),
+    ).toMatchObject([{ path: ['entity_id'] }]);
   });
 });

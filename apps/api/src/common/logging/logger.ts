@@ -1,5 +1,5 @@
 import type { LoggerService } from '@nestjs/common';
-import { REDACTED_KEYS } from '@point/shared';
+import { REDACTED_KEYS, redactSignedUrls } from '@point/shared';
 import { type DestinationStream, type Logger, pino } from 'pino';
 
 // Structured JSON logs on stdout through one injected pino logger (ADR-007 decision 5 · CG-OBS-01).
@@ -34,6 +34,10 @@ export function createLogger(level: string, destination?: DestinationStream): Lo
       level,
       base: undefined, // no pid / hostname in every line
       redact: { paths: REDACT_PATHS, censor: '[redacted]' },
+      // A presigned link loses its signature, credential and token on the finished line (CG-SEC-10 ·
+      // add-attachments-upload design D9): key-based redaction cannot see a link inside a text, an error's
+      // cause or a deep object, and nothing that is logged is changed on the way.
+      hooks: { streamWrite: redactSignedUrls },
       timestamp: pino.stdTimeFunctions.isoTime,
     },
     destination,

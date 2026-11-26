@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Clock } from '../../../common/clock/clock.js';
+import type { AppConfig } from '../../../common/config/config.js';
 import type { AttachmentsRepository } from '../repositories/attachments.repository.js';
 import { Attachments } from './attachments.service.js';
 import { variantsOf, type VariantSource } from './variant-object.js';
 
 // add-attachments-upload task 2.8 — "Server code reads a live row and the object of a variant …" (AT3).
-const attachments = new Attachments({} as AttachmentsRepository, {} as Clock);
+const attachments = new Attachments({} as AttachmentsRepository, {} as Clock, {} as AppConfig);
 const A = '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e01';
 const B = '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e02';
 const N = '0199a3f2-7c1e-7b3a-9d4e-2f6a8c1b5e03';
