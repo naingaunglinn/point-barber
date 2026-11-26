@@ -12,8 +12,9 @@ import { json, problem } from '../../../../../../test/render';
 // with messages at the fields", "Branch members are checked against their limits" and the page guard of
 // /settings/branches/new (AD-FORM-01 / 02 / 04 / 05 / 09 · AD-PERM-02 · design D9).
 const push = vi.hoisted(() => vi.fn());
+const replace = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push, replace, refresh: vi.fn() }),
   usePathname: () => '/settings/branches/new',
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -32,6 +33,7 @@ const B4 = branchOf({
 const fetchMock = vi.fn<typeof fetch>();
 beforeEach(() => {
   push.mockReset();
+  replace.mockReset();
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -138,7 +140,10 @@ describe('New branch — the form', () => {
       is_public: true,
     });
     expect(saved).toHaveBeenCalledWith('Branch saved');
-    expect(push).toHaveBeenCalledWith(`/settings/branches/${BRANCH_IDS.B4}`);
+    // The save answered 201: the new branch's page takes the place of the guard's history entry, with no
+    // question (add-unsaved-changes-guard · UG2).
+    expect(replace).toHaveBeenCalledWith(`/settings/branches/${BRANCH_IDS.B4}`);
+    expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 
   it('Scenario: Messages under the code — b4 is refused before sending, a taken B3 after', async () => {
@@ -198,7 +203,8 @@ describe('New branch — the form', () => {
     const dialog = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
     expect(push).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
-    expect(push).toHaveBeenCalledWith('/settings/branches');
+    // The guard's own question; the list opens in place of its history entry.
+    expect(replace).toHaveBeenCalledWith('/settings/branches');
   });
 });
 

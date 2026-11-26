@@ -78,6 +78,7 @@ import {
   TableLoadingDemo,
   ToastDemo,
 } from './demos/state-demos';
+import { UnsavedChangesDemo } from './demos/unsaved-demos';
 import { UploadDocumentDemo, UploadImageDemo, UploadImportDemo } from './demos/upload-demos';
 import type { CatalogueSectionId } from './sections';
 
@@ -252,6 +253,13 @@ export const MANIFEST: readonly ManifestEntry[] = [
     section: 'dialogs-and-overlays',
     rules: ['AD-CMP-08', 'AD-A11Y-02'],
     demos: [{ id: 'plain', title: 'dialog', Demo: DialogDemo }],
+  },
+  // add-unsaved-changes-guard task 1.9 — the guard every form of the signed-in area opts into.
+  {
+    name: 'UnsavedChanges',
+    section: 'dialogs-and-overlays',
+    rules: ['AD-FORM-08', 'AD-NAV-06', 'AD-CMP-08'],
+    demos: [{ id: 'form', title: 'unsavedGuard', Demo: UnsavedChangesDemo }],
   },
   // Lists
   {

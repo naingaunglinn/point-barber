@@ -1,10 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { todayMmt } from '@point/shared';
-import { DateText, PageHeader, useNow } from '@point/ui';
+import { DateText, PageHeader, useGuardedRouter, useNow } from '@point/ui';
 
 import { StaffOfflineBanner } from '../../../../components/pos/OfflineHelp';
 import { TodayList } from '../../../../components/pos/TodayList';
@@ -18,7 +17,7 @@ import { useOpenVisits } from '../../../../lib/pos/queries';
 // screen's name (WCAG 2.4.2 · AD-A11Y-01 — task 13.8).
 export function TodayScreen() {
   const t = useTranslations('today');
-  const router = useRouter();
+  const router = useGuardedRouter();
   const now = useNow();
   const visits = useOpenVisits();
   return (

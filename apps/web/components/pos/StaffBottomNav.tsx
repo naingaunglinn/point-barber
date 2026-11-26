@@ -1,10 +1,10 @@
 'use client';
 
 import { CalendarCheck, Menu, Plus, Settings } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { BottomNav, type ShellModule } from '@point/ui';
+import { BottomNav, type ShellModule, useGuardedRouter } from '@point/ui';
 
 import { useOpenVisits } from '../../lib/pos/queries';
 import { settingsScreenOf, useSettingsScreens } from '../settings/settings-nav';
@@ -64,7 +64,7 @@ export function useStaffRail(): {
 export function StaffBottomNav() {
   const t = useTranslations('today');
   const tAction = useTranslations('common.action');
-  const router = useRouter();
+  const router = useGuardedRouter();
   const pathname = usePathname();
   const open = useOpenVisits();
   const count = open.data?.length ?? 0;
