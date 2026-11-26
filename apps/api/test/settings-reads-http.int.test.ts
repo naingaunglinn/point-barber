@@ -1,4 +1,4 @@
-import { settingHistoryPageSchema, settingListSchema } from '@point/shared';
+import { SETTINGS, settingHistoryPageSchema, settingListSchema } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -38,8 +38,9 @@ describe('add-settings-store · settings · Setting definitions live in one file
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
     // 15 keys of add-settings-store + the 2 preferred-barber keys of add-customer-management (D9) + the
-    // cross-branch gap of add-schedule-patterns.
-    expect(items).toHaveLength(18);
+    // Every key of the catalogue: add-settings-store, add-customer-management, add-website-management and
+    // add-schedule-patterns (the count follows settings.json, never a hand-edited pin).
+    expect(items).toHaveLength(SETTINGS.length);
     for (const item of items) {
       expect([item.key, item.source, item.company_value]).toStrictEqual([
         item.key,
@@ -74,6 +75,16 @@ describe('add-settings-store · settings · The settings of this change and thei
       'sales.tax_enabled': false,
       'closing.cash_difference_tolerance_amount': 0,
       'attendance.default_radius_meters': 100,
+      // add-website-management task 1.3 — Part 8 §17 defaults (spec "Defaults without rows").
+      'site.announcement': null,
+      'site.cover_attachment_id': null,
+      'site.hero_subtitle': { mm: '', en: null },
+      'site.hero_title': { mm: '', en: null },
+      'site.seo_description': null,
+      'site.seo_title': null,
+      'site.share_image_attachment_id': null,
+      'site.show_barbers': false,
+      'site.show_prices': false,
       'dashboard.show_own_earnings_all': false,
       'system.default_language': 1,
       'system.maintenance': { enabled: false },
@@ -115,8 +126,10 @@ describe('add-settings-store · settings · The settings of this change and thei
       'home_service.travel_minutes',
       'receipt.printer_width_mm',
     ]);
-    // 12 + the 2 company-only keys of add-customer-management (D9) + the gap of add-schedule-patterns.
-    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(15);
+    // Every company-only key of the catalogue (the count follows settings.json).
+    expect(items.filter((item) => item.definition.scope === 'company')).toHaveLength(
+      SETTINGS.filter((entry) => entry.scope === 'company').length,
+    );
   });
 });
 
@@ -196,7 +209,7 @@ describe('add-settings-store · settings · The settings list shows each key wit
     const res = await get('E002', '');
     expect(res.status).toBe(200);
     const items = settingListSchema.parse(res.body).items;
-    expect(items).toHaveLength(18);
+    expect(items).toHaveLength(SETTINGS.length);
     expect(itemOf({ items }, 'home_service.transport_fee_amount')).toMatchObject({
       company_value: 2000,
       effective: 2000,

@@ -92,6 +92,10 @@ export const ErrorCode = {
   // An effective date before today (P2-RULE-04) — shared with the dated writes of #14 / #15; its text is a
   // ★ proposal under the owner's standing rule of 01/Nov/2026 (add-schedule-patterns A3).
   EFFECTIVE_DATE_PAST: 'effective_date_past',
+  // Two writers raced into the DB EXCLUDE `schedule_shifts_no_overlap` — one person's shifts never overlap,
+  // at any branch (D-SCH-02 · Part 2 §13b · add-schedule-patterns design D4); 409. Its text is the one of
+  // add-schedule-roster design S18, a ★ proposal for the owner to read.
+  SHIFT_OVERLAP: 'shift_overlap',
   // add-service-catalogue — Part 2 §13b · API-ERR-02 (task 2.2): a category archive refused while
   // non-archived services use it, context `{ count }` (P2.CAT.04); option pricing sent to the create
   // (P2.SVC.02) or to the update (P2.SVC.04) instead of the options endpoint (P2-RULE-02).
@@ -102,6 +106,18 @@ export const ErrorCode = {
   // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
   // are reused.
   LEAVE_TYPE_IN_USE: 'leave_type_in_use',
+  // add-website-management — Part 8 §16 · API-ERR-02 (task 1.4; texts proposed for the owner, S18):
+  // closures (P8.WEB.06 – 08 · P8-RULE-12 · owner WM4) and the report / closure range of 366 days
+  // (`context.max_days`); the four per-day field codes of a 400 `validation` week (P8.WEB.04 · WM3).
+  CLOSURE_OVERLAP: 'closure_overlap',
+  DATE_IN_PAST: 'date_in_past',
+  CLOSURE_STARTED: 'closure_started',
+  CLOSURE_PAST: 'closure_past',
+  RANGE_TOO_LONG: 'range_too_long',
+  CLOSES_BEFORE_OPENS: 'closes_before_opens',
+  TIMES_REQUIRED: 'times_required',
+  TIMES_NOT_ALLOWED: 'times_not_allowed',
+  OVERNIGHT_NOT_ALLOWED: 'overnight_not_allowed',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

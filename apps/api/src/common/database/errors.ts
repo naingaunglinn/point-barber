@@ -78,3 +78,16 @@ export function isFinishedImmutable(error: unknown): boolean {
   const message = meta?.driverAdapterError?.cause?.originalMessage;
   return typeof message === 'string' && message.includes('finished_immutable');
 }
+
+/**
+ * Two writers put overlapping shifts of one person into `schedule_shifts` and the DB EXCLUDE
+ * `schedule_shifts_no_overlap` refused the second — SQLSTATE `23P01` (D-SCH-02 · add-schedule-patterns
+ * design D4): answered 409 `shift_overlap`, the transaction rolled back.
+ */
+export function isShiftOverlap(error: unknown): boolean {
+  if (sqlStateOf(error) !== '23P01') return false;
+  const meta = (error as PrismaLikeError).meta as
+    { driverAdapterError?: { cause?: { originalMessage?: unknown } } } | undefined;
+  const message = meta?.driverAdapterError?.cause?.originalMessage;
+  return typeof message === 'string' && message.includes('schedule_shifts_no_overlap');
+}

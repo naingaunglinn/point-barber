@@ -87,6 +87,30 @@ describe('add-schedule-patterns · scheduling · access and dates of a save', ()
     expect(await rowCount()).toBe(before);
   });
 
+  it('Scenario: A B1 segment the manager cannot reach is refused even when the stored set is only B3 → 403', async () => {
+    // Ko Aung's stored set (first scenario) is B3 only: the new half of the union — the body — carries
+    // the branch Ma Hnin does not manage (design D3 step 4 · P2-RULE-11).
+    const before = await rowCount();
+    const res = await save('E002', E.E004, {
+      effective_from: '2026-10-12',
+      days: [{ day_of_week: 6, segments: [seg(B1, '10:00', '18:00')] }],
+    });
+    expect([res.status, res.body.code]).toStrictEqual([403, 'forbidden']);
+    expect(await rowCount()).toBe(before);
+  });
+
+  it('Scenario: A B1 segment for an employee with no stored set → 403, nothing written', async () => {
+    const before = await rowCount();
+    expect(await rowsOf(E.E008)).toStrictEqual([]);
+    const res = await save('E002', E.E008, {
+      effective_from: '2026-10-12',
+      days: week([1, 2], B1, '10:00', '18:00'),
+    });
+    expect([res.status, res.body.code]).toStrictEqual([403, 'forbidden']);
+    expect(await rowCount()).toBe(before);
+    expect(await rowsOf(E.E008)).toStrictEqual([]);
+  });
+
   it('Scenario: Another branch’s manager — Ko Zaw saves Ko Aung → 403', async () => {
     const before = await rowCount();
     const res = await save('E003', E.E004, {
