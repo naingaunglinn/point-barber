@@ -42,6 +42,7 @@ guard of `add-ci-guard-rails` completes the list before it reads it.
 | `booking`      | `customers`                                                                                                                 | `add-walkin-visit-checkout`  |
 | `booking`      | nothing new — reads `bookings`, `booking_items`, `booking_cancel_reasons` (customer statistics, timeline, archive guard)    | `add-customer-management`    |
 | `platform`     | `attachments` (generated rows only — receipts)                                                                              | `add-walkin-visit-checkout`  |
+| `platform`     | `attachments` — the staging rows of an upload (`POST /v1/attachments`); the generated rows are above                        | `add-attachments-upload`     |
 | `platform`     | `settings` (insert / update, never delete) · `settings_history` (written only by the trigger `settings_history_trg`)        | `add-settings-store`         |
 | `catalog`      | `service_categories`, `services`, `branch_services`, `service_prices` (close only) · reads `employee_service_eligibilities` | `add-service-catalogue`      |
 | `cash-closing` | nothing yet — reads `daily_closings`                                                                                        | `add-walkin-visit-checkout`  |
@@ -126,7 +127,8 @@ What enforces them at build time (design D10):
 What crosses the two modules of `add-foundation-auth-access` without an import cycle: `people`
 registers into `platform` at start-up (the audit writer's primary-branch rule, the steps of
 `sync.code_tables`, the `employee` target of the access guard; with `add-settings-store` the settings
-store's ports `CompanyOfSettings`, `UserNames` and `SettingBranches`) and supplies the access guard's
+store's ports `CompanyOfSettings`, `UserNames` and `SettingBranches`; with `add-attachments-upload` the
+uploader names `UploaderNames`) and supplies the access guard's
 port `GrantSource`; `auth` reads people only through `PeopleDirectory`.
 
 Lint cannot see which tables a repository writes. Rule 1's "own tables only" is kept by review; the

@@ -9,8 +9,11 @@ import {
   PublicMediaRules,
   SingleImageFields,
 } from './attachments/attachment-registries.js';
+import { AttachmentUploads } from './attachments/attachment-uploads.js';
+import { AttachmentsController } from './attachments/attachments.controller.js';
 import { Attachments } from './attachments/attachments.service.js';
 import { ReceiptFilesLock } from './attachments/receipt-files-lock.js';
+import { UploaderNames } from './attachments/uploader-names.js';
 import { registerUploadPolicies } from './attachments/upload-policies.js';
 import { Audit } from './audit/audit.service.js';
 import { AuditedInterceptor } from './audit/audited.js';
@@ -69,7 +72,13 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
 
 @Module({
   imports: [JobsModule, MailModule, SettingsModule],
-  controllers: [HealthController, StatusController, MaintenanceController, SettingsWriteController],
+  controllers: [
+    HealthController,
+    StatusController,
+    MaintenanceController,
+    SettingsWriteController,
+    AttachmentsController,
+  ],
   providers: [
     SystemService,
     // add-settings-store — the store's write path beside the audit writer, P1.SET.03 / 04, P1.SYS.03.
@@ -78,10 +87,12 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     MaintenanceMode,
     AttachmentsRepository,
     Attachments,
-    // add-attachments-upload — the three registries of design D8.
+    // add-attachments-upload — the upload and the three registries of design D8.
+    AttachmentUploads,
     AttachmentPolicies,
     SingleImageFields,
     PublicMediaRules,
+    UploaderNames,
     ReceiptFilesLock,
     Audit,
     AuditedInterceptor,
@@ -121,6 +132,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     AttachmentPolicies,
     SingleImageFields,
     PublicMediaRules,
+    UploaderNames,
     ReceiptFilesLock,
     Audit,
     AuditedInterceptor,

@@ -11,6 +11,7 @@ import {
   PlatformModule,
   RegisteredGrantSource,
   SettingBranches,
+  UploaderNames,
   UserNames,
 } from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
@@ -118,6 +119,8 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
     private readonly names: DisplayNameRepository,
     private readonly companyOfSettings: CompanyOfSettings,
     private readonly userNames: UserNames,
+    private readonly uploaderNames: UploaderNames,
+    private readonly displayNames: DisplayNames,
     private readonly settingBranches: SettingBranches,
     private readonly gateGrants: RegisteredGrantSource,
     private readonly grantSource: GrantSource,
@@ -130,6 +133,10 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
     // or a history line, and whether a branch exists (add-settings-store design D1).
     this.companyOfSettings.use(() => this.companies.companyId());
     this.userNames.use((userIds) => this.names.namesOfUsers(userIds));
+    // `uploaded_by.display_name` of an attachment (P8.ATT.01): the employee's name in the caller's language.
+    this.uploaderNames.use(async (userIds) =>
+      this.displayNames.ofUsers(userIds, await this.displayNames.callerLocale()),
+    );
     this.settingBranches.use(
       async (branchId) => (await this.directory.branchSummaries([branchId])).length === 1,
     );

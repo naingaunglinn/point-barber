@@ -43,3 +43,9 @@ export function assertWithinCeiling<T>(rows: T[], read: string): T[] {
  * the 24-hour purge, so this is a guard, not a page.
  */
 export const LIST_MAX = 100;
+
+/**
+ * What an upload request may carry besides its one file (design D3): the `purpose` and nothing else is
+ * read, so a long value or many parts is refused before it is held in memory (CG-SEC-08).
+ */
+export const MULTIPART_LIMITS = { fieldSize: 1_024, fields: 10, parts: 20 } as const;
