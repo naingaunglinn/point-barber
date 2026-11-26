@@ -568,11 +568,14 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       adjust: { type: 'boolean' },
     },
   },
+  // One shared Warning for every part (owner, 26/Nov/2026, point-sdd #40 comment 7181866383 item 4):
+  // Part 4's copy gains Part 1's optional `items` in the next consolidation; it is written here ahead.
   Warning: {
     type: 'object',
     properties: {
       code: { type: 'string' },
       params: { type: 'object', additionalProperties: true },
+      items: { type: 'array', items: { type: 'object', additionalProperties: true } },
     },
     required: ['code'],
   },

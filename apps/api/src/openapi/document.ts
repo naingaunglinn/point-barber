@@ -28,7 +28,6 @@ import {
   employeeSchema,
   employeeStatusSchema,
   employeeUpdateSchema,
-  employeeWarningSchema,
   grantSchema,
   healthSchema,
   maintenanceBodySchema,
@@ -493,12 +492,11 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         ServiceCreate: schema(serviceCreateSchema, 'input'),
         ServiceUpdate: schema(serviceUpdateSchema, 'input'),
         // add-employee-management task 1.7 — the Part 1 v1.8 employee DTOs and bodies (EM2); their
-        // paths are added with the endpoints. `Warning` is Part 4's, so Part 1's is EmployeeWarning.
+        // paths are added with the endpoints. `Warning` is the one shared schema.
         Employee: schema(employeeSchema),
         EmployeeCreate: schema(employeeCreateSchema, 'input'),
         EmployeeListItem: schema(employeeListItemSchema),
         EmployeeUpdate: schema(employeeUpdateSchema, 'input'),
-        EmployeeWarning: schema(employeeWarningSchema),
         RoleAssignment: schema(roleAssignmentSchema),
         Session: schema(sessionSchema),
         UserAccess: schema(userAccessSchema),

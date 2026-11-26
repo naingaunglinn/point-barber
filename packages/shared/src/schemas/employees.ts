@@ -223,7 +223,7 @@ const loginStatusFilter = z.string().transform((value, ctx) => {
 
 /** P1.EMP.01 query (D8): the search text, the filters, the sort, `cursor` and `limit` 1 – 100 (default 25). */
 export const employeeListQuerySchema = listQuerySchema.extend({
-  q: z.string().max(EmployeeLimits.QUERY_MAX).optional(),
+  q: z.string().trim().max(EmployeeLimits.QUERY_MAX).optional(),
   branch_id: z.uuid().optional(),
   role_id: z.uuid().optional(),
   status: statusFilter.optional(),
@@ -325,24 +325,12 @@ export const sessionSchema = z.strictObject({
   is_current: z.boolean(),
 });
 
-/**
- * OpenAPI Part 1 `Warning` — a warning of a status change or an assignment end (`future_bookings`
- * with its `items`). Part 4's `Warning` has no `items`; the two files give the same name to two
- * shapes (reported), so the document names this one `EmployeeWarning`.
- */
-export const employeeWarningSchema = z.strictObject({
-  code: z.string(),
-  params: z.record(z.string(), z.unknown()).optional(),
-  items: z.array(z.record(z.string(), z.unknown())).optional(),
-});
-
 export type EmployeeListItem = z.infer<typeof employeeListItemSchema>;
 export type EmployeeDto = z.infer<typeof employeeSchema>;
 export type EmployeeSelfViewDto = z.infer<typeof employeeSelfViewSchema>;
 export type UserAccessDto = z.infer<typeof userAccessSchema>;
 export type RoleAssignmentDto = z.infer<typeof roleAssignmentSchema>;
 export type SessionDto = z.infer<typeof sessionSchema>;
-export type EmployeeWarning = z.infer<typeof employeeWarningSchema>;
 
 /**
  * The one mapper of an employee answer (design D6): it lists every member of `Employee` explicitly, so a

@@ -191,8 +191,8 @@ const PART1: Record<string, Schema> = {
     },
   },
   // add-employee-management task 1.7 — the employee schemas and bodies of Part 1 v1.8 (owner EM2: the
-  // limits the batch adds). `Warning` is Part 1's own copy (it has `items`); the document names it
-  // EmployeeWarning because Part 4 gives `Warning` another shape.
+  // limits the batch adds). `Warning` is Part 1's copy, with `items`, which the one shared schema
+  // now carries (owner, 26/Nov/2026).
   UserAccess: {
     type: 'object',
     required: ['id', 'email', 'status'],
@@ -609,8 +609,8 @@ describe('add-branch-management task 1.7 — the branch schemas = OpenAPI Part 1
 });
 
 describe('add-employee-management task 1.7 — the employee schemas = OpenAPI Part 1 v1.8', () => {
-  // Part 4 gives `Warning` another shape, so the document names Part 1's copy EmployeeWarning.
-  const generatedName = (name: string) => (name === 'Warning' ? 'EmployeeWarning' : name);
+  // One shared `Warning` (owner, 26/Nov/2026): Part 1's copy, with `items`, is the generated one.
+  const generatedName = (name: string) => name;
 
   it.each(['UserAccess', 'RoleAssignment', 'EmployeeListItem', 'Employee', 'Session', 'Warning'])(
     '%s',

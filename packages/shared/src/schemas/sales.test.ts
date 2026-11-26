@@ -11,6 +11,7 @@ import {
   receiptQuerySchema,
   saleItemCreateSchema,
   startVisitRequestSchema,
+  warningSchema,
 } from './sales.js';
 
 // add-walkin-visit-checkout task 2.6 — the request schemas hold only the members of design D12; an
@@ -304,5 +305,21 @@ describe('late-entry members (add-late-entry)', () => {
     expect(
       finishRequestSchema.parse({ expected_total_amount: 0, finished_at: null }),
     ).toStrictEqual({ expected_total_amount: 0, finished_at: null });
+  });
+});
+
+// The one shared Warning (owner, 26/Nov/2026, #40 comment 7181866383 item 4): Part 1's `items` too.
+describe('warningSchema', () => {
+  it('carries its code, params and items, and nothing else', () => {
+    const warning = {
+      code: 'future_bookings',
+      params: { count: 4 },
+      items: [
+        { id: '0199a3f2-0000-7000-8001-000000000b01', starts_at: '2026-10-06T10:00:00+06:30' },
+      ],
+    };
+    expect(warningSchema.parse(warning)).toEqual(warning);
+    expect(warningSchema.parse({ code: 'not_eligible' })).toEqual({ code: 'not_eligible' });
+    expect(warningSchema.safeParse({ code: 'x', extra: 1 }).success).toBe(false);
   });
 });
