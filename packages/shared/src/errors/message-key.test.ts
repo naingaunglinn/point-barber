@@ -47,6 +47,14 @@ describe('errorMessageKey — add-service-catalogue', () => {
   );
 });
 
+// add-product-catalogue task 2.5 — the two Part 6 §12 codes this change raises (API-ERR-02); the context
+// members are `branches[]` / `in_transit_quantity` and `purchases` / `transfers` / `counts` / `sales`.
+describe('errorMessageKey — add-product-catalogue', () => {
+  it.each(['product_has_stock', 'product_in_open_documents'])('%s → error.%s', (code) => {
+    expect(errorMessageKey(code)).toBe(`error.${code}`);
+  });
+});
+
 describe('fieldMessageKey — the table of design D9', () => {
   it('a catalogue code named by the schema → error.<that code>', () => {
     for (const code of ['phone_invalid', 'amount_invalid', 'reason_required', 'date_invalid']) {

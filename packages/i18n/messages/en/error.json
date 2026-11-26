@@ -81,5 +81,7 @@
   "closes_before_opens": "The closing time must be after the opening time.",
   "times_required": "Enter the opening and closing times.",
   "times_not_allowed": "A closed day has no times.",
-  "overnight_not_allowed": "Opening hours can't run past midnight."
+  "overnight_not_allowed": "Opening hours can't run past midnight.",
+  "product_has_stock": "This product still has stock. Move or adjust it first.",
+  "product_in_open_documents": "This product is still on a draft purchase, a draft transfer, a count in progress or an open sale."
 }

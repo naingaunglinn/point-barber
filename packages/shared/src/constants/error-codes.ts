@@ -121,6 +121,13 @@ export const ErrorCode = {
   TIMES_REQUIRED: 'times_required',
   TIMES_NOT_ALLOWED: 'times_not_allowed',
   OVERNIGHT_NOT_ALLOWED: 'overnight_not_allowed',
+  // add-product-catalogue — Part 6 §12 · API-ERR-02 (task 2.5; texts proposed for the owner, S18): a
+  // product archive refused while any branch holds a quantity or a SENT transfer carries it, context
+  // `{ branches[], in_transit_quantity }` (P6.PRD.06), and while a DRAFT purchase, DRAFT transfer,
+  // IN_PROGRESS count or OPEN sale line has it, context `{ purchases, transfers, counts, sales }`.
+  // already_exists, conflict, category_in_use and category_inactive above are reused.
+  PRODUCT_HAS_STOCK: 'product_has_stock',
+  PRODUCT_IN_OPEN_DOCUMENTS: 'product_in_open_documents',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
