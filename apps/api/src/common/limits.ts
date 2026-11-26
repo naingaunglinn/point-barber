@@ -3,6 +3,9 @@
 /** JSON request body limit — uploads get their own multipart route (design D5 · API-SHAPE-05). */
 export const JSON_BODY_LIMIT = '1mb';
 
+/** A HEIC decode in its worker thread ends after this, so a hostile file cannot hold the queue (design R2 of add-attachments-upload). */
+export const HEIC_DECODE_TIMEOUT_MS = 30_000;
+
 /** Health ping timeout: a hanging database answers `degraded` after this (design D9). */
 export const HEALTH_PING_TIMEOUT_MS = 2_000;
 

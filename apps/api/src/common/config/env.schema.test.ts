@@ -229,6 +229,18 @@ describe('API environment schema · sign-in, mail, jobs (design D18)', () => {
     expect(() => parseApiEnv(rest)).toThrow(new RegExp(`${name} is required`));
   });
 
+  // add-attachments-upload task 2.6 — the address of signed links is optional.
+  it('S3_PUBLIC_ENDPOINT is optional; when set it must be an http(s) URL', () => {
+    expect(parseApiEnv(valid).S3_PUBLIC_ENDPOINT).toBeUndefined();
+    expect(parseApiEnv({ ...valid, S3_PUBLIC_ENDPOINT: '' }).S3_PUBLIC_ENDPOINT).toBeUndefined();
+    expect(
+      parseApiEnv({ ...valid, S3_PUBLIC_ENDPOINT: 'http://localhost:9000' }).S3_PUBLIC_ENDPOINT,
+    ).toBe('http://localhost:9000');
+    expect(messageOf({ ...valid, S3_PUBLIC_ENDPOINT: 'localhost:9000' })).toMatch(
+      /S3_PUBLIC_ENDPOINT/,
+    );
+  });
+
   it('refuses an S3_ENDPOINT that is not an http(s) URL', () => {
     expect(messageOf({ ...valid, S3_ENDPOINT: 'localhost:9000' })).toMatch(/S3_ENDPOINT/);
   });

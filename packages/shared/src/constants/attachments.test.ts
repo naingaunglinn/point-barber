@@ -4,6 +4,7 @@ import {
   BYTES_PER_MB,
   FILE_NAME_MAX,
   IMAGE_LONG_EDGE_PX,
+  IMAGE_MAX_INPUT_PIXELS,
   PURGE_BATCH,
   PURGE_WINDOW_DAYS,
   REASON_MAX,
@@ -21,6 +22,7 @@ describe('attachment limits', () => {
     expect([FILE_NAME_MAX, REASON_MAX, PURGE_BATCH, PURGE_WINDOW_DAYS]).toEqual([
       255, 1000, 200, 30,
     ]);
+    expect(IMAGE_MAX_INPUT_PIXELS).toBe(50_000_000);
     expect(VARIANT_WIDTHS).toEqual([400, 800, 1600]);
     expect(10 * BYTES_PER_MB).toBe(10_485_760);
   });
