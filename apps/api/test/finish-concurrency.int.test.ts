@@ -111,6 +111,7 @@ describe('No gap after a failure (D-PAY-06)', () => {
     let fail = true;
     const faulty: VisitsPort = {
       read: (db, id) => real.read(db, id),
+      readMany: (db, ids) => real.readMany(db, ids),
       lockForUpdate: (tx, id) => real.lockForUpdate(tx, id),
       markFinished: async (tx, id, at, recordedAt) => {
         if (fail) {

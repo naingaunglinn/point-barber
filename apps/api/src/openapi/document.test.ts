@@ -66,12 +66,18 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
   it('serves under /api/v1 with the two paths of this change and the company of add-company-profile', () => {
     expect(document.servers).toStrictEqual([{ url: '/api/v1' }]);
     expect(Object.keys(document.paths as object).sort()).toStrictEqual([
+      // add-booking-cancel-reasons A2 — P3.CRS.01 / 02.
+      '/booking-cancel-reasons',
       // add-branch-management task 3.12 — P1.BR.02 – 05.
       '/branches',
       '/branches/{id}',
       '/branches/{id}/status',
       '/company',
       '/health',
+      // add-leave-types task 2.11 — P2.LVT.01 – 04.
+      '/leave-types',
+      '/leave-types/{id}',
+      '/leave-types/{id}/archive',
       // add-settings-store task 3.12 — P1.SET.01 – 05.
       '/settings',
       '/settings/effective',
@@ -91,6 +97,23 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
     expect(paths['/branches/{id}']?.get?.operationId).toBe('getBranch');
     expect(paths['/branches/{id}']?.patch?.operationId).toBe('patchBranch');
     expect(paths['/branches/{id}/status']?.post?.operationId).toBe('setBranchStatus');
+  });
+
+  // add-booking-cancel-reasons A2 — P3.CRS.01 / 02 with Part 3's operation ids (OpenAPI 1.2.0).
+  it('the cancel-reason path carries the list and the create of Part 3', () => {
+    const paths = document.paths as Record<string, Record<string, { operationId?: string }>>;
+    expect(paths['/booking-cancel-reasons']?.get?.operationId).toBe('cancelReasonList');
+    expect(paths['/booking-cancel-reasons']?.post?.operationId).toBe('cancelReasonCreate');
+    expect(schemas.CancelReason?.required).toEqual(
+      expect.arrayContaining([
+        'id',
+        'name_mm',
+        'requires_note',
+        'system_code',
+        'sort_order',
+        'status',
+      ]),
+    );
   });
 
   // add-company-profile task 2.10 — copied from Part 1 v1.7 (OpenAPI 1.7.0) `paths./company`.
