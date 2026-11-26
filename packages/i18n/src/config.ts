@@ -29,6 +29,8 @@ export const NAMESPACES = [
   'profile',
   'devices',
   'team',
+  // add-pwa-install task 1.5 — design D8 (texts proposed for the owner's review, S18).
+  'pwa',
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

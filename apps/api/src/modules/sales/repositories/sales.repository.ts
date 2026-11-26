@@ -155,22 +155,4 @@ export class SalesRepository {
       data: { status: SaleStatus.CANCELLED, cancelled_at: at, updated_at: at },
     });
   }
-
-  /** The latest finish time of a customer's FINISHED visit sales at the branches (null = any). */
-  async lastVisitFinishedAt(
-    db: Tx,
-    customerId: string,
-    branchIds: readonly string[] | null,
-  ): Promise<Date | null> {
-    const row = await db.sales.aggregate({
-      where: {
-        customer_id: customerId,
-        status: SaleStatus.FINISHED,
-        visit_id: { not: null },
-        ...(branchIds === null ? {} : { branch_id: { in: [...branchIds] } }),
-      },
-      _max: { finished_at: true },
-    });
-    return row._max.finished_at;
-  }
 }

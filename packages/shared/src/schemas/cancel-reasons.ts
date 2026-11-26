@@ -17,8 +17,17 @@ export const CancelReasonLimits = {
 
 /** The Myanmar name: required, 1 – 150 characters after trimming (D-DB-04). */
 const nameMm = z.string().trim().min(1).max(CancelReasonLimits.NAME_MAX);
-/** The English name: optional, at most 150 characters after trimming, or null. */
-const nameEn = z.string().trim().max(CancelReasonLimits.NAME_MAX).nullable().optional();
+/** Blank after trimming is null, as branch and company store an empty optional text. */
+const blankAsNull = (value: unknown): unknown =>
+  typeof value === 'string' && value.trim() === '' ? null : value;
+
+/**
+ * The English name: optional, at most 150 characters after trimming, or null; an empty or blank one is
+ * stored as NULL, so the English UI falls back to the Myanmar name (AD-L10N-03 — recorded reading, A2).
+ */
+const nameEn = z
+  .preprocess(blankAsNull, z.string().trim().max(CancelReasonLimits.NAME_MAX).nullable())
+  .optional();
 
 /**
  * P3.CRS.01 query: `status` repeatable (`status=0&status=1`), default ACTIVE only; `include_archived`

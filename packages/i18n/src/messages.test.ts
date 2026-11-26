@@ -32,6 +32,7 @@ describe('language files', () => {
       'profile',
       'devices',
       'team',
+      'pwa',
     ]);
   });
 
