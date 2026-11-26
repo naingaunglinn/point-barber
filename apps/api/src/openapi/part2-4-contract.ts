@@ -1039,3 +1039,83 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
     required: ['client_request_id', 'resource_type', 'id'],
   },
 };
+
+// add-leave-types task 1.6 — the leave-type schemas and the four P2.LVT operations, copied on 18/Nov/2026
+// from point-sdd docs/api/openapi/part2-catalogue-scheduling.yaml v1.6.0 (owner LT1 recorded in
+// `LeaveTypeCreate.sort_order` — a description only, no schema change). Members, types, formats, enums
+// and required lists; for the paths the operation id, the parameters, the body and the answer.
+const uuid = { type: 'string', format: 'uuid' };
+const dateTime = { type: 'string', format: 'date-time' };
+const leaveTypeName = { type: 'string' };
+const leaveTypeNameEn = { type: ['string', 'null'] };
+
+export const LEAVE_TYPE_SCHEMAS: Record<string, Record<string, unknown>> = {
+  LeaveType: {
+    type: 'object',
+    required: ['id', 'name_mm', 'name_en', 'is_paid', 'sort_order', 'status', 'updated_at'],
+    properties: {
+      id: uuid,
+      name_mm: leaveTypeName,
+      name_en: leaveTypeNameEn,
+      is_paid: { type: 'boolean' },
+      sort_order: { type: 'integer' },
+      status: { type: 'integer', enum: [0, 1] },
+      archived_at: { type: ['string', 'null'], format: 'date-time' },
+      updated_at: dateTime,
+    },
+  },
+  LeaveTypeCreate: {
+    type: 'object',
+    required: ['name_mm', 'is_paid'],
+    properties: {
+      name_mm: leaveTypeName,
+      name_en: leaveTypeNameEn,
+      is_paid: { type: 'boolean' },
+      sort_order: { type: 'integer' },
+    },
+  },
+  LeaveTypeUpdate: {
+    type: 'object',
+    required: ['expected_updated_at'],
+    properties: {
+      name_mm: leaveTypeName,
+      name_en: leaveTypeNameEn,
+      is_paid: { type: 'boolean' },
+      status: { type: 'integer', enum: [0, 1] },
+      sort_order: { type: 'integer' },
+      expected_updated_at: dateTime,
+    },
+  },
+};
+
+/** `<method> <path>` → operation id, parameter names in order, request body and success answer. */
+export const LEAVE_TYPE_OPERATIONS: Record<
+  string,
+  { operationId: string; parameters: string[]; body?: string; status: string; answer?: string }
+> = {
+  'get /leave-types': {
+    operationId: 'leaveTypeList',
+    parameters: ['status', 'include_archived'],
+    status: '200',
+  },
+  'post /leave-types': {
+    operationId: 'leaveTypeCreate',
+    parameters: ['X-Requested-With'],
+    body: 'LeaveTypeCreate',
+    status: '201',
+    answer: 'LeaveType',
+  },
+  'patch /leave-types/{id}': {
+    operationId: 'leaveTypeUpdate',
+    parameters: ['X-Requested-With', 'id'],
+    body: 'LeaveTypeUpdate',
+    status: '200',
+    answer: 'LeaveType',
+  },
+  'post /leave-types/{id}/archive': {
+    operationId: 'leaveTypeArchive',
+    parameters: ['X-Requested-With', 'id'],
+    status: '200',
+    answer: 'LeaveType',
+  },
+};

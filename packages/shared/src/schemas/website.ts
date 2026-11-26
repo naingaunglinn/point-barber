@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ErrorCode, FieldIssueCode } from '../constants/error-codes.js';
+import { CATALOGUE_CODE_PREFIX } from './catalogue-code.js';
 import { textMmEnSchema } from '../settings/text-mm-en.js';
 import { warningSchema } from './sales.js';
 import { timeOfDaySchema } from './schedule.js';
@@ -65,12 +67,56 @@ const hoursDay = {
   opens_at: timeOfDaySchema.nullable(),
   closes_at: timeOfDaySchema.nullable(),
 };
+const hoursDaySchema = z.object(hoursDay);
 
-/** P8.WEB.04 body — `BranchHoursWrite`: exactly seven days (P8-RULE-12). */
-export const branchHoursWriteSchema = z.object({
-  days: z.array(z.object(hoursDay)).length(WebsiteLimits.WEEK_DAYS),
-  expected_updated_at: wireDateTime.nullable().optional(),
-});
+type HoursDay = z.infer<z.ZodObject<typeof hoursDay>>;
+
+/**
+ * The per-day rule of P8.WEB.04 (P8-RULE-12 · owner WM3 ★ · design D5), checked in this order: a closed
+ * day with a time; an open day without both times; closing at `00:00` (midnight is the next day — no
+ * overnight, D-PLT-15); any other closing at or before the opening. Null when the day is valid.
+ */
+export function hoursDayCode(day: HoursDay): ErrorCode | null {
+  if (day.is_closed) {
+    return day.opens_at === null && day.closes_at === null ? null : ErrorCode.TIMES_NOT_ALLOWED;
+  }
+  if (day.opens_at === null || day.closes_at === null) return ErrorCode.TIMES_REQUIRED;
+  if (day.closes_at === '00:00') return ErrorCode.OVERNIGHT_NOT_ALLOWED;
+  // `HH:mm` texts sort as their times.
+  return day.closes_at <= day.opens_at ? ErrorCode.CLOSES_BEFORE_OPENS : null;
+}
+
+/**
+ * P8.WEB.04 body — `BranchHoursWrite`: exactly seven days, each weekday once (else `invalid_value` at
+ * `days`), and every day checked — one `errors[]` item per wrong day at `days[<index>]`, all together.
+ */
+export const branchHoursWriteSchema = z
+  .object({
+    days: z.array(hoursDaySchema).length(WebsiteLimits.WEEK_DAYS),
+    expected_updated_at: wireDateTime.nullable().optional(),
+  })
+  .superRefine((body, ctx) => {
+    // zod runs a refinement after a shape issue too: the week rules wait for a week of the right shape.
+    const weekdays = new Set(body.days.map((day) => day.day_of_week));
+    if (body.days.length === WebsiteLimits.WEEK_DAYS && weekdays.size !== body.days.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['days'],
+        message: `${CATALOGUE_CODE_PREFIX}${FieldIssueCode.INVALID_VALUE}`,
+      });
+    }
+    body.days.forEach((day, index) => {
+      // A day whose own members are malformed (a time that is no `HH:mm`) already has its shape issue.
+      const code = hoursDaySchema.safeParse(day).success ? hoursDayCode(day) : null;
+      if (code !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['days', index],
+          message: `${CATALOGUE_CODE_PREFIX}${code}`,
+        });
+      }
+    });
+  });
 
 const noticeMm = z.string().trim().min(1).max(WebsiteLimits.CLOSURE_NOTICE);
 

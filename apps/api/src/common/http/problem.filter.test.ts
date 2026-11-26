@@ -168,6 +168,26 @@ describe('ProblemFilter · error reporting', () => {
   });
 });
 
+// add-leave-types design D5 — the name index decides, so two simultaneous creates cannot both succeed.
+describe('ProblemFilter · a taken leave-type name', () => {
+  const uniqueViolation = (index: string) => ({
+    code: 'P2002',
+    meta: { driverAdapterError: { cause: { originalCode: '23505', constraint: { index } } } },
+  });
+
+  it('answers 409 already_exists for a violation of leave_types_name_active', () => {
+    const sent = send(uniqueViolation('leave_types_name_active'));
+    expect(sent.status).toBe(409);
+    expect(sent.body).toMatchObject({ code: 'already_exists' });
+  });
+
+  it('does not take another index for it', () => {
+    const sent = send(uniqueViolation('some_other_index'));
+    expect(sent.body).not.toMatchObject({ code: 'already_exists' });
+    expect(sent.status).toBe(500);
+  });
+});
+
 // add-schedule-patterns design D4 — 23P01 from `schedule_shifts_no_overlap` → 409 `shift_overlap`.
 describe('ProblemFilter · shift overlap', () => {
   const exclusion = (originalCode: string, constraint: string) =>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildOpenApiDocument } from './document.js';
-import { PART2_4_SCHEMAS } from './part2-4-contract.js';
+import { LEAVE_TYPE_OPERATIONS, LEAVE_TYPE_SCHEMAS, PART2_4_SCHEMAS } from './part2-4-contract.js';
 
 // add-walkin-visit-checkout task 2.5 — the generated response schemas of tasks 2.2 – 2.4 equal the
 // Part 2 / 3 / 4 OpenAPI schemas (API-ERR-03): every member with its type, format and enum, the
@@ -150,6 +150,47 @@ describe('generated response schemas = OpenAPI Part 2 / 3 / 4 (add-walkin-visit-
     expect(() => {
       expectParity(PART2_4_SCHEMAS.Sale as Schema, broken, 'Sale');
     }).toThrow(/Sale\.visit_id type/);
+  });
+});
+
+// add-leave-types task 1.6 — P2.LVT.01 – 04: the three leave-type schemas and the four operations equal
+// OpenAPI Part 2 v1.6. LT1 only describes `LeaveTypeCreate.sort_order` (omitted = last), so no schema
+// changes with it.
+interface Operation {
+  readonly operationId?: string;
+  readonly parameters?: readonly { readonly name: string }[];
+  readonly requestBody?: { readonly content: Record<string, { readonly schema: Schema }> };
+  readonly responses?: Record<
+    string,
+    { readonly content?: Record<string, { readonly schema: Schema }> }
+  >;
+}
+
+describe('add-leave-types · LeaveType* and P2.LVT.01 – 04 = OpenAPI Part 2 v1.6 (LT1: sort_order omitted = last, no schema change)', () => {
+  it.each(Object.keys(LEAVE_TYPE_SCHEMAS))('%s', (name) => {
+    expect(generated[name], name).toBeDefined();
+    expectParity(LEAVE_TYPE_SCHEMAS[name] as Schema, generated[name] as Schema, name);
+  });
+
+  it('the four operations: id, parameters, body and answer', () => {
+    const paths = document.paths as Record<string, Record<string, Operation>>;
+    const refOf = (schema: Schema | undefined) =>
+      typeof schema?.$ref === 'string' ? schema.$ref.split('/').pop() : undefined;
+    for (const [key, contract] of Object.entries(LEAVE_TYPE_OPERATIONS)) {
+      const [method = '', path = ''] = key.split(' ');
+      const operation = paths[path]?.[method];
+      expect(operation?.operationId, key).toBe(contract.operationId);
+      expect(operation?.parameters?.map((parameter) => parameter.name) ?? [], key).toStrictEqual(
+        contract.parameters,
+      );
+      expect(refOf(operation?.requestBody?.content['application/json']?.schema), key).toBe(
+        contract.body,
+      );
+      const answer = operation?.responses?.[contract.status];
+      expect(answer, key).toBeDefined();
+      if (contract.answer !== undefined)
+        expect(refOf(answer?.content?.['application/json']?.schema), key).toBe(contract.answer);
+    }
   });
 });
 
