@@ -70,14 +70,16 @@ describe('add-customer-management · customers · customer.delete holders set a 
   });
 
   it('Scenario: The same status twice — both 200, the same updated_at, one deactivate audit row', async () => {
+    const deactivations = async () =>
+      (await audits(MA_SU)).filter((row) => row.action === 'customer.deactivate').length;
+    const already = await deactivations();
     s.clock?.set(new Date('2026-10-01T09:06:00+06:30'));
     const twice = await post(MA_SU, 'status', { status: 0 });
     s.clock?.set(new Date('2026-10-01T09:07:00+06:30'));
     const again = await post(MA_SU, 'status', { status: 0 });
     expect([twice.status, again.status]).toStrictEqual([200, 200]);
     expect(again.body.updated_at).toBe(twice.body.updated_at);
-    const rows = (await audits(MA_SU)).filter((row) => row.action === 'customer.deactivate');
-    expect(rows).toHaveLength(1);
+    expect((await deactivations()) - already).toBe(1);
     await post(MA_SU, 'status', { status: 1 });
     s.clock?.set(new Date('2026-10-01T09:00:00+06:30'));
   });

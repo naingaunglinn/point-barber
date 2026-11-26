@@ -63,10 +63,11 @@ describe('add-customer-management · customers · Every committed customer write
   });
 
   it('Scenario: A phone correction — customer.update holds the phone and its E.164 form, before and after', async () => {
+    const expected_updated_at = await stamp(MA_SU);
     const res = await s.http
       .patch(`/api/v1/customers/${MA_SU}`)
       .set('Cookie', as('E003'))
-      .send({ phone: '09 7712 3457', expected_updated_at: await stamp(MA_SU) });
+      .send({ phone: '09 7712 3457', expected_updated_at });
     expect(res.status).toBe(200);
     const rows = await rowsOf(res);
     expect(rows).toHaveLength(1);
@@ -81,10 +82,11 @@ describe('add-customer-management · customers · Every committed customer write
   });
 
   it('Scenario: The same number typed another way — only phone changes, carried with its E.164 form', async () => {
+    const expected_updated_at = await stamp(MA_SU);
     const res = await s.http
       .patch(`/api/v1/customers/${MA_SU}`)
       .set('Cookie', as('E003'))
-      .send({ phone: '+95 9 7712 3457', expected_updated_at: await stamp(MA_SU) });
+      .send({ phone: '+95 9 7712 3457', expected_updated_at });
     const rows = await rowsOf(res);
     expect(rows[0]).toMatchObject({
       before_data: { phone: '09 7712 3457', phone_normalized: '+95977123457' },
@@ -139,10 +141,11 @@ describe('add-customer-management · customers · Every committed customer write
       'customer_has_active_bookings',
     ]);
     expect(await rowsOf(refused)).toHaveLength(0);
+    const expected_updated_at = await stamp(MA_SU);
     const unchanged = await s.http
       .patch(`/api/v1/customers/${MA_SU}`)
       .set('Cookie', as('E003'))
-      .send({ name: 'Ma Su', expected_updated_at: await stamp(MA_SU) });
+      .send({ name: 'Ma Su', expected_updated_at });
     expect(unchanged.status).toBe(200);
     expect(await rowsOf(unchanged)).toHaveLength(0);
     const taken = await s.http
