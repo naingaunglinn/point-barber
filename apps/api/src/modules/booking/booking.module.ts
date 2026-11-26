@@ -3,12 +3,16 @@ import { Module, type OnModuleInit } from '@nestjs/common';
 import { TransactionRunner } from '../../common/database/transaction-runner.js';
 import { BranchUsage, PeopleModule } from '../people/index.js';
 import { ClosureBookings, CodeTables, PlatformModule } from '../platform/index.js';
+import { CancelReasonReads } from './cancel-reasons/cancel-reason-reads.js';
 import { CancelReasonSeed } from './cancel-reasons/cancel-reason-seed.js';
+import { CancelReasonWrites } from './cancel-reasons/cancel-reason-writes.js';
+import { CancelReasonsController } from './cancel-reasons/cancel-reasons.controller.js';
 import { CustomersController } from './customers/customers.controller.js';
 import { Customers } from './customers/customers.js';
 import { BookingReads } from './reads/booking-reads.js';
 import { BookingsRepository } from './repositories/bookings.repository.js';
 import { CancelReasonsRepository } from './repositories/cancel-reasons.repository.js';
+import { CustomerBookingsRepository } from './repositories/customer-bookings.repository.js';
 import { CustomersRepository } from './repositories/customers.repository.js';
 
 // Bounded context `booking` (ADR-001 · docs/engineering/module-map.md): Part 3 customers, bookings,
@@ -19,14 +23,17 @@ import { CustomersRepository } from './repositories/customers.repository.js';
 // add-website-management adds `BookingReads` (the bookings inside a closure — design D7).
 @Module({
   imports: [PlatformModule, PeopleModule],
-  controllers: [CustomersController],
+  controllers: [CustomersController, CancelReasonsController],
   providers: [
     CustomersRepository,
     BookingsRepository,
+    CustomerBookingsRepository,
     Customers,
     BookingReads,
     CancelReasonsRepository,
     CancelReasonSeed,
+    CancelReasonReads,
+    CancelReasonWrites,
   ],
   exports: [Customers, BookingReads],
 })
