@@ -40,11 +40,12 @@ export class OpeningHoursRepository {
     }));
   }
 
-  /** The rows of one branch, Monday first, with their last change. */
+  /** The rows of one branch, Monday first, with their last change (at most seven: CG-PERF-02). */
   async weekOf(branchId: string): Promise<HoursRow[]> {
     const rows = await this.db.branch_opening_hours.findMany({
       where: { branch_id: branchId },
       orderBy: { day_of_week: 'asc' },
+      take: 7,
     });
     return rows.map((row) => ({
       id: row.id,
@@ -57,8 +58,14 @@ export class OpeningHoursRepository {
     }));
   }
 
-  /** The branch's rows locked for the write (CG-DB-06 · design D5). */
+  /**
+   * The branch's rows locked for the write (CG-DB-06 · design D5). The branch row is locked first, so
+   * two first saves of a branch without rows take turns instead of both inserting (the second would
+   * hit the unique index on `(branch_id, day_of_week)`); `NO KEY UPDATE` leaves the foreign-key checks
+   * of other writes alone.
+   */
   async lockWeek(tx: Tx, branchId: string): Promise<HoursRow[]> {
+    await tx.$queryRaw`SELECT id FROM branches WHERE id = ${branchId}::uuid FOR NO KEY UPDATE`;
     const rows = await tx.$queryRaw<HoursRow[]>`
       SELECT id, day_of_week, is_closed, to_char(opens_at, 'HH24:MI') AS opens_at,
              to_char(closes_at, 'HH24:MI') AS closes_at, updated_at, updated_by_user_id

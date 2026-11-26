@@ -235,4 +235,41 @@ describe('add-website-management · website · An hours save writes only the wee
     expect(await rowsOf(branchId)).toHaveLength(7);
     expect((await jobs()).at(-1)?.data.tags).toStrictEqual(['home', 'branch:B5']);
   });
+
+  it('two first saves of a branch without rows take turns: both 200, seven rows', async () => {
+    const created = await s.http
+      .post('/api/v1/branches')
+      .set('Cookie', await cookieOf('E001'))
+      .send({ ...B4, code: 'B6' });
+    const branchId = String(created.body.id);
+    const cookie = await cookieOf('E001');
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let locked: () => void = () => undefined;
+    const ready = new Promise<void>((resolve) => {
+      locked = resolve;
+    });
+    // Another connection holds the branch row, so both saves are in flight before either one inserts.
+    const holder = s.prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT id FROM branches WHERE id = ${branchId}::uuid FOR UPDATE`;
+        locked();
+        await held;
+      },
+      { timeout: 20_000 },
+    );
+    await ready;
+    const saves = [WEEK, MONDAY_CLOSED].map((days) =>
+      s.http.put(path(branchId)).set('Cookie', cookie).send({ days }),
+    );
+    const settled = Promise.all(saves);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    release();
+    await holder;
+    const results = await settled;
+    expect(results.map((res) => res.status)).toStrictEqual([200, 200]);
+    expect(await rowsOf(branchId)).toHaveLength(7);
+  });
 });
