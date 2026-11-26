@@ -28,6 +28,7 @@ describe('language files', () => {
       'maintenance',
       'permission',
       'leaveType',
+      'pwa',
       'cancelReason',
     ]);
   });
