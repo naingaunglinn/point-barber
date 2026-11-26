@@ -20,6 +20,7 @@ import {
 
 import { PUBLIC_API_BASE } from '../../../env';
 import { ApiProblem, api } from '../../../lib/api/client';
+import { useInstallListener } from '../../../lib/pwa/use-install-capability';
 import { navigation } from '../../../lib/session/navigate';
 import type { SignedOutKey } from '../../../lib/session/return-to';
 
@@ -66,6 +67,8 @@ export function LoginScreen({ signedOut, googleNotLinked = false, returnTo }: Lo
   const raw = useLocale();
   const locale = isLocale(raw) ? raw : 'my';
   const [sent, setSent] = useState<{ readonly email: string; readonly at: number }>();
+  // Chrome's install prompt may already be offered before the first sign-in (add-pwa-install design D6).
+  useInstallListener();
 
   const google = () => {
     const query = returnTo === undefined ? '' : `?return_to=${encodeURIComponent(returnTo)}`;
