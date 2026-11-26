@@ -29,6 +29,14 @@ export class CompanyAdmin {
     private readonly clock: Clock,
   ) {}
 
+  /**
+   * The lock of every write that can remove the last active admin (design D1 / D7): taken first, before
+   * `empcode`, the branch rows and the employee row; released at commit or rollback.
+   */
+  lock(tx: Tx, companyId: string): Promise<void> {
+    return this.roles.lockCompanyAdmins(tx, companyId);
+  }
+
   isCompanyAdminRole(codes: readonly string[]): boolean {
     return ROLE_CODES.every((code) => codes.includes(code));
   }
