@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { Messages } from '@point/i18n';
 
 import { BRANCH_CODES } from '../../lib/branches/access';
+import { LEAVE_TYPE_CODES } from '../../lib/leave-types/access';
 import { useCan } from '../../lib/session/grants';
 import { seesCompany } from './company-access';
 
@@ -44,6 +45,13 @@ const SCREENS: readonly SettingsScreenEntry[] = [
     key: 'additional',
     href: '/settings/additional',
     visible: (can) => can('settings.view') || can('settings.update'),
+  },
+  // add-leave-types — Settings › Leave types for a holder of any leave_type.* code (leave_type.view⁺ —
+  // AD-NAV-02 · AD-PERM-03 · design D9), after Additional settings in AD-NAV-02's order.
+  {
+    key: 'leaveTypes',
+    href: '/settings/leave-types',
+    visible: (can) => LEAVE_TYPE_CODES.some((code) => can(code)),
   },
   {
     key: 'maintenance',
