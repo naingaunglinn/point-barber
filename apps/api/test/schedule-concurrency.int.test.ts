@@ -17,10 +17,10 @@ const E = FIXTURE_IDS.employees;
 const mmt = (local: string) => new Date(`${local}+06:30`);
 
 let s: SeededApp;
-const save = async (hours: [string, string]) =>
+const saveWith = (cookie: string, hours: [string, string]) =>
   s.http
     .put(`/api/v1/employees/${E.E004}/schedule-pattern`)
-    .set('Cookie', (await s.signIn('E002')).cookie)
+    .set('Cookie', cookie)
     .send({
       effective_from: '2026-10-12',
       days: [1, 2, 3, 4, 5].map((day_of_week) => ({
@@ -28,6 +28,7 @@ const save = async (hours: [string, string]) =>
         segments: [{ branch_id: B3, start_time: hours[0], end_time: hours[1] }],
       })),
     });
+const save = async (hours: [string, string]) => saveWith((await s.signIn('E002')).cookie, hours);
 
 describe('add-schedule-patterns · scheduling · concurrency of the schedule writers', () => {
   beforeAll(async () => {
@@ -36,8 +37,8 @@ describe('add-schedule-patterns · scheduling · concurrency of the schedule wri
   }, 60_000);
   afterAll(() => s.close());
 
-  it('a generation unit waits for the schedule lock another writer holds, then runs', async () => {
-    const runner = s.app.get(TransactionRunner);
+  /** Holds `ScheduleLock` of Ko Aung in an open transaction until `release()`. */
+  async function holdLock(): Promise<{ release: () => void; done: Promise<void> }> {
     let release = (): void => undefined;
     const held = new Promise<void>((resolve) => {
       release = resolve;
@@ -46,20 +47,36 @@ describe('add-schedule-patterns · scheduling · concurrency of the schedule wri
     const holding = new Promise<void>((resolve) => {
       acquired = resolve;
     });
-    const holder = runner.run(async (tx) => {
+    const done = s.app.get(TransactionRunner).run(async (tx) => {
       await s.app.get(ScheduleLock).acquire(tx, E.E004);
       acquired();
       await held;
     });
     await holding;
+    return { release, done };
+  }
 
+  const stateAfter = <T>(work: Promise<T>): Promise<'done' | 'waiting'> =>
+    Promise.race([work.then(() => 'done' as const), sleep(400).then(() => 'waiting' as const)]);
+
+  it('a generation unit waits for the schedule lock another writer holds, then runs', async () => {
+    const { release, done } = await holdLock();
     const unit = generateUnit(s, E.E004);
-    expect(await Promise.race([unit.then(() => 'done'), sleep(400).then(() => 'waiting')])).toBe(
-      'waiting',
-    );
+    expect(await stateAfter(unit)).toBe('waiting');
     release();
-    await holder;
+    await done;
     expect(await unit).toStrictEqual({ changed_dates: [], warnings: [] });
+  });
+
+  it('a save waits for the schedule lock another writer holds, then answers 200 (design D6)', async () => {
+    const cookie = (await s.signIn('E002')).cookie;
+    const { release, done } = await holdLock();
+    const request = saveWith(cookie, ['10:00', '19:00']).then((res) => res);
+    // Without `lock.acquire` in the writer the save would not wait for the open transaction.
+    expect(await stateAfter(request)).toBe('waiting');
+    release();
+    await done;
+    expect((await request).status).toBe(200);
   });
 
   it('Scenario: a save and a generation unit for Ko Aung in parallel — both finish, one consistent shift set, no 23P01', async () => {
