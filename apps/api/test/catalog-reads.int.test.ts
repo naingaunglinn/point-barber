@@ -1,8 +1,11 @@
+import { randomUUID } from 'node:crypto';
+
 import { ErrorCode, ServiceCategoryStatus, ServiceStatus } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../src/common/database/prisma.service.js';
+import { READ_ROW_CEILING } from '../src/common/limits.js';
 import { type CatalogueBuilder, catalogueBuilder } from './helpers/catalogue.js';
 import { type SeededApp, seededApp } from './helpers/seeded.js';
 import { type WalkinHttp, walkinHttp } from './helpers/walkin-http.js';
@@ -174,6 +177,77 @@ describe('The picker view and catalogue order (task 3.3 · Recorded readings 1 a
     const res = await api.get(MIN, '/service-categories');
     // 'ဂ' < 'ဘ' < 'ဝန်ဆောင်မှု' in code point order.
     expect(names(res.body)).toStrictEqual(['First', 'Second', 'Services']);
+  });
+});
+
+describe('Paging in catalogue order and the category ceiling (review of #86 · CG-PERF-02)', () => {
+  /** Walks every page with `limit=1` and returns the names in the order the pages came. */
+  async function walk(path: string): Promise<(string | null)[]> {
+    const seen: (string | null)[] = [];
+    let cursor: string | null = null;
+    for (let page = 0; page < 10; page += 1) {
+      const joiner = path.includes('?') ? '&' : '?';
+      const res = await api.get(
+        ADMIN,
+        `${path}${joiner}limit=1${cursor === null ? '' : `&cursor=${cursor}`}`,
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.items.length).toBeLessThanOrEqual(1);
+      seen.push(...names(res.body));
+      cursor = res.body.next_cursor;
+      if (cursor === null) return seen;
+    }
+    throw new Error('the cursor never ended');
+  }
+
+  async function kidsBeforeServices(sold_at: { branch_id: string; duration_minutes: number }[]) {
+    await prisma.service_categories.update({
+      where: { id: serviceCategories.SERVICES },
+      data: { sort_order: 2 },
+    });
+    const kids = await build.category({ name_mm: 'ကလေး', name_en: 'Kids', sort_order: 1 });
+    for (const [name_en, name_mm] of [
+      ['Kids shave', 'ကလေးအမွေးရိတ်'],
+      ['Kids haircut', 'ကလေးဆံပင်ညှပ်'],
+    ] as const) {
+      await build.service({ category_id: kids, name_mm, name_en, sort_order: 1, sold_at });
+    }
+  }
+
+  it('limit=1 over two categories walks the catalogue order once, with no row skipped or repeated', async () => {
+    await kidsBeforeServices([{ branch_id: branches.B3, duration_minutes: 20 }]);
+    const all = names((await api.get(ADMIN, '/services?limit=100')).body);
+    expect(all).toHaveLength(5);
+    expect(all.slice(2)).toStrictEqual(['Haircut', 'Shave', 'Hair wash']);
+    expect(await walk('/services')).toStrictEqual(all);
+  });
+
+  it('a sold=all page walk crosses the category and keeps the sold_here flag per row', async () => {
+    await kidsBeforeServices([{ branch_id: branches.B1, duration_minutes: 20 }]);
+    const path = `/services?branch_id=${branches.B3}&sold=all`;
+    const all = names((await api.get(ADMIN, `${path}&limit=100`)).body);
+    expect(all).toHaveLength(5);
+    expect(await walk(path)).toStrictEqual(all);
+  });
+
+  it('more than READ_ROW_CEILING categories fail loudly (500), never a cut list', async () => {
+    const company = await prisma.companies.findFirstOrThrow();
+    const prefix = 'ceiling-test-';
+    await prisma.service_categories.createMany({
+      data: Array.from({ length: READ_ROW_CEILING }, (_, i) => ({
+        id: randomUUID(),
+        company_id: company.id,
+        name_mm: `${prefix}${i}`,
+        sort_order: 100 + i,
+        status: ServiceStatus.ACTIVE,
+      })),
+    });
+    try {
+      expect((await api.get(ADMIN, '/service-categories')).status).toBe(500);
+    } finally {
+      await prisma.service_categories.deleteMany({ where: { name_mm: { startsWith: prefix } } });
+    }
+    expect((await api.get(ADMIN, '/service-categories')).status).toBe(200);
   });
 });
 

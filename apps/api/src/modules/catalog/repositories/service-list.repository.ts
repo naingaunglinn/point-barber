@@ -3,6 +3,7 @@ import { ServiceCategoryStatus, ServiceStatus } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { likeText } from '../../../common/database/like-text.js';
+import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
 
 // The operational reads of the POS (P2.SVC.01 · P2.CAT.01 — the catalog module owns the tables):
 // ACTIVE services in catalogue order, with where they are sold and the price rows of today.
@@ -172,9 +173,10 @@ export class ServiceListRepository {
   }
 
   /** The list of P2.CAT.01 in catalogue order; archived rows only with `include_archived`. */
-  categories(db: Tx, filter: CategoryListFilter) {
+  async categories(db: Tx, filter: CategoryListFilter) {
     const live = { archived_at: null, status: { in: [...filter.statuses] } };
-    return db.service_categories.findMany({
+    // Not paged, and archived rows never go away: past the ceiling the read fails loudly (CG-PERF-02).
+    const rows = await db.service_categories.findMany({
       where: filter.include_archived ? { OR: [live, { archived_at: { not: null } }] } : live,
       orderBy: [{ sort_order: 'asc' }, { name_mm: 'asc' }, { id: 'asc' }],
       select: {
@@ -186,7 +188,9 @@ export class ServiceListRepository {
         archived_at: true,
         updated_at: true,
       },
+      take: READ_ROW_CEILING + 1,
     });
+    return assertWithinCeiling(rows, 'ServiceListRepository.categories');
   }
 
   /** `service_count` — the non-archived services of each category, whatever their status (reading 6). */
