@@ -25,6 +25,8 @@ model attachments {
   uploaded_at                                  DateTime      @default(now()) @db.Timestamptz(6)
   deleted_at                                   DateTime?     @db.Timestamptz(6)
   deleted_by_user_id                           String?       @db.Uuid
+  image_width                                  Int?
+  image_height                                 Int?
   companies                                    companies     @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_attachments_deleted_by_user_idTousers  users?        @relation("attachments_deleted_by_user_idTousers", fields: [deleted_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_attachments_uploaded_by_user_idTousers users         @relation("attachments_uploaded_by_user_idTousers", fields: [uploaded_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
