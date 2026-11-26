@@ -15,6 +15,7 @@ import {
   isCancelReasonNameTaken,
   isClientRequestIdConflict,
   isFinishedImmutable,
+  isLeaveTypeNameTaken,
   isPaymentReferenceConflict,
 } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
@@ -58,6 +59,8 @@ function toProblem(error: unknown): ProblemException | null {
   // A branch code the company already has (P1.BR.02 · add-branch-management design D3): the unique
   // index decides, so two simultaneous creates of one code cannot both succeed.
   if (isBranchCodeTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
+  // A Myanmar name another non-archived leave type holds (add-leave-types design D5).
+  if (isLeaveTypeNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
   // The same for a cancel reason's Myanmar name (add-booking-cancel-reasons design D6).
   if (isCancelReasonNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
   // The second wall (add-walkin-visit-checkout design D9): a finished record reached its guard trigger.

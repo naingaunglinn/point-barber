@@ -167,3 +167,23 @@ describe('ProblemFilter · error reporting', () => {
     expect(reporting(new ProblemException(code, status))).not.toHaveBeenCalled();
   });
 });
+
+// add-leave-types design D5 — the name index decides, so two simultaneous creates cannot both succeed.
+describe('ProblemFilter · a taken leave-type name', () => {
+  const uniqueViolation = (index: string) => ({
+    code: 'P2002',
+    meta: { driverAdapterError: { cause: { originalCode: '23505', constraint: { index } } } },
+  });
+
+  it('answers 409 already_exists for a violation of leave_types_name_active', () => {
+    const sent = send(uniqueViolation('leave_types_name_active'));
+    expect(sent.status).toBe(409);
+    expect(sent.body).toMatchObject({ code: 'already_exists' });
+  });
+
+  it('does not take another index for it', () => {
+    const sent = send(uniqueViolation('some_other_index'));
+    expect(sent.body).not.toMatchObject({ code: 'already_exists' });
+    expect(sent.status).toBe(500);
+  });
+});
