@@ -178,6 +178,11 @@ describe('add-customer-management · customers · The list searches by name or b
     expect(await names(`?q=${encodeURIComponent('၀၉ ၇၇၁၂')}`)).toStrictEqual(['Ma Su']);
   });
 
+  it('Scenario: An ending that starts with 0 — 001122 finds Ko Phyo as typed (owner 16 – 17/Nov/2026)', async () => {
+    // `+95945001122` holds `001122`; the 95 form `9501122` is not in it, and the typed form is enough.
+    expect(await names('?q=001122')).toStrictEqual(['Ko Phyo']);
+  });
+
   it('Scenario: Five digits are a name search — 77123 finds nobody, total 0', async () => {
     const found = await page('?q=77123');
     expect([found.items, found.total]).toStrictEqual([[], 0]);
