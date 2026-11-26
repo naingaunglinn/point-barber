@@ -66,6 +66,12 @@ describe('cancelReasonCreateSchema (P3.CRS.02)', () => {
   it('name_en: 150 or null pass, 151 is too_big', () => {
     expect(create.parse({ name_mm: 'x', name_en: 'P'.repeat(150) }).name_en).toHaveLength(150);
     expect(create.parse({ name_mm: 'x', name_en: null }).name_en).toBeNull();
+    // A2 recorded reading — an empty or blank English name is null (AD-L10N-03).
+    for (const blank of ['', '   ']) {
+      expect(create.parse({ name_mm: 'x', name_en: blank }).name_en).toBeNull();
+      expect(update.parse({ name_en: blank, expected_updated_at: AT }).name_en).toBeNull();
+    }
+    expect(create.parse({ name_mm: 'x', name_en: ' Other ' }).name_en).toBe('Other');
     expect(fails(create, { name_mm: 'x', name_en: 'P'.repeat(151) })).toStrictEqual([
       'name_en:too_big',
     ]);
