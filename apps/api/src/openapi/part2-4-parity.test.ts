@@ -184,3 +184,24 @@ describe('add-customer-management task 1.7 — the customer schemas = OpenAPI Pa
     }).toThrow(/TimelineEntry\.at type/);
   });
 });
+
+// add-schedule-patterns A4 — the one shared `Warning` carries the optional `items` (owner decision
+// 26/Nov/2026, point-sdd #40): `shift_kept_attendance` lists `{ shift_id, shift_date }` items.
+describe('the shared Warning carries optional items', () => {
+  const warning = generated.Warning as Schema;
+
+  it('items is an optional array of objects in the generated schema and in the contract', () => {
+    for (const schema of [warning, PART2_4_SCHEMAS.Warning as Schema]) {
+      const properties = schema.properties as Record<string, Schema>;
+      expect(properties.items).toMatchObject({ type: 'array', items: { type: 'object' } });
+      expect(schema.required).toStrictEqual(['code']);
+    }
+  });
+
+  it('the check bites when the generated Warning loses items', () => {
+    const { items: _items, ...rest } = warning.properties as Record<string, Schema>;
+    expect(() => {
+      expectParity(PART2_4_SCHEMAS.Warning as Schema, { ...warning, properties: rest }, 'Warning');
+    }).toThrow(/Warning members/);
+  });
+});

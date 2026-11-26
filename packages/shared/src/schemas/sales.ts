@@ -131,10 +131,14 @@ export const saleActionsSchema = z.strictObject({
   adjust: z.boolean(),
 });
 
-/** `Warning` — e.g. `not_eligible`, `customer_restored`; never a refusal. */
+/**
+ * `Warning` — e.g. `not_eligible`, `customer_restored`, `shift_kept_attendance`; never a refusal. `items`
+ * lists the records a warning is about (owner decision 26/Nov/2026, point-sdd #40 — one shared `Warning`).
+ */
 export const warningSchema = z.strictObject({
   code: z.string(),
   params: z.record(z.string(), z.unknown()).optional(),
+  items: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 /** `SaleDiscount` — the applied discount (a code or an approved request). */
