@@ -2,6 +2,7 @@ import type { Locale } from './config';
 import authEn from '../messages/en/auth.json';
 import branchEn from '../messages/en/branch.json';
 import commonEn from '../messages/en/common.json';
+import customerEn from '../messages/en/customer.json';
 import devuiEn from '../messages/en/devui.json';
 import errorEn from '../messages/en/error.json';
 import leaveTypeEn from '../messages/en/leaveType.json';
@@ -16,6 +17,7 @@ import todayEn from '../messages/en/today.json';
 import authMy from '../messages/my/auth.json';
 import branchMy from '../messages/my/branch.json';
 import commonMy from '../messages/my/common.json';
+import customerMy from '../messages/my/customer.json';
 import devuiMy from '../messages/my/devui.json';
 import errorMy from '../messages/my/error.json';
 import leaveTypeMy from '../messages/my/leaveType.json';
@@ -46,6 +48,7 @@ const MESSAGES = {
     maintenance: maintenanceEn,
     permission: permissionEn,
     leaveType: leaveTypeEn,
+    customer: customerEn,
   },
   my: {
     common: commonMy,
@@ -62,6 +65,7 @@ const MESSAGES = {
     maintenance: maintenanceMy,
     permission: permissionMy,
     leaveType: leaveTypeMy,
+    customer: customerMy,
   },
 } as const;
 

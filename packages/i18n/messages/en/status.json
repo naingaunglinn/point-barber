@@ -155,5 +155,10 @@
   "leave_types": {
     "ACTIVE": "Active",
     "INACTIVE": "Inactive"
+  },
+  "customers": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId } from 'react';
@@ -10,6 +10,7 @@ import { localized } from '@point/shared';
 import { Button, LanguageSwitch, PageHeader } from '@point/ui';
 
 import { useSettingsScreens } from '../../../../components/settings/settings-nav';
+import { useCustomerAccess } from '../../../../lib/customers/access';
 import { useSetLanguage, useSignOut } from '../../../../lib/session/session-layer';
 import { useMe } from '../../../../lib/session/use-me';
 
@@ -18,17 +19,20 @@ import { useMe } from '../../../../lib/session/use-me';
 // is signed in, the MM / EN switch (saved on the account, AD-L10N-06) and Sign out. On a phone the top bar
 // has no user menu, so this is where they live; the modules of later changes join this menu. The Settings
 // list (AD-NAV-02 · add-company-profile design D8 · proposal reading 13) holds the Settings screens the
-// user may open; it is not shown when there is none.
+// user may open; it is not shown when there is none. Customers (add-customer-management design D11 ·
+// AD-NAV-02) has its entry here for every holder of a `customer.*` code.
 export function MoreScreen() {
   const tCommon = useTranslations('common.action');
   const t = useTranslations('auth.landing');
   const tSettings = useTranslations('settings.nav');
+  const tCustomer = useTranslations('customer.nav');
   const raw = useLocale();
   const locale = isLocale(raw) ? raw : 'my';
   const me = useMe().data;
   const setLanguage = useSetLanguage();
   const signOut = useSignOut();
   const settings = useSettingsScreens();
+  const customers = useCustomerAccess().any;
   const settingsHeading = useId();
   if (me === undefined) return null;
   return (
@@ -42,6 +46,21 @@ export function MoreScreen() {
           {localized(me.employee, 'name', locale)}
         </p>
       </section>
+      {customers ? (
+        <nav aria-label={tCustomer('title')} className="grid gap-1" data-testid="more-customers-nav">
+          <Link
+            href="/customers"
+            data-testid="more-customers"
+            className="flex min-h-12 items-center justify-between gap-2 rounded-md border border-border px-3 font-semibold break-words hover:bg-muted"
+          >
+            <span className="flex items-center gap-2">
+              <Users aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+              {tCustomer('title')}
+            </span>
+            <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+          </Link>
+        </nav>
+      ) : null}
       {settings.length === 0 ? null : (
         <nav aria-labelledby={settingsHeading} className="grid gap-1" data-testid="more-settings">
           <h2 id={settingsHeading} className="text-sm text-muted-foreground">

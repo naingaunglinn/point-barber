@@ -155,5 +155,10 @@
   "leave_types": {
     "ACTIVE": "ဖွင့်ထား",
     "INACTIVE": "ပိတ်ထား"
+  },
+  "customers": {
+    "ACTIVE": "အသုံးပြုဆဲ",
+    "INACTIVE": "ပိတ်ထား",
+    "ARCHIVED": "Archive လုပ်ထား"
   }
 }

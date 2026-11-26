@@ -84,6 +84,14 @@ export const BackupRunStatus = { RUNNING: 1, SUCCESS: 2, FAILED: 3 } as const;
 export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 
+/**
+ * part3 — customers.status. The status chips of the customer list and its INACTIVE badge (add-customer-
+ * management design D11 · AD-CMP-05 master data: ACTIVE shows no badge, as for branches), so it has its
+ * table in STATUS_BY_TABLE. An archived customer keeps its status; its badge is a derived state.
+ */
+export const CustomerStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type CustomerStatus = (typeof CustomerStatus)[keyof typeof CustomerStatus];
+
 /** The constants by table name — the key the status map and the language keys use. */
 export const STATUS_BY_TABLE = {
   bookings: BookingStatus,
@@ -107,6 +115,8 @@ export const STATUS_BY_TABLE = {
   backup_runs: BackupRunStatus,
   // add-branch-management — the branch screens' badge and status chips (design D9).
   branches: BranchStatus,
+  // add-customer-management — the customer list's status chips and badge (design D11).
+  customers: CustomerStatus,
 } as const;
 
 export type StatusTable = keyof typeof STATUS_BY_TABLE;
@@ -237,10 +247,6 @@ export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
  */
 export const LeaveTypeStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type LeaveTypeStatus = (typeof LeaveTypeStatus)[keyof typeof LeaveTypeStatus];
-
-/** part3 — customers.status. */
-export const CustomerStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
-export type CustomerStatus = (typeof CustomerStatus)[keyof typeof CustomerStatus];
 
 /** part8 — attachments.kind; a receipt PDF / PNG is a DOCUMENT (add-walkin-visit-checkout design D10). */
 export const AttachmentKind = { DOCUMENT: 1, IMAGE: 2, IMPORT_FILE: 3 } as const;

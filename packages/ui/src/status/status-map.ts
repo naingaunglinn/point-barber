@@ -109,6 +109,8 @@ export const STATUS_MAP = {
   },
   backup_runs: { RUNNING: info, SUCCESS: success, FAILED: danger },
   branches: { INACTIVE: muted },
+  // add-customer-management — AD-CMP-05 master data, as branches: ACTIVE shows no badge (design D11).
+  customers: { INACTIVE: muted },
 } as const satisfies Record<string, Record<string, StatusStyle>>;
 
 /**
@@ -125,6 +127,8 @@ export const DERIVED_STATES = {
   daily_closings: { OPEN_PAST: warning },
   /** Branch, role, service, product, customer …: ACTIVE has no badge. */
   master: { INACTIVE: muted },
+  /** An archived customer (P3-RULE-02): `archived_at` set; its `status` is kept (proposal reading 5). */
+  customers: { ARCHIVED: muted },
 } as const satisfies Record<string, Record<string, StatusStyle>>;
 
 export interface FlagStyle {

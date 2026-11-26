@@ -1,0 +1,82 @@
+{
+  "nav": {
+    "title": "Customers"
+  },
+  "list": {
+    "title": "Customers",
+    "searchPlaceholder": "Name or phone",
+    "add": "Add customer",
+    "column": {
+      "name": "Name",
+      "phone": "Phone",
+      "lastVisit": "Last visit",
+      "visits": "Visits",
+      "status": "Status"
+    },
+    "showArchived": "Show archived",
+    "empty": "No customers yet. Customers are added when a phone is given at Finish, or with Add customer.",
+    "emptySearch": "No customer matches this search."
+  },
+  "field": {
+    "name": "Name",
+    "phone": "Phone",
+    "notes": "Notes",
+    "notesHelp": "Every staff member can see these notes."
+  },
+  "form": {
+    "title": {
+      "new": "Add customer",
+      "edit": "Edit customer"
+    },
+    "phoneTaken": "A customer with this phone already exists.",
+    "open": "Open customer",
+    "restore": "Restore",
+    "conflict": "This customer was changed by someone else. Reload to see the changes.",
+    "reload": "Reload"
+  },
+  "toast": {
+    "saved": "Customer saved",
+    "restored": "Customer restored",
+    "deactivated": "Customer set to Inactive",
+    "reactivated": "Customer set to Active",
+    "archived": "Customer archived"
+  },
+  "detail": {
+    "tab": {
+      "overview": "Overview",
+      "history": "History"
+    },
+    "notesEmpty": "No notes",
+    "archivedBanner": "This customer is archived. Restore the customer to make changes.",
+    "call": "Call"
+  },
+  "stats": {
+    "visits": "Visits",
+    "totalSpent": "Total spent",
+    "lastVisit": "Last visit",
+    "preferredBarber": "Preferred barber",
+    "noShows": "No-shows",
+    "scopeNote": "At your branches"
+  },
+  "timeline": {
+    "booking": "Booking",
+    "visit": "Visit",
+    "sale": "Sale",
+    "empty": "No bookings or sales at your branches yet.",
+    "loadMore": "Load more"
+  },
+  "action": {
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "reactivate": "Re-activate",
+    "archive": "Archive",
+    "restore": "Restore"
+  },
+  "archive": {
+    "title": "Archive customer",
+    "consequence": "{name} will be hidden from the customer list and search. The history stays, the phone number stays reserved, and you can restore the customer later.",
+    "note": "Note (optional)",
+    "confirm": "Archive customer",
+    "keep": "Keep customer"
+  }
+}
