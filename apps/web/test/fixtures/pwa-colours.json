@@ -1,0 +1,7 @@
+{
+  "colours": {
+    "white": { "oklch": "oklch(1 0 0)", "hex": "#ffffff" },
+    "neutral": { "oklch": "oklch(0.205 0 0)", "hex": "#171717" }
+  },
+  "siteBackground": "#eeeeee"
+}

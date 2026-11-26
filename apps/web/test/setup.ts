@@ -1,4 +1,10 @@
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+import { staffColours } from '../lib/pwa/token-file';
+
+// What next.config.ts inlines when Next.js builds (add-pwa-install design D2): the staff `--background` from the
+// token file, for the manifest and the page head.
+vi.stubEnv('POINT_PWA_BACKGROUND', staffColours().background);
 
 // Component tests of the web app run in jsdom (`// @vitest-environment jsdom` at the top of the file); the
 // other tests stay in node. Testing Library unmounts after each test only when `afterEach` is a global —
