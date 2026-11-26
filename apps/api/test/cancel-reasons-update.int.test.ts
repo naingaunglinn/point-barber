@@ -2,7 +2,7 @@ import { BookingStatus, CancelReasonStatus, ScopeType } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { bookingAt } from './helpers/branches.js';
+import { bookingAt } from './builders/bookings.js';
 import { assignRole } from './helpers/roles.js';
 import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 
@@ -212,12 +212,11 @@ describe('add-booking-cancel-reasons · booking · An inactive cancel reason is 
 
   it('Scenario: A cancelled booking keeps its reason', async () => {
     const reason = await read(CHANGE);
-    const bookingId = await bookingAt(
-      t.prisma,
-      FIXTURE_IDS.branches.B1,
-      BookingStatus.BOOKED,
-      at('09:00'),
-    );
+    const bookingId = await bookingAt(t.prisma, {
+      branch: FIXTURE_IDS.branches.B1,
+      status: BookingStatus.BOOKED,
+      startsAt: at('09:00'),
+    });
     madeBookings.push(bookingId);
     await t.prisma.bookings.update({
       where: { id: bookingId },
