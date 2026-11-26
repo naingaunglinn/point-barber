@@ -32,8 +32,11 @@ const INTERNAL_PREFIX = '/internal/';
 
 const TREES: readonly RouteTree[] = [RouteTree.SITE, RouteTree.STAFF];
 
-/** The staff paths that open without a session: the login screen and the component catalogue. */
-const OPEN_STAFF_PATHS = ['/login', '/dev/ui'];
+/**
+ * The staff paths that open without a session: the login screen, the component catalogue and the web app
+ * manifest, which a browser fetches without cookies (add-pwa-install design D1 · PW3).
+ */
+const OPEN_STAFF_PATHS = ['/login', '/dev/ui', '/manifest.webmanifest'];
 
 const isOpenStaffPath = (pathname: string): boolean =>
   OPEN_STAFF_PATHS.some((open) => pathname === open || pathname.startsWith(`${open}/`));

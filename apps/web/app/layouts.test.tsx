@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import fixture from '../test/fixtures/pwa-colours.json';
+
 const cookie = vi.hoisted(() => ({ value: undefined as string | undefined }));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock('next/headers', () => ({
@@ -11,8 +13,10 @@ vi.mock('next/headers', () => ({
 }));
 
 const { RootLayout } = await import('./root-layout');
-const { default: StaffLayout } = await import('./staff/layout');
-const { default: SiteLayout } = await import('./site/layout');
+const staffModule = await import('./staff/layout');
+const { default: StaffLayout } = staffModule;
+const siteModule = await import('./site/layout');
+const { default: SiteLayout } = siteModule;
 
 type HtmlProps = { lang: string; 'data-tree': string };
 
@@ -104,5 +108,36 @@ describe('the root layouts mount error reporting in a Suspense boundary', () => 
       environment: 'test',
       release: 'v0.1.0',
     });
+  });
+});
+
+// add-pwa-install task 2.1 · spec "Every staff page links the manifest and the iPhone settings" · design D4 ·
+// PW5: what the staff layout hands to Next.js. The tags Next.js 16.3.8 makes of it, each exactly once, are
+// read from the served `/login` in e2e/pwa.spec.ts — Next.js has no public function that renders them.
+describe('the staff layout head (design D4)', () => {
+  it('links the manifest and the Apple touch icon and sets the iOS standalone flags', () => {
+    expect(staffModule.metadata).toEqual({
+      manifest: '/manifest.webmanifest',
+      icons: { apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180' } },
+      appleWebApp: { capable: true, title: 'Point', statusBarStyle: 'default' },
+      other: { 'apple-mobile-web-app-capable': 'yes' },
+    });
+  });
+
+  it('sets the theme colour of the manifest and viewport-fit=cover', () => {
+    expect(staffModule.viewport).toMatchObject({
+      themeColor: fixture.colours.white.hex,
+      viewportFit: 'cover',
+    });
+  });
+
+  it('keeps the page zoomable (AD-A11Y-05)', () => {
+    expect(staffModule.viewport).not.toHaveProperty('maximumScale');
+    expect(staffModule.viewport).not.toHaveProperty('userScalable');
+  });
+
+  it('the site layout has none of it', () => {
+    expect(siteModule).not.toHaveProperty('metadata');
+    expect(siteModule).not.toHaveProperty('viewport');
   });
 });
