@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { textMmEnSchema } from '../settings/text-mm-en.js';
 import { warningSchema } from './sales.js';
 import { timeOfDaySchema } from './schedule.js';
 import { employeeRefSchema, userRefSchema, wireDate, wireDateTime } from './wire.js';
@@ -32,9 +33,8 @@ export const WebsiteWarning = {
 
 export type WebsiteWarning = (typeof WebsiteWarning)[keyof typeof WebsiteWarning];
 
-/** A site text: `mm` 0 … max after trimming (proposal reading 2), `en` null or ≤ max. */
-const siteText = (max: number) =>
-  z.object({ mm: z.string().trim().max(max), en: z.string().trim().max(max).nullable() });
+/** A site text: `mm` 0 … max after trimming (proposal reading 2), `en` null or ≤ max; an empty `en` is null. */
+const siteText = (max: number) => textMmEnSchema(max, 0);
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional();
 

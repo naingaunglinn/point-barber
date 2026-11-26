@@ -43,6 +43,7 @@
     "sales": "ရောင်းချမှုနဲ့ ငွေပေးချေမှု",
     "closing": "နေ့စဉ်စာရင်းပိတ်",
     "attendance": "လစာနဲ့ တက်ရောက်မှု",
+    "website": "Website",
     "dashboard": "Dashboard",
     "system": "စနစ်",
     "customer": "ဧည့်သည်များ"
@@ -196,5 +197,34 @@
   "history": {
     "line": "{name} · {datetime} · {old} → {new}",
     "empty": "ပြင်ထားတာ မရှိသေးပါ။"
+  },
+  "site": {
+    "announcement": {
+      "label": "ကြေညာချက်"
+    },
+    "cover_attachment_id": {
+      "label": "Cover ပုံ"
+    },
+    "hero_subtitle": {
+      "label": "Hero စာတို"
+    },
+    "hero_title": {
+      "label": "Hero ခေါင်းစဉ်"
+    },
+    "seo_description": {
+      "label": "SEO ဖော်ပြချက်"
+    },
+    "seo_title": {
+      "label": "SEO ခေါင်းစဉ်"
+    },
+    "share_image_attachment_id": {
+      "label": "Share ပုံ"
+    },
+    "show_barbers": {
+      "label": "Barber ပြ"
+    },
+    "show_prices": {
+      "label": "ဈေးပြ"
+    }
   }
 }
