@@ -12,6 +12,8 @@ import { Eligibility } from './eligibility/eligibility.js';
 import { PriceQuote } from './price-quote/price-quote.js';
 import { CatalogRepository } from './repositories/catalog.repository.js';
 import { ServiceListRepository } from './repositories/service-list.repository.js';
+import { ServiceWritesRepository } from './repositories/service-writes.repository.js';
+import { ServiceWrites } from './service-writes/service-writes.js';
 import { ServiceCatalog } from './service-list/service-catalog.js';
 import { ServiceDetail } from './service-detail/service-detail.js';
 import { PilotCatalogue } from './pilot/pilot-catalogue.js';
@@ -28,6 +30,8 @@ import { PilotCatalogue } from './pilot/pilot-catalogue.js';
     CategoryWrites,
     CategoryWritesRepository,
     ServiceListRepository,
+    ServiceWritesRepository,
+    ServiceWrites,
     PriceQuote,
     Eligibility,
     ServiceCatalog,
