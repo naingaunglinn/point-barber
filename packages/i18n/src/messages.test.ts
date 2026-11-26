@@ -30,6 +30,7 @@ describe('language files', () => {
       'permission',
       'attachment',
       'leaveType',
+      'pwa',
     ]);
   });
 

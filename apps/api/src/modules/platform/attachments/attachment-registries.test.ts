@@ -109,13 +109,14 @@ describe('the policies of this change', () => {
     }
   });
 
-  it('logo and photo: any signed-in staff member reads, nobody removes one directly; an unknown company is hidden', async () => {
+  it('logo and photo: any signed-in staff member reads and may ask to remove; an unknown company is hidden', async () => {
     const logo = policies.of('companies', 2);
     expect(await logo?.read({ user_id: AUNG }, COMPANY)).toBe('allow');
     expect(await logo?.read({ user_id: AUNG }, AUNG)).toBe('hidden');
-    expect(await logo?.remove({ user_id: AUNG }, COMPANY)).toBe('deny');
+    expect(await logo?.remove({ user_id: AUNG }, COMPANY)).toBe('allow');
+    expect(await logo?.remove({ user_id: AUNG }, AUNG)).toBe('hidden');
     const photo = policies.of('employees', 2);
     expect(await photo?.read({ user_id: MIN }, AUNG)).toBe('allow');
-    expect(await photo?.remove({ user_id: MIN }, AUNG)).toBe('deny');
+    expect(await photo?.remove({ user_id: MIN }, AUNG)).toBe('allow');
   });
 });
