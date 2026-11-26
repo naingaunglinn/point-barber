@@ -2,32 +2,40 @@ import type { Locale } from './config';
 import authEn from '../messages/en/auth.json';
 import branchEn from '../messages/en/branch.json';
 import commonEn from '../messages/en/common.json';
+import devicesEn from '../messages/en/devices.json';
 import devuiEn from '../messages/en/devui.json';
+import employeeEn from '../messages/en/employee.json';
 import errorEn from '../messages/en/error.json';
 import leaveTypeEn from '../messages/en/leaveType.json';
 import maintenanceEn from '../messages/en/maintenance.json';
 import permissionEn from '../messages/en/permission.json';
 import posEn from '../messages/en/pos.json';
+import profileEn from '../messages/en/profile.json';
 import pwaEn from '../messages/en/pwa.json';
 import reasonEn from '../messages/en/reason.json';
 import receiptEn from '../messages/en/receipt.json';
 import settingsEn from '../messages/en/settings.json';
 import statusEn from '../messages/en/status.json';
+import teamEn from '../messages/en/team.json';
 import todayEn from '../messages/en/today.json';
 import authMy from '../messages/my/auth.json';
 import branchMy from '../messages/my/branch.json';
 import commonMy from '../messages/my/common.json';
+import devicesMy from '../messages/my/devices.json';
 import devuiMy from '../messages/my/devui.json';
+import employeeMy from '../messages/my/employee.json';
 import errorMy from '../messages/my/error.json';
 import leaveTypeMy from '../messages/my/leaveType.json';
 import maintenanceMy from '../messages/my/maintenance.json';
 import permissionMy from '../messages/my/permission.json';
 import posMy from '../messages/my/pos.json';
+import profileMy from '../messages/my/profile.json';
 import pwaMy from '../messages/my/pwa.json';
 import reasonMy from '../messages/my/reason.json';
 import receiptMy from '../messages/my/receipt.json';
 import settingsMy from '../messages/my/settings.json';
 import statusMy from '../messages/my/status.json';
+import teamMy from '../messages/my/team.json';
 import todayMy from '../messages/my/today.json';
 
 // The messages of one language, one JSON file per namespace (D-PLT-03 · AD-L10N-01 · design D6).
@@ -48,6 +56,10 @@ const MESSAGES = {
     maintenance: maintenanceEn,
     permission: permissionEn,
     leaveType: leaveTypeEn,
+    employee: employeeEn,
+    profile: profileEn,
+    devices: devicesEn,
+    team: teamEn,
     pwa: pwaEn,
   },
   my: {
@@ -65,6 +77,10 @@ const MESSAGES = {
     maintenance: maintenanceMy,
     permission: permissionMy,
     leaveType: leaveTypeMy,
+    employee: employeeMy,
+    profile: profileMy,
+    devices: devicesMy,
+    team: teamMy,
     pwa: pwaMy,
   },
 } as const;

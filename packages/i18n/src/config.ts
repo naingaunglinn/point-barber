@@ -24,6 +24,11 @@ export const NAMESPACES = [
   'permission',
   // add-leave-types task 1.8 — design D10 (texts proposed for the owner's review, S18).
   'leaveType',
+  // add-employee-management task 1.8 — design D13 (texts: the brief's table, owner answer S18).
+  'employee',
+  'profile',
+  'devices',
+  'team',
   // add-pwa-install task 1.5 — design D8 (texts proposed for the owner's review, S18).
   'pwa',
 ] as const;

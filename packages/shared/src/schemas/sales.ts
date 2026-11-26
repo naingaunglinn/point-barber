@@ -131,10 +131,15 @@ export const saleActionsSchema = z.strictObject({
   adjust: z.boolean(),
 });
 
-/** `Warning` — e.g. `not_eligible`, `customer_restored`; never a refusal. */
+/**
+ * `Warning` — e.g. `not_eligible`, `customer_restored`, `future_bookings`; never a refusal. One schema
+ * for every part: `items` (the rows a warning names, e.g. Part 1's future bookings) is optional (owner,
+ * 26/Nov/2026: Part 4's copy gains it in the next consolidation).
+ */
 export const warningSchema = z.strictObject({
   code: z.string(),
   params: z.record(z.string(), z.unknown()).optional(),
+  items: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 /** `SaleDiscount` — the applied discount (a code or an approved request). */
