@@ -6,8 +6,8 @@
       "name": "_generated-tables-part1-8.sql",
       "kind": "ddl",
       "load_order": 1,
-      "sha256": "03f5c7e980392f841dee03bbc57feac966cfb58d51249def3097e01a8e6d8e4f",
-      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
+      "sha256": "e05918776dcf50dd42f77075c04cde11460a451139c48b8056a4cf0537da6718",
+      "commit": "352df9f32400b8744c56d266173ad72e6295ce8b"
     },
     {
       "name": "part1-foundation-v3-constraints.sql",
@@ -69,8 +69,8 @@
       "name": "part8-system-website-v1-constraints.sql",
       "kind": "constraints",
       "load_order": 10,
-      "sha256": "b6fe3e7b5d857893776156123967511f1288d6f888abe069bfd1a880007c2511",
-      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
+      "sha256": "3de5140931571b9d4658a9f202ba076b035838de23ef5488aa7b8d99feeba34f",
+      "commit": "352df9f32400b8744c56d266173ad72e6295ce8b"
     },
     {
       "name": "part3-customers-booking-v3-test.sql",
@@ -105,8 +105,8 @@
     {
       "name": "part8-system-website-v1-test.sql",
       "kind": "test",
-      "sha256": "ea8051066262ae81fb4c777a230c63e6702cca5f650bd7368f2037bdf0975b20",
-      "commit": "394e253befca4be1d8474d54de4a604ec44785a3"
+      "sha256": "3618051ead536480edcbcbd508658ab6fadbb1d2aacb3d5f79950981a8c9bf48",
+      "commit": "352df9f32400b8744c56d266173ad72e6295ce8b"
     }
   ],
   "note": "commit = the point-sdd commit each file was copied from (design D4.1)"
