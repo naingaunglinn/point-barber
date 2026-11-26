@@ -67,6 +67,15 @@ export function isCancelReasonNameTaken(error: unknown): boolean {
   return uniqueViolationIndex(error) === 'booking_cancel_reasons_name_active';
 }
 
+/**
+ * A customer whose phone another request took first hit the unique index on
+ * `customers (company_id, phone_normalized)` (P3.CUS.05 · add-customer-management design D5): the
+ * transaction is aborted, so the service reads the holder in a new one and answers 409 already_exists.
+ */
+export function isCustomerPhoneTaken(error: unknown): boolean {
+  return uniqueViolationIndex(error) === 'customers_company_id_phone_normalized_idx';
+}
+
 /** The SQLSTATE of a failed query (`55P03` lock_not_available, `23505` …), from the driver adapter. */
 export function sqlStateOf(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) return null;

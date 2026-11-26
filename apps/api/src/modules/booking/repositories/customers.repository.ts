@@ -19,6 +19,12 @@ export interface CustomerRow {
   readonly archived_at: Date | null;
 }
 
+/** A customer row locked FOR UPDATE for a write: the members of the detail (design D5 · D8). */
+export interface LockedCustomerRow extends CustomerRow {
+  readonly created_at: Date;
+  readonly updated_at: Date;
+}
+
 /** The list's filter (P3.CUS.01 · design D3): company, status, archived rows, the `q` reader. */
 export interface CustomerListFilter {
   readonly companyId: string;
@@ -209,5 +215,50 @@ export class CustomersRepository {
       where: { id },
       data: { status: CustomerStatus.ACTIVE, archived_at: null, updated_at: at },
     });
+  }
+
+  /** A new row for P3.CUS.03 unless the phone exists; true when this call created it (design D5). */
+  async insertNew(
+    tx: Tx,
+    row: {
+      id: string;
+      company_id: string;
+      name: string;
+      phone: string;
+      phone_normalized: string;
+      notes: string | null;
+      at: Date;
+    },
+  ): Promise<boolean> {
+    const inserted = await tx.$executeRaw`
+      INSERT INTO customers (id, company_id, name, phone, phone_normalized, notes, status, created_at, updated_at)
+      VALUES (${row.id}::uuid, ${row.company_id}::uuid, ${row.name}, ${row.phone},
+              ${row.phone_normalized}, ${row.notes}, ${CustomerStatus.ACTIVE}, ${row.at}, ${row.at})
+      ON CONFLICT (company_id, phone_normalized) DO NOTHING`;
+    return inserted === 1;
+  }
+
+  /** The customer's row locked FOR UPDATE until commit — the first statement of an edit (design D5). */
+  async lockById(tx: Tx, companyId: string, id: string): Promise<LockedCustomerRow | null> {
+    const rows = await tx.$queryRaw<LockedCustomerRow[]>`
+      SELECT id, name, phone, phone_normalized, notes, status, archived_at, created_at, updated_at
+      FROM customers WHERE company_id = ${companyId}::uuid AND id = ${id}::uuid
+      FOR UPDATE`;
+    return rows[0] ?? null;
+  }
+
+  /** Only the members of an edit that are given; `phone` and `phone_normalized` always go together. */
+  async updateMembers(
+    tx: Tx,
+    id: string,
+    members: {
+      readonly name?: string;
+      readonly phone?: string;
+      readonly phone_normalized?: string;
+      readonly notes?: string | null;
+    },
+    at: Date,
+  ): Promise<void> {
+    await tx.customers.update({ where: { id }, data: { ...members, updated_at: at } });
   }
 }
