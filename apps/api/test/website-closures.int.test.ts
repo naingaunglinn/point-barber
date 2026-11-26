@@ -5,7 +5,8 @@ import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { BranchClosures } from '../src/modules/platform/index.js';
-import { UNKNOWN_ID, bookingAt, revalidateJobs } from './helpers/branches.js';
+import { bookingAt } from './builders/bookings.js';
+import { UNKNOWN_ID, revalidateJobs } from './helpers/branches.js';
 import { assignRole } from './helpers/roles.js';
 import { type FixturePerson, type SeededApp, seededApp } from './helpers/seeded.js';
 
@@ -289,8 +290,16 @@ describe('add-website-management · website · Closures of one branch never over
 
 describe('add-website-management · website · Bookings inside a closure are listed, never cancelled (task 3.4)', () => {
   const bookedTwo = async () => {
-    const first = await bookingAt(s.prisma, B3, BookingStatus.BOOKED, mmt('2026-10-13T14:00:00'));
-    const second = await bookingAt(s.prisma, B3, BookingStatus.BOOKED, mmt('2026-10-13T16:00:00'));
+    const first = await bookingAt(s.prisma, {
+      branch: B3,
+      status: BookingStatus.BOOKED,
+      startsAt: mmt('2026-10-13T14:00:00'),
+    });
+    const second = await bookingAt(s.prisma, {
+      branch: B3,
+      status: BookingStatus.BOOKED,
+      startsAt: mmt('2026-10-13T16:00:00'),
+    });
     const company = (await s.prisma.branches.findUniqueOrThrow({ where: { id: B3 } })).company_id;
     const customer = (
       await s.prisma.customers.upsert({
@@ -393,12 +402,11 @@ describe('add-website-management · website · Bookings inside a closure are lis
   });
 
   it('Scenario: More bookings than the list holds — 100 listed, count 101, truncated { shown: 100, total: 101 }', async () => {
-    const template = await bookingAt(
-      s.prisma,
-      B3,
-      BookingStatus.BOOKED,
-      mmt('2026-10-13T09:00:00'),
-    );
+    const template = await bookingAt(s.prisma, {
+      branch: B3,
+      status: BookingStatus.BOOKED,
+      startsAt: mmt('2026-10-13T09:00:00'),
+    });
     const row = await s.prisma.bookings.findUniqueOrThrow({ where: { id: template } });
     await s.prisma.bookings.deleteMany();
     // One-minute bookings of one barber, a minute apart (bookings_no_overlap).
