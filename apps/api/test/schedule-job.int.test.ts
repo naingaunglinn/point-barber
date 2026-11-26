@@ -76,7 +76,7 @@ describe('add-schedule-patterns · scheduling · The nightly run', () => {
     expect(after.filter((row) => before.some((old) => old.id === row.id))).toStrictEqual(before);
   });
 
-  it('the changing run wrote one schedule.generate row — source 3, no branch — and announced each employee', async () => {
+  it('the changing run wrote one schedule.generate row — source 3, no branch', async () => {
     const [first, second, ...rest] = await generateAudits();
     expect(rest).toStrictEqual([]);
     expect([first, second].map((row) => [row?.source, row?.branch_id, row?.actor_user_id])).toStrictEqual([
