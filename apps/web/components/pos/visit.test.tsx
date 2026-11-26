@@ -16,6 +16,8 @@ const visit = (customer: string | null = null) =>
     id: 'v1',
     started_at: '2026-10-05T10:02:00+06:30',
     performed_by: { id: 'e004', display_name: 'Ko Aung' },
+    proxy_reason: null,
+    started_by: { user_id: 'u-aung', display_name: 'Ko Aung' },
     sale: { customer: customer === null ? null : { id: 'c1', name: customer, phone: '' } },
   }) as unknown as VisitDto;
 
@@ -50,6 +52,24 @@ describe('VisitHeader (task 11.2)', () => {
     const classes = screen.getByTestId('visit-header').className.split(' ');
     expect(classes).toEqual(expect.arrayContaining(['sticky', 'top-16', 'md:top-15', 'z-10']));
     expect(classes).not.toContain('top-0');
+  });
+});
+
+describe('VisitHeader — recorded for another barber (add-proxy-recording task 4.2 · AD-CMP-06)', () => {
+  it('shows "Recorded by Ko Min" beside the performer Ko Aung, in both languages', () => {
+    const proxy = {
+      ...visit(),
+      proxy_reason: 1,
+      started_by: { user_id: 'u-min', display_name: 'Ko Min' },
+    } as unknown as VisitDto;
+    renderStaff(<VisitHeader visit={proxy} branchName="Point 3.0" />);
+    expect(screen.getByText('Ko Aung')).toBeTruthy();
+    expect(screen.getByText('Recorded by Ko Min')).toBeTruthy();
+  });
+
+  it('an own visit has no flag', () => {
+    renderStaff(<VisitHeader visit={visit()} branchName="Point 3.0" />);
+    expect(screen.queryByText(/Recorded by/)).toBeNull();
   });
 });
 

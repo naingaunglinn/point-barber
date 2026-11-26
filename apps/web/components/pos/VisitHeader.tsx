@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import { minutesSince } from './minutes';
 
-// The sticky header of a visit (AD-POS-04 · AD-POS-06 · AD-GOAL-02 · add-walkin-visit-checkout task 11.2):
+// The sticky header of a visit (AD-POS-04 · AD-POS-06 · AD-GOAL-02 · add-walkin-visit-checkout task 11.2;
+// add-proxy-recording task 4.2: the flag "Recorded by <name>" when the visit was recorded for another barber):
 // the customer or "Walk-in", the performer's chip, the branch, the start time and the minutes since. It
 // stays on the in-progress screen and every checkout step, so the barber never loses who and where.
 // It sticks under the AppShell top bar (sticky, z-20), not behind it. The shell has no height token — the
@@ -39,6 +40,9 @@ export function VisitHeader({ visit, branchName }: VisitHeaderProps) {
       <div className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
         <span>{branchName}</span>
         {visit.is_late_entry && <FlagChip flag="late_entry" />}
+        {visit.proxy_reason !== null && (
+          <FlagChip flag="proxy_recorded" name={visit.started_by.display_name} />
+        )}
         <span data-testid="visit-started">
           {t('started', {
             time: formatTime(visit.started_at, { locale }),

@@ -20,8 +20,11 @@ const visit = (
     id,
     status,
     started_at,
+    proxy_reason: null,
+    started_by: { user_id: 'u-aung', display_name: 'Ko Aung' },
     sale: {
       id: `sale-${id}`,
+      actions: { edit_lines: true, take_payment: true },
       customer: customer === null ? null : { id: 'c1', name: customer.name, phone: '09 7712 3456' },
       items: items.map((item, i) => ({
         id: `${id}-${i}`,
@@ -133,5 +136,68 @@ describe('the Late entry flag (add-late-entry task 4.6)', () => {
     const [first, second] = screen.getAllByRole('listitem');
     expect(within(first as HTMLElement).getByText('Late entry')).toBeTruthy();
     expect((second as HTMLElement).querySelector('[data-slot="flag-chip"]')).toBeNull();
+  });
+});
+
+// add-proxy-recording task 4.2 — visits spec "A visit recorded for another barber shows who recorded it"
+// and "Today lists the barber's open visits first" (AD-CMP-06 · AD-PERM-02 · owner PY2 ★).
+describe('a visit recorded for another barber (add-proxy-recording task 4.2)', () => {
+  const recorded = (
+    id: string,
+    status: number,
+    actions: { edit_lines: boolean; take_payment: boolean },
+  ) =>
+    ({
+      ...visit(id, status, '2026-10-05T10:05:00+06:30', [HAIRCUT]),
+      proxy_reason: 2,
+      started_by: { user_id: 'u-min', display_name: 'Ko Min' },
+      sale: { ...visit(id, status, '2026-10-05T10:05:00+06:30', [HAIRCUT]).sale, actions },
+    }) as unknown as VisitDto;
+
+  it('the card carries "Recorded by Ko Min"; an own visit has no such flag', () => {
+    renderStaff(
+      <TodayList
+        visits={[
+          recorded('p', VisitStatus.STARTED, { edit_lines: true, take_payment: false }),
+          visit('w', VisitStatus.STARTED, '2026-10-05T10:30:00+06:30', [SHAVE]),
+        ]}
+        onOpen={() => {}}
+        onStart={() => {}}
+      />,
+    );
+    const [first, second] = screen.getAllByRole('listitem');
+    expect(within(first as HTMLElement).getByText('Recorded by Ko Min')).toBeTruthy();
+    expect(within(second as HTMLElement).queryByText(/Recorded by/)).toBeNull();
+  });
+
+  it('a helper (reason 2) sees "Service done" on a STARTED visit and no button once COMPLETED', () => {
+    const onOpen = vi.fn();
+    renderStaff(
+      <TodayList
+        visits={[
+          recorded('a', VisitStatus.STARTED, { edit_lines: true, take_payment: false }),
+          recorded('b', VisitStatus.COMPLETED, { edit_lines: true, take_payment: false }),
+        ]}
+        onOpen={onOpen}
+        onStart={() => {}}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Service done' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Take payment' })).toBeNull();
+    // The card still counts and a tap on it opens the visit read-only.
+    const cards = screen.getAllByRole('listitem');
+    expect(cards).toHaveLength(2);
+    expect(cards[1]?.textContent).toContain('Awaiting payment');
+  });
+
+  it('a reason-1 recorder keeps "Take payment"', () => {
+    renderStaff(
+      <TodayList
+        visits={[recorded('c', VisitStatus.COMPLETED, { edit_lines: true, take_payment: true })]}
+        onOpen={() => {}}
+        onStart={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Take payment' })).toBeTruthy();
   });
 });

@@ -17,7 +17,8 @@ import { minutesSince } from './minutes';
 // "In progress" on Today (AD-TODAY-01 · AD-TODAY-02 · AD-CMP-05 · AD-STATE-01..03 · add-walkin-visit-checkout
 // tasks 10.3 / 10.4): my open visits, oldest first, each a card — the customer or "Walk-in", the services,
 // the status (a COMPLETED visit reads "Awaiting payment" in the warning tone) with the minutes since START,
-// and the next action ("Service done" / "Take payment"), which opens the sale. While loading: skeleton
+// and the next action ("Service done" / "Take payment"), which opens the sale and shows only where
+// `Sale.actions` allows it (add-proxy-recording task 4.2). While loading: skeleton
 // cards; nothing open: the empty state with ＋ Start; a failed query: the error state with Retry.
 
 export interface TodayListProps {
@@ -70,16 +71,26 @@ export function TodayList({ visits, error, onRetry, onOpen, onStart }: TodayList
             <span key="status" className="flex flex-wrap items-center gap-2">
               <StatusBadge table="visits" code={visit.status} />
               {visit.is_late_entry && <FlagChip flag="late_entry" />}
+              {visit.proxy_reason !== null && (
+                <FlagChip flag="proxy_recorded" name={visit.started_by.display_name} />
+              )}
               <span>{formatDuration(minutesSince(visit.started_at, now), { locale })}</span>
             </span>,
           ],
-          action: {
-            label:
-              visit.status === VisitStatus.COMPLETED
-                ? t('next.takePayment')
-                : t('next.serviceDone'),
-            onPress: () => onOpen(visit),
-          },
+          // Only where the caller holds the action (AD-PERM-02 · owner PY2 ★): a recorder's card has no
+          // button for what the API would refuse; a tap on the card still opens the visit.
+          action:
+            visit.status === VisitStatus.COMPLETED
+              ? {
+                  label: t('next.takePayment'),
+                  onPress: () => onOpen(visit),
+                  allowed: visit.sale.actions.take_payment,
+                }
+              : {
+                  label: t('next.serviceDone'),
+                  onPress: () => onOpen(visit),
+                  allowed: visit.sale.actions.edit_lines,
+                },
         })}
       />
     </section>
