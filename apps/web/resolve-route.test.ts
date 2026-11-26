@@ -111,6 +111,28 @@ describe('add-foundation-auth-access · platform-runtime · The Host header sele
     });
   });
 
+  // add-pwa-install task 1.4 · spec "The manifest without a session" · ADR-009.
+  it('Scenario: The manifest needs no session — not the 307 to /login that other staff paths answer', () => {
+    expect(resolveRoute('app.point.test', '/manifest.webmanifest', hosts)).toEqual({
+      kind: 'rewrite',
+      pathname: '/staff/manifest.webmanifest',
+    });
+  });
+
+  it('Scenario: The public site has no manifest — the site tree has no such route, so it answers 404', () => {
+    expect(resolveRoute('point.test', '/manifest.webmanifest', hosts)).toEqual({
+      kind: 'rewrite',
+      pathname: '/site/manifest.webmanifest',
+    });
+  });
+
+  it('a look-alike of the manifest path is not open', () => {
+    expect(resolveRoute('app.point.test', '/manifest.webmanifest.json', hosts)).toEqual({
+      kind: 'redirect',
+      location: '/login?return_to=%2Fmanifest.webmanifest.json',
+    });
+  });
+
   it('Scenario: The login screen is not on the public host — the site tree has no /login', () => {
     expect(resolveRoute('point.test', '/login', hosts)).toEqual({
       kind: 'rewrite',

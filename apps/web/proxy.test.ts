@@ -43,6 +43,11 @@ describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
     expect(proxy(requestTo('app.point.test', '/', 'point_session=')).status).toBe(307);
   });
 
+  it('serves the manifest to a staff browser without the session cookie (add-pwa-install task 1.4)', () => {
+    const response = proxy(requestTo('app.point.test', '/manifest.webmanifest'));
+    expect(getRewrittenUrl(response)).toBe('http://localhost:3000/staff/manifest.webmanifest');
+  });
+
   it("rewrites a refused path to the app's not-found page", () => {
     const response = proxy(requestTo('point.test', '/staff'));
     expect(getRewrittenUrl(response)).toBe('http://localhost:3000/_not-routed');
@@ -66,14 +71,20 @@ describe('apps/web/proxy.ts (ADR-001 host rewrite · design D11)', () => {
     '/_next/image',
     '/fonts/pyidaungsu-regular.woff2',
     '/vendor/zxing-wasm@3.1.3/zxing_reader.wasm',
+    '/icons/icon-192.png',
+    '/icons/apple-touch-icon.png',
   ])('skips %s', (path) => {
     expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(false);
   });
 
-  it.each(['/staff/fonts/x.woff2', '/fontsx', '/staff/vendor/x.wasm', '/vendorx'])(
-    'still runs for %s',
-    (path) => {
-      expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(true);
-    },
-  );
+  it.each([
+    '/staff/fonts/x.woff2',
+    '/fontsx',
+    '/staff/vendor/x.wasm',
+    '/vendorx',
+    '/staff/icons/x.png',
+    '/iconsx',
+  ])('still runs for %s', (path) => {
+    expect(unstable_doesMiddlewareMatch({ config, url: path })).toBe(true);
+  });
 });
