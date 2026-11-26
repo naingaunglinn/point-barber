@@ -85,6 +85,8 @@ it, on `hashtextextended(<key>, 0)` (CG-DB-08). A new key gets a row here in the
 | `payref:<method_id>:<reference>`  | `PaymentReferenceLock`              | `sales`        | exclusive                                                               | `add-walkin-visit-checkout`  |
 | `receipt:<entity_id>`             | `ReceiptFilesLock.acquire`          | `platform`     | exclusive                                                               | `add-walkin-visit-checkout`  |
 | `schedule:<employee_id>`          | `ScheduleLock.acquire`              | `scheduling`   | exclusive — every writer of one employee's patterns and shifts          | `add-schedule-patterns`      |
+| `empcode:<company_id>`            | `EmployeeCodes.lock`                | `people`       | exclusive — every create that reads the highest employee number         | `add-employee-management`    |
+| `coadmin:<company_id>`            | `CompanyAdmin.lock`                 | `people`       | exclusive — every write that can remove the last active company admin   | `add-employee-management`    |
 
 Locks are taken in one order per transaction; the order of each write is in its change's design (for
 walk-in checkout: design D4 and D5).

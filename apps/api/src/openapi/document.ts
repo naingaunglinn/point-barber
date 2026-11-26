@@ -29,6 +29,7 @@ import {
   leaveTypeSchema,
   leaveTypeUpdateSchema,
   maintenanceBodySchema,
+  optionsViewSchema,
   meResponseSchema,
   paymentMethodSchema,
   paymentSchema,
@@ -49,6 +50,7 @@ import {
   serviceCreateSchema,
   SETTING_KEY_PATTERN,
   serviceListItemSchema,
+  serviceSchema,
   serviceUpdateSchema,
   settingDefinitionSchema,
   settingHistoryItemSchema,
@@ -626,6 +628,9 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         ServiceBranch: schema(serviceBranchSchema),
         ServiceCreate: schema(serviceCreateSchema, 'input'),
         ServiceUpdate: schema(serviceUpdateSchema, 'input'),
+        // add-service-catalogue task 3.5 — P2.SVC.03; the options item schemas come with #13.
+        OptionsView: schema(optionsViewSchema),
+        Service: schema(serviceSchema),
       },
     },
   };
