@@ -1,13 +1,16 @@
-import { Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
   type CursorPage,
   ErrorCode,
   type QuoteDto,
   type QuoteRequest,
+  type ServiceCategoriesQuery,
   type ServiceCategoryDto,
+  type ServiceDto,
   type ServiceListItemDto,
   type ServicesQuery,
   quoteRequestSchema,
+  serviceCategoriesQuerySchema,
   servicesQuerySchema,
 } from '@point/shared';
 
@@ -18,6 +21,7 @@ import { PrismaService } from '../../common/database/prisma.service.js';
 import { ProblemException } from '../../common/http/problem.exception.js';
 import { ZBody, ZQuery } from '../../common/http/zod-validation.pipe.js';
 import { PriceQuote, toQuoteDto } from './price-quote/price-quote.js';
+import { ServiceDetail } from './service-detail/service-detail.js';
 import { ServiceCatalog } from './service-list/service-catalog.js';
 
 // The operational reads of the POS (P2.CAT.01 · P2.SVC.01 · P2.PRC.06 · API-PERM-03 ·
@@ -27,23 +31,50 @@ export class CatalogController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly catalog: ServiceCatalog,
+    private readonly detail: ServiceDetail,
     private readonly quotes: PriceQuote,
   ) {}
 
-  /** P2.SVC.01 — the services sold at a branch; a branch outside the read scope is an empty page. */
+  /**
+   * P2.SVC.01 — the services sold at a branch; a branch outside the read scope is an empty page.
+   * `include_archived=true` and `sold=all` are management reads: they need `service.view⁺` (add-service-
+   * catalogue design D2 / D5 · P2-RULE-11), checked before any read.
+   */
   @Get('services')
   @Staff()
   services(
     @ZQuery(servicesQuerySchema) query: ServicesQuery,
   ): Promise<CursorPage<ServiceListItemDto>> {
-    return this.catalog.listServices(this.prisma, query, toReadScope(AccessContext.scope()));
+    const management =
+      query.include_archived || query.sold === 'all'
+        ? AccessContext.requireViewScope('service')
+        : undefined;
+    return this.catalog.listServices(
+      this.prisma,
+      query,
+      toReadScope(AccessContext.scope()),
+      management === undefined ? undefined : toReadScope(management),
+    );
   }
 
-  /** P2.CAT.01 — the ACTIVE categories in `sort_order`. */
+  /** P2.SVC.03 — any signed-in staff member; an archived service only for `service.view⁺`, else 404. */
+  @Get('services/:id')
+  @Staff()
+  service(@Param('id') id: string): Promise<ServiceDto> {
+    return this.detail.get(this.prisma, id, {
+      scope: toReadScope(AccessContext.scope()),
+      management: AccessContext.viewScope('service') !== null,
+    });
+  }
+
+  /** P2.CAT.01 — the ACTIVE categories in catalogue order; `include_archived=true` is a management read. */
   @Get('service-categories')
   @Staff()
-  categories(): Promise<{ items: ServiceCategoryDto[] }> {
-    return this.catalog.listCategories(this.prisma);
+  categories(
+    @ZQuery(serviceCategoriesQuerySchema) query: ServiceCategoriesQuery,
+  ): Promise<{ items: ServiceCategoryDto[] }> {
+    if (query.include_archived) AccessContext.requireViewScope('service');
+    return this.catalog.listCategories(this.prisma, query);
   }
 
   /** P2.PRC.06 — the one price calculator; a pure read sent as POST because of its body. */
