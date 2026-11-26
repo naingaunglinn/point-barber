@@ -6,6 +6,8 @@ export {
   CUSTOMER_RESTORE,
   type CustomerActivity,
   type CustomerRef,
+  type CustomerTotals,
   Customers,
   type MatchResult,
 } from './customers/customers.js';
+export type { RecentVisit } from './customers/preferred-barber.js';
