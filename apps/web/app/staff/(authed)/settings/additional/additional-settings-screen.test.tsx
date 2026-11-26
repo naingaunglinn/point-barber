@@ -87,6 +87,7 @@ describe('add-settings-store · settings · The Additional settings screen', () 
       'Sales & payments',
       'Closing',
       'Payroll & attendance',
+      'Website',
       'Dashboard',
       'System',
       // add-customer-management design D9 — the preferred-barber settings.

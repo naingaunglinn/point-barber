@@ -102,6 +102,18 @@ export const ErrorCode = {
   // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
   // are reused.
   LEAVE_TYPE_IN_USE: 'leave_type_in_use',
+  // add-website-management — Part 8 §16 · API-ERR-02 (task 1.4; texts proposed for the owner, S18):
+  // closures (P8.WEB.06 – 08 · P8-RULE-12 · owner WM4) and the report / closure range of 366 days
+  // (`context.max_days`); the four per-day field codes of a 400 `validation` week (P8.WEB.04 · WM3).
+  CLOSURE_OVERLAP: 'closure_overlap',
+  DATE_IN_PAST: 'date_in_past',
+  CLOSURE_STARTED: 'closure_started',
+  CLOSURE_PAST: 'closure_past',
+  RANGE_TOO_LONG: 'range_too_long',
+  CLOSES_BEFORE_OPENS: 'closes_before_opens',
+  TIMES_REQUIRED: 'times_required',
+  TIMES_NOT_ALLOWED: 'times_not_allowed',
+  OVERNIGHT_NOT_ALLOWED: 'overnight_not_allowed',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

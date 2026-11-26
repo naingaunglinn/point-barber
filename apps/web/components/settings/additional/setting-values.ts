@@ -26,7 +26,10 @@ export interface FormatContext {
   readonly profile: MoneyProfile;
 }
 
-/** The control of a key: by its type and unit (settings.json). `json` has no control here. */
+/**
+ * The control of a key: by its type and unit (settings.json). `json` and `uuid` (the website's image
+ * keys, written only in Website › Site content) have no control here.
+ */
 export type ControlKind = 'money' | 'number' | 'switch' | 'choice' | 'text' | 'none';
 
 export function controlOf(key: SettingKey): ControlKind {
@@ -41,6 +44,7 @@ export function controlOf(key: SettingKey): ControlKind {
     case 'text_mm_en':
       return 'text';
     case 'json':
+    case 'uuid':
       return 'none';
   }
 }
@@ -83,6 +87,8 @@ export function formatSettingValue(key: SettingKey, value: unknown, ctx: FormatC
           ? 'settings.value.on'
           : 'settings.value.off',
       );
+    case 'uuid':
+      return String(value);
   }
 }
 
