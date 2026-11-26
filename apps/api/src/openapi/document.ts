@@ -9,7 +9,9 @@ import {
   branchSummarySchema,
   branchUpdateSchema,
   cancelReasonCreateSchema,
+  cancelReasonOrderSchema,
   cancelReasonSchema,
+  cancelReasonUpdateSchema,
   categoryCreateSchema,
   categoryUpdateSchema,
   commissionEstimateSchema,
@@ -29,6 +31,7 @@ import {
   leaveTypeSchema,
   leaveTypeUpdateSchema,
   maintenanceBodySchema,
+  optionsViewSchema,
   meResponseSchema,
   paymentMethodSchema,
   paymentSchema,
@@ -49,6 +52,7 @@ import {
   serviceCreateSchema,
   SETTING_KEY_PATTERN,
   serviceListItemSchema,
+  serviceSchema,
   serviceUpdateSchema,
   settingDefinitionSchema,
   settingHistoryItemSchema,
@@ -171,8 +175,22 @@ const X_REQUESTED_WITH = {
   description: 'CSRF guard for cookie-authenticated mutations (API-AUTH-02)',
 };
 
-// add-booking-cancel-reasons A2 — P3.CRS.01 / 02 as API Part 3 v1.2 and OpenAPI Part 3 1.2.0 write them
-// (owner CR1); P3.CRS.03 – 05 join with A3.
+// add-booking-cancel-reasons A2 / A3 — P3.CRS.01 – 05 as API Part 3 v1.2 and OpenAPI Part 3 1.2.0 write
+// them (owner CR1).
+const CANCEL_REASON_LIST = {
+  description: 'OK',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'object',
+        properties: {
+          items: { type: 'array', items: { $ref: '#/components/schemas/CancelReason' } },
+        },
+        required: ['items'],
+      },
+    },
+  },
+};
 const CANCEL_REASON_PATHS = {
   '/booking-cancel-reasons': {
     get: {
@@ -192,23 +210,7 @@ const CANCEL_REASON_PATHS = {
         },
         { name: 'include_archived', in: 'query', schema: { type: 'boolean', default: false } },
       ],
-      responses: {
-        '200': {
-          description: 'OK',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  items: { type: 'array', items: { $ref: '#/components/schemas/CancelReason' } },
-                },
-                required: ['items'],
-              },
-            },
-          },
-        },
-        default: PROBLEM_RESPONSE,
-      },
+      responses: { '200': CANCEL_REASON_LIST, default: PROBLEM_RESPONSE },
     },
     post: {
       tags: ['cancel-reasons'],
@@ -219,6 +221,46 @@ const CANCEL_REASON_PATHS = {
       requestBody: { required: true, ...json('CancelReasonCreate') },
       responses: {
         '201': { description: 'Created', ...json('CancelReason') },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/booking-cancel-reasons/order': {
+    put: {
+      tags: ['cancel-reasons'],
+      operationId: 'cancelReasonReorder',
+      summary: 'Reorder (P3.CRS.05)',
+      'x-permission': 'booking_cancel_reason.update (company master: company scope)',
+      parameters: [X_REQUESTED_WITH],
+      requestBody: { required: true, ...json('CancelReasonOrder') },
+      responses: { '200': CANCEL_REASON_LIST, default: PROBLEM_RESPONSE },
+    },
+  },
+  '/booking-cancel-reasons/{id}': {
+    patch: {
+      tags: ['cancel-reasons'],
+      operationId: 'cancelReasonUpdate',
+      summary: 'Edit a cancel reason (P3.CRS.03)',
+      'x-permission': 'booking_cancel_reason.update (company master: company scope)',
+      description: 'System row (system_code 1): only the names may change — 409 system_row.',
+      parameters: [ID_PARAMETER, X_REQUESTED_WITH],
+      requestBody: { required: true, ...json('CancelReasonUpdate') },
+      responses: {
+        '200': { description: 'OK', ...json('CancelReason') },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/booking-cancel-reasons/{id}/archive': {
+    post: {
+      tags: ['cancel-reasons'],
+      operationId: 'cancelReasonArchive',
+      summary: 'Archive a cancel reason (P3.CRS.04)',
+      'x-permission': 'booking_cancel_reason.delete (company master: company scope)',
+      description: 'System row → 409 system_row.',
+      parameters: [ID_PARAMETER, X_REQUESTED_WITH],
+      responses: {
+        '200': { description: 'OK', ...json('CancelReason') },
         default: PROBLEM_RESPONSE,
       },
     },
@@ -615,6 +657,9 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         // add-booking-cancel-reasons A2 — P3.CRS.01 / 02 (Part 3 §11 `CancelReason`).
         CancelReason: schema(cancelReasonSchema),
         CancelReasonCreate: schema(cancelReasonCreateSchema, 'input'),
+        // A3 — P3.CRS.03 / 05 request bodies.
+        CancelReasonUpdate: schema(cancelReasonUpdateSchema, 'input'),
+        CancelReasonOrder: schema(cancelReasonOrderSchema, 'input'),
         // add-leave-types task 2.11 — P2.LVT.01 – 04 (Part 2 v1.6 · OpenAPI 1.6.0 · owner LT1).
         LeaveType: schema(leaveTypeSchema),
         LeaveTypeCreate: schema(leaveTypeCreateSchema),
@@ -626,6 +671,9 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         ServiceBranch: schema(serviceBranchSchema),
         ServiceCreate: schema(serviceCreateSchema, 'input'),
         ServiceUpdate: schema(serviceUpdateSchema, 'input'),
+        // add-service-catalogue task 3.5 — P2.SVC.03; the options item schemas come with #13.
+        OptionsView: schema(optionsViewSchema),
+        Service: schema(serviceSchema),
       },
     },
   };

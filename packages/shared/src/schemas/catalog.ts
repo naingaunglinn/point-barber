@@ -85,6 +85,35 @@ export const serviceCategorySchema = z.strictObject({
   updated_at: wireDateTime,
 });
 
+/** `OptionsView` — P2.SVC.03; empty for a SIMPLE service until `add-option-services` fills it. */
+export const optionsViewSchema = z.strictObject({
+  groups: z.array(z.never()),
+  variants: z.array(z.never()),
+});
+
+/** `ServiceBranch` as a response — one `branch_services` row, sold or not (P2.SVC.03 · Recorded reading 8). */
+export const serviceBranchViewSchema = z.strictObject({
+  branch_id: z.uuid(),
+  sold: z.boolean(),
+  duration_minutes: z.int().min(1),
+});
+
+/**
+ * `Service` — P2.SVC.03 (OpenAPI Part 2 v1.6): the list item without `sold_here`, the descriptions, the
+ * website fields, the image and the branch rows. `image_url` is `/api/v1/public/media/<id>/original`
+ * (P8-RULE-04); null while the service has no image.
+ */
+export const serviceSchema = serviceListItemSchema.omit({ sold_here: true }).extend({
+  description_mm: z.string().nullable(),
+  description_en: z.string().nullable(),
+  public_description_mm: z.string().nullable(),
+  public_description_en: z.string().nullable(),
+  image_attachment_id: z.uuid().nullable(),
+  image_url: z.string().meta({ format: 'uri-reference' }).nullable(),
+  branches: z.array(serviceBranchViewSchema),
+  options: optionsViewSchema,
+});
+
 /** A boolean query flag (`include_archived=true`): `true` or `false` only; absent = false. */
 const queryFlag = z.stringbool({ truthy: ['true'], falsy: ['false'] }).default(false);
 
@@ -249,6 +278,7 @@ export const serviceOrderSchema = z.object({
 export type QuoteItemDto = z.infer<typeof quoteItemSchema>;
 export type QuoteDto = z.infer<typeof quoteSchema>;
 export type ServiceListItemDto = z.infer<typeof serviceListItemSchema>;
+export type ServiceDto = z.infer<typeof serviceSchema>;
 export type ServiceCategoryDto = z.infer<typeof serviceCategorySchema>;
 export type ServicesQuery = z.infer<typeof servicesQuerySchema>;
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
