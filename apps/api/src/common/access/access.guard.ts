@@ -85,14 +85,22 @@ export class AccessGuard implements CanActivate {
     const ctx = this.caller();
     const grants = await this.grantsOf(ctx);
     const parts: RequestParts = { body: req.body as unknown, query: req.query, params: req.params };
-    const target = await this.targetOf(declaration, req, parts, {
-      userId: ctx.user_id ?? '',
-      employeeId: ctx.employee_id ?? '',
-    });
-    const decision =
+    const caller = { userId: ctx.user_id ?? '', employeeId: ctx.employee_id ?? '' };
+    let target = await this.targetOf(declaration, req, parts, caller);
+    let decision =
       declaration.kind === 'canFields'
         ? decideFields(declaration, grants, target, req.method, req.body)
         : decide(declaration, grants, target, req.method);
+    // A declaration with both a target and a branch path needs both (P1.EMP.07: the scope covers the
+    // branch AND reaches the employee): the target is decided first (its 404), then the branch, which is
+    // also the one branch the request acts on.
+    if (decision.allow && declaration.kind === 'can' && declaration.target !== undefined) {
+      if (declaration.branch !== undefined) {
+        const branchOnly: CanDeclaration = { ...declaration, target: undefined, orSelf: undefined };
+        target = await this.targetOf(branchOnly, req, parts, caller);
+        decision = decide(branchOnly, grants, target, req.method);
+      }
+    }
     if (!decision.allow) {
       throw new ProblemException(decision.code, decision.status, {
         ...(decision.required === undefined ? {} : { context: { required: decision.required } }),

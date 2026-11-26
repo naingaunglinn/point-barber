@@ -32,6 +32,7 @@ const list = (caller?: { cookie: string }, query = '?limit=100') => {
 type Item = {
   id: string;
   employee_code: string;
+  name_mm: string;
   status: number;
   login_status: number;
   branches: { code: string }[];
@@ -49,6 +50,11 @@ describe("add-employee-management · organization · The employee list is a mana
     expect(body.next_cursor).toBeNull();
     expect(itemsOf(res)).toHaveLength(9);
     expect(new Set(codes(res))).toEqual(new Set(Object.keys(E)));
+    // In the order of name_mm, then id (design D8): the names as the database compares them.
+    const names = itemsOf(res).map((item) => item.name_mm);
+    const ordered = await t.prisma.$queryRaw<{ name_mm: string }[]>`
+      SELECT name_mm FROM employees ORDER BY name_mm, id`;
+    expect(names).toStrictEqual(ordered.map((row) => row.name_mm));
     const naing = itemsOf(res).find((item) => item.employee_code === 'E009');
     expect(naing).toMatchObject({ status: 0, login_status: 0, branches: [] });
   });
