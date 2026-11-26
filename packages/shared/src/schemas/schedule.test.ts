@@ -284,4 +284,27 @@ describe('add-schedule-patterns · scheduling · A shift that attendance points 
       scheduleWarningSchema.safeParse({ code: 'shift_kept_attendance', items: [{}] }).success,
     ).toBe(false);
   });
+
+  it('bookings_outside_shift lists the bookings — id, branch and the booking’s own times, no customer', () => {
+    const warning = {
+      code: 'bookings_outside_shift',
+      items: [
+        {
+          booking_id: '0199a3f2-0000-7000-8004-000000000001',
+          branch_id: B3,
+          starts_at: '2026-10-17T16:00:00+06:30',
+          ends_at: '2026-10-17T16:30:00+06:30',
+        },
+      ],
+    };
+    expect(scheduleWarningSchema.parse(warning)).toStrictEqual(warning);
+    const [item] = warning.items;
+    expect(
+      scheduleWarningSchema.safeParse({
+        code: warning.code,
+        items: [{ ...item, customer_name: 'Ma Su' }],
+      }).success,
+    ).toBe(false);
+    expect(scheduleWarningSchema.safeParse({ code: 'unknown', items: [] }).success).toBe(false);
+  });
 });

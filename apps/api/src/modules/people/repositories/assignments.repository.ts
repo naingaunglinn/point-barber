@@ -72,4 +72,38 @@ export class AssignmentsRepository {
     });
     return row?.status ?? null;
   }
+
+  /** `employees.user_id` of the employee; null when there is no such employee. */
+  async userIdOf(db: Tx, employeeId: string): Promise<string | null> {
+    const row = await db.employees.findUnique({
+      where: { id: employeeId },
+      select: { user_id: true },
+    });
+    return row?.user_id ?? null;
+  }
+
+  /**
+   * The employees with an assignment of `branch_id` overlapping `from` … `to` (both inclusive), ended ones
+   * included — whatever their status (P2.SHF.06 · add-schedule-patterns proposal reading 7). Bounded by the
+   * ceiling: one branch has no source-given cap on staff over time.
+   */
+  async employeesAt(
+    db: Tx,
+    key: { branch_id: string; from: string; to: string },
+  ): Promise<string[]> {
+    const rows = await db.employee_branches.findMany({
+      where: {
+        branch_id: key.branch_id,
+        effective_from: { lte: dayOf(key.to) },
+        OR: [{ effective_to: null }, { effective_to: { gte: dayOf(key.from) } }],
+      },
+      distinct: ['employee_id'],
+      orderBy: { employee_id: 'asc' },
+      select: { employee_id: true },
+      take: READ_ROW_CEILING + 1,
+    });
+    return assertWithinCeiling(rows, 'AssignmentsRepository.employeesAt').map(
+      (row) => row.employee_id,
+    );
+  }
 }

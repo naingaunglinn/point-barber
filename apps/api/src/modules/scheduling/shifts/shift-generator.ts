@@ -25,9 +25,17 @@ import { type PlannedShift, ShiftPlanner } from './shift-planner.js';
 //      never collides with its own old shift), then the inserts. A run that finds nothing writes nothing.
 //   6. Result: the dates with any write and the `shift_kept_attendance` warning (or none).
 
+/** A branch and a date on which a shift was archived, converted or inserted. */
+export interface ChangedShift {
+  readonly branch_id: string;
+  readonly shift_date: string;
+}
+
 export interface GenerateResult {
   /** Dates (ascending) with an archived, converted or inserted shift. */
   readonly changed_dates: string[];
+  /** The (branch, date) pairs behind `changed_dates`, by date then branch — the events of design D3 step 10. */
+  readonly changed: ChangedShift[];
   readonly warnings: ScheduleWarning[];
 }
 
@@ -49,20 +57,25 @@ export class ShiftGenerator {
     private readonly planner: ShiftPlanner,
   ) {}
 
+  /** The business date of now and the horizon, `today + booking.advance_window_days + 7` (design D4 step 1). */
+  async span(): Promise<{ readonly today: string; readonly horizon: string }> {
+    const today = businessDateOf(this.clock.now());
+    const { 'booking.advance_window_days': window } = await this.settings.effective([
+      'booking.advance_window_days',
+    ]);
+    return { today, horizon: plusDays(today, window + 7) };
+  }
+
   /** `to` omitted = the horizon, `today + booking.advance_window_days + 7`. */
   async run(
     tx: Tx,
     input: { readonly employee_id: string; readonly from: string; readonly to?: string },
   ): Promise<GenerateResult> {
     const now = this.clock.now();
-    const today = businessDateOf(now);
-    const { 'booking.advance_window_days': window } = await this.settings.effective([
-      'booking.advance_window_days',
-    ]);
-    const horizon = plusDays(today, window + 7);
+    const { today, horizon } = await this.span();
     const from = input.from > today ? input.from : today;
     const to = input.to === undefined || input.to > horizon ? horizon : input.to;
-    if (from > to) return { changed_dates: [], warnings: [] };
+    if (from > to) return { changed_dates: [], changed: [], warnings: [] };
 
     const employeeId = input.employee_id;
     const ctx = {
@@ -91,18 +104,23 @@ export class ShiftGenerator {
     const archive: string[] = [];
     const convert: { readonly id: string; readonly shift_date: string }[] = [];
     const insert: PlannedShift[] = [];
-    const changed = new Set<string>();
+    const changed = new Map<string, ChangedShift>();
+    const touch = (branchId: string, date: string): void => {
+      changed.set(`${date} ${branchId}`, { branch_id: branchId, shift_date: date });
+    };
     for (const date of datesBetween(from, to)) {
       if (manualDays.has(date)) continue;
-      const diff = diffDay(
-        this.planner.plan(rows, date, ctx),
-        patternShifts.filter((shift) => shift.shift_date === date),
-        attended,
-      );
+      const have = patternShifts.filter((shift) => shift.shift_date === date);
+      const diff = diffDay(this.planner.plan(rows, date, ctx), have, attended);
       archive.push(...diff.archive);
       convert.push(...diff.convert.map((id) => ({ id, shift_date: date })));
       insert.push(...diff.insert);
-      if (diff.archive.length + diff.convert.length + diff.insert.length > 0) changed.add(date);
+      for (const shift of have) {
+        if (diff.archive.includes(shift.id) || diff.convert.includes(shift.id)) {
+          touch(shift.branch_id, date);
+        }
+      }
+      for (const shift of diff.insert) touch(shift.branch_id, date);
     }
 
     await this.shifts.archive(tx, archive, now);
@@ -119,7 +137,8 @@ export class ShiftGenerator {
     );
 
     return {
-      changed_dates: [...changed].sort(),
+      changed_dates: [...new Set([...changed.values()].map((shift) => shift.shift_date))].sort(),
+      changed: [...changed.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, shift]) => shift),
       warnings:
         convert.length === 0
           ? []

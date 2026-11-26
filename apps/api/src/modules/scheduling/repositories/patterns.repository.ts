@@ -136,4 +136,34 @@ export class PatternsRepository {
       UPDATE schedule_patterns SET archived_at = ${at}, updated_at = ${at}
       WHERE id = ANY(${ids}::uuid[]) AND archived_at IS NULL`;
   }
+
+  /** The employees with a non-archived pattern row effective anywhere in `from` … `to` — the nightly run's set. */
+  async employeesWithSets(db: Tx, from: string, to: string): Promise<string[]> {
+    const rows = await db.$queryRaw<unknown[]>`
+      SELECT DISTINCT employee_id FROM schedule_patterns
+      WHERE archived_at IS NULL AND effective_from <= ${to}::date
+        AND (effective_to IS NULL OR effective_to >= ${from}::date)
+      ORDER BY employee_id
+      LIMIT ${READ_ROW_CEILING + 1}`;
+    return assertWithinCeiling(
+      z.array(z.object({ employee_id: z.uuid() })).parse(rows),
+      'PatternsRepository.employeesWithSets',
+    ).map((row) => row.employee_id);
+  }
+
+  /** The branches of the non-archived segments effective anywhere in `from` … `to`, per employee. */
+  async branchesOf(
+    db: Tx,
+    employeeIds: readonly string[],
+    from: string,
+    to: string,
+  ): Promise<{ employee_id: string; branch_id: string }[]> {
+    if (employeeIds.length === 0) return [];
+    const rows = await db.$queryRaw<unknown[]>`
+      SELECT DISTINCT employee_id, branch_id FROM schedule_patterns
+      WHERE employee_id = ANY(${employeeIds}::uuid[]) AND archived_at IS NULL
+        AND effective_from <= ${to}::date
+        AND (effective_to IS NULL OR effective_to >= ${from}::date)`;
+    return z.array(z.object({ employee_id: z.uuid(), branch_id: z.uuid() })).parse(rows);
+  }
 }

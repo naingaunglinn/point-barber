@@ -15,4 +15,49 @@ export class BookingsRepository {
   openAt(tx: Tx, branchId: string): Promise<number> {
     return tx.bookings.count({ where: { branch_id: branchId, status: { in: OPEN } } });
   }
+
+  /**
+   * The BOOKED bookings of the employee whose business date is one of `dates` (add-schedule-patterns
+   * design D1 · D8 — a STARTED or CANCELLED booking is not returned), by start.
+   */
+  async bookedOn(
+    tx: Tx,
+    employeeId: string,
+    dates: readonly string[],
+  ): Promise<BookedBlockRow[]> {
+    return tx.bookings.findMany({
+      where: {
+        booked_employee_id: employeeId,
+        status: BookingStatus.BOOKED,
+        business_date: { in: dates.map((date) => new Date(`${date}T00:00:00Z`)) },
+      },
+      orderBy: [{ starts_at: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        booked_employee_id: true,
+        branch_id: true,
+        status: true,
+        business_date: true,
+        starts_at: true,
+        ends_at: true,
+        block_starts_at: true,
+        block_ends_at: true,
+        customer_name: true,
+      },
+    });
+  }
+}
+
+/** The columns of one booking the schedule reads. */
+export interface BookedBlockRow {
+  readonly id: string;
+  readonly booked_employee_id: string;
+  readonly branch_id: string;
+  readonly status: number;
+  readonly business_date: Date;
+  readonly starts_at: Date;
+  readonly ends_at: Date;
+  readonly block_starts_at: Date;
+  readonly block_ends_at: Date;
+  readonly customer_name: string;
 }

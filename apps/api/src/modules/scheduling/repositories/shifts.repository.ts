@@ -23,6 +23,16 @@ const shiftSchema = z.object({
   archived: z.boolean(),
 });
 
+const activeShiftSchema = z.object({
+  branch_id: z.uuid(),
+  shift_date: z.string(),
+  starts_at: z.date(),
+  ends_at: z.date(),
+});
+
+/** An active shift of an employee: branch, date and instants. */
+export type ActiveShift = z.infer<typeof activeShiftSchema>;
+
 /** A stored shift of an employee, archived ones included. */
 export type StoredShift = z.infer<typeof shiftSchema>;
 
@@ -91,5 +101,39 @@ export class ShiftsRepository {
                 ${row.starts_at}, ${row.ends_at}, ${SHIFT_SOURCE.PATTERN},
                 ${row.schedule_pattern_id}::uuid, ${at}, ${at})`;
     }
+  }
+
+  /**
+   * The employee's active (non-archived) shifts on `dates` — what the booking warning measures the
+   * bookings against (design D8). A read inside the caller's transaction, by date and start.
+   */
+  async activeOn(
+    tx: Tx,
+    employeeId: string,
+    dates: readonly string[],
+  ): Promise<ActiveShift[]> {
+    if (dates.length === 0) return [];
+    const rows = await tx.$queryRaw<unknown[]>`
+      SELECT branch_id, shift_date::text AS shift_date, starts_at, ends_at
+      FROM schedule_shifts
+      WHERE employee_id = ${employeeId}::uuid AND archived_at IS NULL
+        AND shift_date = ANY(${dates}::date[])
+      ORDER BY shift_date, starts_at, id`;
+    return z.array(activeShiftSchema).parse(rows);
+  }
+
+  /** The branches of the active shifts dated `from` … `to`, per employee (P2.SHF.06 · owner PT6). */
+  async branchesOf(
+    db: Tx,
+    employeeIds: readonly string[],
+    from: string,
+    to: string,
+  ): Promise<{ employee_id: string; branch_id: string }[]> {
+    if (employeeIds.length === 0) return [];
+    const rows = await db.$queryRaw<unknown[]>`
+      SELECT DISTINCT employee_id, branch_id FROM schedule_shifts
+      WHERE employee_id = ANY(${employeeIds}::uuid[]) AND archived_at IS NULL
+        AND shift_date BETWEEN ${from}::date AND ${to}::date`;
+    return z.array(z.object({ employee_id: z.uuid(), branch_id: z.uuid() })).parse(rows);
   }
 }

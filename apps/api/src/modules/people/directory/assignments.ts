@@ -31,4 +31,12 @@ export class Assignments {
   ): Promise<AssignmentPeriod[]> {
     return this.repository.overlapping(db, { employee_id: employeeId, ...range });
   }
+
+  /** The ids of the employees with an assignment of `branch_id` overlapping `from` … `to`, by id. */
+  employeesAt(
+    db: Tx,
+    key: { readonly branch_id: string; readonly from: string; readonly to: string },
+  ): Promise<string[]> {
+    return this.repository.employeesAt(db, key);
+  }
 }

@@ -31,6 +31,14 @@ export class PeopleDirectory {
   }
 
   /**
+   * `employees.user_id` of an employee — the id a `user:<user_id>` realtime room holds (API-RT-01 ·
+   * add-realtime-gateway design D9); null when there is no such employee.
+   */
+  userIdOfEmployee(db: Tx, employeeId: string): Promise<string | null> {
+    return this.assignments.userIdOf(db, employeeId);
+  }
+
+  /**
    * The primary branch of an employee today (Myanmar Time): the active assignment with the earliest
    * effective_from, ties by created_at then id; null with no active assignment (API-AUD-01 ·
    * P1-RULE-10 · design D12).

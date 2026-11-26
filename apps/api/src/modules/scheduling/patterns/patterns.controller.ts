@@ -9,12 +9,12 @@ import {
 } from '@point/shared';
 
 import { Can, CanView } from '../../../common/access/declarations.js';
-import type { GrantSet } from '../../../common/access/grant-set.js';
 import { Clock } from '../../../common/clock/clock.js';
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import { RequestContext } from '../../../common/http/request-context.js';
 import { ZBody, ZQuery } from '../../../common/http/zod-validation.pipe.js';
 import { Audited } from '../../platform/index.js';
+import { callerGrants } from './caller-grants.js';
 import { PatternSets } from './pattern-sets.js';
 import { SCHEDULE_PATTERN_SET, type PatternSaved, PatternWriter } from './pattern-writer.js';
 
@@ -25,13 +25,6 @@ import { SCHEDULE_PATTERN_SET, type PatternSaved, PatternWriter } from './patter
 // - PUT: `schedule.update` somewhere in the employee's target set; the handler then requires every
 //   branch of the old ∪ new segments (design D3 step 4). CSRF header; no Idempotency-Key — an identical
 //   repeat is a no-op (D3 step 7).
-
-/** The caller's grants, which the access guard built for this route's declaration (design D11). */
-function callerGrants(): GrantSet {
-  const grants = RequestContext.current()?.grants;
-  if (grants === undefined) throw new Error('schedule: the access guard built no grant set');
-  return grants;
-}
 
 @Controller('v1/employees/:id/schedule-pattern')
 export class PatternsController {

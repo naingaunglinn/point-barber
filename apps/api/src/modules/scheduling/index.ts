@@ -4,3 +4,7 @@ export { SchedulingModule } from './scheduling.module.js';
 // add-leave-requests (#32) — and the row it answers.
 export { LeaveTypes } from './leave-types/leave-types.js';
 export type { LeaveTypeRow } from './leave-types/leave-type-mapper.js';
+// add-schedule-patterns (design D1 · D8): the booking port — declared here, implemented by `booking`, which
+// registers it through `BookingsOutsideShift.use` — and the warning of a shift change.
+export type { BookedBlock, BookedBlocksPort } from './bookings/booked-blocks.js';
+export { BookingsOutsideShift } from './bookings/bookings-outside-shift.js';

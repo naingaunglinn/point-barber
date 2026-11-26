@@ -13,8 +13,10 @@ import { TransactionRunner } from '../../../common/database/transaction-runner.j
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { Assignments } from '../../people/index.js';
-import { Audit, SettingsReader } from '../../platform/index.js';
+import { Audit, SettingsReader, SiteContent } from '../../platform/index.js';
+import { BookingsOutsideShift } from '../bookings/bookings-outside-shift.js';
 import { PatternsRepository } from '../repositories/patterns.repository.js';
+import { ScheduleEvents } from '../shifts/schedule-events.js';
 import { ShiftGenerator } from '../shifts/shift-generator.js';
 import { planSave } from './pattern-plan.js';
 import { PatternSets, toPatternSet } from './pattern-sets.js';
@@ -34,10 +36,12 @@ import { ScheduleLock } from './schedule-lock.js';
 //   8. ShiftGenerator over max(D, today) … horizon, still under the lock.
 //   9. The own-save guard (owner C11 · PT5): the caller's own employee and the generation archived,
 //      inserted or converted a shift dated today → 422 self_action; the transaction rolls back.
-//  10. The audit row `schedule.pattern_set` with the set before and after; its branch = the segments'
-//      one branch, else the employee's primary branch (`@Audited({ target: 'employee' })`).
+//  10. The booking warning on the changed dates (`bookings_outside_shift`, before the
+//      `shift_kept_attendance` of step 8); the audit row `schedule.pattern_set` with the set before and
+//      after — its branch = the segments' one branch, else the employee's primary branch
+//      (`@Audited({ target: 'employee' })`); `schedule.changed` per changed branch and once for the
+//      employee's user room; the website tag `barbers` when a shift of today changed.
 //  11. The answer = the set effective on D + warnings.
-// Step 10's booking warning, events and site touch come with A5.
 
 export const SCHEDULE_PATTERN_SET = 'schedule.pattern_set';
 
@@ -58,6 +62,9 @@ export class PatternWriter {
     private readonly assignments: Assignments,
     private readonly settings: SettingsReader,
     private readonly audit: Audit,
+    private readonly outsideShift: BookingsOutsideShift,
+    private readonly events: ScheduleEvents,
+    private readonly site: SiteContent,
   ) {}
 
   save(
@@ -148,7 +155,13 @@ export class PatternWriter {
         before: { ...before },
         after: { ...after },
       });
-      return { ...after, warnings: generated.warnings };
+      await this.events.collect(tx, employeeId, generated.changed);
+      if (generated.changed_dates.includes(today)) await this.site.touch(tx, ['barbers']);
+      const outside = await this.outsideShift.check(tx, employeeId, generated.changed_dates);
+      return {
+        ...after,
+        warnings: outside === null ? generated.warnings : [outside, ...generated.warnings],
+      };
     });
   }
 }

@@ -201,15 +201,31 @@ export type PatternSet = z.infer<typeof patternSetSchema>;
 
 /**
  * A warning of a pattern save (P2.PAT.02 `warnings[]` · OpenAPI Part 2 `Warning` with `items`): the shifts
- * a regeneration kept because attendance points at them (P2-RULE-07 · P5-RULE-14). `bookings_outside_shift`
- * joins this union with the booking warning (task 5.2).
+ * a regeneration kept because attendance points at them (P2-RULE-07 · P5-RULE-14), and the BOOKED bookings
+ * it left outside the employee's shifts (P2-RULE-08 · D-BKG-19) — a booking is listed by id, branch and its
+ * own start and end, no customer data (design D9).
  */
 export const shiftKeptAttendanceWarningSchema = z.strictObject({
   code: z.literal('shift_kept_attendance'),
   items: z.array(z.strictObject({ shift_id: z.uuid(), shift_date: wireDate })),
 });
 
-export const scheduleWarningSchema = shiftKeptAttendanceWarningSchema;
+export const bookingsOutsideShiftWarningSchema = z.strictObject({
+  code: z.literal('bookings_outside_shift'),
+  items: z.array(
+    z.strictObject({
+      booking_id: z.uuid(),
+      branch_id: z.uuid(),
+      starts_at: wireDateTime,
+      ends_at: wireDateTime,
+    }),
+  ),
+});
+
+export const scheduleWarningSchema = z.discriminatedUnion('code', [
+  shiftKeptAttendanceWarningSchema,
+  bookingsOutsideShiftWarningSchema,
+]);
 
 export type ScheduleWarning = z.infer<typeof scheduleWarningSchema>;
 
