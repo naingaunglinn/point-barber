@@ -4,6 +4,7 @@ import { BookingStatus, type Mmk, type StatusCode, businessDateOf } from '@point
 import { FIXTURE_IDS } from '@point/shared/testing';
 
 import type { PrismaService } from '../../src/common/database/prisma.service.js';
+import type { Tx } from '../../src/common/database/transaction-runner.js';
 import type { FixturePerson } from '../helpers/seeded.js';
 
 // Bookings written directly, because no booking endpoint exists yet (add-branch-management design D11;
@@ -37,7 +38,7 @@ const PRESETS = [
  * The company's seed cancel reasons: the four rows of the base seed (add-booking-cancel-reasons,
  * merged), found by their Myanmar names; a test database without the seed gets them inserted.
  */
-export async function seedCancelReasons(prisma: PrismaService): Promise<CancelReasons> {
+export async function seedCancelReasons(prisma: PrismaService | Tx): Promise<CancelReasons> {
   const company = await prisma.companies.findFirstOrThrow({ select: { id: true } });
   const ids = new Map<string, string>();
   for (const [key, name_mm, name_en, sort_order, system_code, requires_note] of PRESETS) {
@@ -88,7 +89,7 @@ export interface BookingSpec {
 }
 
 /** One booking (with its items), entered by U Kyaw Zin; a CANCELLED one carries its cancel fields. */
-export async function bookingAt(prisma: PrismaService, spec: BookingSpec): Promise<string> {
+export async function bookingAt(prisma: PrismaService | Tx, spec: BookingSpec): Promise<string> {
   const id = randomUUID();
   const minutes = (spec.items ?? []).reduce((sum, item) => sum + item.minutes, 0);
   const endsAt = new Date(spec.startsAt.getTime() + (minutes === 0 ? 30 : minutes) * 60_000);
