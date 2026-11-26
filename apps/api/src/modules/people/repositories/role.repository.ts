@@ -4,11 +4,17 @@ import { EmployeeStatus, ScopeType } from '@point/shared';
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import { TransactionScope } from '../../../common/database/transaction-scope.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import { companyAdminLockKey } from '../employees/lock-keys.js';
 
 // Role assignments (D-ROLE-03 · P1-RULE-12): which roles an employee holds at company scope.
 @Injectable()
 export class RoleRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** `pg_advisory_xact_lock(hashtextextended('coadmin:<company_id>', 0))`, held to commit (CG-DB-08). */
+  async lockCompanyAdmins(tx: Tx, companyId: string): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${companyAdminLockKey(companyId)}, 0))`;
+  }
 
   private db(tx?: Tx) {
     return tx ?? TransactionScope.current()?.tx ?? this.prisma;

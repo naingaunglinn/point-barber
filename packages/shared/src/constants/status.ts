@@ -7,10 +7,13 @@
 
 /** part3 — D-BKG-18. */
 export const BookingStatus = { CANCELLED: 0, BOOKED: 1, STARTED: 2, COMPLETED: 3 } as const;
+export type BookingStatus = (typeof BookingStatus)[keyof typeof BookingStatus];
 /** part4 — D-VIS-07 · D-VIS-09. */
 export const VisitStatus = { INCOMPLETE: 0, STARTED: 1, COMPLETED: 2, FINISHED: 3 } as const;
+export type VisitStatus = (typeof VisitStatus)[keyof typeof VisitStatus];
 /** part4 — FINISHED is immutable (D-VIS-08). */
 export const SaleStatus = { CANCELLED: 0, OPEN: 1, FINISHED: 2 } as const;
+export type SaleStatus = (typeof SaleStatus)[keyof typeof SaleStatus];
 /** part4. */
 export const DiscountRequestStatus = {
   CANCELLED: 0,
@@ -81,6 +84,14 @@ export const BackupRunStatus = { RUNNING: 1, SUCCESS: 2, FAILED: 3 } as const;
 export const BranchStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 
+/**
+ * part2 — leave_types.status (add-leave-types design D4 / D9): INACTIVE takes the type off the leave
+ * request form, ACTIVE brings it back (P2.LVT.01 / 03). The list's status chips and badge, so it has its
+ * table in STATUS_BY_TABLE (AD-CMP-05 master data: ACTIVE shows no badge, as for branches).
+ */
+export const LeaveTypeStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type LeaveTypeStatus = (typeof LeaveTypeStatus)[keyof typeof LeaveTypeStatus];
+
 /** The constants by table name — the key the status map and the language keys use. */
 export const STATUS_BY_TABLE = {
   bookings: BookingStatus,
@@ -104,6 +115,8 @@ export const STATUS_BY_TABLE = {
   backup_runs: BackupRunStatus,
   // add-branch-management — the branch screens' badge and status chips (design D9).
   branches: BranchStatus,
+  // add-leave-types — the leave-type list's status chips and badge (design D9).
+  leave_types: LeaveTypeStatus,
 } as const;
 
 export type StatusTable = keyof typeof STATUS_BY_TABLE;
@@ -226,14 +239,6 @@ export type ServiceCategoryStatus =
 /** part2 — services.status. */
 export const ServiceStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
-
-/**
- * part2 — leave_types.status (add-leave-types design D4): INACTIVE takes the type off the leave request
- * form, ACTIVE brings it back (P2.LVT.01 / 03). Not in STATUS_BY_TABLE yet: the screen of part B1 decides
- * its badge; the labels `status.leave_types.*` are in the language files.
- */
-export const LeaveTypeStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
-export type LeaveTypeStatus = (typeof LeaveTypeStatus)[keyof typeof LeaveTypeStatus];
 
 /** part3 — customers.status. */
 export const CustomerStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
