@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 
 import type { Locale } from '@point/i18n';
 import type { MeResponse } from '@point/shared';
+import { UnsavedChangesProvider } from '@point/ui';
 
 import { BranchProvider, startBranchOf } from '../lib/session/branch';
 import { GrantsProvider } from '../lib/session/grants';
@@ -46,7 +47,8 @@ export function renderPos(
       <BranchProvider
         value={{ branchId, setBranchId: () => undefined, startBranch: startBranchOf(me, branchId) }}
       >
-        {ui}
+        {/* The guard of the signed-in area (add-unsaved-changes-guard design D2), as SessionLayer mounts it. */}
+        <UnsavedChangesProvider>{ui}</UnsavedChangesProvider>
       </BranchProvider>
     </GrantsProvider>,
     { client, locale },

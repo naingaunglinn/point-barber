@@ -218,3 +218,24 @@ describe('Maintenance mode: a failed load in the background, a Save with no answ
     expect(screen.queryByText('This field is required.')).toBeNull();
   });
 });
+
+const RAIL_TODAY = 'Rail Today';
+
+describe('add-unsaved-changes-guard task 4.3 · the maintenance form registers with the shared guard', () => {
+  it('Scenario: an edited form makes a link ask "Discard changes?"', async () => {
+    routeFetch(fetchMock, { [STATUS]: json(200, status()) });
+    renderPos(
+      <>
+        <MaintenanceScreen />
+        <a href="/today">{RAIL_TODAY}</a>
+      </>,
+      { me: kyawZinMe() },
+    );
+    const stop = (event: Event) => event.preventDefault();
+    document.addEventListener('click', stop);
+    fireEvent.click(await screen.findByRole('switch', { name: 'Maintenance mode' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Rail Today' }));
+    expect(await screen.findByRole('alertdialog', { name: 'Discard changes?' })).toBeTruthy();
+    document.removeEventListener('click', stop);
+  });
+});

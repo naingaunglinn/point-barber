@@ -8,6 +8,7 @@ import {
   type QuoteDto,
   ServicePricingMode,
   ServiceStatus,
+  businessDateOf,
   moneyFromWire,
   moneyToWire,
   sumMoney,
@@ -184,8 +185,7 @@ export class PriceQuote {
     );
     const last = new Date(`${today}T00:00:00Z`);
     last.setUTCDate(last.getUTCDate() + window);
-    if (date > last.toISOString().slice(0, 10))
-      throw new ProblemException(ErrorCode.OUTSIDE_WINDOW, 422);
+    if (date > businessDateOf(last)) throw new ProblemException(ErrorCode.OUTSIDE_WINDOW, 422);
     if (date >= today) return;
     const closed = await this.dayLock.closedDay(db, branchId, date);
     if (closed === null) return;

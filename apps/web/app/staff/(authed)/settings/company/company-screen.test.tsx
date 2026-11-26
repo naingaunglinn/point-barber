@@ -575,8 +575,12 @@ describe('Settings › Company — Save and its answers (task 4.5)', () => {
     fireEvent.click(screen.getByTestId('company-back'));
     const dialog = await screen.findByRole('alertdialog', { name: 'Discard changes?' });
     expect(within(dialog).getByRole('button', { name: 'Keep editing' })).toBeTruthy();
+    // Discard goes back past the guard's history entry and the page (add-unsaved-changes-guard design D4).
+    const go = vi.spyOn(window.history, 'go').mockImplementation(() => undefined);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
-    expect(back).toHaveBeenCalledTimes(1);
+    expect(go).toHaveBeenCalledWith(-2);
+    expect(back).not.toHaveBeenCalled();
+    go.mockRestore();
   });
 
   it('Back without edits goes back at once', async () => {

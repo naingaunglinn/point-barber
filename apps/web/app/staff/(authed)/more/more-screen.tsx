@@ -10,7 +10,7 @@ import { localized } from '@point/shared';
 import { Button, LanguageSwitch, PageHeader } from '@point/ui';
 
 import { useSettingsScreens } from '../../../../components/settings/settings-nav';
-import { signOut, useSetLanguage } from '../../../../lib/session/session-layer';
+import { useSetLanguage, useSignOut } from '../../../../lib/session/session-layer';
 import { useMe } from '../../../../lib/session/use-me';
 
 // More — the last item of the phone's bottom navigation (AD-NAV-01 · AD-LAY-03 · AD-NAV-07 ·
@@ -27,6 +27,7 @@ export function MoreScreen() {
   const locale = isLocale(raw) ? raw : 'my';
   const me = useMe().data;
   const setLanguage = useSetLanguage();
+  const signOut = useSignOut();
   const settings = useSettingsScreens();
   const settingsHeading = useId();
   if (me === undefined) return null;
@@ -63,7 +64,7 @@ export function MoreScreen() {
         </nav>
       )}
       <LanguageSwitch value={locale} onChange={setLanguage} />
-      <Button fullWidth data-testid="more-sign-out" onClick={() => void signOut()}>
+      <Button fullWidth data-testid="more-sign-out" onClick={signOut}>
         {t('signOut')}
       </Button>
     </div>

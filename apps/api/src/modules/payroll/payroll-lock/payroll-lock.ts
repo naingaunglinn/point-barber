@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type BusinessDate, ErrorCode } from '@point/shared';
+import { type BusinessDate, ErrorCode, businessDateOf } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
@@ -9,7 +9,7 @@ import { PayrollRunsRepository } from '../repositories/payroll-runs.repository.j
 // PayrollLock — finalized periods are frozen (P5-RULE-10 · API-IDEM-06 · CG-DB-08 · add-walkin-visit-
 // checkout design D1). In the one lock order it comes second: day lock → payroll lock → row locks.
 
-const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
+const isoDate = (date: Date): string => businessDateOf(date);
 
 @Injectable()
 export class PayrollLock {
