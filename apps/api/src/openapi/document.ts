@@ -8,6 +8,8 @@ import {
   branchStatusSchema,
   branchSummarySchema,
   branchUpdateSchema,
+  cancelReasonCreateSchema,
+  cancelReasonSchema,
   categoryCreateSchema,
   categoryUpdateSchema,
   commissionEstimateSchema,
@@ -164,6 +166,60 @@ const X_REQUESTED_WITH = {
   required: true,
   schema: { type: 'string', enum: ['point-app'] },
   description: 'CSRF guard for cookie-authenticated mutations (API-AUTH-02)',
+};
+
+// add-booking-cancel-reasons A2 — P3.CRS.01 / 02 as API Part 3 v1.2 and OpenAPI Part 3 1.2.0 write them
+// (owner CR1); P3.CRS.03 – 05 join with A3.
+const CANCEL_REASON_PATHS = {
+  '/booking-cancel-reasons': {
+    get: {
+      tags: ['cancel-reasons'],
+      operationId: 'cancelReasonList',
+      summary: 'Cancel reasons for the cancel dialog (P3.CRS.01) — D-BKG-14',
+      'x-permission':
+        'any staff (read scope) — operational; include_archived=true -> booking_cancel_reason.view+',
+      parameters: [
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'array', items: { type: 'integer', enum: [0, 1] } },
+          description: 'Repeatable; default 1',
+          style: 'form',
+          explode: true,
+        },
+        { name: 'include_archived', in: 'query', schema: { type: 'boolean', default: false } },
+      ],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  items: { type: 'array', items: { $ref: '#/components/schemas/CancelReason' } },
+                },
+                required: ['items'],
+              },
+            },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+    post: {
+      tags: ['cancel-reasons'],
+      operationId: 'cancelReasonCreate',
+      summary: 'Add a cancel reason (P3.CRS.02)',
+      'x-permission': 'booking_cancel_reason.create (company master: company scope)',
+      parameters: [X_REQUESTED_WITH],
+      requestBody: { required: true, ...json('CancelReasonCreate') },
+      responses: {
+        '201': { description: 'Created', ...json('CancelReason') },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
 };
 
 // add-settings-store task 3.12 — the settings reads P1.SET.01 / 02 / 05 as Part 1 v1.7 writes them.
@@ -409,6 +465,7 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         },
       },
       ...SETTINGS_PATHS,
+      ...CANCEL_REASON_PATHS,
     },
     components: {
       schemas: {
@@ -472,6 +529,9 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         BranchUpdate: schema(branchUpdateSchema),
         BranchStatusRequest: schema(branchStatusSchema),
         BranchInUseContext: schema(branchInUseContextSchema),
+        // add-booking-cancel-reasons A2 — P3.CRS.01 / 02 (Part 3 §11 `CancelReason`).
+        CancelReason: schema(cancelReasonSchema),
+        CancelReasonCreate: schema(cancelReasonCreateSchema, 'input'),
         // add-service-catalogue task 2.1 — the request bodies of P2.CAT.02 / 03 and P2.SVC.02 / 04
         // (Part 2 v1.6); their paths are added with the endpoints.
         CategoryCreate: schema(categoryCreateSchema, 'input'),
