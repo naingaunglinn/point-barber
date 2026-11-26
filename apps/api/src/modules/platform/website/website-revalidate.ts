@@ -27,7 +27,10 @@ export class WebsiteRevalidate {
 
   async run(body: RevalidateRequestBody): Promise<{ queued_tags: SiteTag[] }> {
     const branches = await this.directory.branchesForWebsite();
-    const known: SiteTag[] = [...FIXED_TAGS, ...branches.map((branch) => `branch:${branch.code}`)];
+    const known: SiteTag[] = [
+      ...FIXED_TAGS,
+      ...branches.map((branch): SiteTag => `branch:${branch.code}`),
+    ];
     const tags = body.tags === undefined ? known : this.checked(body.tags, known);
     await this.runner.run(async (tx) => {
       await this.site.touch(tx, tags);

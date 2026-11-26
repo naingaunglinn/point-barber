@@ -70,6 +70,8 @@ for the settings store (each port and read comes with the part that first uses i
 `catalog` — `ServiceCatalog.countOnWebsite`; `people` — `PublicPeople.activeProfiles` and
 `PeopleDirectory.branchesForWebsite`; `scheduling` — `TodayShifts.branchesOf` (shared with
 `add-schedule-patterns`; the first change to merge creates it).
+Part A5 adds the ports `WebsiteDirectory` (`people`: the company, `PeopleDirectory.branchesForWebsite`,
+`PublicPeople.activeProfiles`), `WebsiteCatalog` (`catalog`) and `WebsiteShifts` (`scheduling`).
 
 ## Advisory lock keys
 

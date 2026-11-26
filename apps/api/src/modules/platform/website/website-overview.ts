@@ -3,7 +3,10 @@ import { type WebsiteOverview, todayMmt } from '@point/shared';
 
 import { type GrantSet, type Scope, reaches } from '../../../common/access/grant-set.js';
 import { Clock } from '../../../common/clock/clock.js';
-import { BranchClosuresRepository } from '../repositories/branch-closures.repository.js';
+import {
+  BranchClosuresRepository,
+  type ClosureRow,
+} from '../repositories/branch-closures.repository.js';
 import { OpeningHoursRepository } from '../repositories/opening-hours.repository.js';
 import { SiteContentReader } from './site-content-reader.js';
 import { WebsiteCatalog, WebsiteDirectory } from './website-ports.js';
@@ -31,13 +34,12 @@ export class WebsiteOverviewReader {
     ]);
     const branches = all.filter((branch) => reaches(scope, branch.id));
     const ids = branches.map((branch) => branch.id);
-    const [configured, next] =
+    const configured =
+      ids.length === 0 ? new Set<string>() : await this.hours.configuredBranchIds(ids);
+    const next =
       ids.length === 0
-        ? [new Set<string>(), new Map()]
-        : await Promise.all([
-            this.hours.configuredBranchIds(ids),
-            this.closures.nextOf(ids, todayMmt(this.clock.now())),
-          ]);
+        ? new Map<string, ClosureRow>()
+        : await this.closures.nextOf(ids, todayMmt(this.clock.now()));
     const company = grants.isCompany('website.update');
     return {
       site_origin: content.site_origin,

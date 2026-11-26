@@ -1,5 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SETTINGS, type SiteContent, settingEntry, siteContentSchema, toMmtIsoMillis } from '@point/shared';
+import {
+  SETTINGS,
+  type SettingKey,
+  type SiteContent,
+  settingEntry,
+  siteContentSchema,
+  toMmtIsoMillis,
+} from '@point/shared';
 import type { Logger } from 'pino';
 
 import { AppConfig } from '../../../common/config/config.js';
@@ -39,7 +46,7 @@ export function siteContentOf(
   rows: readonly StoredSetting[],
   options: { readonly siteOrigin: string; readonly names: ReadonlyMap<string, string> },
 ): SiteContent {
-  const value = (key: string): unknown => resolveSetting(settingEntry(key), rows).effective;
+  const value = (key: SettingKey): unknown => resolveSetting(settingEntry(key), rows).effective;
   const newest = newestSetting(rows);
   return siteContentSchema.parse({
     hero_title: value('site.hero_title'),
