@@ -20,6 +20,7 @@ import {
 import { WithOfflineHelp } from '../../components/pos/OfflineHelp';
 import { StaffBottomNav, useStaffRail } from '../../components/pos/StaffBottomNav';
 import { api, setApiHandlers } from '../api/client';
+import { useInstallListener } from '../pwa/use-install-capability';
 import { BranchProvider, initialBranchId, startBranchOf } from './branch';
 import { GrantsProvider } from './grants';
 import {
@@ -92,6 +93,9 @@ export function SessionLayer({
   const client = useQueryClient();
   const router = useRouter();
   const [maintenance, setMaintenance] = useState<MaintenanceState | null>(null);
+  // Keeps Chrome's `beforeinstallprompt` for the install guide and the first-login tip (add-pwa-install
+  // design D6); above the early returns, so the event is not lost while `/me` loads.
+  useInstallListener();
 
   useEffect(
     () =>
