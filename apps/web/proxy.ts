@@ -45,8 +45,9 @@ export function proxy(request: NextRequest): NextResponse {
 export const config = {
   // Everything except Next.js's own assets under /_next/, the self-hosted fonts under /fonts/
   // (public/fonts, copied from packages/ui/fonts — add-shared-ui-components design D3) and the
-  // vendored library files under /vendor/ (public/vendor — the QR scanner's WebAssembly). A folder
-  // added to public/ later gets its own exclusion here — never a "path with a dot" pattern, which
-  // would let /staff/<x>.<y> skip the 404 rule (design D11).
-  matcher: ['/((?!_next/|fonts/|vendor/).*)'],
+  // vendored library files under /vendor/ (public/vendor — the QR scanner's WebAssembly) and the app
+  // icons under /icons/ (public/icons — add-pwa-install design D3: a browser fetches them without
+  // cookies). A folder added to public/ later gets its own exclusion here — never a "path with a dot"
+  // pattern, which would let /staff/<x>.<y> skip the 404 rule (design D11).
+  matcher: ['/((?!_next/|fonts/|vendor/|icons/).*)'],
 };

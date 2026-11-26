@@ -71,6 +71,8 @@
   "options_required": "A service priced by options needs its options.",
   "use_options_endpoint": "Option pricing is set with the service's options, not here.",
   "leave_type_in_use": "This leave type is used by leave that is still waiting for approval. Decide or cancel that leave first.",
+  "last_admin": "You can't switch off the last company admin.",
+  "not_multiple_of": "Use steps of 0.5, for example 4.5.",
   "closure_overlap": "These dates overlap another closure of this branch.",
   "date_in_past": "This date has already passed.",
   "closure_started": "This closure has already started — only its end date and notices can change.",
