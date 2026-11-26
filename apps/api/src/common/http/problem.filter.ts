@@ -12,9 +12,11 @@ import type { Logger } from 'pino';
 import { AppConfig } from '../config/config.js';
 import {
   isBranchCodeTaken,
+  isCancelReasonNameTaken,
   isCatalogueNameTaken,
   isClientRequestIdConflict,
   isFinishedImmutable,
+  isLeaveTypeNameTaken,
   isPaymentReferenceConflict,
 } from '../database/errors.js';
 import { LOGGER } from '../logging/logger.js';
@@ -59,6 +61,10 @@ function toProblem(error: unknown): ProblemException | null {
   // index decides, so two simultaneous creates of one code cannot both succeed.
   if (isBranchCodeTaken(error) || isCatalogueNameTaken(error))
     return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
+  // A Myanmar name another non-archived leave type holds (add-leave-types design D5).
+  if (isLeaveTypeNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
+  // The same for a cancel reason's Myanmar name (add-booking-cancel-reasons design D6).
+  if (isCancelReasonNameTaken(error)) return new ProblemException(ErrorCode.ALREADY_EXISTS, 409);
   // The second wall (add-walkin-visit-checkout design D9): a finished record reached its guard trigger.
   if (isFinishedImmutable(error)) return new ProblemException(ErrorCode.LOCKED, 423);
   // The JSON body could not be read: unparseable or above the 1 MB limit (design D7, reading 5).

@@ -96,8 +96,11 @@ e2e · infra · tools · docs/engineering · docs/ops · design-reference · ope
 - **Git:** branch `feature/<change-id>` (one per pull request when a change has several:
   `feature/<change-id>/<part>`); commits and the PR title are Conventional Commits with the change id as
   scope — `feat(add-walkin-visit-checkout): take split payment`; the PR description names
-  `Spec: point-sdd/openspec/changes/<change-id>` and the decision / rule IDs. Order: CI green + one human
-  review → test cases run with no open NG → squash merge → archive (CG-GIT-01..05, guideline §23).
+  `Spec: point-sdd/openspec/changes/<change-id>` and the decision / rule IDs. Each PR ≤ 1,500 counted lines
+  (CG-GIT-03). Order: CI green + one approval (a person's for money, permission, login / auth / session and
+  locked-source PRs and any PR marked "needs a person"; otherwise also the other developer's Claude after a
+  clean review — CG-REVIEW-01) → test cases run with no open NG → squash merge (auto-merge) → archive
+  (CG-GIT-01..05, guideline §23).
 - Keep the diff inside the task (CG-AI-07). Clean-ups go in their own PR. Never loosen a lint rule, a guard or a
   test to get green (CG-AI-06).
 - **Never** commit secrets, `.env`, real customer or staff data, or screenshots of the live Fresha account.

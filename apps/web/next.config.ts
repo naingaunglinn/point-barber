@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
+import { staffColours } from './lib/pwa/token-file';
+
 // One Next.js app serves both hosts; proxy.ts picks the route tree (ADR-001 · design D11).
 // `standalone` is what the web image runs (ADR-006).
 // `agentRules: false`: `next dev` writes no AGENTS.md / CLAUDE.md into apps/web when it detects an
@@ -17,6 +19,8 @@ const nextConfig: NextConfig = {
   // then never hydrates. Development only; a production build ignores it.
   allowedDevOrigins: ['app.point.test', 'point.test'],
   experimental: { globalNotFound: true },
+  // The manifest and the page head take their colour from the token file (add-pwa-install design D2).
+  env: { POINT_PWA_BACKGROUND: staffColours().background },
 };
 
 export default nextConfig;
