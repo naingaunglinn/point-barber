@@ -4,6 +4,7 @@ import {
   CustomerStatus,
   type E164,
   ErrorCode,
+  type Mmk,
   maskPhone,
   normalizeDigits,
   normalizePhone,
@@ -12,12 +13,13 @@ import {
 
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import { Clock } from '../../../common/clock/clock.js';
-import type { Tx } from '../../../common/database/transaction-runner.js';
+import type { SqlPiece, Tx } from '../../../common/database/transaction-runner.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { CurrentCompany } from '../../people/index.js';
 import { Audit } from '../../platform/index.js';
 import { type CustomerRow, CustomersRepository } from '../repositories/customers.repository.js';
+import type { RecentVisit } from './preferred-barber.js';
 
 // One customer identity function (P3-RULE-01 · D-CUS-02 / 03 · add-walkin-visit-checkout design D1):
 // the only way a FINISH (and later a booking) finds its customer. `INSERT … ON CONFLICT DO NOTHING` +
@@ -43,12 +45,32 @@ export interface MatchResult {
   readonly warnings: readonly { readonly code: 'customer_restored' | 'customer_reactivated' }[];
 }
 
+/** A customer's figures in a read scope (P3-RULE-03 · add-customer-management design D6). */
+export interface CustomerTotals {
+  /** FINISHED sales of the customer that have a visit. */
+  readonly visit_count: number;
+  /** Σ total of the FINISHED sales (with or without a visit) − Σ their kind-1 refunds. */
+  readonly total_spent_amount: Mmk;
+  readonly last_visit_at: Date | null;
+}
+
 /**
- * The last finished visit of a customer at the branches in scope (P3.CUS.02 `last_visit_at`).
- * Declared here, implemented by `sales`, which owns the finished sales (design D1).
+ * The customer's Part 4 history in a read scope — `last_visit_at` of P3.CUS.02, and the list, the
+ * statistics and the timeline of add-customer-management (design D1 / D3 / D6). Declared here,
+ * implemented by `sales`, which owns the finished sales (walk-in design D1).
  */
 export interface CustomerActivity {
   lastVisitAt(db: Tx, customerId: string, branchIds: ReadScope): Promise<Date | null>;
+  /** `customer_id, last_visit_at, visit_count` per customer — the list joins and sorts on it (D3). */
+  visitAggregate(scope: ReadScope): SqlPiece;
+  totals(db: Tx, customerId: string, scope: ReadScope): Promise<CustomerTotals>;
+  /** The last `window` FINISHED visits, newest first, with their performers (D6). */
+  recentVisits(
+    db: Tx,
+    customerId: string,
+    scope: ReadScope,
+    window: number,
+  ): Promise<readonly RecentVisit[]>;
 }
 
 const ref = (row: CustomerRow): CustomerRef => ({
