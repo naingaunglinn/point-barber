@@ -27,6 +27,7 @@ export interface WalkinHttp {
   cookie(who: FixturePerson): Promise<string>;
   get(who: FixturePerson, path: string): Promise<Response>;
   post(who: FixturePerson, path: string, body?: object, key?: string): Promise<Response>;
+  patch(who: FixturePerson, path: string, body?: object): Promise<Response>;
   start(who: FixturePerson, items?: readonly string[]): Promise<VisitDto>;
   complete(who: FixturePerson, visitId: string): Promise<VisitDto>;
   pay(who: FixturePerson, saleId: string, body: Record<string, unknown>): Promise<SaleDto>;
@@ -48,6 +49,12 @@ export function walkinHttp(s: SeededApp): WalkinHttp {
     const req = s.http.post(`${API}${path}`).set('Cookie', await cookie(who));
     return (key === undefined ? req : req.set('Idempotency-Key', key)).send(body);
   };
+
+  const patch = async (who: FixturePerson, path: string, body: object = {}) =>
+    s.http
+      .patch(`${API}${path}`)
+      .set('Cookie', await cookie(who))
+      .send(body);
 
   const start = async (
     who: FixturePerson,
@@ -88,5 +95,5 @@ export function walkinHttp(s: SeededApp): WalkinHttp {
     return res.body as SaleDto;
   };
 
-  return { cookie, get, post, start, complete, pay, finish };
+  return { cookie, get, post, patch, start, complete, pay, finish };
 }

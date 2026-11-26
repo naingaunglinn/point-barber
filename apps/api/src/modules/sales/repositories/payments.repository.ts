@@ -115,11 +115,28 @@ export class PaymentsRepository {
   find(
     db: Tx,
     id: string,
-  ): Promise<{ id: string; sale_id: string; received_at: Date; voided_at: Date | null } | null> {
+  ): Promise<{
+    id: string;
+    sale_id: string;
+    received_at: Date;
+    voided_at: Date | null;
+    collected_by_employee_id: string;
+  } | null> {
     return db.payments.findUnique({
       where: { id },
-      select: { id: true, sale_id: true, received_at: true, voided_at: true },
+      select: {
+        id: true,
+        sale_id: true,
+        received_at: true,
+        voided_at: true,
+        collected_by_employee_id: true,
+      },
     });
+  }
+
+  /** P4.PAY.04 — the collector only; `payments` has no `updated_at` column (DB Part 4 v1.2). */
+  async setCollector(tx: Tx, id: string, employeeId: string): Promise<void> {
+    await tx.payments.update({ where: { id }, data: { collected_by_employee_id: employeeId } });
   }
 
   /** The sale of the non-voided payment that holds a reference of a method (D-PAY-02). */

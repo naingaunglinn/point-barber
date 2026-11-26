@@ -465,6 +465,18 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       'refunded_amount',
     ],
   },
+  // add-payment-collector-picker task 1.2 — copied on 26/Nov/2026 from part4-visits-sales-payments.yaml
+  // (components.schemas.Collector).
+  Collector: {
+    type: 'object',
+    required: ['employee_id', 'display_name', 'clocked_in', 'is_default'],
+    properties: {
+      employee_id: { type: 'string', format: 'uuid' },
+      display_name: { type: 'string' },
+      clocked_in: { type: 'boolean' },
+      is_default: { type: 'boolean' },
+    },
+  },
   Payment: {
     type: 'object',
     properties: {

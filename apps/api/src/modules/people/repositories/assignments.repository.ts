@@ -39,6 +39,27 @@ export class AssignmentsRepository {
   }
 
   /**
+   * The ids of the ACTIVE employees assigned to a branch on a date (both ends inclusive) — one query,
+   * each id once. No source caps a branch's staff, so the read is bounded by the ceiling and fails
+   * loudly above it (CG-PERF-02 · kind C).
+   */
+  async activeAssignedAt(db: Tx, key: { branch_id: string; date: string }): Promise<string[]> {
+    const day = dayOf(key.date);
+    const rows = await db.employee_branches.findMany({
+      where: {
+        branch_id: key.branch_id,
+        effective_from: { lte: day },
+        OR: [{ effective_to: null }, { effective_to: { gte: day } }],
+        employees: { status: EmployeeStatus.ACTIVE },
+      },
+      select: { employee_id: true },
+      take: READ_ROW_CEILING + 1,
+    });
+    const ids = assertWithinCeiling(rows, 'AssignmentsRepository.activeAssignedAt');
+    return [...new Set(ids.map((row) => row.employee_id))];
+  }
+
+  /**
    * The employee's assignments overlapping `from` … `to` (both inclusive), ended ones included,
    * ordered by effective_from, created_at, id. No source caps how many assignments one employee has
    * over time, so the read is bounded by the ceiling and fails loudly above it (CG-PERF-02 · kind C).

@@ -28,9 +28,13 @@ export const SALE_ROUTES = [
   routeKey('POST', '/v1/sales/:id/items/:item_id/remove'),
   routeKey('POST', '/v1/sales/:id/finish'),
   routeKey('POST', '/v1/sales/:id/payments'),
+  routeKey('GET', '/v1/sales/:id/collectors'),
 ];
 
-export const PAYMENT_ROUTES = [routeKey('POST', '/v1/payments/:id/void')];
+export const PAYMENT_ROUTES = [
+  routeKey('POST', '/v1/payments/:id/void'),
+  routeKey('PATCH', '/v1/payments/:id'),
+];
 
 @Injectable()
 export class SaleAccess {
@@ -45,7 +49,8 @@ export class SaleAccess {
   register(targets: TargetResolvers, orSelf: OrSelfResolvers): void {
     targets.register(SALE_ROUTES, async (id) => branchOf(await this.sale(id)));
     targets.register(PAYMENT_ROUTES, async (id) => branchOf(await this.saleOfPayment(id)));
-    // FINISH and payment add (a sale id), payment void (a payment id).
+    // FINISH, payment add and the collector list (a sale id), payment void and collector change (a
+    // payment id).
     orSelf.register('sale.checkoutActors', async (parts, caller) => {
       const id = paramAt(parts, 'id');
       const sale = (await this.sale(id)) ?? (await this.saleOfPayment(id));

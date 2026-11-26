@@ -8,6 +8,8 @@ import { CatalogModule } from '../catalog/index.js';
 import { PayrollModule } from '../payroll/index.js';
 import { BranchUsage, PeopleModule } from '../people/index.js';
 import { CodeTables, Jobs, PlatformModule } from '../platform/index.js';
+import { SchedulingModule } from '../scheduling/index.js';
+import { CollectorList } from './collectors/collector-list.js';
 import { SaleAccess } from './access/sale-access.js';
 import { SalesCustomerActivity } from './customer-activity/sales-customer-activity.js';
 import { ReceiptNumbers } from './finish/receipt-numbers.js';
@@ -48,6 +50,7 @@ import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
     CatalogModule,
     CashClosingModule,
     PayrollModule,
+    SchedulingModule,
   ],
   controllers: [SalesController],
   providers: [
@@ -64,6 +67,7 @@ import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
     SaleLines,
     SaleView,
     Payments,
+    CollectorList,
     ReceiptNumbers,
     SalesFinish,
     ReceiptFiles,

@@ -202,7 +202,7 @@ export class Sales {
  */
 export function assertSaleOpen(
   sale: SaleRow,
-  correctionPath: 'difference_sale' | 'refund' | null,
+  correctionPath: 'adjustment' | 'difference_sale' | 'refund' | null,
 ): void {
   if (sale.status === SaleStatus.OPEN) return;
   const context: Record<string, unknown> = { status: sale.status };

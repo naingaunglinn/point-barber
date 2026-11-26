@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { quoteRequestSchema } from './catalog.js';
 import { customerLookupQuerySchema } from './customers.js';
 import {
+  collectorSchema,
   completeRequestSchema,
   finishRequestSchema,
   myVisitsQuerySchema,
+  paymentCollectorChangeSchema,
   paymentCreateSchema,
   reasonBodySchema,
   receiptQuerySchema,
@@ -304,5 +306,32 @@ describe('late-entry members (add-late-entry)', () => {
     expect(
       finishRequestSchema.parse({ expected_total_amount: 0, finished_at: null }),
     ).toStrictEqual({ expected_total_amount: 0, finished_at: null });
+  });
+});
+
+// add-payment-collector-picker task 1.2 — P4.SAL.14 · P4.PAY.04 · API-ERR-03.
+describe('the collector schemas', () => {
+  const item = { employee_id: CASH, display_name: 'Ko Min', clocked_in: true, is_default: false };
+
+  it('a collector is strict: an unknown member is refused, a missing one too', () => {
+    expect(collectorSchema.safeParse(item).success).toBe(true);
+    expect(collectorSchema.safeParse({ ...item, phone: '09' }).success).toBe(false);
+    expect(collectorSchema.safeParse({ ...item, is_default: undefined }).success).toBe(false);
+  });
+
+  it('the change needs a UUID: {} is invalid_type, a non-UUID is invalid_format', () => {
+    const missing = paymentCollectorChangeSchema.safeParse({});
+    expect(missing.error?.issues[0]).toMatchObject({
+      code: 'invalid_type',
+      path: ['collected_by_employee_id'],
+    });
+    const wrong = paymentCollectorChangeSchema.safeParse({ collected_by_employee_id: 'Ko Min' });
+    expect(wrong.error?.issues[0]).toMatchObject({
+      code: 'invalid_format',
+      path: ['collected_by_employee_id'],
+    });
+    expect(paymentCollectorChangeSchema.parse({ collected_by_employee_id: CASH, x: 1 })).toStrictEqual({
+      collected_by_employee_id: CASH,
+    });
   });
 });
