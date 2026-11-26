@@ -11,6 +11,7 @@ import maintenanceEn from '../messages/en/maintenance.json';
 import permissionEn from '../messages/en/permission.json';
 import posEn from '../messages/en/pos.json';
 import profileEn from '../messages/en/profile.json';
+import pwaEn from '../messages/en/pwa.json';
 import reasonEn from '../messages/en/reason.json';
 import receiptEn from '../messages/en/receipt.json';
 import settingsEn from '../messages/en/settings.json';
@@ -29,6 +30,7 @@ import maintenanceMy from '../messages/my/maintenance.json';
 import permissionMy from '../messages/my/permission.json';
 import posMy from '../messages/my/pos.json';
 import profileMy from '../messages/my/profile.json';
+import pwaMy from '../messages/my/pwa.json';
 import reasonMy from '../messages/my/reason.json';
 import receiptMy from '../messages/my/receipt.json';
 import settingsMy from '../messages/my/settings.json';
@@ -58,6 +60,7 @@ const MESSAGES = {
     profile: profileEn,
     devices: devicesEn,
     team: teamEn,
+    pwa: pwaEn,
   },
   my: {
     common: commonMy,
@@ -78,6 +81,7 @@ const MESSAGES = {
     profile: profileMy,
     devices: devicesMy,
     team: teamMy,
+    pwa: pwaMy,
   },
 } as const;
 
