@@ -22,6 +22,7 @@ import { ReceiptRenderHandler } from './receipts/receipt-render.handler.js';
 import { RECEIPT_RENDER, type ReceiptRenderData } from './receipts/receipt-render.job.js';
 import { ReceiptViews } from './receipts/receipt-views.js';
 import { VisitsRegistry } from './ports/visits-registry.js';
+import { CustomerActivityRepository } from './repositories/customer-activity.repository.js';
 import { PaymentMethodsRepository } from './repositories/payment-methods.repository.js';
 import { PaymentsRepository } from './repositories/payments.repository.js';
 import { RefundsRepository } from './repositories/refunds.repository.js';
@@ -55,6 +56,7 @@ import { PilotPaymentMethods } from './pilot/pilot-payment-methods.js';
     SaleItemsRepository,
     PaymentsRepository,
     RefundsRepository,
+    CustomerActivityRepository,
     PaymentMethodSeed,
     SalesCustomerActivity,
     VisitsRegistry,
