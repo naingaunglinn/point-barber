@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { DailyClosingStatus, ErrorCode } from '@point/shared';
+import { DailyClosingStatus, ErrorCode, businessDateOf } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -66,7 +66,7 @@ describe('Business dates follow Myanmar time (D-PLT-15)', () => {
       'B3-2026-OCT-00001',
     ]);
     const visit = await prisma.visits.findUniqueOrThrow({ where: { id: visitId } });
-    expect(visit.business_date.toISOString().slice(0, 10)).toBe('2026-10-05');
+    expect(businessDateOf(visit.business_date)).toBe('2026-10-05');
   });
 
   it('Scenarios: One minute before midnight on 31/Oct → B3-2026-OCT-00125; midnight → B3-2026-NOV-00001', async () => {

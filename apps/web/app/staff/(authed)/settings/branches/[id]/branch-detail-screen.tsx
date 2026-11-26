@@ -1,12 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
 import { type Branch, localized } from '@point/shared';
-import { DataText, ErrorState, PageHeader, Skeleton } from '@point/ui';
+import { DataText, ErrorState, PageHeader, Skeleton, useGuardedRouter } from '@point/ui';
 
 import { BranchForm } from '../../../../../../components/branches/BranchForm';
 import { useBranchStatusAction } from '../../../../../../components/branches/BranchStatusAction';
@@ -36,7 +35,7 @@ import { MainQueryState, RefusedPage } from '../../../../../../lib/session/main-
  * branch the API answered; so does a newer branch (a status change) while the form holds no edit.
  */
 function Editor({ branch, reload }: Readonly<{ branch: Branch; reload: Reload }>) {
-  const router = useRouter();
+  const router = useGuardedRouter();
   const update = useUpdateBranch(branch.id);
   const [base, setBase] = useState(branch);
   const [version, setVersion] = useState(0);

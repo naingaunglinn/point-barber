@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { businessDateOf } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import type { PriceRow } from '../price-quote/resolve-price.js';
@@ -24,7 +25,7 @@ export interface BranchServiceRow {
   readonly status: number;
 }
 
-const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
+const isoDate = (date: Date): string => businessDateOf(date);
 const day = (date: string): Date => new Date(`${date}T00:00:00Z`);
 
 @Injectable()
