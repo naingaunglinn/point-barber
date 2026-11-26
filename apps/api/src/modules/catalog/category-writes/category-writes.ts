@@ -22,6 +22,7 @@ import {
 } from '../repositories/category-writes.repository.js';
 import { toCategoryDto } from '../service-list/service-catalog.js';
 import { assertFresh } from '../stale.js';
+import { assertNoZawgyi } from '../zawgyi.js';
 
 // The category writes P2.CAT.02 – 05 of add-service-catalogue (design D1 / D4 / D7 / D8 / D9): one
 // TransactionRunner.run each (READ COMMITTED), locks first and checks after them, one audit row per committed
@@ -59,6 +60,7 @@ export class CategoryWrites {
   /** P2.CAT.02 — an ACTIVE category, last unless a position is sent (SC2 ★). */
   create(body: CategoryCreateBody): Promise<ServiceCategoryDto> {
     return this.runner.run(async (tx) => {
+      assertNoZawgyi({ name_mm: body.name_mm, name_en: body.name_en });
       const now = this.clock.now();
       const companyId = await this.company.id(tx);
       // The pre-check answers the usual case; the unique index answers a race (CG-DB-12 · API-IDEM-05).
@@ -90,6 +92,7 @@ export class CategoryWrites {
     return this.runner.run(async (tx) => {
       const stored = await this.lockLive(tx, id);
       assertFresh(stored.updated_at, body.expected_updated_at);
+      assertNoZawgyi({ name_mm: body.name_mm, name_en: body.name_en });
       const changes: { name_mm?: string; name_en?: string | null; status?: number } = {};
       if (body.name_mm !== undefined && body.name_mm !== stored.name_mm)
         changes.name_mm = body.name_mm;
@@ -174,7 +177,8 @@ export class CategoryWrites {
         before: { ids: before },
         after: { ids: body.ids },
       });
-      const rows = await Promise.all(body.ids.map((id) => this.stored(tx, id)));
+      // One read, put in the order sent — never several reads at once on one transaction (CG-TS-07).
+      const rows = await this.repository.rows(tx, body.ids);
       return { items: rows.map((row) => toCategoryDto(row)) };
     });
   }

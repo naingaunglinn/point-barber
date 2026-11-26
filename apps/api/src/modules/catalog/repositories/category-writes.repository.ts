@@ -57,6 +57,21 @@ export class CategoryWritesRepository {
     return tx.service_categories.findUnique({ where: { id }, select: SELECT });
   }
 
+  /** The rows of `ids`, in the order of `ids`; an id with no row is an error (the caller locked them all). */
+  async rows(tx: Tx, ids: readonly string[]): Promise<CategoryRow[]> {
+    const found = await tx.service_categories.findMany({
+      where: { id: { in: [...ids] } },
+      select: SELECT,
+      take: ids.length,
+    });
+    const byId = new Map(found.map((row) => [row.id, row]));
+    return ids.map((id) => {
+      const row = byId.get(id);
+      if (row === undefined) throw new Error(`category ${id} vanished inside its own transaction`);
+      return row;
+    });
+  }
+
   /** The non-archived category of the company with this Myanmar name, other than `exceptId`. */
   async nameTaken(tx: Tx, companyId: string, nameMm: string, exceptId?: string): Promise<boolean> {
     const found = await tx.service_categories.findFirst({

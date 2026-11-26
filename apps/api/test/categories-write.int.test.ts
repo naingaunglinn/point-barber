@@ -16,6 +16,9 @@ import { type SeededApp, startSeededApp } from './helpers/seeded.js';
 const { serviceCategories, branches, services, employees } = FIXTURE_IDS;
 const API = '/api/v1/service-categories';
 const NOW = '2026-10-05T10:00:00+06:30';
+// "No. 3, Example Road" in Myanmar typed with a Zawgyi keyboard (detector probability ≥ 0.95).
+const ZAWGYI =
+  '\u1021\u1019\u103d\u1010\u1039 \u1043\u104a \u1005\u1019\u1039\u1038\u101e\u1015\u1039\u101c\u1019\u1039\u1038';
 
 let t: SeededApp;
 let build: CatalogueBuilder;
@@ -234,6 +237,45 @@ describe('Create a category (task 4.2 · P2.CAT.02 · SC2 ★ · design D7 / D8 
     expect(results.map((res) => res.status).sort()).toStrictEqual([201, 409]);
     expect(results.find((res) => res.status === 409)?.body.code).toBe(ErrorCode.ALREADY_EXISTS);
     expect(await list()).toHaveLength(2);
+  });
+});
+
+describe('Zawgyi text in a category name is refused (API-SHAPE-05 · review of #87)', () => {
+  it.each(['name_mm', 'name_en'])(
+    'a Zawgyi %s on create → 400 zawgyi_text naming the member, nothing written',
+    async (member) => {
+      const res = await post(ADMIN, '/service-categories', { ...KIDS, [member]: ZAWGYI });
+      expect([res.status, res.body.code, res.body.errors]).toStrictEqual([
+        400,
+        ErrorCode.ZAWGYI_TEXT,
+        [{ field: member, code: ErrorCode.ZAWGYI_TEXT }],
+      ]);
+      expect(await list()).toHaveLength(1);
+      expect(await audits('category.create')).toHaveLength(0);
+    },
+  );
+
+  it('both names in Zawgyi → one errors[] item each', async () => {
+    const res = await post(ADMIN, '/service-categories', { name_mm: ZAWGYI, name_en: ZAWGYI });
+    expect(res.body.errors).toStrictEqual([
+      { field: 'name_mm', code: ErrorCode.ZAWGYI_TEXT },
+      { field: 'name_en', code: ErrorCode.ZAWGYI_TEXT },
+    ]);
+  });
+
+  it('a Zawgyi rename on edit → 400 zawgyi_text, the row and its token stay', async () => {
+    const before = await current(serviceCategories.SERVICES);
+    const res = await patch(ADMIN, serviceCategories.SERVICES, {
+      name_mm: ZAWGYI,
+      expected_updated_at: before.updated_at,
+    });
+    expect([res.status, res.body.code, res.body.errors]).toStrictEqual([
+      400,
+      ErrorCode.ZAWGYI_TEXT,
+      [{ field: 'name_mm', code: ErrorCode.ZAWGYI_TEXT }],
+    ]);
+    expect(await current(serviceCategories.SERVICES)).toStrictEqual(before);
+    expect(await audits('category.update')).toHaveLength(0);
   });
 });
 
