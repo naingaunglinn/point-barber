@@ -62,6 +62,9 @@ const MANAGER = [
   // Part 8 §14 (add-website-management task 1.2).
   'website.view',
   'website.update',
+  // Part 6 §10 (add-product-catalogue task 1.3).
+  'product.view',
+  'supplier.view',
 ];
 // Part 3 §7 (add-customer-management task 1.3) and Part 4 §9, sorted as roleCodes() reads them.
 const BARBER = ['customer.create', 'customer.view', 'sale.create', 'sale.late_entry'];
@@ -352,5 +355,40 @@ describe('add-service-catalogue · services-pricing · The service module has fo
     expect(serviceCodes(roles.Admin?.codes)).toStrictEqual(SERVICE_CODES);
     expect(serviceCodes(roles.Manager?.codes)).toStrictEqual([]);
     expect(serviceCodes(roles.Barber?.codes)).toStrictEqual([]);
+  });
+});
+
+// add-product-catalogue tasks 1.2 / 1.3 — inventory "The product catalogue has twelve permission codes"
+// (Part 6 §10 · API-PERM-06 #7 c · D-ROLE-09 · design D3).
+describe('add-product-catalogue · inventory · The product catalogue has twelve permission codes', () => {
+  const MODULES = ['product.', 'supplier.', 'stock_adjustment_reason.'];
+  const ALL_TWELVE = MODULES.flatMap((module) =>
+    ['create', 'delete', 'update', 'view'].map((action) => `${module}${action}`),
+  ).sort();
+  const catalogueCodes = (codes: readonly string[] | undefined) =>
+    (codes ?? []).filter((code) => MODULES.some((module) => code.startsWith(module)));
+
+  it('Scenario: The Manager seed reads the masters only — a database without roles', async () => {
+    await firstStart();
+    const roles = await roleCodes();
+    expect(catalogueCodes(roles.Admin?.codes)).toStrictEqual(ALL_TWELVE);
+    expect(catalogueCodes(roles.Manager?.codes)).toStrictEqual(['product.view', 'supplier.view']);
+    expect(catalogueCodes(roles.Barber?.codes)).toStrictEqual([]);
+  });
+
+  it('the catalogue sync gives the twelve codes to a company-admin role created before them', async () => {
+    await firstStart();
+    // The database as a deploy before this change left it: no such code, no link to one.
+    const modules = ['product', 'supplier', 'stock_adjustment_reason'];
+    await prisma.role_permissions.deleteMany({
+      where: { permissions: { module: { in: modules } } },
+    });
+    await prisma.permissions.deleteMany({ where: { module: { in: modules } } });
+    expect(catalogueCodes((await roleCodes()).Admin?.codes)).toStrictEqual([]);
+    await runner.run((tx) => t.app.get(PermissionCatalogue).sync(tx, PERMISSIONS));
+    const roles = await roleCodes();
+    expect(catalogueCodes(roles.Admin?.codes)).toStrictEqual(ALL_TWELVE);
+    expect(catalogueCodes(roles.Manager?.codes)).toStrictEqual([]);
+    expect(catalogueCodes(roles.Barber?.codes)).toStrictEqual([]);
   });
 });

@@ -46,6 +46,7 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'employee.view',
         'payment.verify',
         'payment.view',
+        'product.view',
         'role.assign',
         'sale.create',
         'sale.delete',
@@ -59,6 +60,7 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'service.view',
         'settings.update',
         'settings.view',
+        'supplier.view',
         'visit.delete',
         'visit.update',
         'visit.view',
@@ -99,6 +101,10 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
         'booking_cancel_reason.create',
         'booking_cancel_reason.update',
         'booking_cancel_reason.delete',
+        // add-product-catalogue "The Admin holds the twelve codes" (Part 6 §10 · D-ROLE-09).
+        ...['product', 'supplier', 'stock_adjustment_reason'].flatMap((module) =>
+          ['view', 'create', 'update', 'delete'].map((action) => `${module}.${action}`),
+        ),
       ]),
     );
     expect(
@@ -134,10 +140,13 @@ describe('add-foundation-auth-access · access · GET /v1/me returns everything 
       });
       expect(body.branches_in_scope).toMatchObject([{ code: 'B3' }]);
       // services-pricing "The Barber holds none" (add-service-catalogue design D3) and the Barber seed holds
-      // no website code either (add-website-management task 1.2 — Part 8 §14).
+      // no website code either (add-website-management task 1.2 — Part 8 §14), nor a product, supplier or
+      // adjustment-reason code (add-product-catalogue "The Barber holds none" — Part 6 §10).
       expect(
-        (body.grants as { code: string }[]).filter(
-          (g) => g.code.startsWith('service.') || g.code.startsWith('website.'),
+        (body.grants as { code: string }[]).filter((g) =>
+          ['service.', 'website.', 'product.', 'supplier.', 'stock_adjustment_reason.'].some(
+            (prefix) => g.code.startsWith(prefix),
+          ),
         ),
       ).toStrictEqual([]);
     }

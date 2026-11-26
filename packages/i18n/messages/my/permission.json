@@ -17,6 +17,24 @@
     "update": "ခွင့်အမျိုးအစား ပြင်ရန်",
     "delete": "ခွင့်အမျိုးအစား Archive လုပ်ရန်"
   },
+  "product": {
+    "view": "ပစ္စည်းနဲ့ အမျိုးအစား ကြည့်ခွင့်",
+    "create": "ပစ္စည်းနဲ့ အမျိုးအစား ထည့်ခွင့်",
+    "update": "ပစ္စည်းနဲ့ အမျိုးအစား ပြင်ခွင့်",
+    "delete": "ပစ္စည်းနဲ့ အမျိုးအစား archive လုပ်ခွင့်"
+  },
+  "supplier": {
+    "view": "Supplier ကြည့်ခွင့်",
+    "create": "Supplier ထည့်ခွင့်",
+    "update": "Supplier ပြင်ခွင့်",
+    "delete": "Supplier archive လုပ်ခွင့်"
+  },
+  "stock_adjustment_reason": {
+    "view": "Stock ပြင်ဆင်ရတဲ့ အကြောင်းပြချက် ကြည့်ခွင့်",
+    "create": "Stock ပြင်ဆင်ရတဲ့ အကြောင်းပြချက် ထည့်ခွင့်",
+    "update": "Stock ပြင်ဆင်ရတဲ့ အကြောင်းပြချက် ပြင်ခွင့်",
+    "delete": "Stock ပြင်ဆင်ရတဲ့ အကြောင်းပြချက် ပိတ်ခွင့်"
+  },
   "website": {
     "view": "Website ကြည့်ခွင့်",
     "update": "Website ပြင်ခွင့်"

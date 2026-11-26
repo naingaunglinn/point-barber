@@ -262,3 +262,26 @@ export type CancelReasonStatus = (typeof CancelReasonStatus)[keyof typeof Cancel
 export const CancelReasonSystemCode = { NO_SHOW: 1 } as const;
 export type CancelReasonSystemCode =
   (typeof CancelReasonSystemCode)[keyof typeof CancelReasonSystemCode];
+
+// add-product-catalogue — DB Part 6 v1.2 (task 1.4 · design D3 · D-DB-03). Not in STATUS_BY_TABLE (the web
+// groups of this change add their chips there); each set equals the CHECK list of its column in db/source
+// (status.test.ts). The purchase, transfer and count constants (`PurchaseStatus`, `StockTransferStatus`,
+// `StockCountStatus`) are already above.
+
+/** part6 — product_categories.status; INACTIVE = not offered for a new product, existing products stay. */
+export const ProductCategoryStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type ProductCategoryStatus =
+  (typeof ProductCategoryStatus)[keyof typeof ProductCategoryStatus];
+
+/** part6 — products.status. */
+export const ProductStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type ProductStatus = (typeof ProductStatus)[keyof typeof ProductStatus];
+
+/** part6 — suppliers.status. */
+export const SupplierStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type SupplierStatus = (typeof SupplierStatus)[keyof typeof SupplierStatus];
+
+/** part6 — stock_adjustment_reasons.status; INACTIVE = disabled, never deleted (D-STK-05). */
+export const AdjustmentReasonStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type AdjustmentReasonStatus =
+  (typeof AdjustmentReasonStatus)[keyof typeof AdjustmentReasonStatus];

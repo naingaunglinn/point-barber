@@ -11,6 +11,7 @@ import { BookingModule } from './modules/booking/index.js';
 import { CashClosingModule } from './modules/cash-closing/index.js';
 import { CatalogModule } from './modules/catalog/index.js';
 import { DeliveryModule } from './modules/delivery/index.js';
+import { InventoryModule } from './modules/inventory/index.js';
 import { PayrollModule } from './modules/payroll/index.js';
 import { PeopleModule } from './modules/people/index.js';
 import { PlatformModule } from './modules/platform/index.js';
@@ -32,6 +33,7 @@ import { SchedulingModule } from './modules/scheduling/index.js';
     SalesModule,
     SchedulingModule,
     DeliveryModule,
+    InventoryModule,
   ],
   // The three global guards, in the order of design D2: a forged changing request is refused before
   // any session or database work; the session is checked before any permission.

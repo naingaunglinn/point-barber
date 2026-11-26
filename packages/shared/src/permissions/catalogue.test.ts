@@ -34,6 +34,8 @@ const PART8_MODULES = new Set(['website']);
  * (add-booking-cancel-reasons), below; `booking.*` come with their changes.
  */
 const PART3_MODULES = new Set(['customer', 'booking_cancel_reason']);
+/** The Part 6 §10 modules of add-product-catalogue (below); `stock`, `purchase` and `transfer` come later. */
+const PART6_MODULES = new Set(['product', 'supplier', 'stock_adjustment_reason']);
 
 const count = <K extends string>(values: readonly K[]) =>
   values.reduce<Record<string, number>>(
@@ -105,13 +107,14 @@ describe('add-foundation-auth-access · access · The permission catalogue is on
     ]);
   });
 
-  it('holds nothing but the codes of Parts 1, 2, 3, 4 and 8', () => {
+  it('holds nothing but the codes of Parts 1, 2, 3, 4, 6 and 8', () => {
     const modules = new Set([
       ...PART1_MODULES,
       ...PART2_MODULES,
       ...PART2_LEAVE_TYPE_MODULES,
       ...PART3_MODULES,
       ...PART4_MODULES,
+      ...PART6_MODULES,
       ...PART8_MODULES,
     ]);
     expect(PERMISSIONS.filter((entry) => !modules.has(entry.module))).toStrictEqual([]);
@@ -297,6 +300,34 @@ describe('add-website-management · website · Website has two permission codes 
   it('types a website code', () => {
     const code: PermissionCode = 'website.update';
     expect(permissionLevel(code)).toBe('mixed');
+  });
+});
+
+// add-product-catalogue task 1.2 — spec "The product catalogue has twelve permission codes" (Part 6 §10 ·
+// ADR-011 · ADR-012 · API-PERM-06 · D-ROLE-09): kind crud, level company, label key `permission.<code>`.
+// The sync that gives them to a company-admin role, and the Manager and Barber seeds: base-seed.int.test.ts.
+describe('add-product-catalogue · inventory · The product catalogue has twelve permission codes', () => {
+  const ACTIONS = ['view', 'create', 'update', 'delete'];
+  const MODULES = ['product', 'supplier', 'stock_adjustment_reason'];
+
+  it('holds the twelve codes of the Part 6 table, each crud · company with its label key', () => {
+    const part6 = PERMISSIONS.filter((entry) => PART6_MODULES.has(entry.module));
+    expect(
+      part6.map((entry) => [entry.code, `${entry.kind} · ${entry.level}`, entry.label_key]),
+    ).toStrictEqual(
+      MODULES.flatMap((module) =>
+        ACTIONS.map((action) => [
+          `${module}.${action}`,
+          'crud · company',
+          `permission.${module}.${action}`,
+        ]),
+      ),
+    );
+  });
+
+  it('types a Part 6 code', () => {
+    const code: PermissionCode = 'stock_adjustment_reason.delete';
+    expect(permissionLevel(code)).toBe('company');
   });
 });
 

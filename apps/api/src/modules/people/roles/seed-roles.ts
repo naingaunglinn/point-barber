@@ -5,6 +5,7 @@ import {
   MANAGER_PART2_SERVICE_CODES,
   MANAGER_PART3_CUSTOMER_CODES,
   MANAGER_PART4_CODES,
+  MANAGER_PART6_CATALOGUE_CODES,
   MANAGER_SCHEDULE_CODES,
   MANAGER_WEBSITE_CODES,
 } from '@point/shared';
@@ -24,7 +25,8 @@ import { CompanyRepository } from '../repositories/company.repository.js';
 // and the two Part 2 service codes (add-service-catalogue task 1.3). Scope is not part of a role.
 // Names: fixtures §2 and the brief's copy table (owner answer S18).
 // add-customer-management task 1.3 adds the Part 3 customer codes of both (Part 3 §7);
-// add-website-management task 1.2 the two Part 8 website codes of the Manager, none of the Barber.
+// add-website-management task 1.2 the two Part 8 website codes of the Manager, none of the Barber;
+// add-product-catalogue task 1.3 the two Part 6 codes `product.view` and `supplier.view` of the Manager.
 
 /** Part 1 §10 entries whose seed names Manager without a condition. */
 export const MANAGER_SEED_CODES = [
@@ -38,6 +40,8 @@ export const MANAGER_SEED_CODES = [
 
 /** Part 2 §12 (packages/shared — the fixture module 100 reads the same list). */
 export const MANAGER_PART2_SEED_CODES = MANAGER_PART2_SERVICE_CODES;
+/** Part 6 §10 — `product.view`, `supplier.view` (packages/shared — the fixture module 190 reads it). */
+export const MANAGER_PART6_SEED_CODES = MANAGER_PART6_CATALOGUE_CODES;
 /** Part 4 §9 (packages/shared — the fixture module 090 reads the same lists). */
 export const MANAGER_PART4_SEED_CODES = MANAGER_PART4_CODES;
 export const BARBER_SEED_CODES = BARBER_PART4_CODES;
@@ -62,6 +66,7 @@ export const SEED_ROLES = [
       ...MANAGER_PART2_SEED_CODES,
       ...MANAGER_PART3_SEED_CODES,
       ...MANAGER_PART4_SEED_CODES,
+      ...MANAGER_PART6_SEED_CODES,
       ...MANAGER_SCHEDULE_SEED_CODES,
       ...MANAGER_WEBSITE_SEED_CODES,
     ],
