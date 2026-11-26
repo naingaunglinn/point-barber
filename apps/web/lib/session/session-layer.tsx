@@ -15,6 +15,8 @@ import {
   ClockProvider,
   LanguageSwitch,
   Skeleton,
+  UnsavedChangesProvider,
+  useGuardedRouter,
 } from '@point/ui';
 
 import { WithOfflineHelp } from '../../components/pos/OfflineHelp';
@@ -39,7 +41,9 @@ import { ME_QUERY_KEY, useMe } from './use-me';
 // language follow the account — the cookie `point_locale` only mirrors it — and frames the page in the
 // AppShell fed by `/me`. A 503 `maintenance` from any call, `/me` included, replaces everything with the
 // maintenance notice until "Try again" loads `/me` with a 200 (AD-NAV-08 · API-AUTH-06 · add-settings-store
-// design D10); a user who passes sees the banner while `/me.system.maintenance` is true.
+// design D10); a user who passes sees the banner while `/me.system.maintenance` is true. The unsaved-changes
+// guard (add-unsaved-changes-guard design D2) wraps the whole layer, so the 401 handler below can disarm it
+// (UG4) and Sign out can ask first (UG3).
 
 /** The value of a cookie of `document.cookie`. */
 export function documentCookie(name: string): string | undefined {
@@ -85,13 +89,31 @@ export async function signOut(): Promise<void> {
   navigation.assign(loginUrl({ reason: 1 }));
 }
 
+/**
+ * Sign out (the user menu and the More screen): asks "Discard changes?" first while a form holds unsaved
+ * edits; *Discard* signs out with the guard disarmed, so the browser does not ask a second time (UG3).
+ */
+export function useSignOut(): () => void {
+  const guard = useGuardedRouter();
+  return () => guard.leave(() => void signOut());
+}
+
 export function SessionLayer({
   locale,
   children,
 }: Readonly<{ locale: Locale; children: ReactNode }>) {
+  return (
+    <UnsavedChangesProvider>
+      <SessionBoundary locale={locale}>{children}</SessionBoundary>
+    </UnsavedChangesProvider>
+  );
+}
+
+function SessionBoundary({ locale, children }: Readonly<{ locale: Locale; children: ReactNode }>) {
   const me = useMe();
   const client = useQueryClient();
   const router = useRouter();
+  const guard = useGuardedRouter();
   const [maintenance, setMaintenance] = useState<MaintenanceState | null>(null);
   // Keeps Chrome's `beforeinstallprompt` for the install guide and the first-login tip (add-pwa-install
   // design D6); above the early returns, so the event is not lost while `/me` loads.
@@ -100,14 +122,18 @@ export function SessionLayer({
   useEffect(
     () =>
       setApiHandlers({
+        // A lost session goes to the login screen without either question: the edits cannot be saved
+        // any more (UG4 · AD-AUTH-01).
         onUnauthorized: (problem) => {
-          navigation.assign(
-            loginUrl({
-              ...(problem.code === 'session_revoked' && problem.reason !== undefined
-                ? { reason: problem.reason }
-                : {}),
-              returnTo: `${window.location.pathname}${window.location.search}`,
-            }),
+          guard.bypass(() =>
+            navigation.assign(
+              loginUrl({
+                ...(problem.code === 'session_revoked' && problem.reason !== undefined
+                  ? { reason: problem.reason }
+                  : {}),
+                returnTo: `${window.location.pathname}${window.location.search}`,
+              }),
+            ),
           );
         },
         onForbidden: () => {
@@ -115,7 +141,7 @@ export function SessionLayer({
         },
         onMaintenance: (problem) => setMaintenance(maintenanceOf(problem)),
       }),
-    [client],
+    [client, guard],
   );
 
   // After `/me`: the page is in the account's language; the cookie follows it, and the server
@@ -171,6 +197,7 @@ function StaffShell({
   const company = me.grants.some((grant) => grant.scope_type === ScopeType.COMPANY);
   const [branch, setBranch] = useState<string>(() => initialBranchId(me));
   const setLanguage = useSetLanguage();
+  const signOutNow = useSignOut();
   const rail = useStaffRail();
   return (
     <BranchProvider
@@ -199,7 +226,7 @@ function StaffShell({
             <span className="text-sm font-semibold" data-testid="user-menu-name">
               {localized(me.employee, 'name', locale)}
             </span>
-            <Button variant="ghost" data-testid="user-menu-sign-out" onClick={() => void signOut()}>
+            <Button variant="ghost" data-testid="user-menu-sign-out" onClick={signOutNow}>
               {t('signOut')}
             </Button>
           </div>

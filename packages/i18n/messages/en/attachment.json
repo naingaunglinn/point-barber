@@ -1,0 +1,9 @@
+{
+  "field": {
+    "logo_attachment_id": "company logo",
+    "photo_attachment_id": "employee photo",
+    "image_attachment_id": "service image",
+    "site_cover_attachment_id": "website cover image",
+    "site_share_image_attachment_id": "website share image"
+  }
+}

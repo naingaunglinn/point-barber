@@ -96,7 +96,9 @@ function columns(day: HoursWrite) {
 
 /** A `time` column arrives as a Date on 1970-01-01 UTC; the wire form is `HH:MM` (API-DATA-03). */
 function timeOfDay(value: Date | null): string | null {
-  return value === null ? null : value.toISOString().slice(11, 16);
+  if (value === null) return null;
+  const pad = (part: number): string => String(part).padStart(2, '0');
+  return `${pad(value.getUTCHours())}:${pad(value.getUTCMinutes())}`;
 }
 
 /** `HH:MM` → the Date a `time` column takes (1970-01-01 UTC). */

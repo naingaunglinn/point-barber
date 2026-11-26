@@ -1294,6 +1294,8 @@ CREATE TABLE "attachments" (
   "file_name" varchar(255) NOT NULL,
   "mime_type" varchar(100) NOT NULL,
   "size_bytes" bigint NOT NULL,
+  "image_width" integer,
+  "image_height" integer,
   "uploaded_by_user_id" uuid NOT NULL,
   "uploaded_at" timestamptz NOT NULL DEFAULT (now()),
   "deleted_at" timestamptz,
@@ -2935,6 +2937,10 @@ COMMENT ON COLUMN "attachments"."storage_key" IS 'Object storage path (S3-compat
 COMMENT ON COLUMN "attachments"."file_name" IS 'မူလ ဖိုင်နာမည်';
 
 COMMENT ON COLUMN "attachments"."size_bytes" IS '> 0 · max = setting';
+
+COMMENT ON COLUMN "attachments"."image_width" IS 'v1.2 (AT8 = A) — pixel အကျယ် · ပုံဖိုင် (mime_type image/…) ပဲ၊ kind မဆိုင်၊ ပုံမဟုတ်ရင် NULL · image_height နဲ့ အတူတူ set (နှစ်ခုလုံး > 0 — CHECK attachments_image_size_chk)';
+
+COMMENT ON COLUMN "attachments"."image_height" IS 'v1.2 (AT8 = A) — pixel အမြင့် · image_width နဲ့ အတူတူ set / NULL';
 
 COMMENT ON COLUMN "attachments"."deleted_at" IS 'Soft delete — storage cleanup job';
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type VisitDto, type WarningDto, toMmtIso } from '@point/shared';
+import { type VisitDto, type WarningDto, businessDateOf, toMmtIso } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { DisplayNames } from '../../people/index.js';
@@ -9,7 +9,7 @@ import type { VisitRow } from '../repositories/visits.repository.js';
 // The one Visit mapper (P4.VIS.02 – .06 `Visit` · API-ERR-03): the visit with its sale, people by
 // display name in the caller's language. A walk-in has no booking, no booked barber and no proxy.
 
-const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
+const isoDate = (date: Date): string => businessDateOf(date);
 const instant = (date: Date | null): string | null => (date === null ? null : toMmtIso(date));
 
 export function visitForSale(visit: VisitRow): VisitForSale {
