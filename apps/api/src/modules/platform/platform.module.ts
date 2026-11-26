@@ -1,11 +1,17 @@
-import { Module, type OnModuleInit } from '@nestjs/common';
+import { Module, type OnApplicationBootstrap, type OnModuleInit } from '@nestjs/common';
 import type { Logger } from 'pino';
 
 import { TargetResolvers } from '../../common/access/resolvers.js';
 import { AppConfig } from '../../common/config/config.js';
 import { LOGGER } from '../../common/logging/logger.js';
+import {
+  AttachmentPolicies,
+  PublicMediaRules,
+  SingleImageFields,
+} from './attachments/attachment-registries.js';
 import { Attachments } from './attachments/attachments.service.js';
 import { ReceiptFilesLock } from './attachments/receipt-files-lock.js';
+import { registerUploadPolicies } from './attachments/upload-policies.js';
 import { Audit } from './audit/audit.service.js';
 import { AuditedInterceptor } from './audit/audited.js';
 import { CodeTables } from './code-tables/code-tables.js';
@@ -21,6 +27,7 @@ import { AttachmentsRepository } from './repositories/attachments.repository.js'
 import { BranchClosuresRepository } from './repositories/branch-closures.repository.js';
 import { OpeningHoursRepository } from './repositories/opening-hours.repository.js';
 import { MaintenanceGate, StoreMaintenanceGate } from './settings/maintenance-gate.js';
+import { CompanyOfSettings } from './settings/ports.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { SettingsCommands } from './settings/settings-commands.js';
 import { SettingsWriteController } from './settings/settings-write.controller.js';
@@ -71,6 +78,10 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     MaintenanceMode,
     AttachmentsRepository,
     Attachments,
+    // add-attachments-upload — the three registries of design D8.
+    AttachmentPolicies,
+    SingleImageFields,
+    PublicMediaRules,
     ReceiptFilesLock,
     Audit,
     AuditedInterceptor,
@@ -107,6 +118,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
   ],
   exports: [
     Attachments,
+    AttachmentPolicies,
+    SingleImageFields,
+    PublicMediaRules,
     ReceiptFilesLock,
     Audit,
     AuditedInterceptor,
@@ -125,13 +139,25 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     MailModule,
   ],
 })
-export class PlatformModule implements OnModuleInit {
+export class PlatformModule implements OnModuleInit, OnApplicationBootstrap {
   constructor(
     private readonly closureAccess: ClosureAccess,
     private readonly targets: TargetResolvers,
+    private readonly policies: AttachmentPolicies,
+    private readonly fields: SingleImageFields,
+    private readonly publicRules: PublicMediaRules,
+    private readonly company: CompanyOfSettings,
   ) {}
 
   onModuleInit(): void {
     this.closureAccess.register(this.targets);
+    registerUploadPolicies(this.policies, () => this.company.id());
+  }
+
+  /** After every module's `onModuleInit` the registries of the attachments module accept no more (design D8). */
+  onApplicationBootstrap(): void {
+    this.policies.freeze();
+    this.fields.freeze();
+    this.publicRules.freeze();
   }
 }

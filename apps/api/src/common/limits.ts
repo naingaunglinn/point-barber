@@ -36,3 +36,10 @@ export function assertWithinCeiling<T>(rows: T[], read: string): T[] {
   }
   return rows;
 }
+
+/**
+ * The most rows a list of an entity's files returns, newest first (CG-PERF-02 · CG-ARCH-09 · add-attachments-upload
+ * task 3.1): an entity holds at most 20 live files by its callers' `max` and a user's staging rows are cut by
+ * the 24-hour purge, so this is a guard, not a page.
+ */
+export const LIST_MAX = 100;
