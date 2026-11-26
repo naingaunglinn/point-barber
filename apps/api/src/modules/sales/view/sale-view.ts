@@ -7,6 +7,7 @@ import {
   type SaleDto,
   type SaleItemDto,
   type WarningDto,
+  businessDateOf,
   moneyToWire,
   sumMoney,
   toMmtIso,
@@ -40,7 +41,7 @@ export interface SaleViewer {
 }
 
 const wire = (amount: bigint): number => moneyToWire(amount as Mmk);
-const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
+const isoDate = (date: Date): string => businessDateOf(date);
 const instant = (date: Date | null): string | null => (date === null ? null : toMmtIso(date));
 
 @Injectable()

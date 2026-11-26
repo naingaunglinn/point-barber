@@ -6,6 +6,7 @@ import {
   RoleStatus,
   ScopeType,
   UserStatus,
+  businessDateOf,
 } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
@@ -162,7 +163,7 @@ export class PilotPeople {
       });
       if (employee === null) continue;
       const key = person.employee_code;
-      const joined = employee.join_date?.toISOString().slice(0, 10) ?? null;
+      const joined = employee.join_date === null ? null : businessDateOf(employee.join_date);
       for (const [column, stored, file] of [
         ['name_mm', employee.name_mm, person.name_mm],
         ['name_en', employee.name_en, person.name_en ?? null],

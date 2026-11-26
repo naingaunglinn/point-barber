@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { BranchAssignment, BranchSummary } from '@point/shared';
+import { type BranchAssignment, type BranchSummary, businessDateOf } from '@point/shared';
 
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import { TransactionScope } from '../../../common/database/transaction-scope.js';
@@ -37,7 +37,7 @@ function toBranchSummary(row: {
 }
 
 /** A `date` column (read as UTC midnight) as `YYYY-MM-DD`. */
-const isoDate = (value: Date): string => value.toISOString().slice(0, 10);
+const isoDate = (value: Date): string => businessDateOf(value);
 
 // Reads of the people tables (ADR-001 rule 1 — the people module owns them). Inside a
 // TransactionRunner.run() a read goes through that transaction, so it sees the work's own rows.
