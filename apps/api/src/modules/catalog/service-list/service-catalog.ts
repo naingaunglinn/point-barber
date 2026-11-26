@@ -83,6 +83,11 @@ export class ServiceCatalog {
     private readonly clock: Clock,
   ) {}
 
+  /** How many ACTIVE, non-archived services are shown on the website (add-website-management design D1). */
+  countOnWebsite(db: Tx): Promise<number> {
+    return this.repository.countOnWebsite(db);
+  }
+
   /**
    * `serviceScope` = the branches the caller's `service.*` codes reach; only `sold=all` reads it, and only
    * for a caller who passed the management check (a `branch_id` outside it is the empty page — P2-RULE-11).

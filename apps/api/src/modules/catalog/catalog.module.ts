@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 
 import { CashClosingModule } from '../cash-closing/index.js';
-import { PlatformModule } from '../platform/index.js';
+import { PrismaService } from '../../common/database/prisma.service.js';
+import { PlatformModule, WebsiteCatalog } from '../platform/index.js';
 import { CatalogController } from './catalog.controller.js';
 import { Eligibility } from './eligibility/eligibility.js';
 import { PriceQuote } from './price-quote/price-quote.js';
@@ -28,4 +29,15 @@ import { PilotCatalogue } from './pilot/pilot-catalogue.js';
   ],
   exports: [PriceQuote, Eligibility, ServiceCatalog, ServiceDetail, PilotCatalogue],
 })
-export class CatalogModule {}
+export class CatalogModule implements OnModuleInit {
+  constructor(
+    private readonly websiteCatalog: WebsiteCatalog,
+    private readonly serviceCatalog: ServiceCatalog,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  onModuleInit(): void {
+    // The website management counts the services shown on the site (add-website-management design D1).
+    this.websiteCatalog.use({ countOnWebsite: () => this.serviceCatalog.countOnWebsite(this.prisma) });
+  }
+}

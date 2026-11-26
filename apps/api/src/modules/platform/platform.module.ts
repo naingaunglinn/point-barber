@@ -40,10 +40,18 @@ import { ClosureBookings } from './website/closure-bookings.js';
 import { ClosureReads } from './website/closure-reads.js';
 import { ClosureViews } from './website/closure-view.js';
 import { ClosureWrites } from './website/closure-writes.js';
+import { BookingQrReader } from './website/booking-qr.js';
 import { ClosuresController } from './website/closures.controller.js';
 import { OpeningHours } from './website/opening-hours.js';
 import { OpeningHoursWrites } from './website/opening-hours-writes.js';
+import { SharePreviewReader } from './website/share-preview.js';
 import { SiteContent } from './website/site-content.js';
+import { SiteContentReader } from './website/site-content-reader.js';
+import { TeamOverviewReader } from './website/team-overview.js';
+import { WebsiteController } from './website/website.controller.js';
+import { WebsiteOverviewReader } from './website/website-overview.js';
+import { WebsiteCatalog, WebsiteDirectory, WebsiteShifts } from './website/website-ports.js';
+import { WebsiteRevalidate } from './website/website-revalidate.js';
 import { WebsiteHoursController } from './website/website-hours.controller.js';
 import { WebsitePeople } from './website/website-people.js';
 
@@ -81,6 +89,9 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     // closures' list and create (the edit and the archive answer 501 until A4).
     WebsiteHoursController,
     ClosuresController,
+    // A5 — the overview, the team, the share preview, the booking QR and the refresh (the content save
+    // answers 501 until A6).
+    WebsiteController,
   ],
   providers: [
     SystemService,
@@ -112,6 +123,16 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     ClosureViews,
     ClosureReads,
     ClosureWrites,
+    // A5 — the readers of the overview, team, share preview and QR, and the ports the other modules fill.
+    WebsiteDirectory,
+    WebsiteCatalog,
+    WebsiteShifts,
+    SiteContentReader,
+    WebsiteOverviewReader,
+    TeamOverviewReader,
+    SharePreviewReader,
+    BookingQrReader,
+    WebsiteRevalidate,
     RateLimiter,
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
@@ -148,6 +169,10 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     WebsitePeople,
     BranchClosures,
     ClosureBookings,
+    WebsiteDirectory,
+    WebsiteCatalog,
+    WebsiteShifts,
+    SiteContentReader,
     RateLimiter,
     SettingsModule,
     MaintenanceGate,
