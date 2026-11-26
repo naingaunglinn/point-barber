@@ -76,7 +76,6 @@ describe('add-customer-management · customers · The preferred-barber settings 
   });
 
   it('Scenario: A minimum within the window — 200 and the next detail reads it (Ko Aung with 2 of the last 5)', async () => {
-    await customerHistory(s.prisma);
     expect(await preferred()).toBeUndefined();
     const res = await put(MIN, { value: 2 });
     expect(res.status).toBe(200);

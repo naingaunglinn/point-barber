@@ -73,6 +73,13 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
       '/branches/{id}',
       '/branches/{id}/status',
       '/company',
+      // add-customer-management task 3.13 — P3.CUS.01 and P3.CUS.03 – 09.
+      '/customers',
+      '/customers/{id}',
+      '/customers/{id}/archive',
+      '/customers/{id}/restore',
+      '/customers/{id}/status',
+      '/customers/{id}/timeline',
       '/health',
       // add-settings-store task 3.12 — P1.SET.01 – 05.
       '/settings',
@@ -84,6 +91,19 @@ describe('generated OpenAPI document (task 4.20 · design D5)', () => {
       '/system/maintenance',
       '/system/status',
     ]);
+  });
+
+  // add-customer-management task 3.13 — the eight operations with Part 3's operation ids.
+  it('the customer paths carry the eight operations of Part 3', () => {
+    const paths = document.paths as Record<string, Record<string, { operationId?: string }>>;
+    expect(paths['/customers']?.get?.operationId).toBe('customerList');
+    expect(paths['/customers']?.post?.operationId).toBe('customerCreate');
+    expect(paths['/customers/{id}']?.get?.operationId).toBe('customerGet');
+    expect(paths['/customers/{id}']?.patch?.operationId).toBe('customerUpdate');
+    expect(paths['/customers/{id}/status']?.post?.operationId).toBe('customerSetStatus');
+    expect(paths['/customers/{id}/archive']?.post?.operationId).toBe('customerArchive');
+    expect(paths['/customers/{id}/restore']?.post?.operationId).toBe('customerRestore');
+    expect(paths['/customers/{id}/timeline']?.get?.operationId).toBe('customerTimeline');
   });
 
   // add-branch-management task 3.12 — the operations of P1.BR.02 – 05 with Part 1's operation ids.

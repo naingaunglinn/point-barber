@@ -261,4 +261,14 @@ export class CustomersRepository {
   ): Promise<void> {
     await tx.customers.update({ where: { id }, data: { ...members, updated_at: at } });
   }
+
+  /** INACTIVE or ACTIVE (P3.CUS.06). */
+  async setStatus(tx: Tx, id: string, status: CustomerStatus, at: Date): Promise<void> {
+    await tx.customers.update({ where: { id }, data: { status, updated_at: at } });
+  }
+
+  /** Hides the customer and keeps the row, the phone and the status (P3.CUS.07). */
+  async setArchived(tx: Tx, id: string, at: Date): Promise<void> {
+    await tx.customers.update({ where: { id }, data: { archived_at: at, updated_at: at } });
+  }
 }

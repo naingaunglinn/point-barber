@@ -22,6 +22,19 @@ const atBranches = (scope: ReadScope) => (scope === 'all' ? {} : { branch_id: { 
 @Injectable()
 export class CustomerBookingsRepository {
   /**
+   * The customer's bookings that are BOOKED or STARTED at **every** branch (P3.CUS.07 · design D5): read
+   * after the customer row is locked, so a booking that committed before the lock is counted.
+   */
+  activeCount(tx: Tx, customerId: string): Promise<number> {
+    return tx.bookings.count({
+      where: {
+        customer_id: customerId,
+        status: { in: [BookingStatus.BOOKED, BookingStatus.STARTED] },
+      },
+    });
+  }
+
+  /**
    * `cancelled` = every CANCELLED booking, whoever cancelled it and with whatever reason; `no_show` =
    * those whose reason is the NO_SHOW row (owner CM2).
    */

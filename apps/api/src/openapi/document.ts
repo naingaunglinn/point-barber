@@ -15,11 +15,13 @@ import {
   commissionEstimateSchema,
   companySchema,
   companyUpdateSchema,
+  customerArchiveSchema,
   customerCreateSchema,
   customerListItemSchema,
   customerLookupSchema,
   customerSchema,
   customerStatsSchema,
+  customerStatusSchema,
   customerUpdateSchema,
   discountRequestSchema,
   durationRangeSchema,
@@ -394,6 +396,205 @@ const SETTINGS_PATHS = {
   },
 };
 
+// add-customer-management task 3.13 — P3.CUS.01 and P3.CUS.03 – 09 as API Part 3 v1.2 and OpenAPI Part 3
+// write them (owner CM1 – CM5); P3.CUS.02, the phone lookup, belongs to add-walkin-visit-checkout.
+const CURSOR_PARAMETER = { name: 'cursor', in: 'query', schema: { type: 'string' } };
+const LIMIT_PARAMETER = {
+  name: 'limit',
+  in: 'query',
+  schema: { type: 'integer', minimum: 1, maximum: 100, default: 25 },
+};
+const customerOk = { '200': { description: 'OK', ...json('Customer') } };
+const CUSTOMER_PATHS = {
+  '/customers': {
+    get: {
+      tags: ['customers'],
+      operationId: 'customerList',
+      summary: 'List / search customers (P3.CUS.01) — D-CUS-06/07, AD-CUS-01',
+      'x-permission':
+        'customer.view+ (shared — any scope; statistics in the caller read scope)',
+      parameters: [
+        { name: 'q', in: 'query', schema: { type: 'string', maxLength: 255 } },
+        {
+          name: 'status',
+          in: 'query',
+          schema: { type: 'array', items: { type: 'integer', enum: [0, 1] } },
+          description: 'Repeatable; default 1',
+          style: 'form',
+          explode: true,
+        },
+        { name: 'include_archived', in: 'query', schema: { type: 'boolean', default: false } },
+        {
+          name: 'sort',
+          in: 'query',
+          schema: { type: 'string', enum: ['-last_visit_at', 'name', '-created_at'] },
+        },
+        CURSOR_PARAMETER,
+        LIMIT_PARAMETER,
+      ],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['items', 'next_cursor', 'total'],
+                properties: {
+                  items: { type: 'array', items: { $ref: '#/components/schemas/CustomerListItem' } },
+                  next_cursor: { type: ['string', 'null'] },
+                  total: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+    post: {
+      tags: ['customers'],
+      operationId: 'customerCreate',
+      summary: 'Add a customer (P3.CUS.03)',
+      'x-permission': 'customer.create (shared)',
+      parameters: [X_REQUESTED_WITH],
+      requestBody: { required: true, ...json('CustomerCreate') },
+      responses: {
+        '201': {
+          description: 'Created',
+          headers: { Location: { schema: { type: 'string' } } },
+          ...json('Customer'),
+        },
+        '409': {
+          description:
+            'already_exists { customer_id, status, archived } — the phone belongs to a customer',
+          content: {
+            'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/customers/{id}': {
+    parameters: [ID_PARAMETER],
+    get: {
+      tags: ['customers'],
+      operationId: 'customerGet',
+      summary: 'Customer detail + statistics (P3.CUS.04) — AD-CUS-02, D-CUS-07/08/09',
+      'x-permission': 'customer.view+ (shared; stats / upcoming in the caller read scope)',
+      responses: { ...customerOk, default: PROBLEM_RESPONSE },
+    },
+    patch: {
+      tags: ['customers'],
+      operationId: 'customerUpdate',
+      summary: 'Edit name / phone / notes (P3.CUS.05)',
+      'x-permission': 'customer.update (shared)',
+      parameters: [X_REQUESTED_WITH],
+      requestBody: { required: true, ...json('CustomerUpdate') },
+      responses: {
+        ...customerOk,
+        '409': {
+          description:
+            'already_exists (phone taken) · conflict (expected_updated_at) · invalid_transition — archived customer (owner CM5)',
+          content: {
+            'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/customers/{id}/status': {
+    parameters: [ID_PARAMETER],
+    post: {
+      tags: ['customers'],
+      operationId: 'customerSetStatus',
+      summary: 'Inactive / Active (P3.CUS.06)',
+      'x-permission': 'customer.delete (shared)',
+      parameters: [X_REQUESTED_WITH],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: schema(customerStatusSchema, 'input') } },
+      },
+      responses: {
+        ...customerOk,
+        '409': {
+          description: 'invalid_transition — archived customer (owner CM5)',
+          content: {
+            'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/customers/{id}/archive': {
+    parameters: [ID_PARAMETER],
+    post: {
+      tags: ['customers'],
+      operationId: 'customerArchive',
+      summary: 'Archive (soft delete) (P3.CUS.07)',
+      'x-permission': 'customer.delete (shared)',
+      parameters: [X_REQUESTED_WITH],
+      requestBody: {
+        required: false,
+        content: { 'application/json': { schema: schema(customerArchiveSchema, 'input') } },
+      },
+      responses: {
+        ...customerOk,
+        '409': {
+          description: 'customer_has_active_bookings { count } — BOOKED or STARTED bookings remain',
+          content: {
+            'application/problem+json': { schema: { $ref: '#/components/schemas/Problem' } },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+  '/customers/{id}/restore': {
+    parameters: [ID_PARAMETER],
+    post: {
+      tags: ['customers'],
+      operationId: 'customerRestore',
+      summary: 'Restore an archived customer (P3.CUS.08)',
+      'x-permission': 'customer.delete (shared)',
+      parameters: [X_REQUESTED_WITH],
+      responses: { ...customerOk, default: PROBLEM_RESPONSE },
+    },
+  },
+  '/customers/{id}/timeline': {
+    parameters: [ID_PARAMETER],
+    get: {
+      tags: ['customers'],
+      operationId: 'customerTimeline',
+      summary: 'Bookings and visits, newest first (P3.CUS.09) — read scope only',
+      'x-permission': 'customer.view+ (shared)',
+      parameters: [CURSOR_PARAMETER, LIMIT_PARAMETER],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['items', 'next_cursor', 'total'],
+                properties: {
+                  items: { type: 'array', items: { $ref: '#/components/schemas/TimelineEntry' } },
+                  next_cursor: { type: ['string', 'null'] },
+                  total: { type: 'null' },
+                },
+              },
+            },
+          },
+        },
+        default: PROBLEM_RESPONSE,
+      },
+    },
+  },
+};
+
 export function buildOpenApiDocument(version: string): JsonSchema {
   return {
     openapi: '3.1.0',
@@ -466,6 +667,7 @@ export function buildOpenApiDocument(version: string): JsonSchema {
       },
       ...SETTINGS_PATHS,
       ...CANCEL_REASON_PATHS,
+      ...CUSTOMER_PATHS,
     },
     components: {
       schemas: {

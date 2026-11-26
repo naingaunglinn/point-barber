@@ -17,6 +17,7 @@ import {
   type Mmk,
   type SaleStatus,
   type VisitStatus,
+  archiveNoteOf,
   isZawgyi,
   maskPhone,
   normalizeCustomerMembers,
@@ -40,6 +41,7 @@ import { ProblemException } from '../../../common/http/problem.exception.js';
 import { isUuid, uuidV7 } from '../../../common/http/uuid-v7.js';
 import { CurrentCompany } from '../../people/index.js';
 import { Audit } from '../../platform/index.js';
+import { CustomerBookingsRepository } from '../repositories/customer-bookings.repository.js';
 import {
   type CustomerListRow,
   type CustomerRow,
@@ -138,10 +140,6 @@ export type ActivityEntry =
 
 const notFound = (): ProblemException => new ProblemException(ErrorCode.NOT_FOUND, 404);
 
-/** The write routes of part A5 answer 500 until it lands (task 3.1 declares them first). */
-const notBuilt = (method: string, args: readonly unknown[]): Promise<never> =>
-  Promise.reject(new Error(`Customers.${method}(${args.length} arguments) is built in part A5`));
-
 /** The members checked for Zawgyi after the schema passed (API-SHAPE-05 · design D4). */
 const ZAWGYI_MEMBERS = ['name', 'notes'] as const;
 
@@ -217,6 +215,7 @@ export class Customers {
     private readonly stats: CustomerStats,
     private readonly timelines: CustomerTimeline,
     private readonly runner: TransactionRunner,
+    private readonly bookings: CustomerBookingsRepository,
   ) {}
 
   /** Called once by the sales module at start-up; booking never imports sales. */
@@ -474,6 +473,9 @@ export class Customers {
     try {
       return await this.runner.run(async (tx) => {
         const stored = await this.locked(tx, id);
+        if (stored.archived_at !== null) {
+          throw new ProblemException(ErrorCode.INVALID_TRANSITION, 409);
+        }
         if (!sameMillisecond(stored.updated_at, body.expected_updated_at)) {
           throw new ProblemException(ErrorCode.CONFLICT, 409);
         }
@@ -523,19 +525,85 @@ export class Customers {
     }
   }
 
-  /** P3.CUS.06 — built by add-customer-management part A5 (task 3.7); A4 carries the route's declaration. */
+  /**
+   * P3.CUS.06 — Inactive or Active (design D5 step 3): an archived customer is refused (owner CM5), the
+   * same status again writes nothing. The `customer.deactivate` / `customer.reactivate` row follows the
+   * new status.
+   */
   setStatus(id: string, body: CustomerStatusBody, scope: ReadScope): Promise<CustomerDto> {
-    return notBuilt('setStatus', [id, body, scope]);
+    return this.runner.run(async (tx) => {
+      const stored = await this.locked(tx, id);
+      if (stored.archived_at !== null) {
+        throw new ProblemException(ErrorCode.INVALID_TRANSITION, 409);
+      }
+      if (stored.status === body.status) {
+        this.audit.skip();
+        return this.detail(tx, id, scope);
+      }
+      await this.repository.setStatus(tx, id, body.status, this.clock.now());
+      await this.audit.emit({
+        action: body.status === CustomerStatus.INACTIVE ? CUSTOMER_DEACTIVATE : CUSTOMER_REACTIVATE,
+        entity_type: 'customers',
+        entity_id: id,
+        before: { status: stored.status },
+        after: { status: body.status },
+      });
+      return this.detail(tx, id, scope);
+    });
   }
 
-  /** P3.CUS.07 — built by part A5 (tasks 3.8 / 3.9). */
+  /**
+   * P3.CUS.07 — hides the customer (design D5 step 4): after the row lock the BOOKED and STARTED
+   * bookings at every branch are counted, and any refuses with 409 and the count (R1). Archiving an
+   * archived customer writes nothing. The note is the audit `reason` and stored nowhere else (owner CM4).
+   */
   archive(id: string, body: CustomerArchiveBody, scope: ReadScope): Promise<CustomerDto> {
-    return notBuilt('archive', [id, body, scope]);
+    return this.runner.run(async (tx) => {
+      const stored = await this.locked(tx, id);
+      if (stored.archived_at !== null) {
+        this.audit.skip();
+        return this.detail(tx, id, scope);
+      }
+      const count = await this.bookings.activeCount(tx, id);
+      if (count > 0) {
+        throw new ProblemException(ErrorCode.CUSTOMER_HAS_ACTIVE_BOOKINGS, 409, {
+          context: { count },
+        });
+      }
+      await this.repository.setArchived(tx, id, this.clock.now());
+      await this.audit.emit({
+        action: CUSTOMER_ARCHIVE,
+        entity_type: 'customers',
+        entity_id: id,
+        before: { archived: false },
+        after: { archived: true },
+        reason: archiveNoteOf(body),
+      });
+      return this.detail(tx, id, scope);
+    });
   }
 
-  /** P3.CUS.08 — built by part A5 (task 3.9). */
+  /**
+   * P3.CUS.08 — an archived customer back as ACTIVE (design D5 step 5); a customer who is not archived
+   * answers 200 and nothing is written. The audit row has the shape the walk-in FINISH writes.
+   */
   restore(id: string, scope: ReadScope): Promise<CustomerDto> {
-    return notBuilt('restore', [id, scope]);
+    return this.runner.run(async (tx) => {
+      const stored = await this.locked(tx, id);
+      if (stored.archived_at === null) {
+        this.audit.skip();
+        return this.detail(tx, id, scope);
+      }
+      await this.repository.reactivate(tx, id, this.clock.now());
+      await this.audit.emit({
+        action: CUSTOMER_RESTORE,
+        entity_type: 'customers',
+        entity_id: id,
+        before: { status: stored.status, archived: true },
+        after: { status: CustomerStatus.ACTIVE, archived: false },
+      });
+      return this.detail(tx, id, scope);
+    });
   }
 
   /** The customer's row locked FOR UPDATE (design D5); 404 for an id that is no customer. */
