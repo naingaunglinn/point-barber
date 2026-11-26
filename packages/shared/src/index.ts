@@ -2,6 +2,7 @@ export * from './constants/attachments.js';
 export * from './constants/error-codes.js';
 export * from './constants/http-status.js';
 export * from './constants/limits.js';
+export * from './constants/payment-methods.js';
 export * from './constants/status.js';
 export * from './constants/time.js';
 export * from './customers/query.js';

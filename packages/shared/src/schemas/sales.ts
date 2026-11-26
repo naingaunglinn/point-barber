@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 import {
+  PAYMENT_METHOD_CODE_PATTERN,
+  PAYMENT_METHOD_NAME_MAX,
+  PAYMENT_METHOD_ORDER_MAX,
+  SORT_ORDER_MAX,
+} from '../constants/payment-methods.js';
+import {
   DiscountRequestStatus,
   DiscountType,
   LateEntryReason,
@@ -106,6 +112,66 @@ export const paymentMethodSchema = z.strictObject({
   status: codeOf(PaymentMethodStatus),
   archived_at: wireDateTime.nullable(),
   updated_at: wireDateTime,
+});
+
+// add-payment-methods-admin task 1.5 — the request schemas of P4.PMT.01 – 03 and 06 (API Part 4 §8 ·
+// OpenAPI Part 4 `PaymentMethodCreate` / `PaymentMethodUpdate`). Request objects are plain z.object, so
+// `code`, `kind`, `is_cash` of an update (never changed — P4-RULE-19) and `status` of a create are
+// dropped (CG-API-03). A failed bound is the Zod issue name (API-ERR-03).
+
+/** Blank after trimming is null, as the other masters store an empty optional text. */
+const blankAsNull = (value: unknown): unknown =>
+  typeof value === 'string' && value.trim() === '' ? null : value;
+
+const methodNameMm = z.string().trim().min(1).max(PAYMENT_METHOD_NAME_MAX);
+const methodNameEn = z
+  .preprocess(blankAsNull, z.string().trim().max(PAYMENT_METHOD_NAME_MAX).nullable())
+  .optional();
+/**
+ * Stored as sent (no trim) unless blank (null — recorded reading 6). No maximum here: the length, the
+ * compile and the nested-quantifier tests are `ReferenceFormat.check`'s, so 201 characters answers
+ * `invalid_regex` (design D5 · owner PM6).
+ */
+const methodReferenceRegex = z.preprocess(blankAsNull, z.string().nullable()).optional();
+
+/** P4.PMT.01 query: `status` repeatable, 0 or 1, default ACTIVE only; `include_archived` default false. */
+export const paymentMethodListQuerySchema = z.object({
+  // Digits only: `?status=` or a blank is a 400, never status 0 (INACTIVE).
+  status: repeated(
+    z.string().regex(/^\d+$/).transform(Number).pipe(codeOf(PaymentMethodStatus)),
+  ).default([PaymentMethodStatus.ACTIVE]),
+  include_archived: z.stringbool({ truthy: ['true'], falsy: ['false'] }).default(false),
+});
+
+/** P4.PMT.02 body: both flags false when not sent; `sort_order` absent = placed last (PM7). */
+export const paymentMethodCreateSchema = z.object({
+  code: z.string().regex(PAYMENT_METHOD_CODE_PATTERN),
+  name_mm: methodNameMm,
+  name_en: methodNameEn,
+  kind: codeOf(PaymentMethodKind),
+  requires_reference: z.boolean().default(false),
+  requires_verification: z.boolean().default(false),
+  reference_regex: methodReferenceRegex,
+  sort_order: z.int().min(0).max(SORT_ORDER_MAX).optional(),
+});
+
+/**
+ * P4.PMT.03 body: every member optional except `expected_updated_at` (API-IDEM-04); the system rows'
+ * flags and CASH `status` are checked by the service (409 `system_row`), not here.
+ */
+export const paymentMethodUpdateSchema = z.object({
+  name_mm: methodNameMm.optional(),
+  name_en: methodNameEn,
+  requires_reference: z.boolean().optional(),
+  requires_verification: z.boolean().optional(),
+  reference_regex: methodReferenceRegex,
+  status: codeOf(PaymentMethodStatus).optional(),
+  expected_updated_at: wireDateTime,
+});
+
+/** P4.PMT.06 body: the ids of every non-archived method in the new order (the service checks the set). */
+export const paymentMethodOrderSchema = z.object({
+  ids: z.array(z.uuid()).min(1).max(PAYMENT_METHOD_ORDER_MAX),
 });
 
 /** `RefundSummary` — a refund of a sale, or the change of an over-transfer (D-PAY-05). */
@@ -415,6 +481,10 @@ export const receiptQuerySchema = z.object({
 export type SaleItemDto = z.infer<typeof saleItemSchema>;
 export type PaymentDto = z.infer<typeof paymentSchema>;
 export type PaymentMethodDto = z.infer<typeof paymentMethodSchema>;
+export type PaymentMethodCreate = z.infer<typeof paymentMethodCreateSchema>;
+export type PaymentMethodUpdate = z.infer<typeof paymentMethodUpdateSchema>;
+export type PaymentMethodOrder = z.infer<typeof paymentMethodOrderSchema>;
+export type PaymentMethodListQuery = z.infer<typeof paymentMethodListQuerySchema>;
 export type RefundSummaryDto = z.infer<typeof refundSummarySchema>;
 export type SaleActionsDto = z.infer<typeof saleActionsSchema>;
 export type WarningDto = z.infer<typeof warningSchema>;

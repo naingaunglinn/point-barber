@@ -5,6 +5,7 @@ import {
   type PaymentCreate,
   type PaymentMethodDto,
   PaymentMethodStatus,
+  SYSTEM_PAYMENT_METHOD_CODES,
   type SaleDto,
   SaleStatus,
   businessDateOf,
@@ -12,6 +13,7 @@ import {
   moneyToWire,
   normalizeDigits,
   toMmtIso,
+  toMmtIsoMillis,
 } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
@@ -44,9 +46,6 @@ import { type SaleViewer, SaleView } from '../view/sale-view.js';
 export const PAYMENT_ADD = 'payment.add';
 export const PAYMENT_VOID = 'payment.void';
 
-/** The two system methods of the base seed (P4-RULE-19). */
-const SYSTEM_CODES = new Set(['CASH', 'KBZPAY']);
-
 const blank = (text: string | null | undefined): boolean => (text ?? '').trim() === '';
 
 export function toPaymentMethodDto(row: PaymentMethodListRow): PaymentMethodDto {
@@ -60,11 +59,12 @@ export function toPaymentMethodDto(row: PaymentMethodListRow): PaymentMethodDto 
     requires_reference: row.requires_reference,
     requires_verification: row.requires_verification,
     reference_regex: row.reference_regex,
-    is_system: SYSTEM_CODES.has(row.code),
+    is_system: SYSTEM_PAYMENT_METHOD_CODES.includes(row.code),
     sort_order: row.sort_order,
     status: row.status as PaymentMethodDto['status'],
     archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
-    updated_at: toMmtIso(row.updated_at),
+    // Milliseconds: a client echoes it as `expected_updated_at`, compared to the millisecond (API-IDEM-04).
+    updated_at: toMmtIsoMillis(row.updated_at),
   };
 }
 

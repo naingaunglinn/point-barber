@@ -35,7 +35,9 @@ import {
   maintenanceBodySchema,
   optionsViewSchema,
   meResponseSchema,
+  paymentMethodCreateSchema,
   paymentMethodSchema,
+  paymentMethodUpdateSchema,
   paymentSchema,
   problemSchema,
   quoteItemSchema,
@@ -636,6 +638,10 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         DurationRange: schema(durationRangeSchema),
         Payment: schema(paymentSchema),
         PaymentMethod: schema(paymentMethodSchema),
+        // add-payment-methods-admin task 1.5 — the request bodies of P4.PMT.02 / 03; their paths come
+        // with the controller (A2 – A4).
+        PaymentMethodCreate: schema(paymentMethodCreateSchema, 'input'),
+        PaymentMethodUpdate: schema(paymentMethodUpdateSchema, 'input'),
         Category: schema(serviceCategorySchema),
         Quote: schema(quoteSchema),
         QuoteItem: schema(quoteItemSchema),

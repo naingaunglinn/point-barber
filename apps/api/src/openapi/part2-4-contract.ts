@@ -590,6 +590,35 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       'status',
     ],
   },
+  // add-payment-methods-admin task 1.5 — copied from part4-visits-sales-payments.yaml (v1.2 + the
+  // 1.3 additions of that change): the request bodies of P4.PMT.02 / 03.
+  PaymentMethodCreate: {
+    type: 'object',
+    properties: {
+      code: { type: 'string' },
+      name_mm: { type: 'string' },
+      name_en: { type: ['string', 'null'] },
+      kind: { type: 'integer', enum: [1, 2, 3, 4] },
+      requires_reference: { type: 'boolean' },
+      requires_verification: { type: 'boolean' },
+      reference_regex: { type: ['string', 'null'] },
+      sort_order: { type: 'integer' },
+    },
+    required: ['code', 'name_mm', 'kind'],
+  },
+  PaymentMethodUpdate: {
+    type: 'object',
+    properties: {
+      name_mm: { type: 'string' },
+      name_en: { type: ['string', 'null'] },
+      requires_reference: { type: 'boolean' },
+      requires_verification: { type: 'boolean' },
+      reference_regex: { type: ['string', 'null'] },
+      status: { type: 'integer', enum: [0, 1] },
+      expected_updated_at: { type: 'string', format: 'date-time' },
+    },
+    required: ['expected_updated_at'],
+  },
   RefundSummary: {
     type: 'object',
     properties: {
