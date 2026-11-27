@@ -323,7 +323,7 @@ describe('fixture 190-product-catalogue (add-product-catalogue task 1.6)', () =>
       categories: await prisma.$queryRaw`
         SELECT id::text, name_mm, name_en, sort_order, status FROM product_categories ORDER BY sort_order`,
       products: await prisma.$queryRaw`
-        SELECT id::text, c.name_en AS category, p.name_en, p.sku, p.is_sellable,
+        SELECT p.id::text, c.name_en AS category, p.name_en, p.sku, p.is_sellable,
                p.sell_price_amount::text AS price, p.default_low_stock_threshold AS threshold, p.status
         FROM products p JOIN product_categories c ON c.id = p.category_id ORDER BY p.name_en`,
       suppliers: await prisma.$queryRaw`
