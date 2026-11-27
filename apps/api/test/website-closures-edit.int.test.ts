@@ -92,9 +92,10 @@ const archive = async (who: FixturePerson, id: string, body?: object) =>
       .set('Cookie', await cookieOf(who))
       .send(body),
   );
-const audits = (action: string) =>
+/** The audit rows of one closure (earlier tests leave their own rows behind). */
+const audits = (action: string, closureId: string) =>
   s.prisma.audit_events.findMany({
-    where: { action },
+    where: { action, entity_id: closureId },
     select: { branch_id: true, reason: true, before_data: true, after_data: true },
   });
 /** What a write may leave behind: jobs, events and cache calls since the last mark. */
@@ -122,7 +123,7 @@ describe('add-website-management · website · A closure is edited according to 
     expect(row.end_date.toISOString().slice(0, 10)).toBe('2026-10-05');
     expect(toMmtIsoMillis(row.updated_at)).toBe('2026-10-05T10:00:00.000+06:30');
     expect(before).toBe('2026-10-01T09:00:00.000+06:30');
-    const rows = await audits('website.closure_update');
+    const rows = await audits('website.closure_update', id);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       branch_id: B3,
@@ -138,7 +139,7 @@ describe('add-website-management · website · A closure is edited according to 
     expect([res.status, res.body.code]).toStrictEqual([422, 'closure_started']);
     expect((await rowOf(id)).start_date.toISOString().slice(0, 10)).toBe('2026-10-04');
     expect(await effectsSince(mark)).toStrictEqual(NO_EFFECTS);
-    expect(await audits('website.closure_update')).toHaveLength(0);
+    expect(await audits('website.closure_update', id)).toHaveLength(0);
   });
 
   it('Scenario: Ending a started closure yesterday — 422 date_in_past (WM4 ★)', async () => {
@@ -257,7 +258,7 @@ describe('add-website-management · website · A closure is edited according to 
       200,
       '2026-10-01T09:00:00.000+06:30',
     ]);
-    expect(await audits('website.closure_update')).toHaveLength(0);
+    expect(await audits('website.closure_update', id)).toHaveLength(0);
     expect(await effectsSince(mark)).toStrictEqual(NO_EFFECTS);
   });
 
@@ -287,7 +288,7 @@ describe('add-website-management · website · Deleting a closure archives it on
     const res = await archive('E002', id, { reason: 'wrong branch' });
     expect([res.status, res.body.state]).toStrictEqual([200, 'archived']);
     expect(res.body.archived_at).toBe('2026-10-05T10:00:00.000+06:30');
-    const rows = await audits('website.closure_archive');
+    const rows = await audits('website.closure_archive', id);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ branch_id: B3, reason: 'wrong branch' });
   });
@@ -296,7 +297,7 @@ describe('add-website-management · website · Deleting a closure archives it on
     const id = await closureRow(B3, '2026-10-12', '2026-10-13');
     const res = await archive('E002', id);
     expect([res.status, res.body.state]).toStrictEqual([200, 'archived']);
-    expect((await audits('website.closure_archive'))[0]?.reason).toBeNull();
+    expect((await audits('website.closure_archive', id))[0]?.reason).toBeNull();
   });
 
   it('Scenario: A closure that started yesterday — 422 closure_started; unchanged', async () => {
@@ -322,7 +323,7 @@ describe('add-website-management · website · Deleting a closure archives it on
     const again = await archive('E002', id);
     s.clock?.set(mmt('2026-10-05T10:00:00'));
     expect([again.status, again.body.archived_at]).toStrictEqual([200, first.body.archived_at]);
-    expect(await audits('website.closure_archive')).toHaveLength(1);
+    expect(await audits('website.closure_archive', id)).toHaveLength(1);
     expect(await effectsSince(mark)).toStrictEqual(NO_EFFECTS);
   });
 
