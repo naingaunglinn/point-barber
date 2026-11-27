@@ -45,7 +45,19 @@ export async function attendanceRecord(prisma: PrismaService, spec: RecordSpec):
 
 /** The 05/Oct/2026 morning of the collector scenarios: Ko Aung 8:55 AM and Ko Min 10:12 AM at B3, U Kyaw Zin at B1. */
 export async function morningAtB3(prisma: PrismaService): Promise<void> {
-  await attendanceRecord(prisma, { who: 'E004', branch: branches.B3, in: '2026-10-05T08:55:00+06:30' });
-  await attendanceRecord(prisma, { who: 'E005', branch: branches.B3, in: '2026-10-05T10:12:00+06:30' });
-  await attendanceRecord(prisma, { who: 'E001', branch: branches.B1, in: '2026-10-05T08:30:00+06:30' });
+  await attendanceRecord(prisma, {
+    who: 'E004',
+    branch: branches.B3,
+    in: '2026-10-05T08:55:00+06:30',
+  });
+  await attendanceRecord(prisma, {
+    who: 'E005',
+    branch: branches.B3,
+    in: '2026-10-05T10:12:00+06:30',
+  });
+  await attendanceRecord(prisma, {
+    who: 'E001',
+    branch: branches.B1,
+    in: '2026-10-05T08:30:00+06:30',
+  });
 }

@@ -5,6 +5,7 @@ import {
   DailyClosingStatus,
   ErrorCode,
   SaleStatus,
+  UiLanguage,
   saleSchema,
 } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
@@ -32,6 +33,8 @@ beforeAll(async () => {
   api = walkinHttp(s);
   prisma = s.app.get(PrismaService);
   cash = (await prisma.payment_methods.findFirstOrThrow({ where: { code: 'CASH' } })).id;
+  // Ko Aung reads the names in English (the system default is Myanmar).
+  await prisma.users.update({ where: { id: users.E004 }, data: { ui_language: UiLanguage.EN } });
 });
 afterAll(() => s.close());
 
@@ -88,9 +91,11 @@ describe('PATCH /v1/payments/{id} (P4.PAY.04)', () => {
     const res = await change(AUNG, paymentId, employees.E004);
     expect(res.status).toBe(200);
     expect(await audits(saleId, AuditSource.APP, 'payment.collector_change')).toBe(0);
-    expect(await prisma.audit_events.count({ where: { entity_id: paymentId, source: AuditSource.DB_TRIGGER } })).toBe(
-      dbRows,
-    );
+    expect(
+      await prisma.audit_events.count({
+        where: { entity_id: paymentId, source: AuditSource.DB_TRIGGER },
+      }),
+    ).toBe(dbRows);
   });
 
   it('Scenario: A finished sale — 409 invalid_transition, status 2, correction_path adjustment', async () => {
@@ -162,7 +167,8 @@ describe('the audit of a collector change (P4-RULE-21 · API-AUD-01 · D-AUD-01 
     const dbBefore = await prisma.audit_events.count({
       where: { entity_id: paymentId, entity_type: 'payments', source: AuditSource.DB_TRIGGER },
     });
-    for (let i = 0; i < 2; i += 1) expect((await change(AUNG, paymentId, employees.E005)).status).toBe(200);
+    for (let i = 0; i < 2; i += 1)
+      expect((await change(AUNG, paymentId, employees.E005)).status).toBe(200);
     const rows = await prisma.audit_events.findMany({
       where: { entity_id: saleId, action: 'payment.collector_change' },
     });
@@ -172,8 +178,8 @@ describe('the audit of a collector change (P4-RULE-21 · API-AUD-01 · D-AUD-01 
       entity_type: 'sales',
       branch_id: branches.B3,
       actor_user_id: users.E004,
-      before: { payment_id: paymentId, collected_by_employee_id: employees.E004 },
-      after: { payment_id: paymentId, collected_by_employee_id: employees.E005 },
+      before_data: { payment_id: paymentId, collected_by_employee_id: employees.E004 },
+      after_data: { payment_id: paymentId, collected_by_employee_id: employees.E005 },
     });
     const dbRows = await prisma.audit_events.count({
       where: { entity_id: paymentId, entity_type: 'payments', source: AuditSource.DB_TRIGGER },
@@ -219,4 +225,3 @@ describe('the day lock gates the change (P7-RULE-02) — last, it closes B3 toda
     expect(await collectorOf(paymentId)).toBe(employees.E004);
   });
 });
-

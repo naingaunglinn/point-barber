@@ -76,8 +76,18 @@ describe('GET /v1/sales/{id}/collectors (P4.SAL.14)', () => {
     expect(items).toStrictEqual([
       { employee_id: employees.E004, display_name: 'Ko Aung', clocked_in: true, is_default: true },
       { employee_id: employees.E005, display_name: 'Ko Min', clocked_in: true, is_default: false },
-      { employee_id: employees.E002, display_name: 'Ma Hnin', clocked_in: false, is_default: false },
-      { employee_id: employees.E008, display_name: 'Ma Thida', clocked_in: false, is_default: false },
+      {
+        employee_id: employees.E002,
+        display_name: 'Ma Hnin',
+        clocked_in: false,
+        is_default: false,
+      },
+      {
+        employee_id: employees.E008,
+        display_name: 'Ma Thida',
+        clocked_in: false,
+        is_default: false,
+      },
       {
         employee_id: employees.E001,
         display_name: 'U Kyaw Zin',
@@ -111,7 +121,11 @@ describe('GET /v1/sales/{id}/collectors (P4.SAL.14)', () => {
 
   it('Scenario: Nobody clocked in — by name, Ko Aung the default (records closed)', async () => {
     await prisma.attendance_records.updateMany({
-      where: { clock_out_at: null, voided_at: null, business_date: new Date('2026-10-05T00:00:00Z') },
+      where: {
+        clock_out_at: null,
+        voided_at: null,
+        business_date: new Date('2026-10-05T00:00:00Z'),
+      },
       data: { clock_out_at: new Date('2026-10-05T10:30:00+06:30'), clock_out_source: 1 },
     });
     const res = await list('E004');

@@ -330,7 +330,9 @@ describe('the collector schemas', () => {
       code: 'invalid_format',
       path: ['collected_by_employee_id'],
     });
-    expect(paymentCollectorChangeSchema.parse({ collected_by_employee_id: CASH, x: 1 })).toStrictEqual({
+    expect(
+      paymentCollectorChangeSchema.parse({ collected_by_employee_id: CASH, x: 1 }),
+    ).toStrictEqual({
       collected_by_employee_id: CASH,
     });
   });

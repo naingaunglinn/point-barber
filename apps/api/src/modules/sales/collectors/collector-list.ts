@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { type CollectorList as CollectorListDto, ErrorCode, SaleStatus, todayMmt } from '@point/shared';
+import {
+  type CollectorList as CollectorListDto,
+  ErrorCode,
+  SaleStatus,
+  todayMmt,
+} from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
 import { PrismaService } from '../../../common/database/prisma.service.js';
@@ -43,7 +48,8 @@ export class CollectorList {
     const db = this.prisma;
     const sale = await this.sales.find(db, saleId);
     if (sale === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
-    const visit = sale.visit_id === null ? null : await this.registry.visits.read(db, sale.visit_id);
+    const visit =
+      sale.visit_id === null ? null : await this.registry.visits.read(db, sale.visit_id);
     const date = saleDate(sale, visit, this.clock.now());
     const [assigned, open, locale] = await Promise.all([
       this.assignments.activeAssignedAt(db, sale.branch_id, date),
