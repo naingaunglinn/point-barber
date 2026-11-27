@@ -22,6 +22,7 @@ import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { DayLock } from '../../cash-closing/index.js';
 import { Assignments } from '../../people/index.js';
 import { Audit, Idempotency } from '../../platform/index.js';
+import { defaultCollectorOf } from './default-collector.js';
 import { assertLateEntryOrder, enteredTime } from '../late-entry/late-entry-times.js';
 import { Sales, assertSaleOpen } from '../lines/sales.js';
 import type { VisitForSale } from '../ports/visits-port.js';
@@ -43,6 +44,7 @@ import { type SaleViewer, SaleView } from '../view/sale-view.js';
 /** The audit actions of the payment endpoints (their @Audited lists name the same constants). */
 export const PAYMENT_ADD = 'payment.add';
 export const PAYMENT_VOID = 'payment.void';
+export const PAYMENT_COLLECTOR_CHANGE = 'payment.collector_change';
 
 /** The two system methods of the base seed (P4-RULE-19). */
 const SYSTEM_CODES = new Set(['CASH', 'KBZPAY']);
@@ -183,7 +185,8 @@ export class Payments {
     if (visit === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
     // Again under the sale lock: a COMPLETE that ran meanwhile set the completed time.
     if (late) paymentOrder(visit, receivedAt, now);
-    const collector = body.collected_by_employee_id ?? visit.performed_by_employee_id;
+    const collector =
+      body.collected_by_employee_id ?? (await defaultCollectorOf(tx, { sale, visit }));
     if (body.collected_by_employee_id !== undefined && body.collected_by_employee_id !== null) {
       const assigned = await this.assignments.isActiveAndAssigned(tx, {
         employee_id: collector,
@@ -282,6 +285,62 @@ export class Payments {
         branch_id: sale.branch_id,
         before: { payment_id: payment.id },
         reason: text,
+        actor_user_id: viewer.actor.user_id,
+      });
+      return sale.id;
+    });
+    return this.saleOf(viewer, saleId);
+  }
+
+  /**
+   * P4.PAY.04 — change who collected a payment while the sale is OPEN (D-VIS-06 · P4-RULE-09 / 22). Locks
+   * in the one order — day lock → sale → payment — and every check after them. The sale's state comes
+   * first: a CANCELLED sale refuses even a voided payment (owner S17), and only on an OPEN sale does a
+   * voided payment or the same collector answer 200 and write nothing (owner CL2).
+   */
+  async changeCollector(
+    viewer: SaleViewer,
+    paymentId: string,
+    collectorId: string,
+  ): Promise<SaleDto> {
+    const saleId = await this.runner.run(async (tx) => {
+      const payment = await this.payments.find(tx, paymentId);
+      if (payment === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
+      const unlocked = await this.sales.find(tx, payment.sale_id);
+      if (unlocked === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
+      // A late entry's payment is on its own day (recorded reading 2), any other one today.
+      const visit =
+        unlocked.visit_id === null ? null : await this.registry.visits.read(tx, unlocked.visit_id);
+      const day = businessDateOf(
+        visit?.is_late_entry === true ? payment.received_at : this.clock.now(),
+      );
+      await this.dayLock.assertOpen(tx, unlocked.branch_id, day);
+      const sale = await this.sales.lockForUpdate(tx, payment.sale_id);
+      assertSaleOpen(sale, 'adjustment');
+      await this.payments.lockOne(tx, payment.id);
+      const current = await this.payments.find(tx, payment.id);
+      if (current === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
+      if (current.voided_at !== null || current.collected_by_employee_id === collectorId) {
+        this.audit.skip();
+        return sale.id;
+      }
+      const assigned = await this.assignments.isActiveAndAssigned(tx, {
+        employee_id: collectorId,
+        branch_id: sale.branch_id,
+        date: day,
+      });
+      if (!assigned) throw new ProblemException(ErrorCode.NOT_ASSIGNED_TO_BRANCH, 422);
+      await this.payments.setCollector(tx, payment.id, collectorId);
+      await this.audit.emit({
+        action: PAYMENT_COLLECTOR_CHANGE,
+        entity_type: 'sales',
+        entity_id: sale.id,
+        branch_id: sale.branch_id,
+        before: {
+          payment_id: payment.id,
+          collected_by_employee_id: current.collected_by_employee_id,
+        },
+        after: { payment_id: payment.id, collected_by_employee_id: collectorId },
         actor_user_id: viewer.actor.user_id,
       });
       return sale.id;

@@ -20,6 +20,11 @@ export class Assignments {
     return this.repository.activeAndAssigned(db, key);
   }
 
+  /** The ids of the ACTIVE employees assigned to the branch on `date` (the collector list — P4.SAL.14). */
+  activeAssignedAt(db: Tx, branchId: string, date: string): Promise<string[]> {
+    return this.repository.activeAssignedAt(db, { branch_id: branchId, date });
+  }
+
   /**
    * The employee's branch assignments overlapping `from` … `to` (Myanmar calendar dates, both
    * inclusive), ended ones included — whatever the employee's status.

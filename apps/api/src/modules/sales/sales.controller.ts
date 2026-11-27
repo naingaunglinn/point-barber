@@ -1,7 +1,9 @@
-import { Controller, Get, HttpCode, Param, Post, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, Patch, Post, Res, StreamableFile } from '@nestjs/common';
 import {
+  type CollectorList as CollectorListDto,
   ErrorCode,
   type FinishRequest,
+  type PaymentCollectorChange,
   type PaymentCreate,
   type PaymentMethodDto,
   type ReasonBody,
@@ -10,6 +12,7 @@ import {
   type SaleDto,
   type SaleItemCreate,
   finishRequestSchema,
+  paymentCollectorChangeSchema,
   paymentCreateSchema,
   reasonBodySchema,
   receiptQuerySchema,
@@ -29,7 +32,13 @@ import { Audited, IdempotencyKey, Idempotent } from '../platform/index.js';
 import { SALE_FINISH, SalesFinish } from './finish/sales-finish.js';
 import { SaleLines } from './lines/sale-lines.js';
 import { SALE_ITEM_ADD, SALE_ITEM_REMOVE } from './lines/sales.js';
-import { PAYMENT_ADD, PAYMENT_VOID, Payments } from './payments/payments.js';
+import { CollectorList } from './collectors/collector-list.js';
+import {
+  PAYMENT_ADD,
+  PAYMENT_COLLECTOR_CHANGE,
+  PAYMENT_VOID,
+  Payments,
+} from './payments/payments.js';
 import { type ReceiptFile, ReceiptReads } from './receipts/receipt-reads.js';
 import { SaleView, type SaleViewer } from './view/sale-view.js';
 import { SaleViewers } from './view/sale-viewers.js';
@@ -48,6 +57,7 @@ export class SalesController {
     private readonly view: SaleView,
     private readonly lines: SaleLines,
     private readonly payments: Payments,
+    private readonly collectors: CollectorList,
     private readonly finishing: SalesFinish,
     private readonly receipts: ReceiptReads,
   ) {}
@@ -127,6 +137,29 @@ export class SalesController {
     @ZBody(reasonBodySchema) body: ReasonBody,
   ): Promise<SaleDto> {
     return this.payments.void(await this.viewers.current(), id, body.reason);
+  }
+
+  /** P4.PAY.04 — change who collected a payment while the sale is OPEN (D-VIS-06 · owner B3). */
+  @Patch('payments/:id')
+  @HttpCode(200)
+  @Can('sale.finish_override', { branch: SALE_BRANCH, orSelf: 'sale.checkoutActors' })
+  @Audited({ actions: [PAYMENT_COLLECTOR_CHANGE] })
+  async changeCollector(
+    @Param('id') id: string,
+    @ZBody(paymentCollectorChangeSchema) body: PaymentCollectorChange,
+  ): Promise<SaleDto> {
+    return this.payments.changeCollector(
+      await this.viewers.current(),
+      id,
+      body.collected_by_employee_id,
+    );
+  }
+
+  /** P4.SAL.14 — the "Collected by" choices: the branch's active staff, clocked in first. */
+  @Get('sales/:id/collectors')
+  @Can('sale.finish_override', { branch: SALE_BRANCH, orSelf: 'sale.checkoutActors' })
+  collectorsOf(@Param('id') id: string): Promise<CollectorListDto> {
+    return this.collectors.of(id);
   }
 
   /** P4.PMT.01 — the ACTIVE methods in `sort_order` (Cash first), for every staff member. */

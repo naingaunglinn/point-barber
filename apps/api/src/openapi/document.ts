@@ -36,6 +36,8 @@ import {
   optionsViewSchema,
   meResponseSchema,
   paymentMethodSchema,
+  collectorSchema,
+  paymentCollectorChangeSchema,
   paymentSchema,
   problemSchema,
   quoteItemSchema,
@@ -634,6 +636,9 @@ export function buildOpenApiDocument(version: string): JsonSchema {
         ActiveBookingsContext: schema(activeBookingsContextSchema),
         DiscountRequest: schema(discountRequestSchema),
         DurationRange: schema(durationRangeSchema),
+        // add-payment-collector-picker task 1.2 — P4.SAL.14 / P4.PAY.04 (Part 4 v1.3).
+        Collector: schema(collectorSchema),
+        PaymentCollectorChange: schema(paymentCollectorChangeSchema, 'input'),
         Payment: schema(paymentSchema),
         PaymentMethod: schema(paymentMethodSchema),
         Category: schema(serviceCategorySchema),

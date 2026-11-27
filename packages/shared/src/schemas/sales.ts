@@ -131,6 +131,17 @@ export const saleActionsSchema = z.strictObject({
   adjust: z.boolean(),
 });
 
+/** `Collector` — one choice of "Collected by" (P4.SAL.14 · D-VIS-06 · owner B3). */
+export const collectorSchema = z.strictObject({
+  employee_id: z.uuid(),
+  display_name: z.string(),
+  clocked_in: z.boolean(),
+  is_default: z.boolean(),
+});
+
+/** P4.SAL.14 answer: the branch's active staff, people clocked in here first. */
+export const collectorListSchema = z.strictObject({ items: z.array(collectorSchema) });
+
 /** `Warning` — e.g. `not_eligible`, `customer_restored`; never a refusal. */
 export const warningSchema = z.strictObject({
   code: z.string(),
@@ -383,6 +394,9 @@ export const paymentCreateSchema = z.object({
   received_at: enteredTime.nullish(),
 });
 
+/** P4.PAY.04 change the collector of a payment: the new collector is required (API-ERR-03). */
+export const paymentCollectorChangeSchema = z.object({ collected_by_employee_id: z.uuid() });
+
 /** P4.SAL.10 FINISH: the total on the Finish button, the customer or Skip, the override reason. */
 export const finishRequestSchema = z.object({
   expected_total_amount: wireAmount,
@@ -429,6 +443,9 @@ export type CompleteRequest = z.infer<typeof completeRequestSchema>;
 export type SaleItemCreate = z.infer<typeof saleItemCreateSchema>;
 export type ReasonBody = z.infer<typeof reasonBodySchema>;
 export type PaymentCreate = z.infer<typeof paymentCreateSchema>;
+export type PaymentCollectorChange = z.infer<typeof paymentCollectorChangeSchema>;
+export type CollectorDto = z.infer<typeof collectorSchema>;
+export type CollectorList = z.infer<typeof collectorListSchema>;
 export type FinishRequest = z.infer<typeof finishRequestSchema>;
 export type MyVisitsQuery = z.infer<typeof myVisitsQuerySchema>;
 export type ReceiptQuery = z.infer<typeof receiptQuerySchema>;
