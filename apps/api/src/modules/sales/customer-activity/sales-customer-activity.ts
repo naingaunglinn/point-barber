@@ -69,15 +69,18 @@ export class SalesCustomerActivity implements CustomerActivity {
   }
 
   /**
-   * A visit entry for every visit of the customer's sales — receipt and amount once the sale is
-   * FINISHED — and a sale entry for every FINISHED sale without a visit (design D10).
+   * A visit entry for the visits of the customer's sales — receipt and amount once the sale is
+   * FINISHED — and a sale entry for the FINISHED sales without a visit, the `take` newest older than
+   * `before` (design D10); the visit fields are read for those sales only.
    */
   async timelineEntries(
     db: Tx,
     customerId: string,
     scope: ReadScope,
+    before: { readonly at: Date; readonly id: string } | null,
+    take: number,
   ): Promise<readonly ActivityEntry[]> {
-    const sales = await this.repository.timelineSales(db, customerId, scope);
+    const sales = await this.repository.timelineSales(db, customerId, scope, before, take);
     const visitIds = sales.flatMap((sale) => (sale.visit_id === null ? [] : [sale.visit_id]));
     const visits = new Map(
       (await this.registry.visits.readMany(db, visitIds)).map((visit) => [visit.id, visit]),

@@ -19,7 +19,7 @@ import type { ActivityEntry, CustomerActivity } from './customers.js';
 
 // P3.CUS.09 — the customer's bookings, visits and visit-less sales in the caller's read scope, newest
 // first, then by id (add-customer-management design D10 · proposal reading 11 · R6). The bookings are
-// cut in SQL to `limit` + 1 older than the cursor; the sales side is one customer's sales, cut here.
+// cut in SQL to `limit` + 1 older than the cursor, and so are the sales (R6).
 // The merge keeps `limit` and gives the next cursor from the last entry kept; `total` is null.
 
 type BookingRow = Awaited<ReturnType<CustomerBookingsRepository['timelineEntries']>>[number];
@@ -46,12 +46,8 @@ export class CustomerTimeline {
     before: TimelineCursor | null,
     limit: number,
   ): Promise<CursorPage<TimelineEntryDto>> {
-    const older = (entry: { at: Date; id: string }): boolean =>
-      before === null ||
-      entry.at < before.at ||
-      (entry.at.getTime() === before.at.getTime() && entry.id < before.id);
     const bookings = await this.bookings.timelineEntries(db, customerId, scope, before, limit + 1);
-    const sales = (await activity.timelineEntries(db, customerId, scope)).filter(older);
+    const sales = await activity.timelineEntries(db, customerId, scope, before, limit + 1);
     const merged: Source[] = [
       ...bookings.map((booking) => ({ at: booking.starts_at, id: booking.id, booking })),
       ...sales.map((entry) => ({ at: entry.at, id: entry.id, activity: entry })),

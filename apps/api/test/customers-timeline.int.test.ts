@@ -10,6 +10,7 @@ import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
+import { CustomerActivityRepository } from '../src/modules/sales/repositories/customer-activity.repository.js';
 import { bookingAt } from './builders/bookings.js';
 import { type CustomerHistory, addCustomer, customerHistory, mmt } from './builders/customers.js';
 import { finishedSale, incompleteVisit } from './builders/sales.js';
@@ -213,6 +214,50 @@ describe('add-customer-management · customers · The timeline lists bookings, v
     expect(ids).toStrictEqual(
       (await timeline('?limit=100', 'E001', koPhyo)).items.map((item) => item.id),
     );
+  });
+
+  it('the sales side is cut in SQL — a take of 2 over five sales reads two rows, and limit=1 pages in visit-start order (R6)', async () => {
+    const thiri = await addCustomer(s.prisma, 'MA_THIRI');
+    // The visits started in the reverse order of their sales' finishing: the cut keys on `started_at`.
+    const sales = [
+      { receipt: 'B2-2026-JUL-00001', started: '08:00', finished: '12:00' },
+      { receipt: 'B2-2026-JUL-00002', started: '09:00', finished: '11:00' },
+      { receipt: 'B2-2026-JUL-00003', started: '10:00', finished: '10:30' },
+      { receipt: 'B2-2026-JUL-00004', started: null, finished: '13:00' },
+      { receipt: 'B2-2026-JUL-00005', started: null, finished: '07:00' },
+    ];
+    for (const sale of sales) {
+      await finishedSale(s.prisma, {
+        branch: branches.B2,
+        customer: thiri,
+        receipt: sale.receipt,
+        total: 1_000n as Mmk,
+        finishedAt: mmt('2026-07-01', sale.finished),
+        ...(sale.started === null
+          ? {}
+          : { visit: { performer: 'E007' as const, startedAt: mmt('2026-07-01', sale.started) } }),
+      });
+    }
+    const bounded = await s.app
+      .get(CustomerActivityRepository)
+      .timelineSales(s.prisma, thiri, 'all', null, 2);
+    expect(bounded.map((row) => row.receipt_number)).toStrictEqual([
+      'B2-2026-JUL-00004',
+      'B2-2026-JUL-00003',
+    ]);
+    const pages = await allPages(1, 'E001', thiri);
+    expect(pages.map((items) => items.length)).toStrictEqual([1, 1, 1, 1, 1]);
+    expect(
+      pages.map(([item]) =>
+        item !== undefined && 'receipt_number' in item ? item.receipt_number : null,
+      ),
+    ).toStrictEqual([
+      'B2-2026-JUL-00004',
+      'B2-2026-JUL-00003',
+      'B2-2026-JUL-00002',
+      'B2-2026-JUL-00001',
+      'B2-2026-JUL-00005',
+    ]);
   });
 
   it('an unknown customer — 404 not_found', async () => {
