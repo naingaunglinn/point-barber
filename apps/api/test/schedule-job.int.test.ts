@@ -8,11 +8,8 @@ import { ShiftsGenerateJob } from '../src/modules/scheduling/shifts/shifts-gener
 import { type ShiftRow, shiftsOf } from './helpers/schedule-shifts.js';
 import { type SeededApp, seededApp } from './helpers/seeded.js';
 
-// add-schedule-patterns task 5.4 (tests first) — the job `shifts.generate` (ADR-002 · design D5 · reading 11):
-// the nightly run moves the horizon one day and inserts that day only; a second run writes nothing; one
-// employee failing leaves the others written and the handler throws; one `schedule.generate` row
-// (source 3, no branch) only when a shift changed; `barbers` is queued once per run. Clock: 00:30 on
-// 04/Oct/2026, then 05/Oct/2026 (window 14 → horizon 25/Oct, then 26/Oct).
+// add-schedule-patterns task 5.4 (tests first) — the job `shifts.generate` (ADR-002 · design D5 · reading 11).
+// Clock 00:30 on 04/Oct/2026, then 05/Oct/2026 (window 14 → horizon 25/Oct, then 26/Oct).
 const E = FIXTURE_IDS.employees;
 const mmt = (local: string) => new Date(`${local}+06:30`);
 /** Every fixture person with a set, Ko Aung first as the scenarios name them. */
@@ -56,11 +53,11 @@ describe('add-schedule-patterns · scheduling · The nightly run', () => {
     received.length = 0;
   });
 
-  it('the first run generates today … the horizon (25/Oct) for every employee with a set', async () => {
+  it('the first run generates today … the horizon (Saturday 24/Oct — the 25th is a Sunday) for every employee with a set', async () => {
     await run();
     const rows = (await allShifts()).filter((row) => !row.archived);
     expect(rows.length).toBeGreaterThan(0);
-    expect(Math.max(...rows.map((row) => Number(row.date.slice(8))))).toBe(25);
+    expect(Math.max(...rows.map((row) => Number(row.date.slice(8))))).toBe(24);
     expect(new Set(rows.map((row) => row.employee))).toStrictEqual(new Set(WITH_SETS));
   });
 

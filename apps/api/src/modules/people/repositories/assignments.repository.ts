@@ -82,11 +82,7 @@ export class AssignmentsRepository {
     return row?.user_id ?? null;
   }
 
-  /**
-   * The employees with an assignment of `branch_id` overlapping `from` … `to` (both inclusive), ended ones
-   * included — whatever their status (P2.SHF.06 · add-schedule-patterns proposal reading 7). Bounded by the
-   * ceiling: one branch has no source-given cap on staff over time.
-   */
+  /** The employees assigned to `branch_id` anywhere in `from` … `to`, whatever their status (P2.SHF.06). */
   async employeesAt(
     db: Tx,
     key: { branch_id: string; from: string; to: string },

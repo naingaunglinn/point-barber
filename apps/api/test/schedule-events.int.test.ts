@@ -6,11 +6,9 @@ import { BackgroundTasks } from '../src/common/http/background-tasks.js';
 import { generateUnit } from './helpers/schedule-shifts.js';
 import { type FixturePerson, type SeededApp, seededApp } from './helpers/seeded.js';
 
-// add-schedule-patterns task 5.3 (tests first) — the events and the website touch of a save (P2-RULE-12 ·
-// API-AUD-01 · API-RT-03 · API-PUB-03 · design D3 step 10; its audit row was written with task 3.9).
-// `schedule.changed` per changed (employee, branch) for `branch:<id>` and once for `user:<user id>` — a user
-// id, never the employee id — with the top-level `rooms`; `site.revalidate ['barbers']` only when a shift of
-// today changed; the identical repeat writes no row and collects nothing. Clock 05/Oct/2026 11:00 AM.
+// add-schedule-patterns task 5.3 (tests first) — events and website touch of a save (P2-RULE-12 · API-RT-03 ·
+// API-PUB-03 · design D3 step 10): `schedule.changed` per branch and once for `user:<user id>` (never the
+// employee id), `rooms` top-level; `barbers` only when today changed. Clock 05/Oct/2026 11:00 AM.
 const { B1, B3 } = FIXTURE_IDS.branches;
 const E = FIXTURE_IDS.employees;
 const U = FIXTURE_IDS.users;

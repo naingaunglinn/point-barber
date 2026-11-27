@@ -6,9 +6,7 @@ import { activeShifts } from './helpers/schedule-shifts.js';
 import { type FixturePerson, type SeededApp, seededApp } from './helpers/seeded.js';
 
 // add-schedule-patterns task 5.5 (tests first) — P2.SHF.06 `POST /v1/schedule/generate` (P2-RULE-07 · ADR-002 ·
-// owner PT6 · reading 7): 202 `{ job_id }`, the job queued in the request's transaction with the employees
-// the caller's `schedule.update` grants cover; an employee with a segment or shift at another branch is
-// skipped; `from` / `to` are clipped; `to` before `from` → 400; the audit row `schedule.generate` at the
+// owner PT6 · reading 7): 202 `{ job_id }`, the employees the caller's grants cover, the audit row at the
 // request's branch. Clock Monday 05/Oct/2026 11:00 AM.
 const { B3 } = FIXTURE_IDS.branches;
 const E = FIXTURE_IDS.employees;

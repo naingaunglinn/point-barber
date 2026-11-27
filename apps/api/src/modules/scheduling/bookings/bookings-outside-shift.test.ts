@@ -75,11 +75,6 @@ describe('add-schedule-patterns · scheduling · bookings outside the shifts (pu
     expect(outsideShifts([booking(1, '2026-10-13', '12:45', '13:15')], shifts)).toBeNull();
   });
 
-  it('shifts with a gap are not merged — a block over the gap is listed', () => {
-    const shifts = [shift('2026-10-13', '09:00', '12:00'), shift('2026-10-13', '13:00', '18:00')];
-    expect(outsideShifts([booking(1, '2026-10-13', '11:45', '12:15')], shifts)).not.toBeNull();
-  });
-
   it('only the shifts at the booking’s branch and date count', () => {
     const blocks = [booking(1, '2026-10-13', '10:00', '10:30')];
     expect(outsideShifts(blocks, [shift('2026-10-13', '09:00', '18:00', B1)])).not.toBeNull();

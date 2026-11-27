@@ -6,11 +6,9 @@ import { bookingAt } from './builders/bookings.js';
 import { generateUnit } from './helpers/schedule-shifts.js';
 import { type FixturePerson, type SeededApp, seededApp } from './helpers/seeded.js';
 
-// add-schedule-patterns task 5.2 (tests first) — "Shift changes list the bookings left outside the shifts"
-// (D-BKG-19 · P2-RULE-08 · AD-SCH-02 · design D8): after a save's regeneration the response carries
-// `bookings_outside_shift` for every BOOKED booking of the employee on a changed date whose block is not
-// inside the union of the employee's shifts at the booking's branch. Ma Su's bookings with Ko Aung at B3,
-// Ma Hnin's saves from `2026-10-12`, clock 05/Oct/2026 11:00 AM, Ko Aung's nightly shifts 09:00 – 21:00.
+// add-schedule-patterns task 5.2 (tests first) — `bookings_outside_shift` of a save (D-BKG-19 · P2-RULE-08 ·
+// design D8). Ma Su's bookings with Ko Aung at B3, Ma Hnin's saves from `2026-10-12`, clock 05/Oct/2026
+// 11:00 AM, Ko Aung's nightly shifts 09:00 – 21:00.
 const { B3 } = FIXTURE_IDS.branches;
 const E = FIXTURE_IDS.employees;
 const mmt = (local: string) => new Date(`${local}+06:30`);

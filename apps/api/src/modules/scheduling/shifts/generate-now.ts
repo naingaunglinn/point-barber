@@ -12,12 +12,10 @@ import { ShiftsRepository } from '../repositories/shifts.repository.js';
 import { ShiftGenerator } from './shift-generator.js';
 import { SCHEDULE_GENERATE, SHIFTS_GENERATE } from './shifts-generate.job.js';
 
-// P2.SHF.06 — run generation now for one branch (P2-RULE-07 · ADR-002 · owners PT6 · reading 7). In the
-// request transaction: `from` is raised to today and `to` lowered to the horizon (`to` before `from` → 400
-// on `to`); the employees are those with an assignment of the branch overlapping the range (narrowed by
-// `employee_id`) whose pattern segments and active shifts in the range all lie at branches the caller's
-// `schedule.update` reaches — the others are left to the nightly run; the job is sent in the same
-// transaction, so a refused request leaves none; one audit row `schedule.generate` with the request's branch.
+// P2.SHF.06 — run generation now for one branch (P2-RULE-07 · ADR-002 · owner PT6 · reading 7), in one
+// transaction: `from` raised to today, `to` lowered to the horizon (`to` before `from` → 400 on `to`); the
+// employees assigned to the branch in the range (narrowed by `employee_id`) whose segments and active shifts
+// all lie at branches `schedule.update` reaches; the job is sent in the same transaction; one audit row.
 
 @Injectable()
 export class GenerateNow {

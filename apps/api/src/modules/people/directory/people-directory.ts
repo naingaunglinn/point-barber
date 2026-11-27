@@ -30,10 +30,7 @@ export class PeopleDirectory {
     return this.assignments.statusOf(db, employeeId);
   }
 
-  /**
-   * `employees.user_id` of an employee — the id a `user:<user_id>` realtime room holds (API-RT-01 ·
-   * add-realtime-gateway design D9); null when there is no such employee.
-   */
+  /** `employees.user_id` — the id a `user:<user_id>` room holds (API-RT-01 · #41 design D9); null if none. */
   userIdOfEmployee(db: Tx, employeeId: string): Promise<string | null> {
     return this.assignments.userIdOf(db, employeeId);
   }

@@ -14,10 +14,9 @@ import { ShiftGenerator } from './shift-generator.js';
 // The job `shifts.generate` (ADR-002 · design D5 · P2-RULE-07): the nightly run at 00:30 Myanmar time (data
 // `{}`: every employee with a set effective in today … the horizon) and the run P2.SHF.06 asks for now (data
 // `{ branch_id, from, to, employee_ids, requested_by }`, computed with the caller's grants — owner PT6).
-// One transaction per employee: the schedule lock, the generator, the `schedule.changed` events. A failing
-// employee does not stop the others; after them all, one transaction writes the audit row and queues
-// `site.revalidate ['barbers']`, and only then the handler throws if any employee failed — so pg-boss
-// retries (the finished employees are no-ops on the retry) and dead-letters the job after the last retry.
+// One transaction per employee (lock, generator, events). A failing employee does not stop the others; after
+// them all, one transaction writes the audit row and queues `site.revalidate ['barbers']`, and only then
+// the handler throws if any failed — so pg-boss retries (finished employees are no-ops) and dead-letters.
 
 export const SHIFTS_GENERATE = 'shifts.generate';
 /** 00:30 every day (Asia/Yangon is the `Jobs` default). */

@@ -65,7 +65,7 @@ describe('add-schedule-patterns · scheduling · concurrency of the schedule wri
     expect(await stateAfter(unit)).toBe('waiting');
     release();
     await done;
-    expect(await unit).toStrictEqual({ changed_dates: [], warnings: [] });
+    expect(await unit).toStrictEqual({ changed_dates: [], changed: [], warnings: [] });
   });
 
   it('a save waits for the schedule lock another writer holds, then answers 200 (design D6)', async () => {

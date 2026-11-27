@@ -16,10 +16,7 @@ export class BookingsRepository {
     return tx.bookings.count({ where: { branch_id: branchId, status: { in: OPEN } } });
   }
 
-  /**
-   * The BOOKED bookings of the employee whose business date is one of `dates` (add-schedule-patterns
-   * design D1 · D8 — a STARTED or CANCELLED booking is not returned), by start.
-   */
+  /** The BOOKED bookings of the employee on `dates` (add-schedule-patterns D8), by start. */
   async bookedOn(tx: Tx, employeeId: string, dates: readonly string[]): Promise<BookedBlockRow[]> {
     return tx.bookings.findMany({
       where: {

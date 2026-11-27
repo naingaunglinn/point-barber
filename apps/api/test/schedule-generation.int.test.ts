@@ -82,7 +82,7 @@ describe('add-schedule-patterns · scheduling · Generation runs from today to t
   it('Scenario: The nightly run twice — the second run writes nothing, ids and updated_at unchanged', async () => {
     const before = await shiftsOf(s, E.E004);
     const result = await generateUnit(s, E.E004);
-    expect(result).toStrictEqual({ changed_dates: [], warnings: [] });
+    expect(result).toStrictEqual({ changed_dates: [], changed: [], warnings: [] });
     expect(await shiftsOf(s, E.E004)).toStrictEqual(before);
   });
 
@@ -313,7 +313,11 @@ describe('add-schedule-patterns · scheduling · A shift that attendance points 
 
   it('the next run leaves the manual day alone and writes nothing', async () => {
     const before = await shiftsOf(s, E.E004);
-    expect(await generateUnit(s, E.E004)).toStrictEqual({ changed_dates: [], warnings: [] });
+    expect(await generateUnit(s, E.E004)).toStrictEqual({
+      changed_dates: [],
+      changed: [],
+      warnings: [],
+    });
     expect(await shiftsOf(s, E.E004)).toStrictEqual(before);
   });
 });
