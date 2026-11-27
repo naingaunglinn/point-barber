@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Put } from '@nestjs/common';
 import {
   type BookingQr,
   type RevalidateRequestBody,
@@ -10,10 +10,11 @@ import {
   revalidateRequestSchema,
   sharePreviewQuerySchema,
 } from '@point/shared';
+import { z } from 'zod';
 
 import { AccessContext } from '../../../common/access/access-context.js';
 import { Can, CanView } from '../../../common/access/declarations.js';
-import { ZBody, ZQuery } from '../../../common/http/zod-validation.pipe.js';
+import { ZQuery, ZodValidationPipe } from '../../../common/http/zod-validation.pipe.js';
 import { RequestContext } from '../../../common/http/request-context.js';
 import { Audited } from '../audit/audited.js';
 import { BookingQrReader } from './booking-qr.js';
@@ -22,6 +23,9 @@ import { SharePreviewReader } from './share-preview.js';
 import { TeamOverviewReader } from './team-overview.js';
 import { WebsiteOverviewReader } from './website-overview.js';
 import { WEBSITE_REVALIDATE, WebsiteRevalidate } from './website-revalidate.js';
+
+// P8.WEB.12 takes no body at all for "every tag": an absent body is `{}`.
+const revalidateBody = z.preprocess((value) => value ?? {}, revalidateRequestSchema);
 
 // The website's company-master routes and its branch QR (API Part 8 §10 · P8-RULE-01 · owner F7 ·
 // add-website-management design D2): any `website.*` code at any scope reads the overview, the team
@@ -79,7 +83,7 @@ export class WebsiteController {
   @Can('website.update', { level: 'company' })
   @Audited({ actions: [WEBSITE_REVALIDATE] })
   revalidate(
-    @ZBody(revalidateRequestSchema) body: RevalidateRequestBody,
+    @Body(new ZodValidationPipe(revalidateBody)) body: RevalidateRequestBody,
   ): Promise<{ queued_tags: string[] }> {
     return this.refresh.run(body);
   }
