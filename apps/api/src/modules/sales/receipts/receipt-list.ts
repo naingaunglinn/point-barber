@@ -125,7 +125,8 @@ export class ReceiptList {
     }));
     return {
       items,
-      next_cursor: merged.length > query.limit && last !== undefined ? encodeReceiptCursor(last) : null,
+      next_cursor:
+        merged.length > query.limit && last !== undefined ? encodeReceiptCursor(last) : null,
       total: null,
     };
   }

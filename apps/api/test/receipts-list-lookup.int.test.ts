@@ -179,7 +179,11 @@ describe('GET /v1/receipts — the receipts of a day, without amounts (task 2.1)
 
   it('Scenario: Open and cancelled sales are not receipts', async () => {
     // The day holds one OPEN and one CANCELLED sale at B3 (beforeAll) and neither is listed.
-    expect(await prisma.sales.count({ where: { branch_id: B3, status: { in: [SaleStatus.OPEN, SaleStatus.CANCELLED] } } })).toBe(2);
+    expect(
+      await prisma.sales.count({
+        where: { branch_id: B3, status: { in: [SaleStatus.OPEN, SaleStatus.CANCELLED] } },
+      }),
+    ).toBe(2);
     expect(numbers((await list(MIN, `?branch_id=${B3}`)).body)).toHaveLength(3);
   });
 
@@ -225,11 +229,7 @@ describe('GET /v1/receipts — the receipts of a day, without amounts (task 2.1)
       if (page.next_cursor === null) break;
       cursor = `&cursor=${encodeURIComponent(page.next_cursor)}`;
     }
-    expect(seen).toStrictEqual([
-      'B3-2026-OCT-00002',
-      'B3-2026-OCT-00001',
-      'B3-RF-2026-OCT-00001',
-    ]);
+    expect(seen).toStrictEqual(['B3-2026-OCT-00002', 'B3-2026-OCT-00001', 'B3-RF-2026-OCT-00001']);
   });
 
   it('a cursor that does not decode is 400 on cursor', async () => {
@@ -242,7 +242,9 @@ describe('GET /v1/receipts — the receipts of a day, without amounts (task 2.1)
     const sunday = receiptListPageSchema.parse(
       (await list(MIN, `?branch_id=${B3}&date=2026-10-04`)).body,
     );
-    expect(sunday.items).toMatchObject([{ sale_id: lateId, issued_at: '2026-10-04T15:40:00+06:30' }]);
+    expect(sunday.items).toMatchObject([
+      { sale_id: lateId, issued_at: '2026-10-04T15:40:00+06:30' },
+    ]);
     expect(numbers((await list(MIN, `?branch_id=${B3}`)).body)).not.toContain(
       sunday.items[0]?.number,
     );
@@ -352,14 +354,15 @@ describe('GET /v1/receipts/lookup — a receipt by its exact number (task 2.5)',
     expect((await lookup(HTET, 'B3-RF-2026-OCT-00001')).status).toBe(404);
   });
 
-  it.each([['', 'empty'], ['A'.repeat(41), '41 characters'], ['   ', 'only spaces']])(
-    'Scenario: Nothing typed — %j (%s) is 400 on number',
-    async (number) => {
-      const res = await lookup(MIN, number);
-      expect(res.status).toBe(400);
-      expect((res.body as { errors: { field: string }[] }).errors[0]?.field).toBe('number');
-    },
-  );
+  it.each([
+    ['', 'empty'],
+    ['A'.repeat(41), '41 characters'],
+    ['   ', 'only spaces'],
+  ])('Scenario: Nothing typed — %j (%s) is 400 on number', async (number) => {
+    const res = await lookup(MIN, number);
+    expect(res.status).toBe(400);
+    expect((res.body as { errors: { field: string }[] }).errors[0]?.field).toBe('number');
+  });
 
   it('a call without number is 400 on number', async () => {
     const res = await api.get(MIN, '/receipts/lookup');
