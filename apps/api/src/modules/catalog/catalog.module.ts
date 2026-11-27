@@ -8,6 +8,7 @@ import { PriceQuote } from './price-quote/price-quote.js';
 import { CatalogRepository } from './repositories/catalog.repository.js';
 import { ServiceListRepository } from './repositories/service-list.repository.js';
 import { ServiceCatalog } from './service-list/service-catalog.js';
+import { ServiceDetail } from './service-detail/service-detail.js';
 import { PilotCatalogue } from './pilot/pilot-catalogue.js';
 
 // Bounded context `catalog` (ADR-001 · docs/engineering/module-map.md): Part 2 service categories,
@@ -22,8 +23,9 @@ import { PilotCatalogue } from './pilot/pilot-catalogue.js';
     PriceQuote,
     Eligibility,
     ServiceCatalog,
+    ServiceDetail,
     PilotCatalogue,
   ],
-  exports: [PriceQuote, Eligibility, ServiceCatalog, PilotCatalogue],
+  exports: [PriceQuote, Eligibility, ServiceCatalog, ServiceDetail, PilotCatalogue],
 })
 export class CatalogModule {}

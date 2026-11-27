@@ -59,6 +59,14 @@ export function isBranchCodeTaken(error: unknown): boolean {
 }
 
 /**
+ * A second non-archived leave type with a Myanmar name the company already has hit
+ * leave_types_name_active (P2.LVT.02 / 03 · Part 2 §13b · add-leave-types design D5): 409 already_exists.
+ */
+export function isLeaveTypeNameTaken(error: unknown): boolean {
+  return uniqueViolationIndex(error) === 'leave_types_name_active';
+}
+
+/**
  * A second non-archived cancel reason with a Myanmar name the company already has hit
  * booking_cancel_reasons_name_active (P3.CRS.02 / 03 · add-booking-cancel-reasons design D6): the final
  * word behind the service's pre-check, answered 409 already_exists.
@@ -95,4 +103,16 @@ export function isFinishedImmutable(error: unknown): boolean {
     { driverAdapterError?: { cause?: { originalMessage?: unknown } } } | undefined;
   const message = meta?.driverAdapterError?.cause?.originalMessage;
   return typeof message === 'string' && message.includes('finished_immutable');
+}
+
+/**
+ * A closure that shares a day with another non-archived closure of the branch hit the exclusion
+ * constraint branch_closures_no_overlap (SQLSTATE 23P01 — P8-RULE-12 · add-website-management design
+ * D6): the pre-check missed a race, and the answer is the same 409 `closure_overlap`.
+ */
+export function isClosureOverlap(error: unknown): boolean {
+  if (sqlStateOf(error) === '23P01') return true;
+  const message =
+    typeof error === 'object' && error !== null ? (error as PrismaLikeError).message : null;
+  return typeof message === 'string' && message.includes('branch_closures_no_overlap');
 }

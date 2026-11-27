@@ -2,6 +2,7 @@
 -- Part 1 v3.2 / Part 2 v1.2 website column = DBML ထဲ · FK ဒီမှာ
 -- v1.1 (02/Oct/2026 — G (owner one-sheet 02/Oct 00:06) · G (e)) = DB Part 8 v1.1: backup_runs_restore_chk (RESTORE_TEST performed_by NULL ရ — လစဉ် auto, owner F9)
 --      · attachments_deleted_chk (deleted_by NULL + deleted_at = system purge ရ · deleted_by ⇒ deleted_at) · schema မပြောင်း
+-- v1.2 (16/Nov/2026 — owner AT8 = A, review v5.2.33 §0.23) = DB Part 8 v1.2: attachments.image_width / image_height (integer NULL — dbml) + attachments_image_size_chk (နှစ်ခုလုံး NULL သို့ နှစ်ခုလုံး > 0 · ပုံဖိုင် (`mime_type` image/…) ပဲ — kind မဆိုင်: `purpose = document` နဲ့ တင်တဲ့ ဘောင်ချာ ဓာတ်ပုံ (kind 1) လည်း ပုံပဲ — 16/Nov scenario ဖတ်ချက်၊ API Part 8 "WebP variants for images")
 
 -- ═══════════ Part 2 v1.2 future FK ═══════════
 ALTER TABLE services ADD CONSTRAINT services_image_attachment_fk FOREIGN KEY (image_attachment_id) REFERENCES attachments (id);
@@ -97,6 +98,8 @@ ALTER TABLE attachments ADD CONSTRAINT attachments_kind_chk CHECK (kind IN (1, 2
 ALTER TABLE attachments ADD CONSTRAINT attachments_size_chk CHECK (size_bytes > 0);
 -- v1.1 G (e): user ဖျက် = deleted_at + by · system (uploads.purge / exports.purge / single-image replace) = deleted_at + by NULL · by ပဲ (deleted_at မပါ) ✖
 ALTER TABLE attachments ADD CONSTRAINT attachments_deleted_chk CHECK (deleted_by_user_id IS NULL OR deleted_at IS NOT NULL);
+-- v1.2 AT8: ပုံ pixel အရွယ် — နှစ်ခုလုံး NULL (ပုံမဟုတ်တာ / မဖတ်ရသေးတာ) သို့ နှစ်ခုလုံး > 0 · ပုံဖိုင် (mime_type image/…) ပဲ၊ kind မဆိုင် (Attachment.image { width, height, variants } — API Part 8) · variant = အကျယ်ကနေ တွက်၊ column မလို
+ALTER TABLE attachments ADD CONSTRAINT attachments_image_size_chk CHECK ((image_width IS NULL) = (image_height IS NULL) AND (image_width IS NULL OR (image_width > 0 AND image_height > 0 AND mime_type LIKE 'image/%')));
 
 -- ═══════════ import (D-DAT-01) ═══════════
 ALTER TABLE import_jobs ADD CONSTRAINT import_jobs_source_chk CHECK (source IN (1, 2));

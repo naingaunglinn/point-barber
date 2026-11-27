@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EmployeeStatus } from '@point/shared';
+import { EmployeeStatus, businessDateOf } from '@point/shared';
 
 import type { Tx } from '../../../common/database/transaction-runner.js';
 import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
@@ -16,7 +16,7 @@ export interface AssignmentPeriod {
 }
 
 const dayOf = (date: string): Date => new Date(`${date}T00:00:00Z`);
-const isoDate = (value: Date): string => value.toISOString().slice(0, 10);
+const isoDate = (value: Date): string => businessDateOf(value);
 
 @Injectable()
 export class AssignmentsRepository {

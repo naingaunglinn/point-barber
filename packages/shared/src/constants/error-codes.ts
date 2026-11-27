@@ -90,6 +90,11 @@ export const ErrorCode = {
   END_BEFORE_START: 'end_before_start',
   CROSS_BRANCH_GAP: 'cross_branch_gap',
   SELF_ACTION: 'self_action',
+  // add-attachments-upload — API-ERR-02 · Part 8 P8-RULE-03 · P8.ATT.05 (task 1.2; texts in the brief):
+  // a file that cannot be linked, context `{ attachment_id, reason }` (422), and the removal of the
+  // file a single-image field still uses, context `{ field }` (409). zawgyi_text above is reused.
+  ATTACHMENT_INVALID: 'attachment_invalid',
+  ATTACHMENT_IN_USE: 'attachment_in_use',
   // add-service-catalogue — Part 2 §13b · API-ERR-02 (task 2.2): a category archive refused while
   // non-archived services use it, context `{ count }` (P2.CAT.04); option pricing sent to the create
   // (P2.SVC.02) or to the update (P2.SVC.04) instead of the options endpoint (P2-RULE-02).
@@ -100,6 +105,10 @@ export const ErrorCode = {
   // PENDING leave uses the type (P2.LVT.04 — no context). already_exists, conflict and zawgyi_text above
   // are reused.
   LEAVE_TYPE_IN_USE: 'leave_type_in_use',
+  // add-employee-management — Part 1 §11b · API-ERR-02 (task 1.1): the last active company admin cannot
+  // be switched off (P1-RULE-12 · D7). already_exists, conflict, invalid_transition and rate_limited
+  // are declared above and reused; the field code not_multiple_of is in FieldIssueCode.
+  LAST_ADMIN: 'last_admin',
   // add-website-management — Part 8 §16 · API-ERR-02 (task 1.4; texts proposed for the owner, S18):
   // closures (P8.WEB.06 – 08 · P8-RULE-12 · owner WM4) and the report / closure range of 366 days
   // (`context.max_days`); the four per-day field codes of a 400 `validation` week (P8.WEB.04 · WM3).
@@ -125,6 +134,8 @@ export const FieldIssueCode = {
   INVALID_FORMAT: 'invalid_format',
   // add-settings-store — a value that is not one of the listed choices (Zod 4 `invalid_value`).
   INVALID_VALUE: 'invalid_value',
+  // add-employee-management — the rating step: 4.7 is not a multiple of 0.5 (Zod 4 `not_multiple_of`).
+  NOT_MULTIPLE_OF: 'not_multiple_of',
 } as const;
 
 export type FieldIssueCode = (typeof FieldIssueCode)[keyof typeof FieldIssueCode];

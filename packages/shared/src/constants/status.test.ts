@@ -67,6 +67,7 @@ describe('status constants', () => {
       import_job_rows: { PENDING: 1, VALID: 2, ERROR: 3, IMPORTED: 4, SKIPPED: 5 },
       backup_runs: { RUNNING: 1, SUCCESS: 2, FAILED: 3 },
       branches: { INACTIVE: 0, ACTIVE: 1 },
+      leave_types: { INACTIVE: 0, ACTIVE: 1 },
       customers: { INACTIVE: 0, ACTIVE: 1 },
     });
   });
@@ -78,15 +79,20 @@ describe('status constants', () => {
     expect(STATUS_BY_TABLE.branches).toBe(BranchStatus);
   });
 
+  // add-leave-types — leave_types.status, the leave-type list's chips and INACTIVE badge (design D9).
+  it('holds leave_types.status as the table `leave_types`', () => {
+    expect(STATUS_BY_TABLE.leave_types).toBe(LeaveTypeStatus);
+  });
+
   // add-customer-management — customers.status likewise (design D11).
   it('holds customers.status (part3) as the table `customers`', () => {
     expect(STATUS_BY_TABLE.customers).toBe(CustomerStatus);
   });
 
-  it('holds the 71 (table, code) pairs of AD-CMP-05 and the 2 each of branches and customers, codes unique per table', () => {
+  it('holds the 71 (table, code) pairs of AD-CMP-05 and the 2 each of branches, leave types and customers, codes unique per table', () => {
     const tables = Object.values(STATUS_BY_TABLE);
-    expect(tables).toHaveLength(21);
-    expect(tables.reduce((sum, codes) => sum + Object.keys(codes).length, 0)).toBe(75);
+    expect(tables).toHaveLength(22);
+    expect(tables.reduce((sum, codes) => sum + Object.keys(codes).length, 0)).toBe(77);
     for (const codes of tables) {
       const values = Object.values(codes);
       expect(new Set(values).size).toBe(values.length);

@@ -1,3 +1,4 @@
+import { createTranslator } from 'next-intl';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_LOCALE, LOCALES, NAMESPACES } from './config';
@@ -27,8 +28,10 @@ describe('language files', () => {
       'branch',
       'maintenance',
       'permission',
+      'attachment',
       'leaveType',
       'customer',
+      'pwa',
     ]);
   });
 
@@ -70,5 +73,17 @@ describe('language files', () => {
     expect(en.length).toBeGreaterThan(0);
     for (const value of en) expect(value).toMatch(/\S/);
     expect(my).toEqual(en.map(() => null));
+  });
+});
+
+// add-attachments-upload task 1.2 — `error.attachment_invalid` is one ICU `select` on `reason` (D12).
+describe('attachment texts', () => {
+  it.each(LOCALES)('attachment_invalid has its own text for each reason in %s', (locale) => {
+    const t = createTranslator({ locale, messages: loadMessages(locale) });
+    const reasons =
+      'not_found not_yours expired already_linked type_not_allowed too_many other'.split(' ');
+    const texts = reasons.map((reason) => t('error.attachment_invalid', { reason }));
+    expect(new Set(texts).size).toBe(reasons.length);
+    expect(t('error.attachment_invalid', { reason: 'unknown' })).toBe(texts.at(-1));
   });
 });

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { ErrorCode, FieldIssueCode } from '../constants/error-codes.js';
+import { CATALOGUE_CODE_PREFIX } from './catalogue-code.js';
+import { listQuerySchema } from './list-query.js';
 import { textMmEnSchema } from '../settings/text-mm-en.js';
 import { warningSchema } from './sales.js';
 import { timeOfDaySchema } from './schedule.js';
@@ -18,6 +21,8 @@ export const WebsiteLimits = {
   SEO_DESCRIPTION: 160,
   ANNOUNCEMENT_TEXT: 200,
   CLOSURE_NOTICE: 300,
+  /** The most closed days one closure may cover, both ends counted (P8-RULE-12 · reading 5). */
+  CLOSURE_MAX_DAYS: 366,
   ARCHIVE_REASON: 1000,
   WEEK_DAYS: 7,
 } as const;
@@ -65,22 +70,90 @@ const hoursDay = {
   opens_at: timeOfDaySchema.nullable(),
   closes_at: timeOfDaySchema.nullable(),
 };
+const hoursDaySchema = z.object(hoursDay);
 
-/** P8.WEB.04 body — `BranchHoursWrite`: exactly seven days (P8-RULE-12). */
-export const branchHoursWriteSchema = z.object({
-  days: z.array(z.object(hoursDay)).length(WebsiteLimits.WEEK_DAYS),
-  expected_updated_at: wireDateTime.nullable().optional(),
-});
+type HoursDay = z.infer<z.ZodObject<typeof hoursDay>>;
+
+/**
+ * The per-day rule of P8.WEB.04 (P8-RULE-12 · owner WM3 ★ · design D5), checked in this order: a closed
+ * day with a time; an open day without both times; closing at `00:00` (midnight is the next day — no
+ * overnight, D-PLT-15); any other closing at or before the opening. Null when the day is valid.
+ */
+export function hoursDayCode(day: HoursDay): ErrorCode | null {
+  if (day.is_closed) {
+    return day.opens_at === null && day.closes_at === null ? null : ErrorCode.TIMES_NOT_ALLOWED;
+  }
+  if (day.opens_at === null || day.closes_at === null) return ErrorCode.TIMES_REQUIRED;
+  if (day.closes_at === '00:00') return ErrorCode.OVERNIGHT_NOT_ALLOWED;
+  // `HH:mm` texts sort as their times.
+  return day.closes_at <= day.opens_at ? ErrorCode.CLOSES_BEFORE_OPENS : null;
+}
+
+/**
+ * P8.WEB.04 body — `BranchHoursWrite`: exactly seven days, each weekday once (else `invalid_value` at
+ * `days`), and every day checked — one `errors[]` item per wrong day at `days[<index>]`, all together.
+ */
+export const branchHoursWriteSchema = z
+  .object({
+    days: z.array(hoursDaySchema).length(WebsiteLimits.WEEK_DAYS),
+    expected_updated_at: wireDateTime.nullable().optional(),
+  })
+  .superRefine((body, ctx) => {
+    // zod runs a refinement after a shape issue too: the week rules wait for a week of the right shape.
+    const weekdays = new Set(body.days.map((day) => day.day_of_week));
+    if (body.days.length === WebsiteLimits.WEEK_DAYS && weekdays.size !== body.days.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['days'],
+        message: `${CATALOGUE_CODE_PREFIX}${FieldIssueCode.INVALID_VALUE}`,
+      });
+    }
+    body.days.forEach((day, index) => {
+      // A day whose own members are malformed (a time that is no `HH:mm`) already has its shape issue.
+      const code = hoursDaySchema.safeParse(day).success ? hoursDayCode(day) : null;
+      if (code !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['days', index],
+          message: `${CATALOGUE_CODE_PREFIX}${code}`,
+        });
+      }
+    });
+  });
 
 const noticeMm = z.string().trim().min(1).max(WebsiteLimits.CLOSURE_NOTICE);
 
-/** P8.WEB.06 body — `ClosureCreate`. */
-export const closureCreateSchema = z.object({
-  branch_id: z.uuid(),
-  start_date: wireDate,
-  end_date: wireDate,
-  notice_mm: noticeMm,
-  notice_en: optionalText(WebsiteLimits.CLOSURE_NOTICE),
+/** An `end_date` before its `start_date`: the issue sits at the end (catalogue code `end_before_start`). */
+const endBeforeStart = (value: { start_date: string; end_date: string }, ctx: z.RefinementCtx) => {
+  // `YYYY-MM-DD` texts sort as dates; a date that is no date has its own issue.
+  if (!wireDate.safeParse(value.start_date).success || !wireDate.safeParse(value.end_date).success)
+    return;
+  if (value.end_date < value.start_date) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['end_date'],
+      message: `${CATALOGUE_CODE_PREFIX}${ErrorCode.END_BEFORE_START}`,
+    });
+  }
+};
+
+/** P8.WEB.06 body — `ClosureCreate`; today and the 366-day limit are checked in the write. */
+export const closureCreateSchema = z
+  .object({
+    branch_id: z.uuid(),
+    start_date: wireDate,
+    end_date: wireDate,
+    notice_mm: noticeMm,
+    notice_en: optionalText(WebsiteLimits.CLOSURE_NOTICE),
+  })
+  .superRefine(endBeforeStart);
+
+/** P8.WEB.05 query — `from` / `to` select the closures that overlap `[from, to]` (reading 7). */
+export const closureListQuerySchema = listQuerySchema.extend({
+  branch_id: z.uuid().optional(),
+  from: wireDate.optional(),
+  to: wireDate.optional(),
+  include_archived: z.stringbool({ truthy: ['true'], falsy: ['false'] }).default(false),
 });
 
 /** P8.WEB.07 body — `ClosureUpdate`: any member, always the `updated_at` last read (API-IDEM-04). */
@@ -109,6 +182,7 @@ export const revalidateRequestSchema = z.object({ tags: z.array(z.string()).opti
 export type SiteContentWriteBody = z.infer<typeof siteContentWriteSchema>;
 export type BranchHoursWriteBody = z.infer<typeof branchHoursWriteSchema>;
 export type ClosureCreateBody = z.infer<typeof closureCreateSchema>;
+export type ClosureListQuery = z.infer<typeof closureListQuerySchema>;
 export type ClosureUpdateBody = z.infer<typeof closureUpdateSchema>;
 export type ArchiveRequestBody = z.infer<typeof archiveRequestSchema>;
 export type SharePreviewQuery = z.infer<typeof sharePreviewQuerySchema>;

@@ -7,6 +7,7 @@ import {
   archiveRequestSchema,
   branchHoursWriteSchema,
   closureCreateSchema,
+  closureListQuerySchema,
   closureUpdateSchema,
   sharePreviewQuerySchema,
   siteContentWriteSchema,
@@ -144,6 +145,62 @@ const day = (dayOfWeek: number, members: Record<string, unknown> = {}) => ({
 });
 const week = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => day(dayOfWeek));
 
+// add-website-management task 2.3 — spec "An hours save is a whole valid week" (P8.WEB.04 ·
+// P8-RULE-12 · owner WM3 ★): the per-day codes, one `errors[]` item per wrong day, all together; the
+// API names the code the schema names (catalogue codes — API-ERR-03).
+const codesOf = (value: unknown) =>
+  issuesOf(branchHoursWriteSchema, value).map((issue) => [
+    issue.path.map(String).join('.'),
+    String(issue.message).replace(/^code:/, ''),
+  ]);
+
+describe('add-website-management · website · An hours save is a whole valid week', () => {
+  it('Scenario: Four wrong days at once — one code per day, together', () => {
+    const days = [
+      day(1, { is_closed: true, opens_at: '09:00', closes_at: null }),
+      day(2, { opens_at: null, closes_at: null }),
+      day(3, { opens_at: '09:00', closes_at: '00:00' }),
+      day(4, { opens_at: '21:00', closes_at: '09:00' }),
+      ...week.slice(4),
+    ];
+    expect(codesOf({ days })).toStrictEqual([
+      ['days.0', 'times_not_allowed'],
+      ['days.1', 'times_required'],
+      ['days.2', 'overnight_not_allowed'],
+      ['days.3', 'closes_before_opens'],
+    ]);
+  });
+
+  it('Scenario: One minute is enough — Friday 09:00 – 09:01 passes', () => {
+    const days = week.map((entry) =>
+      entry.day_of_week === 5 ? { ...entry, opens_at: '09:00', closes_at: '09:01' } : entry,
+    );
+    expect(branchHoursWriteSchema.safeParse({ days }).success).toBe(true);
+  });
+
+  it('equal times close before they open; a closed day with only a closing time has times', () => {
+    const days = [
+      day(1, { opens_at: '09:00', closes_at: '09:00' }),
+      day(2, { is_closed: true, opens_at: null, closes_at: '21:00' }),
+      day(3, { opens_at: '09:00', closes_at: null }),
+      ...week.slice(3),
+    ];
+    expect(codesOf({ days })).toStrictEqual([
+      ['days.0', 'closes_before_opens'],
+      ['days.1', 'times_not_allowed'],
+      ['days.2', 'times_required'],
+    ]);
+  });
+
+  it('a repeated weekday is invalid_value at days; the per-day checks still run', () => {
+    const days = [day(1), day(1, { opens_at: null }), ...week.slice(2)];
+    expect(codesOf({ days })).toStrictEqual([
+      ['days', 'invalid_value'],
+      ['days.1', 'times_required'],
+    ]);
+  });
+});
+
 describe('branchHoursWriteSchema (P8.WEB.04)', () => {
   it("Scenario: B3's week passes; a closed day carries null times", () => {
     expect(passes(branchHoursWriteSchema, { days: week })).toBe(true);
@@ -197,6 +254,18 @@ describe('closures (P8.WEB.06 – 08)', () => {
         { code: 'too_big', maximum: 300, path: [member] },
       ]);
     }
+  });
+
+  it('Scenario: end before start — the issue is at end_date with the catalogue code end_before_start', () => {
+    expect(
+      issuesOf(closureCreateSchema, {
+        ...THINGYAN,
+        start_date: '2026-10-13',
+        end_date: '2026-10-12',
+      }),
+    ).toMatchObject([{ code: 'custom', message: 'code:end_before_start', path: ['end_date'] }]);
+    // One day is allowed: the end is the start.
+    expect(passes(closureCreateSchema, { ...THINGYAN, end_date: THINGYAN.start_date })).toBe(true);
   });
 
   it('an edit always sends expected_updated_at (API-IDEM-04)', () => {
@@ -263,5 +332,33 @@ describe('response members', () => {
 
   it('the bounds are the numbers of Part 8 §17', () => {
     expect(WebsiteLimits).toMatchObject({ HERO_TITLE: 80, SEO_TITLE: 70, ANNOUNCEMENT_TEXT: 200 });
+  });
+});
+
+describe('closureListQuerySchema (P8.WEB.05)', () => {
+  it('Scenario: the default list — 25 rows, archived ones left out, no filter', () => {
+    expect(closureListQuerySchema.parse({})).toStrictEqual({ limit: 25, include_archived: false });
+  });
+
+  it('limit 1 and 100 pass, 0 and 101 are refused (API-LIM-03)', () => {
+    expect(closureListQuerySchema.parse({ limit: '1' }).limit).toBe(1);
+    expect(closureListQuerySchema.parse({ limit: '100' }).limit).toBe(100);
+    for (const limit of ['0', '101']) {
+      expect(issuesOf(closureListQuerySchema, { limit })).toMatchObject([{ path: ['limit'] }]);
+    }
+  });
+
+  it('from, to, branch_id and include_archived are read from the query text', () => {
+    const query = closureListQuerySchema.parse({
+      branch_id: '0190c3a0-0000-7000-8000-000000000003',
+      from: '2026-10-01',
+      to: '2026-10-31',
+      include_archived: 'true',
+    });
+    expect(query).toMatchObject({
+      from: '2026-10-01',
+      to: '2026-10-31',
+      include_archived: true,
+    });
   });
 });

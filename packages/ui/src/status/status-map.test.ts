@@ -18,18 +18,22 @@ const tones = (table: Record<string, { tone: string }>) =>
 describe('STATUS_MAP', () => {
   // add-branch-management — AD-CMP-05 master data: an ACTIVE branch has no badge, so branches.ACTIVE is
   // the one status constant without an entry (its label is the filter's Active chip).
-  // add-customer-management — customers.ACTIVE likewise (AD-CMP-05 master data, design D11).
-  it('has exactly the 73 pairs of the status constants but branches.ACTIVE and customers.ACTIVE', () => {
+  // add-leave-types — leave_types.ACTIVE likewise (AD-CMP-05 master data, design D9).
+  // add-customer-management — customers.ACTIVE likewise (design D11).
+  it('has exactly the 74 pairs of the status constants but branches.ACTIVE, leave_types.ACTIVE and customers.ACTIVE', () => {
     const pairs = (map: Record<string, Record<string, unknown>>) =>
       Object.entries(map)
         .flatMap(([table, names]) => Object.keys(names).map((name) => `${table}.${name}`))
         .sort();
     expect(pairs(STATUS_MAP)).toEqual(
       pairs(STATUS_BY_TABLE).filter(
-        (pair) => pair !== 'branches.ACTIVE' && pair !== 'customers.ACTIVE',
+        (pair) =>
+          pair !== 'branches.ACTIVE' &&
+          pair !== 'leave_types.ACTIVE' &&
+          pair !== 'customers.ACTIVE',
       ),
     );
-    expect(pairs(STATUS_MAP)).toHaveLength(73);
+    expect(pairs(STATUS_MAP)).toHaveLength(74);
     expect(pairs(STATUS_MAP)).not.toContain('branches.ACTIVE');
   });
 
@@ -88,6 +92,7 @@ describe('STATUS_MAP', () => {
       backup_runs: { RUNNING: 'info', SUCCESS: 'success', FAILED: 'danger' },
       // add-branch-management — INACTIVE muted, ACTIVE no badge (AD-CMP-05 master data).
       branches: { INACTIVE: 'muted' },
+      leave_types: { INACTIVE: 'muted' },
       customers: { INACTIVE: 'muted' },
     });
   });

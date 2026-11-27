@@ -39,7 +39,19 @@ export {
   StorageService,
   type StoredObjectInfo,
 } from './storage/storage.service.js';
+export {
+  BranchClosures,
+  type ClosedDate,
+  type ClosedDatesQuery,
+} from './website/branch-closures.js';
+export {
+  type BookedInRange,
+  type BookedRange,
+  ClosureBookings,
+  type ClosureBookingReads,
+} from './website/closure-bookings.js';
 export { type OpeningDay, OpeningHours } from './website/opening-hours.js';
+export { WebsitePeople } from './website/website-people.js';
 export {
   SITE_CONTENT_CHANGED,
   SITE_REVALIDATE,

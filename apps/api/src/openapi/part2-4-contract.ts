@@ -169,6 +169,54 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       expected_updated_at: { type: 'string', format: 'date-time' },
     },
   },
+  // add-service-catalogue task 3.5 — copied on 20/Nov/2026 from part2-catalogue-scheduling.yaml v1.6.0:
+  // `Service` (P2.SVC.03) and `OptionsView`; the option group and variant items are written by
+  // add-option-services (#13), so the two arrays are empty here and their item schemas are not copied.
+  OptionsView: {
+    type: 'object',
+    required: ['groups', 'variants'],
+    properties: { groups: { type: 'array' }, variants: { type: 'array' } },
+  },
+  Service: {
+    type: 'object',
+    required: [
+      'id',
+      'category_id',
+      'name_mm',
+      'name_en',
+      'pricing_mode',
+      'buffer_minutes',
+      'status',
+      'show_on_website',
+      'branches',
+      'options',
+      'updated_at',
+    ],
+    properties: {
+      id: { type: 'string', format: 'uuid' },
+      category_id: { type: 'string', format: 'uuid' },
+      name_mm: { type: 'string' },
+      name_en: { type: ['string', 'null'] },
+      pricing_mode: { type: 'integer', enum: [1, 2] },
+      buffer_minutes: { type: 'integer' },
+      status: { type: 'integer', enum: [0, 1] },
+      show_on_website: { type: 'boolean' },
+      sort_order: { type: 'integer' },
+      branch_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
+      unpriced_branch_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
+      duration_range: { $ref: '#/components/schemas/DurationRange' },
+      archived_at: { type: ['string', 'null'], format: 'date-time' },
+      updated_at: { type: 'string', format: 'date-time' },
+      description_mm: { type: ['string', 'null'] },
+      description_en: { type: ['string', 'null'] },
+      public_description_mm: { type: ['string', 'null'] },
+      public_description_en: { type: ['string', 'null'] },
+      image_attachment_id: { type: ['string', 'null'], format: 'uuid' },
+      image_url: { type: ['string', 'null'], format: 'uri-reference' },
+      branches: { type: 'array', items: { $ref: '#/components/schemas/ServiceBranch' } },
+      options: { $ref: '#/components/schemas/OptionsView' },
+    },
+  },
   UpcomingBooking: {
     type: 'object',
     properties: {
@@ -1036,5 +1084,85 @@ export const PART2_4_SCHEMAS: Record<string, Record<string, unknown>> = {
       visit_id: { type: ['string', 'null'], format: 'uuid' },
     },
     required: ['client_request_id', 'resource_type', 'id'],
+  },
+};
+
+// add-leave-types task 1.6 — the leave-type schemas and the four P2.LVT operations, copied on 18/Nov/2026
+// from point-sdd docs/api/openapi/part2-catalogue-scheduling.yaml v1.6.0 (owner LT1 recorded in
+// `LeaveTypeCreate.sort_order` — a description only, no schema change). Members, types, formats, enums
+// and required lists; for the paths the operation id, the parameters, the body and the answer.
+const uuid = { type: 'string', format: 'uuid' };
+const dateTime = { type: 'string', format: 'date-time' };
+const leaveTypeName = { type: 'string' };
+const leaveTypeNameEn = { type: ['string', 'null'] };
+
+export const LEAVE_TYPE_SCHEMAS: Record<string, Record<string, unknown>> = {
+  LeaveType: {
+    type: 'object',
+    required: ['id', 'name_mm', 'name_en', 'is_paid', 'sort_order', 'status', 'updated_at'],
+    properties: {
+      id: uuid,
+      name_mm: leaveTypeName,
+      name_en: leaveTypeNameEn,
+      is_paid: { type: 'boolean' },
+      sort_order: { type: 'integer' },
+      status: { type: 'integer', enum: [0, 1] },
+      archived_at: { type: ['string', 'null'], format: 'date-time' },
+      updated_at: dateTime,
+    },
+  },
+  LeaveTypeCreate: {
+    type: 'object',
+    required: ['name_mm', 'is_paid'],
+    properties: {
+      name_mm: leaveTypeName,
+      name_en: leaveTypeNameEn,
+      is_paid: { type: 'boolean' },
+      sort_order: { type: 'integer' },
+    },
+  },
+  LeaveTypeUpdate: {
+    type: 'object',
+    required: ['expected_updated_at'],
+    properties: {
+      name_mm: leaveTypeName,
+      name_en: leaveTypeNameEn,
+      is_paid: { type: 'boolean' },
+      status: { type: 'integer', enum: [0, 1] },
+      sort_order: { type: 'integer' },
+      expected_updated_at: dateTime,
+    },
+  },
+};
+
+/** `<method> <path>` → operation id, parameter names in order, request body and success answer. */
+export const LEAVE_TYPE_OPERATIONS: Record<
+  string,
+  { operationId: string; parameters: string[]; body?: string; status: string; answer?: string }
+> = {
+  'get /leave-types': {
+    operationId: 'leaveTypeList',
+    parameters: ['status', 'include_archived'],
+    status: '200',
+  },
+  'post /leave-types': {
+    operationId: 'leaveTypeCreate',
+    parameters: ['X-Requested-With'],
+    body: 'LeaveTypeCreate',
+    status: '201',
+    answer: 'LeaveType',
+  },
+  'patch /leave-types/{id}': {
+    operationId: 'leaveTypeUpdate',
+    parameters: ['X-Requested-With', 'id'],
+    body: 'LeaveTypeUpdate',
+    status: '200',
+    answer: 'LeaveType',
+  },
+  'post /leave-types/{id}/archive': {
+    operationId: 'leaveTypeArchive',
+    parameters: ['X-Requested-With', 'id'],
+    status: '200',
+    answer: 'LeaveType',
   },
 };
