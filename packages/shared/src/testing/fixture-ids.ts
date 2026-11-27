@@ -56,6 +56,19 @@ export const FIXTURE_IDS = {
     SICK_LEAVE: id('010', '2'),
     UNPAID_LEAVE: id('010', '3'),
   },
+  // add-product-catalogue — the scenario rows of design D3 (fixture module 190).
+  productCategories: {
+    STYLING: id('011', '1'),
+    HAIR_COLOUR: id('011', '2'),
+    HAIR_CARE: id('011', '3'),
+  },
+  products: { POMADE: id('012', '1'), HAIR_COLOUR_BLACK: id('012', '2'), SHAMPOO: id('012', '3') },
+  suppliers: { SHWE_HLA: id('013', '1') },
+  stockAdjustmentReasons: {
+    DAMAGED: id('014', '1'),
+    LOST: id('014', '2'),
+    ENTRY_ERROR: id('014', '3'),
+  },
 } as const;
 
 /** The id of row `n` (1, 2, …) of a fixture table whose rows have no code of their own. */

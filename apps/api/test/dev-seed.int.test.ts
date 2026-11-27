@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { PERMISSIONS } from '@point/shared';
+import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
@@ -54,6 +55,11 @@ const TABLES = [
   // add-leave-types (fixture module 150)
   'leave_types',
   'booking_cancel_reasons',
+  // add-product-catalogue (fixture module 190)
+  'product_categories',
+  'products',
+  'suppliers',
+  'stock_adjustment_reasons',
 ] as const;
 
 async function counts(): Promise<Record<string, number>> {
@@ -124,6 +130,11 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
       leave_types: 3,
       // add-booking-cancel-reasons — the four presets of the base seed (design D3), no fixture module.
       booking_cancel_reasons: 4,
+      // add-product-catalogue module 190 — the scenario rows of design D3.
+      product_categories: 3,
+      products: 3,
+      suppliers: 1,
+      stock_adjustment_reasons: 3,
     });
     await runSeed(t.app, FIXTURES);
     expect(await counts()).toStrictEqual(first);
@@ -299,6 +310,91 @@ describe('pnpm db:seed (tasks 3.6–3.8)', () => {
     expect(rows).toStrictEqual([
       { role: 'Manager', code: 'service.update' },
       { role: 'Manager', code: 'service.view' },
+    ]);
+  });
+});
+
+// add-product-catalogue task 1.6 — fixture module 190 (design D3 "Scenario rows" · spec-fixtures §9 pattern).
+// The refusal under APP_ENV=production is the seed guard's, for every module: seed-guard.test.ts.
+describe('fixture 190-product-catalogue (add-product-catalogue task 1.6)', () => {
+  it('writes the scenario rows with their fixed ids; a second run adds nothing', async () => {
+    await runSeed(t.app, FIXTURES);
+    const read = async () => ({
+      categories: await prisma.$queryRaw`
+        SELECT id::text, name_mm, name_en, sort_order, status FROM product_categories ORDER BY sort_order`,
+      products: await prisma.$queryRaw`
+        SELECT p.id::text, c.name_en AS category, p.name_en, p.sku, p.is_sellable,
+               p.sell_price_amount::text AS price, p.default_low_stock_threshold AS threshold, p.status
+        FROM products p JOIN product_categories c ON c.id = p.category_id ORDER BY p.name_en`,
+      suppliers: await prisma.$queryRaw`
+        SELECT id::text, name, phone, address, status FROM suppliers`,
+      reasons: await prisma.$queryRaw`
+        SELECT id::text, name_mm, name_en, sort_order, status FROM stock_adjustment_reasons ORDER BY sort_order`,
+    });
+    const first = await read();
+    await runSeed(t.app, FIXTURES);
+    expect(await read()).toStrictEqual(first);
+    expect(first.products).toStrictEqual([
+      {
+        id: FIXTURE_IDS.products.HAIR_COLOUR_BLACK,
+        category: 'Hair colour',
+        name_en: 'Hair colour black',
+        sku: 'HC-BLK',
+        is_sellable: false,
+        price: null,
+        threshold: 2,
+        status: 1,
+      },
+      {
+        id: FIXTURE_IDS.products.POMADE,
+        category: 'Styling',
+        name_en: 'Pomade',
+        sku: 'PMD-001',
+        is_sellable: true,
+        price: '12000',
+        threshold: 3,
+        status: 1,
+      },
+      {
+        id: FIXTURE_IDS.products.SHAMPOO,
+        category: 'Hair care',
+        name_en: 'Shampoo',
+        sku: null,
+        is_sellable: false,
+        price: null,
+        threshold: 2,
+        status: 1,
+      },
+    ]);
+    expect(first.categories).toMatchObject([
+      { name_en: 'Styling', sort_order: 1 },
+      { name_en: 'Hair colour', sort_order: 2 },
+      { name_en: 'Hair care', sort_order: 3 },
+    ]);
+    expect(first.suppliers).toMatchObject([{ name: 'Shwe Hla Trading', phone: '09 450 000 222' }]);
+    expect(first.reasons).toMatchObject([
+      { name_en: 'Damaged', sort_order: 1 },
+      { name_en: 'Lost', sort_order: 2 },
+      { name_en: 'Entry error', sort_order: 3 },
+    ]);
+  });
+
+  it('gives product.view and supplier.view to a Manager role created before Part 6, once', async () => {
+    await prisma.$executeRaw`
+      DELETE FROM role_permissions rp USING roles r, permissions p
+      WHERE rp.role_id = r.id AND rp.permission_id = p.id AND r.name_en = 'Manager'
+        AND p.module IN ('product', 'supplier', 'stock_adjustment_reason')`;
+    await runSeed(t.app, FIXTURES);
+    await runSeed(t.app, FIXTURES);
+    const rows = await prisma.$queryRaw<{ role: string; code: string }[]>`
+      SELECT r.name_en AS role, p.code FROM role_permissions rp
+      JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id
+      WHERE p.module IN ('product', 'supplier', 'stock_adjustment_reason')
+        AND r.name_en IN ('Manager', 'Barber')
+      ORDER BY r.name_en, p.code`;
+    expect(rows).toStrictEqual([
+      { role: 'Manager', code: 'product.view' },
+      { role: 'Manager', code: 'supplier.view' },
     ]);
   });
 });

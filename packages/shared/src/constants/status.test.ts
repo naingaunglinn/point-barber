@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AdjustmentReasonStatus,
   AttachmentKind,
   AuditSource,
   BranchStatus,
@@ -24,6 +25,9 @@ import {
   PaymentMethodKind,
   PaymentMethodStatus,
   PriceSource,
+  ProductCategoryStatus,
+  ProductStatus,
+  PurchaseStatus,
   ProxyReason,
   ReceiptCounterKind,
   RefundKind,
@@ -37,6 +41,9 @@ import {
   ServicePricingMode,
   ServiceCategoryStatus,
   ServiceStatus,
+  StockCountStatus,
+  StockTransferStatus,
+  SupplierStatus,
   UiLanguage,
   UserStatus,
   VisitStatus,
@@ -104,6 +111,7 @@ const files = [
   'part4-visits-sales-payments-v1-constraints.sql',
   'part2-services-scheduling-v1-constraints.sql',
   'part3-customers-booking-v3-constraints.sql',
+  'part6-inventory-v1-constraints.sql',
 ].map((name) => readFileSync(join(source, name), 'utf8'));
 
 /** The values of `CHECK (<column> IN (…))` (or `<column> IS NULL OR <column> IN (…)`). */
@@ -159,6 +167,15 @@ describe('status constants = the CHECK lists of db/source', () => {
     // add-booking-cancel-reasons task 1.3 — the cancel-reason master list
     ['CancelReasonStatus', CancelReasonStatus, 'booking_cancel_reasons', 'status'],
     ['CancelReasonSystemCode', CancelReasonSystemCode, 'booking_cancel_reasons', 'system_code'],
+    // add-product-catalogue task 1.4 — the four master statuses and the three document statuses its
+    // archive guard reads (design D3 · D6); DB Part 6 constraints.
+    ['ProductCategoryStatus', ProductCategoryStatus, 'product_categories', 'status'],
+    ['ProductStatus', ProductStatus, 'products', 'status'],
+    ['SupplierStatus', SupplierStatus, 'suppliers', 'status'],
+    ['AdjustmentReasonStatus', AdjustmentReasonStatus, 'stock_adjustment_reasons', 'status'],
+    ['PurchaseStatus', PurchaseStatus, 'purchases', 'status'],
+    ['StockTransferStatus', StockTransferStatus, 'stock_transfers', 'status'],
+    ['StockCountStatus', StockCountStatus, 'stock_counts', 'status'],
   ] as const)('%s = %s.%s', (_, set, table, column) => {
     expect(sorted(set)).toStrictEqual(checkList(table, column));
   });

@@ -17,6 +17,24 @@
     "update": "Edit leave types",
     "delete": "Archive leave types"
   },
+  "product": {
+    "view": "View products and categories",
+    "create": "Add products and categories",
+    "update": "Edit products and categories",
+    "delete": "Archive products and categories"
+  },
+  "supplier": {
+    "view": "View suppliers",
+    "create": "Add suppliers",
+    "update": "Edit suppliers",
+    "delete": "Archive suppliers"
+  },
+  "stock_adjustment_reason": {
+    "view": "View stock adjustment reasons",
+    "create": "Add stock adjustment reasons",
+    "update": "Edit stock adjustment reasons",
+    "delete": "Disable stock adjustment reasons"
+  },
   "website": {
     "view": "View the website",
     "update": "Edit the website"

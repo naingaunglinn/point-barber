@@ -7,6 +7,7 @@ import {
   MANAGER_PART2_SEED_CODES,
   MANAGER_PART3_SEED_CODES,
   MANAGER_PART4_SEED_CODES,
+  MANAGER_PART6_SEED_CODES,
   MANAGER_SCHEDULE_SEED_CODES,
   MANAGER_SEED_CODES,
   MANAGER_WEBSITE_SEED_CODES,
@@ -62,6 +63,7 @@ describe('seed roles — Part 4 codes', () => {
       ...MANAGER_SEED_CODES,
       ...MANAGER_PART2_SEED_CODES,
       ...MANAGER_PART4_SEED_CODES,
+      ...MANAGER_PART6_SEED_CODES,
       ...MANAGER_SCHEDULE_SEED_CODES,
       ...MANAGER_WEBSITE_SEED_CODES,
       ...BARBER_SEED_CODES,
@@ -108,6 +110,30 @@ describe('seed roles — Part 2 service codes', () => {
     expect(manager).not.toContain('service.delete');
     const barber = [...BARBER_SEED_CODES, ...BARBER_PART3_SEED_CODES];
     expect(barber.filter((code) => code.startsWith('service.'))).toStrictEqual([]);
+  });
+});
+
+// add-product-catalogue task 1.3 — inventory "The product catalogue has twelve permission codes"
+// (Part 6 §10 seed · D-ROLE-09): the Manager reads the product and supplier masters and nothing else of
+// the twelve; the Barber holds none. The roles on an empty database: base-seed.int.test.ts.
+describe('seed roles — Part 6 catalogue codes', () => {
+  it('Manager: product.view and supplier.view', () => {
+    expect([...MANAGER_PART6_SEED_CODES]).toStrictEqual(['product.view', 'supplier.view']);
+  });
+
+  it('keeps the writes and the adjustment reasons with the Admin; the Barber holds none', () => {
+    const catalogue = ['product.', 'supplier.', 'stock_adjustment_reason.'];
+    const manager = [
+      ...MANAGER_SEED_CODES,
+      ...MANAGER_PART2_SEED_CODES,
+      ...MANAGER_PART3_SEED_CODES,
+      ...MANAGER_PART4_SEED_CODES,
+      ...MANAGER_SCHEDULE_SEED_CODES,
+      ...MANAGER_WEBSITE_SEED_CODES,
+    ];
+    expect(manager.filter((code) => catalogue.some((p) => code.startsWith(p)))).toStrictEqual([]);
+    const barber = [...BARBER_SEED_CODES, ...BARBER_PART3_SEED_CODES];
+    expect(barber.filter((code) => catalogue.some((p) => code.startsWith(p)))).toStrictEqual([]);
   });
 });
 

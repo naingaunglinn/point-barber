@@ -6,6 +6,15 @@ import { ASSIGNMENTS, EFFECTIVE_FROM as BRANCH_FROM } from './030-access.mjs';
 import { BARBER_PRICES, CATEGORY, SERVICES } from './040-services.mjs';
 import { LEAVE_TYPES, seed as seedLeaveTypes } from './150-leave-types.mjs';
 import {
+  CATEGORIES as PRODUCT_CATEGORIES,
+  FIRST_ROW as PRODUCT_GRANT_ROW,
+  GRANTS as PRODUCT_GRANTS,
+  PRODUCTS,
+  REASONS,
+  SUPPLIERS,
+  seed as seedProductCatalogue,
+} from './190-product-catalogue.mjs';
+import {
   FIRST_ROW as SERVICE_GRANT_ROW,
   GRANTS as SERVICE_GRANTS,
 } from './100-part2-service-grants.mjs';
@@ -227,5 +236,74 @@ describe('fixture 170-customer-grants (add-customer-management task 1.3)', () =>
 
   it('numbers its role_permissions rows in a block of its own (17001 …)', () => {
     expect(CUSTOMER_FIRST_ROW).toBe(17001);
+  });
+});
+
+// add-product-catalogue task 1.6 — module 190: the scenario rows of design D3 and the two Manager codes of
+// Part 6 §10; dev-seed.int.test.ts runs it on a database.
+describe('fixture 190-product-catalogue (add-product-catalogue task 1.6)', () => {
+  it('holds the three categories, three products, the supplier and the three reasons of design D3', () => {
+    expect(PRODUCT_CATEGORIES.map((c) => c.name_en)).toStrictEqual([
+      'Styling',
+      'Hair colour',
+      'Hair care',
+    ]);
+    expect(
+      PRODUCTS.map((p) => [
+        p.name_en,
+        p.category,
+        p.sku,
+        p.is_sellable,
+        p.sell_price_amount,
+        p.threshold,
+      ]),
+    ).toStrictEqual([
+      ['Pomade', 'STYLING', 'PMD-001', true, 12000, 3],
+      ['Hair colour black', 'HAIR_COLOUR', 'HC-BLK', false, null, 2],
+      ['Shampoo', 'HAIR_CARE', null, false, null, 2],
+    ]);
+    expect(SUPPLIERS.map((s) => [s.name, s.phone])).toStrictEqual([
+      ['Shwe Hla Trading', '09 450 000 222'],
+    ]);
+    expect(REASONS.map((r) => r.name_en)).toStrictEqual(['Damaged', 'Lost', 'Entry error']);
+  });
+
+  it('gives every row an id of its own, the product rows in the right category', () => {
+    const ids = [
+      ...Object.values(FIXTURE_IDS.productCategories),
+      ...Object.values(FIXTURE_IDS.products),
+      ...Object.values(FIXTURE_IDS.suppliers),
+      ...Object.values(FIXTURE_IDS.stockAdjustmentReasons),
+    ];
+    expect(new Set(ids).size).toBe(10);
+    for (const product of PRODUCTS) {
+      expect(Object.keys(FIXTURE_IDS.productCategories)).toContain(product.category);
+    }
+  });
+
+  it('writes the 10 rows once each with the company and the fixed ids', async () => {
+    const written = [];
+    const db = {
+      query: async (sql, values) => {
+        written.push([sql.trim().split(/\s+/).slice(2, 3)[0], values[0]]);
+      },
+    };
+    await seedProductCatalogue(db, { companyId: 'company' });
+    const tables = written.map(([table]) => table);
+    expect(tables.filter((t) => t === 'product_categories')).toHaveLength(3);
+    expect(tables.filter((t) => t === 'products')).toHaveLength(3);
+    expect(tables.filter((t) => t === 'suppliers')).toHaveLength(1);
+    expect(tables.filter((t) => t === 'stock_adjustment_reasons')).toHaveLength(3);
+  });
+
+  it('gives the Manager product.view and supplier.view; the Barber role none', () => {
+    expect(PRODUCT_GRANTS.map(({ role, codes }) => [role, [...codes]])).toStrictEqual([
+      ['Manager', ['product.view', 'supplier.view']],
+    ]);
+  });
+
+  it('numbers its role_permissions rows in a block of its own (19001 …)', () => {
+    expect(PRODUCT_GRANT_ROW).toBe(19001);
+    expect(PRODUCT_GRANT_ROW).toBeGreaterThan(SERVICE_GRANT_ROW + SERVICE_GRANTS[0].codes.length);
   });
 });

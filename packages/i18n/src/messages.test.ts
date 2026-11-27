@@ -64,6 +64,18 @@ describe('language files', () => {
     ]);
   });
 
+  // add-product-catalogue task 1.2 — the label `permission.<code>` of the twelve Part 6 codes (design D13).
+  it.each(LOCALES)('labels the twelve product-catalogue codes in %s', (locale) => {
+    const permission = loadMessages(locale).permission;
+    for (const module of [
+      permission.product,
+      permission.supplier,
+      permission.stock_adjustment_reason,
+    ]) {
+      expect(Object.keys(module)).toStrictEqual(['view', 'create', 'update', 'delete']);
+    }
+  });
+
   // ui-foundation "Every visible string comes from the my and en language files" — receipt labels are
   // English only; their Myanmar values are null until a Myanmar receipt is wanted (owner 12/Oct/2026).
   it('receipt labels: text in English, null in Myanmar', () => {

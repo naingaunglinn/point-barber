@@ -56,3 +56,10 @@ export const BARBER_PART3_CUSTOMER_CODES = ['customer.view', 'customer.create'] 
  * scope reaches its own branches' hours and closures, owner F7); the Barber seed role gets none.
  */
 export const MANAGER_WEBSITE_CODES = ['website.view', 'website.update'] as const;
+
+/**
+ * Manager — Part 6 §10 seed (add-product-catalogue design D3): the product and supplier masters,
+ * read-only. The other ten codes of the module stay with the Admin; the Barber holds none. Fixture
+ * module 190 adds them to roles created before Part 6.
+ */
+export const MANAGER_PART6_CATALOGUE_CODES = ['product.view', 'supplier.view'] as const;
