@@ -2,13 +2,10 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { CustomerStatus } from '@point/shared';
 import { toast } from '@point/ui';
 
-import {
-  CUSTOMER_IDS,
-  PEOPLE,
-  customerOf,
-} from '../../../../../test/customer-fixtures';
+import { CUSTOMER_IDS, PEOPLE, customerOf } from '../../../../../test/customer-fixtures';
 import { renderPos, routeFetch } from '../../../../../test/pos-render';
 import { json, problem } from '../../../../../test/render';
 
@@ -95,7 +92,9 @@ function fillTaken(phone: string) {
 describe('Add customer — the form', () => {
   it('has the asterisk on Name and Phone only, a helper under Notes, and the phone preview', () => {
     renderPos(<NewCustomerScreen />, { me: PEOPLE.aung });
-    const marks = [...screen.getByTestId('customer-form').querySelectorAll('[data-slot="required-mark"]')];
+    const marks = [
+      ...screen.getByTestId('customer-form').querySelectorAll('[data-slot="required-mark"]'),
+    ];
     expect(marks).toHaveLength(2);
     expect(field('name').contains(marks[0] ?? null)).toBe(true);
     expect(field('phone').contains(marks[1] ?? null)).toBe(true);
@@ -181,7 +180,7 @@ describe('Add customer — a phone that already belongs to a customer', () => {
     json(
       409,
       problem(409, 'already_exists', {
-        context: { customer_id: CUSTOMER_IDS.MA_SU, status: 1, archived },
+        context: { customer_id: CUSTOMER_IDS.MA_SU, status: CustomerStatus.ACTIVE, archived },
       }),
     );
 
@@ -255,7 +254,10 @@ describe('Add customer — leaving, and the page guard', () => {
   });
 
   it('Scenario: Opening the screen by its address — a user without customer.create sees the forbidden page', () => {
-    const viewer = { ...PEOPLE.aung, grants: PEOPLE.aung.grants.filter((g) => g.code === 'customer.view') };
+    const viewer = {
+      ...PEOPLE.aung,
+      grants: PEOPLE.aung.grants.filter((g) => g.code === 'customer.view'),
+    };
     renderPos(<NewCustomerScreen />, { me: viewer });
     expect(screen.getByTestId('refused-page').textContent).toContain(
       "You don't have access to this page. Ask an admin if you need it.",

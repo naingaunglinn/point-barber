@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { CustomerStatus } from '@point/shared';
 
 import { CUSTOMER_IDS, PEOPLE, listItemOf } from '../../../../test/customer-fixtures';
 import { renderPos, routeFetch } from '../../../../test/pos-render';
@@ -30,7 +32,7 @@ const DAW_MYA = listItemOf({
   name: 'Daw Mya',
   phone: '09 7788 1122',
   phone_normalized: '+95977881122',
-  status: 0,
+  status: CustomerStatus.INACTIVE,
   last_visit_at: null,
   visit_count: 0,
 });
@@ -53,6 +55,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
 });
 afterEach(() => {
+  // Unmount first: an effect that runs after the stubs are gone would find no `matchMedia`.
+  cleanup();
   vi.unstubAllGlobals();
   window.history.replaceState(null, '', '/');
 });
@@ -63,7 +67,7 @@ const type = (element: HTMLElement, value: string) =>
   fireEvent.change(element, { target: { value } });
 
 describe('The customer list — the table', () => {
-  it("Scenario: Ma Hnin searches on her laptop — `7712 3456` finds one row: Ma Su · 09 7712 3456 · 28/Sep/2026 · 6 · no badge", async () => {
+  it('Scenario: Ma Hnin searches on her laptop — `7712 3456` finds one row: Ma Su · 09 7712 3456 · 28/Sep/2026 · 6 · no badge', async () => {
     routeFetch(fetchMock, {
       [LIST]: page([MA_SU, DAW_MYA]),
       'GET /api/v1/customers?q=7712+3456&limit=25': page([MA_SU]),
@@ -72,7 +76,9 @@ describe('The customer list — the table', () => {
     await screen.findByTestId(`customer-row-${CUSTOMER_IDS.DAW_MYA}`);
     type(screen.getByRole('searchbox', { name: 'Name or phone' }), '7712 3456');
     const name = await screen.findByTestId(`customer-row-${CUSTOMER_IDS.MA_SU}`);
-    await vi.waitFor(() => expect(screen.queryByTestId(`customer-row-${CUSTOMER_IDS.DAW_MYA}`)).toBeNull());
+    await vi.waitFor(() =>
+      expect(screen.queryByTestId(`customer-row-${CUSTOMER_IDS.DAW_MYA}`)).toBeNull(),
+    );
     const row = within(name.closest('tr') as HTMLElement);
     expect(row.getAllByRole('cell').map((cell) => cell.textContent)).toStrictEqual([
       'Ma Su',
@@ -129,7 +135,9 @@ describe('The customer list — the table', () => {
     });
     renderPos(<CustomersScreen />, { me: PEOPLE.hnin });
     await screen.findByTestId(`customer-row-${CUSTOMER_IDS.DAW_MYA}`);
-    expect(screen.getByTestId('customer-filter-archived').getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByTestId('customer-filter-archived').getAttribute('aria-checked')).toBe(
+      'true',
+    );
     expect(screen.getByRole('button', { name: 'Inactive', pressed: true })).toBeTruthy();
   });
 
@@ -149,7 +157,10 @@ describe('The customer list — who sees Add customer, cards, empty states, pagi
     fireEvent.click(screen.getByTestId('customer-new'));
     expect(push).toHaveBeenCalledWith('/customers/new');
     unmount();
-    const viewer = { ...PEOPLE.aung, grants: PEOPLE.aung.grants.filter((g) => g.code === 'customer.view') };
+    const viewer = {
+      ...PEOPLE.aung,
+      grants: PEOPLE.aung.grants.filter((g) => g.code === 'customer.view'),
+    };
     renderPos(<CustomersScreen />, { me: viewer });
     await screen.findByTestId(`customer-row-${CUSTOMER_IDS.MA_SU}`);
     expect(screen.queryByTestId('customer-new')).toBeNull();
@@ -162,10 +173,12 @@ describe('The customer list — who sees Add customer, cards, empty states, pagi
     const name = await screen.findByTestId(`customer-row-${CUSTOMER_IDS.MA_SU}`);
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.getByTestId('customer-new')).toBeTruthy();
-    const card = (within(name.closest('li') ?? document.body));
+    const card = within(name.closest('li') ?? document.body);
     expect(card.getByText('09 7712 3456')).toBeTruthy();
     expect(card.getByText('28/Sep/2026')).toBeTruthy();
-    const daw = within(screen.getByTestId(`customer-row-${CUSTOMER_IDS.DAW_MYA}`).closest('li') ?? document.body);
+    const daw = within(
+      screen.getByTestId(`customer-row-${CUSTOMER_IDS.DAW_MYA}`).closest('li') ?? document.body,
+    );
     expect(daw.getByText('Inactive')).toBeTruthy();
   });
 

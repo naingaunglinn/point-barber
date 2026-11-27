@@ -65,8 +65,8 @@ export function useStaffRail(): {
       : pathname.startsWith('/customers')
         ? 'customers'
         : setting !== undefined
-        ? 'settings'
-        : undefined,
+          ? 'settings'
+          : undefined,
     activeItemKey: setting?.key,
   };
 }

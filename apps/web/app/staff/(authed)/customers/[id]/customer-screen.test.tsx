@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { CustomerStatus } from '@point/shared';
 
 import {
   CUSTOMER_IDS,
@@ -31,7 +33,11 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  // Unmount first: an effect that runs after the stubs are gone would find no `matchMedia`.
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const stat = (key: string) => screen.getByTestId(`customer-stat-${key}`);
 const value = (key: string) => stat(key).querySelector('[data-slot="kpi-value"]')?.textContent;
@@ -41,13 +47,9 @@ describe('The customer page — header and Overview', () => {
     routeFetch(fetchMock, { [DETAIL]: json(200, customerOf()) });
     renderPos(<CustomerScreen id={CUSTOMER_IDS.MA_SU} />, { me: PEOPLE.hnin });
     await screen.findByTestId('customer-overview');
-    expect(['visits', 'totalSpent', 'lastVisit', 'preferredBarber', 'noShows'].map(value)).toStrictEqual([
-      '6',
-      '59,000 Ks',
-      '28/Sep/2026',
-      'Ko Aung',
-      '2',
-    ]);
+    expect(
+      ['visits', 'totalSpent', 'lastVisit', 'preferredBarber', 'noShows'].map(value),
+    ).toStrictEqual(['6', '59,000 Ks', '28/Sep/2026', 'Ko Aung', '2']);
     expect(screen.getByTestId('customer-scope-note').textContent).toBe('At your branches');
     expect(within(stat('totalSpent')).getByText('Total spent')).toBeTruthy();
   });
@@ -56,13 +58,9 @@ describe('The customer page — header and Overview', () => {
     routeFetch(fetchMock, { [DETAIL]: json(200, maSuForAdmin()) });
     renderPos(<CustomerScreen id={CUSTOMER_IDS.MA_SU} />, { me: PEOPLE.kyawZin });
     await screen.findByTestId('customer-overview');
-    expect(['visits', 'totalSpent', 'lastVisit', 'preferredBarber', 'noShows'].map(value)).toStrictEqual([
-      '7',
-      '65,000 Ks',
-      '03/Oct/2026',
-      '–',
-      '2',
-    ]);
+    expect(
+      ['visits', 'totalSpent', 'lastVisit', 'preferredBarber', 'noShows'].map(value),
+    ).toStrictEqual(['7', '65,000 Ks', '03/Oct/2026', '–', '2']);
     expect(screen.queryByTestId('customer-scope-note')).toBeNull();
   });
 
@@ -99,15 +97,19 @@ describe('The customer page — header and Overview', () => {
   it('shows the notes, or "No notes"', async () => {
     routeFetch(fetchMock, { [DETAIL]: json(200, customerOf()) });
     const { unmount } = renderPos(<CustomerScreen id={CUSTOMER_IDS.MA_SU} />, { me: PEOPLE.hnin });
-    expect((await screen.findByTestId('customer-notes')).textContent).toContain('Prefers a short fade.');
+    expect((await screen.findByTestId('customer-notes')).textContent).toContain(
+      'Prefers a short fade.',
+    );
     unmount();
     routeFetch(fetchMock, { [DETAIL]: json(200, customerOf({ notes: null })) });
     renderPos(<CustomerScreen id={CUSTOMER_IDS.MA_SU} />, { me: PEOPLE.hnin });
-    await vi.waitFor(() => expect(screen.getByTestId('customer-notes').textContent).toContain('No notes'));
+    await vi.waitFor(() =>
+      expect(screen.getByTestId('customer-notes').textContent).toContain('No notes'),
+    );
   });
 
   it('shows the muted "Inactive" badge for Daw Mya; an archived customer shows "Archived" and the banner', async () => {
-    routeFetch(fetchMock, { [DETAIL]: json(200, customerOf({ status: 0 })) });
+    routeFetch(fetchMock, { [DETAIL]: json(200, customerOf({ status: CustomerStatus.INACTIVE })) });
     const { unmount } = renderPos(<CustomerScreen id={CUSTOMER_IDS.MA_SU} />, { me: PEOPLE.hnin });
     expect((await screen.findByTestId('customer-status-badge')).textContent).toBe('Inactive');
     unmount();

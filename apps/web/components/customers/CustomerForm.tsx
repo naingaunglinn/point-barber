@@ -85,7 +85,9 @@ function TextField({
         {...(helper === undefined ? {} : { helper })}
         error={fieldErrorOf(form.formState.errors, name)}
       >
-        {(control) => <TextInput {...control} {...field} multiline={multiline} maxLength={maxLength} />}
+        {(control) => (
+          <TextInput {...control} {...field} multiline={multiline} maxLength={maxLength} />
+        )}
       </FormField>
     </div>
   );

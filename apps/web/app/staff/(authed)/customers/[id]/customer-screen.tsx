@@ -67,9 +67,7 @@ function Detail({ customer }: Readonly<{ customer: CustomerDto }>) {
           </span>
         }
       />
-      {customer.archived_at === null ? null : (
-        <LockBanner message={t('detail.archivedBanner')} />
-      )}
+      {customer.archived_at === null ? null : <LockBanner message={t('detail.archivedBanner')} />}
       <CustomerOverview customer={customer} updatedAt={now.toISOString()} />
     </div>
   );

@@ -35,7 +35,11 @@ function RailProbe() {
   return (
     <output data-testid="rail">
       {JSON.stringify({
-        modules: rail.nav.map((module) => ({ key: module.key, label: module.label, href: module.href })),
+        modules: rail.nav.map((module) => ({
+          key: module.key,
+          label: module.label,
+          href: module.href,
+        })),
         activeKey: rail.activeKey ?? null,
       })}
     </output>
@@ -82,9 +86,11 @@ describe('Customers in the bottom navigation', () => {
     const nav = await screen.findByRole('navigation');
     const labelled = [...nav.querySelectorAll('li')].map((item) => item.textContent?.trim());
     expect(labelled).toStrictEqual(['Today', 'Start', 'Customers', 'More']);
-    expect(
-      screen.getAllByRole('link').map((link) => link.getAttribute('href')),
-    ).toStrictEqual(['/today', '/customers', '/more']);
+    expect(screen.getAllByRole('link').map((link) => link.getAttribute('href'))).toStrictEqual([
+      '/today',
+      '/customers',
+      '/more',
+    ]);
   });
 
   it('marks Customers current on /customers/<id>', async () => {

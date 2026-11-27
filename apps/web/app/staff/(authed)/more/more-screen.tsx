@@ -47,7 +47,11 @@ export function MoreScreen() {
         </p>
       </section>
       {customers ? (
-        <nav aria-label={tCustomer('title')} className="grid gap-1" data-testid="more-customers-nav">
+        <nav
+          aria-label={tCustomer('title')}
+          className="grid gap-1"
+          data-testid="more-customers-nav"
+        >
           <Link
             href="/customers"
             data-testid="more-customers"
