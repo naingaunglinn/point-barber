@@ -44,7 +44,7 @@ const threshold = z.int().min(0).nullable().optional();
 /** The price rule of P6-RULE-05 · D-PAY-03: `is_sellable` ⇔ a price. */
 export interface PriceRuleRow {
   readonly is_sellable: boolean;
-  readonly sell_price_amount: unknown;
+  readonly sell_price_amount?: unknown;
 }
 
 /** The field a failed price rule is reported on: 400 `validation`, `errors[0].field` (design D8). */
