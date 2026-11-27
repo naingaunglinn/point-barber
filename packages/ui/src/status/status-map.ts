@@ -111,6 +111,8 @@ export const STATUS_MAP = {
   branches: { INACTIVE: muted },
   // add-leave-types — AD-CMP-05 master data, as branches: ACTIVE shows no badge (design D9).
   leave_types: { INACTIVE: muted },
+  // add-booking-cancel-reasons — AD-CMP-05 master data, as branches: ACTIVE shows no badge (design D9).
+  booking_cancel_reasons: { INACTIVE: muted },
 } as const satisfies Record<string, Record<string, StatusStyle>>;
 
 /**

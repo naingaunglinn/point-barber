@@ -31,6 +31,7 @@ describe('language files', () => {
       'attachment',
       'leaveType',
       'pwa',
+      'cancelReason',
     ]);
   });
 

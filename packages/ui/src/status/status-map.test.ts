@@ -19,17 +19,21 @@ describe('STATUS_MAP', () => {
   // add-branch-management — AD-CMP-05 master data: an ACTIVE branch has no badge, so branches.ACTIVE is
   // the one status constant without an entry (its label is the filter's Active chip).
   // add-leave-types — leave_types.ACTIVE likewise (AD-CMP-05 master data, design D9).
-  it('has exactly the 73 pairs of the status constants but branches.ACTIVE and leave_types.ACTIVE', () => {
+  // add-booking-cancel-reasons — booking_cancel_reasons.ACTIVE likewise (design D9).
+  it('has exactly the 74 pairs of the status constants but the ACTIVE of branches, leave_types and booking_cancel_reasons', () => {
     const pairs = (map: Record<string, Record<string, unknown>>) =>
       Object.entries(map)
         .flatMap(([table, names]) => Object.keys(names).map((name) => `${table}.${name}`))
         .sort();
     expect(pairs(STATUS_MAP)).toEqual(
       pairs(STATUS_BY_TABLE).filter(
-        (pair) => pair !== 'branches.ACTIVE' && pair !== 'leave_types.ACTIVE',
+        (pair) =>
+          pair !== 'branches.ACTIVE' &&
+          pair !== 'leave_types.ACTIVE' &&
+          pair !== 'booking_cancel_reasons.ACTIVE',
       ),
     );
-    expect(pairs(STATUS_MAP)).toHaveLength(73);
+    expect(pairs(STATUS_MAP)).toHaveLength(74);
     expect(pairs(STATUS_MAP)).not.toContain('branches.ACTIVE');
   });
 
@@ -89,6 +93,7 @@ describe('STATUS_MAP', () => {
       // add-branch-management — INACTIVE muted, ACTIVE no badge (AD-CMP-05 master data).
       branches: { INACTIVE: 'muted' },
       leave_types: { INACTIVE: 'muted' },
+      booking_cancel_reasons: { INACTIVE: 'muted' },
     });
   });
 

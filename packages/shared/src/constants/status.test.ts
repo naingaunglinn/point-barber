@@ -68,6 +68,7 @@ describe('status constants', () => {
       backup_runs: { RUNNING: 1, SUCCESS: 2, FAILED: 3 },
       branches: { INACTIVE: 0, ACTIVE: 1 },
       leave_types: { INACTIVE: 0, ACTIVE: 1 },
+      booking_cancel_reasons: { INACTIVE: 0, ACTIVE: 1 },
     });
   });
 
@@ -83,10 +84,10 @@ describe('status constants', () => {
     expect(STATUS_BY_TABLE.leave_types).toBe(LeaveTypeStatus);
   });
 
-  it('holds the 71 (table, code) pairs of AD-CMP-05, the 2 of branches and the 2 of leave types, codes unique per table', () => {
+  it('holds the 71 (table, code) pairs of AD-CMP-05 and the 2 each of branches, leave_types and booking_cancel_reasons, codes unique per table', () => {
     const tables = Object.values(STATUS_BY_TABLE);
-    expect(tables).toHaveLength(21);
-    expect(tables.reduce((sum, codes) => sum + Object.keys(codes).length, 0)).toBe(75);
+    expect(tables).toHaveLength(22);
+    expect(tables.reduce((sum, codes) => sum + Object.keys(codes).length, 0)).toBe(77);
     for (const codes of tables) {
       const values = Object.values(codes);
       expect(new Set(values).size).toBe(values.length);

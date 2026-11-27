@@ -92,6 +92,14 @@ export type BranchStatus = (typeof BranchStatus)[keyof typeof BranchStatus];
 export const LeaveTypeStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type LeaveTypeStatus = (typeof LeaveTypeStatus)[keyof typeof LeaveTypeStatus];
 
+/**
+ * part3 — booking_cancel_reasons.status; INACTIVE = no longer offered, past bookings keep it. The INACTIVE
+ * badge of Settings › Cancel reasons (add-booking-cancel-reasons design D9 · AD-CMP-05 master data: ACTIVE
+ * shows no badge), so it has its table in STATUS_BY_TABLE.
+ */
+export const CancelReasonStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
+export type CancelReasonStatus = (typeof CancelReasonStatus)[keyof typeof CancelReasonStatus];
+
 /** The constants by table name — the key the status map and the language keys use. */
 export const STATUS_BY_TABLE = {
   bookings: BookingStatus,
@@ -117,6 +125,8 @@ export const STATUS_BY_TABLE = {
   branches: BranchStatus,
   // add-leave-types — the leave-type list's status chips and badge (design D9).
   leave_types: LeaveTypeStatus,
+  // add-booking-cancel-reasons — the INACTIVE badge of the cancel-reason list (design D9).
+  booking_cancel_reasons: CancelReasonStatus,
 } as const;
 
 export type StatusTable = keyof typeof STATUS_BY_TABLE;
@@ -249,11 +259,8 @@ export const AttachmentKind = { DOCUMENT: 1, IMAGE: 2, IMPORT_FILE: 3 } as const
 export type AttachmentKind = (typeof AttachmentKind)[keyof typeof AttachmentKind];
 
 // add-booking-cancel-reasons — DB Part 3 v3 `booking_cancel_reasons` (task 1.3 · design D3 · D-DB-03).
-// Not in STATUS_BY_TABLE; each set equals the CHECK list of its column in db/source (status.test.ts).
-
-/** part3 — booking_cancel_reasons.status; INACTIVE = no longer offered, past bookings keep it. */
-export const CancelReasonStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
-export type CancelReasonStatus = (typeof CancelReasonStatus)[keyof typeof CancelReasonStatus];
+// `CancelReasonStatus` is above, in STATUS_BY_TABLE; each set equals the CHECK list of its column in
+// db/source (status.test.ts).
 
 /**
  * part3 — booking_cancel_reasons.system_code; NULL = a reason the admin made. NO_SHOW = the locked row

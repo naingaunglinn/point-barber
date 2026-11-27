@@ -20,5 +20,11 @@
   "website": {
     "view": "View the website",
     "update": "Edit the website"
+  },
+  "booking_cancel_reason": {
+    "view": "View cancel reasons",
+    "create": "Add cancel reasons",
+    "update": "Edit and reorder cancel reasons",
+    "delete": "Archive cancel reasons"
   }
 }

@@ -20,5 +20,11 @@
   "website": {
     "view": "Website ကြည့်ခွင့်",
     "update": "Website ပြင်ခွင့်"
+  },
+  "booking_cancel_reason": {
+    "view": "Cancel အကြောင်းပြချက် ကြည့်ခွင့်",
+    "create": "Cancel အကြောင်းပြချက် ထည့်ခွင့်",
+    "update": "Cancel အကြောင်းပြချက် ပြင်ခွင့်၊ အစဉ်ပြောင်းခွင့်",
+    "delete": "Cancel အကြောင်းပြချက် archive လုပ်ခွင့်"
   }
 }

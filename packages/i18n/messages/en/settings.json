@@ -5,7 +5,8 @@
     "additional": "Additional settings",
     "maintenance": "Maintenance mode",
     "branches": "Branches",
-    "leaveTypes": "Leave types"
+    "leaveTypes": "Leave types",
+    "cancelReasons": "Cancel reasons"
   },
   "company": {
     "title": "Company",

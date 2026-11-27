@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { Messages } from '@point/i18n';
 
 import { BRANCH_CODES } from '../../lib/branches/access';
+import { CANCEL_REASON_CODES } from '../../lib/cancel-reasons/access';
 import { LEAVE_TYPE_CODES } from '../../lib/leave-types/access';
 import { useCan } from '../../lib/session/grants';
 import { seesCompany } from './company-access';
@@ -52,6 +53,13 @@ const SCREENS: readonly SettingsScreenEntry[] = [
     key: 'leaveTypes',
     href: '/settings/leave-types',
     visible: (can) => LEAVE_TYPE_CODES.some((code) => can(code)),
+  },
+  // add-booking-cancel-reasons — Settings › Cancel reasons for a holder of any booking_cancel_reason.*
+  // code (booking_cancel_reason.view⁺ — AD-NAV-02 · AD-PERM-03 · design D9).
+  {
+    key: 'cancelReasons',
+    href: '/settings/cancel-reasons',
+    visible: (can) => CANCEL_REASON_CODES.some((code) => can(code)),
   },
   {
     key: 'maintenance',
