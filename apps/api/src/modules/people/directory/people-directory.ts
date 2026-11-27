@@ -4,9 +4,11 @@ import { type BranchAssignment, type BranchSummary, todayMmt } from '@point/shar
 import type { LoadedTarget } from '../../../common/access/resolvers.js';
 import { Clock } from '../../../common/clock/clock.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
+import type { WebsiteBranch } from '../../platform/index.js';
 import { AccessRepository } from '../repositories/access.repository.js';
 import { AssignmentsRepository } from '../repositories/assignments.repository.js';
 import { PeopleRepository } from '../repositories/people.repository.js';
+import { WebsiteRepository } from '../repositories/website.repository.js';
 
 // What other modules may ask about people (add-foundation-auth-access design D1). More reads join
 // with the sign-in and /me tasks.
@@ -20,6 +22,7 @@ export class PeopleDirectory {
     private readonly access: AccessRepository,
     private readonly clock: Clock,
     private readonly assignments: AssignmentsRepository,
+    private readonly website: WebsiteRepository,
   ) {}
 
   /**
@@ -50,6 +53,14 @@ export class PeopleDirectory {
     filter: { readonly status?: number } = {},
   ): Promise<BranchSummary[]> {
     return this.repository.branchSummaries(ids, filter);
+  }
+
+  /**
+   * The ACTIVE branches with their names, addresses, `is_public` and `map_url`, ordered by code — the
+   * website management's read (add-website-management design D1); every one when `ids` is undefined.
+   */
+  branchesForWebsite(ids?: readonly string[]): Promise<WebsiteBranch[]> {
+    return this.website.branches(ids);
   }
 
   /** P1.EMP.06 — every branch assignment of the employee, ended ones included. */

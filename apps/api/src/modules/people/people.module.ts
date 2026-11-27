@@ -12,6 +12,7 @@ import {
   RegisteredGrantSource,
   SettingBranches,
   UserNames,
+  WebsiteDirectory,
   WebsitePeople,
 } from '../platform/index.js';
 import { PeopleGrantSource } from './access/people-grant-source.js';
@@ -27,6 +28,7 @@ import { BranchCodes } from './directory/branch-codes.js';
 import { BranchHeaders } from './directory/branch-headers.js';
 import { DisplayNames } from './directory/display-names.js';
 import { PeopleDirectory } from './directory/people-directory.js';
+import { PublicPeople } from './directory/public-people.js';
 import { EmployeeCodes } from './employees/employee-codes.js';
 import { OrganizationController } from './organization/organization.controller.js';
 import { AccessRepository } from './repositories/access.repository.js';
@@ -40,6 +42,7 @@ import { DisplayNameRepository } from './repositories/display-name.repository.js
 import { EmployeeRepository } from './repositories/employee.repository.js';
 import { PeopleRepository } from './repositories/people.repository.js';
 import { RoleRepository } from './repositories/role.repository.js';
+import { WebsiteRepository } from './repositories/website.repository.js';
 import { CompanyAdmin } from './roles/company-admin.js';
 import { FirstAdmin } from './roles/first-admin.js';
 import { SeedRoles } from './roles/seed-roles.js';
@@ -69,7 +72,9 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
     DisplayNameRepository,
     EmployeeRepository,
     RoleRepository,
+    WebsiteRepository,
     PeopleDirectory,
+    PublicPeople,
     DisplayNames,
     Assignments,
     BranchCodes,
@@ -93,6 +98,7 @@ import { PeopleSeedLock, PilotPeople } from './pilot/pilot-people.js';
   exports: [
     GrantSource,
     PeopleDirectory,
+    PublicPeople,
     DisplayNames,
     Assignments,
     BranchCodes,
@@ -127,6 +133,9 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
     private readonly grantSource: GrantSource,
     private readonly websitePeople: WebsitePeople,
     private readonly displayNames: DisplayNames,
+    private readonly websiteDirectory: WebsiteDirectory,
+    private readonly publicPeople: PublicPeople,
+    private readonly websiteRepository: WebsiteRepository,
   ) {}
 
   onModuleInit(): void {
@@ -150,6 +159,14 @@ export class PeopleModule implements OnModuleInit, OnApplicationBootstrap {
         this.displayNames.ofUsers(userIds, await this.displayNames.callerLocale()),
       employeeDisplayNames: async (employeeIds) =>
         this.displayNames.ofEmployees(employeeIds, await this.displayNames.callerLocale()),
+    });
+    // The website management's other reads (design D1): the company, the ACTIVE branches and the public
+    // team.
+    this.websiteDirectory.use({
+      company: () => this.websiteRepository.company(),
+      branchesForWebsite: (ids) => this.directory.branchesForWebsite(ids),
+      activeProfiles: () => this.publicPeople.activeProfiles(),
+      countPublicProfiles: () => this.publicPeople.countPublicProfiles(),
     });
     // The maintenance gate decides on the same grant rows as the access guard (design D9).
     this.gateGrants.use(this.grantSource);

@@ -58,6 +58,15 @@ export class OpeningHoursRepository {
     }));
   }
 
+  /** The branches among `branchIds` that have hour rows (P8.WEB.01 `hours_configured`). */
+  async configuredBranchIds(branchIds: readonly string[]): Promise<Set<string>> {
+    const groups = await this.db.branch_opening_hours.groupBy({
+      by: ['branch_id'],
+      where: { branch_id: { in: [...branchIds] } },
+    });
+    return new Set(groups.map((group) => group.branch_id));
+  }
+
   /**
    * The branch's rows locked for the write (CG-DB-06 · design D5). The branch row is locked first, so
    * two first saves of a branch without rows take turns instead of both inserting (the second would

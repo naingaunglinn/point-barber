@@ -4,3 +4,5 @@ export { SchedulingModule } from './scheduling.module.js';
 // add-leave-requests (#32) — and the row it answers.
 export { LeaveTypes } from './leave-types/leave-types.js';
 export type { LeaveTypeRow } from './leave-types/leave-type-mapper.js';
+// add-website-management (design D1): where employees work on a day — first merge creates it.
+export { TodayShifts } from './shifts/today-shifts.js';

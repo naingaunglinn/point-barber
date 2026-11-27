@@ -174,4 +174,25 @@ export class BranchClosuresRepository {
     });
     return assertWithinCeiling(rows, 'BranchClosures.onDates').map(rowOf);
   }
+
+  /**
+   * Per branch of `branchIds` the earliest non-archived closure with `end_date` ≥ `today` (P8.WEB.01
+   * `next_closure` — proposal reading 9): `start_date`, then id, decides a tie.
+   */
+  async nextOf(branchIds: readonly string[], today: string): Promise<Map<string, ClosureRow>> {
+    const rows = await this.db.branch_closures.findMany({
+      where: {
+        branch_id: { in: [...branchIds] },
+        archived_at: null,
+        end_date: { gte: dateColumn(today) },
+      },
+      orderBy: [{ start_date: 'asc' }, { id: 'asc' }],
+      take: READ_ROW_CEILING + 1,
+    });
+    const next = new Map<string, ClosureRow>();
+    for (const row of assertWithinCeiling(rows, 'BranchClosuresRepository.nextOf').map(rowOf)) {
+      if (!next.has(row.branch_id)) next.set(row.branch_id, row);
+    }
+    return next;
+  }
 }

@@ -193,6 +193,13 @@ export class ServiceListRepository {
     return assertWithinCeiling(rows, 'ServiceListRepository.categories');
   }
 
+  /** ACTIVE, non-archived services with `show_on_website` (P8.WEB.01 `counts.services_on_website`). */
+  countOnWebsite(db: Tx): Promise<number> {
+    return db.services.count({
+      where: { status: ServiceStatus.ACTIVE, archived_at: null, show_on_website: true },
+    });
+  }
+
   /** `service_count` — the non-archived services of each category, whatever their status (reading 6). */
   async serviceCounts(db: Tx): Promise<ReadonlyMap<string, number>> {
     const groups = await db.services.groupBy({
