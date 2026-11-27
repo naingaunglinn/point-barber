@@ -11,6 +11,7 @@ import {
   Skeleton,
   TABLET,
   useMinWidth,
+  useNow,
 } from '@point/ui';
 
 import { CustomerOverview } from '../../../../../components/customers/CustomerOverview';
@@ -46,8 +47,10 @@ function Phone({ customer }: Readonly<{ customer: CustomerDto }>) {
   );
 }
 
-function Detail({ customer, loadedAt }: Readonly<{ customer: CustomerDto; loadedAt: string }>) {
+function Detail({ customer }: Readonly<{ customer: CustomerDto }>) {
   const t = useTranslations('customer');
+  // The statistics are computed on every read, so the tile's "updated" time is the app's clock now.
+  const now = useNow();
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-6" data-testid="customer-header">
       <title>{customer.name}</title>
@@ -67,7 +70,7 @@ function Detail({ customer, loadedAt }: Readonly<{ customer: CustomerDto; loaded
       {customer.archived_at === null ? null : (
         <LockBanner message={t('detail.archivedBanner')} />
       )}
-      <CustomerOverview customer={customer} updatedAt={loadedAt} />
+      <CustomerOverview customer={customer} updatedAt={now.toISOString()} />
     </div>
   );
 }
@@ -92,9 +95,7 @@ function CustomerPage({ id }: Readonly<{ id: string }>) {
       </div>
     );
   }
-  return (
-    <Detail customer={customer.data} loadedAt={new Date(customer.dataUpdatedAt).toISOString()} />
-  );
+  return <Detail customer={customer.data} />;
 }
 
 /** The page: without a customer code the forbidden page, and no request is made. */
