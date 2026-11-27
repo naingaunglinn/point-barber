@@ -8,7 +8,8 @@ import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js
 
 // The branch_closures table (DB Part 8 v1.1 — the platform module writes it · D-WEB-04 · ADR-001 rule 1):
 // the branch of a closure for the access guard's closure loader (task 1.6), and the create, the overlap
-// check, the list and the dates a closure covers (add-website-management A3 · design D6).
+// check, the list and the dates a closure covers (add-website-management A3 · design D6), and the locked
+// read, the edit and the archive of a closure (A4).
 
 /** A stored closure; its dates are `YYYY-MM-DD` business dates (D-PLT-15). */
 export interface ClosureRow {
@@ -33,6 +34,21 @@ export interface ClosureInsert {
   readonly notice_en: string | null;
   readonly created_by_user_id: string;
   readonly now: Date;
+}
+
+/** What an edit changes of a closure; a member left out stays as it is. */
+export interface ClosureChange {
+  readonly start_date?: string;
+  readonly end_date?: string;
+  readonly notice_mm?: string;
+  readonly notice_en?: string | null;
+  readonly now: Date;
+}
+
+/** A closure read for a write, with the branch's code (the cache tag `branch:<code>`). */
+export interface LockedClosure {
+  readonly closure: ClosureRow;
+  readonly branch_code: string;
 }
 
 /** The filter of the list (P8.WEB.05): `from` / `to` select the closures overlapping `[from, to]`. */
@@ -112,12 +128,31 @@ export class BranchClosuresRepository {
     return rows[0] ?? null;
   }
 
+  /**
+   * The closure for an edit or an archive, held `FOR UPDATE` until the transaction ends (design D6),
+   * with its branch's code; null when no closure has the id.
+   */
+  async lockForUpdate(tx: Tx, closureId: string): Promise<LockedClosure | null> {
+    await tx.$queryRaw`SELECT id FROM branch_closures WHERE id = ${closureId}::uuid FOR UPDATE`;
+    const row = await tx.branch_closures.findUnique({
+      where: { id: closureId },
+      include: { branches: { select: { code: true } } },
+    });
+    return row === null ? null : { closure: rowOf(row), branch_code: row.branches.code };
+  }
+
   /** The earliest non-archived closure of the branch sharing a day with `[start, end]`; its id. */
-  async overlapping(branchId: string, start: string, end: string): Promise<string | null> {
+  async overlapping(
+    branchId: string,
+    start: string,
+    end: string,
+    exceptId?: string,
+  ): Promise<string | null> {
     const row = await this.db.branch_closures.findFirst({
       where: {
         branch_id: branchId,
         archived_at: null,
+        ...(exceptId === undefined ? {} : { id: { not: exceptId } }),
         start_date: { lte: dateColumn(end) },
         end_date: { gte: dateColumn(start) },
       },
@@ -140,6 +175,30 @@ export class BranchClosuresRepository {
         created_at: closure.now,
         updated_at: closure.now,
       },
+    });
+    return rowOf(row);
+  }
+
+  /** The members of `change` that are set, and `updated_at` = the clock. */
+  async update(tx: Tx, closureId: string, change: ClosureChange): Promise<ClosureRow> {
+    const row = await tx.branch_closures.update({
+      where: { id: closureId },
+      data: {
+        ...(change.start_date === undefined ? {} : { start_date: dateColumn(change.start_date) }),
+        ...(change.end_date === undefined ? {} : { end_date: dateColumn(change.end_date) }),
+        ...(change.notice_mm === undefined ? {} : { notice_mm: change.notice_mm }),
+        ...(change.notice_en === undefined ? {} : { notice_en: change.notice_en }),
+        updated_at: change.now,
+      },
+    });
+    return rowOf(row);
+  }
+
+  /** Delete = archive (D-DAT-05): `archived_at` and `updated_at` = the clock. */
+  async archive(tx: Tx, closureId: string, now: Date): Promise<ClosureRow> {
+    const row = await tx.branch_closures.update({
+      where: { id: closureId },
+      data: { archived_at: now, updated_at: now },
     });
     return rowOf(row);
   }

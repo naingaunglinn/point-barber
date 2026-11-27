@@ -1,7 +1,12 @@
 import { ErrorCode } from '@point/shared';
 import { describe, expect, it } from 'vitest';
 
-import { closureDateProblem, closureState } from './closure-rules.js';
+import {
+  closureArchiveProblem,
+  closureDateProblem,
+  closureEditProblem,
+  closureState,
+} from './closure-rules.js';
 
 // add-website-management tasks 3.1 / 3.2 — the date rules of a created closure and the computed state
 // (P8.WEB.06 · P8-RULE-12 · design D6 · proposal readings 5 and 6). "Today" is Monday 05/Oct/2026.
@@ -65,5 +70,84 @@ describe('closureState — computed from the dates and archived_at, never stored
     ] as const) {
       expect(closureState(closure(start, end, true), TODAY)).toBe('archived');
     }
+  });
+});
+
+// add-website-management tasks 4.1 / 4.3 — the checks of an edit and of an archive (P8.WEB.07 / 08 ·
+// owner WM4 ★ · proposal reading 6).
+describe('closureEditProblem — an edit by the closure state', () => {
+  const current = { start_date: '2026-10-04', end_date: '2026-10-07' };
+  const upcoming = { start_date: '2026-10-12', end_date: '2026-10-13' };
+  const ended = { start_date: '2026-10-01', end_date: '2026-10-02' };
+
+  it('a current closure may end today and keeps its start', () => {
+    expect(closureEditProblem(current, { ...current, end_date: '2026-10-05' }, TODAY)).toBeNull();
+  });
+
+  it('a current closure with another start is closure_started', () => {
+    expect(
+      closureEditProblem(current, { ...current, start_date: '2026-10-05' }, TODAY),
+    ).toStrictEqual({ status: 422, code: ErrorCode.CLOSURE_STARTED });
+  });
+
+  it('a current closure ending yesterday is date_in_past (WM4 ★)', () => {
+    expect(closureEditProblem(current, { ...current, end_date: '2026-10-04' }, TODAY)).toStrictEqual(
+      { status: 422, code: ErrorCode.DATE_IN_PAST },
+    );
+  });
+
+  it('a closure that starts today is current: its start stays', () => {
+    const today = { start_date: TODAY, end_date: '2026-10-08' };
+    expect(closureEditProblem(today, { ...today, end_date: TODAY }, TODAY)).toBeNull();
+    expect(closureEditProblem(today, { ...today, start_date: '2026-10-06' }, TODAY)).toStrictEqual({
+      status: 422,
+      code: ErrorCode.CLOSURE_STARTED,
+    });
+  });
+
+  it('an ended closure is closure_past, whatever the body says', () => {
+    expect(closureEditProblem(ended, ended, TODAY)).toStrictEqual({
+      status: 422,
+      code: ErrorCode.CLOSURE_PAST,
+    });
+  });
+
+  it('an upcoming closure moves with the create rules', () => {
+    expect(
+      closureEditProblem(upcoming, { start_date: '2026-10-05', end_date: '2026-10-06' }, TODAY),
+    ).toBeNull();
+    expect(
+      closureEditProblem(upcoming, { start_date: '2026-10-04', end_date: '2026-10-13' }, TODAY),
+    ).toStrictEqual({ status: 422, code: ErrorCode.DATE_IN_PAST });
+    expect(
+      closureEditProblem(upcoming, { start_date: '2026-10-12', end_date: '2027-10-12' }, TODAY),
+    ).toBeNull();
+    expect(
+      closureEditProblem(upcoming, { start_date: '2026-10-12', end_date: '2027-10-13' }, TODAY),
+    ).toStrictEqual({ status: 422, code: ErrorCode.RANGE_TOO_LONG, context: { max_days: 366 } });
+  });
+
+  it('an end before the start is a 400 on the end', () => {
+    expect(
+      closureEditProblem(upcoming, { start_date: '2026-10-14', end_date: '2026-10-13' }, TODAY),
+    ).toStrictEqual({ status: 400, code: ErrorCode.END_BEFORE_START });
+  });
+});
+
+describe('closureArchiveProblem — only while no past day changes', () => {
+  it('a closure that starts today or later can be archived', () => {
+    expect(closureArchiveProblem({ start_date: TODAY, end_date: TODAY }, TODAY)).toBeNull();
+    expect(
+      closureArchiveProblem({ start_date: '2026-10-12', end_date: '2026-10-13' }, TODAY),
+    ).toBeNull();
+  });
+
+  it('a started closure is closure_started, an ended one closure_past', () => {
+    expect(
+      closureArchiveProblem({ start_date: '2026-10-04', end_date: '2026-10-07' }, TODAY),
+    ).toBe(ErrorCode.CLOSURE_STARTED);
+    expect(
+      closureArchiveProblem({ start_date: '2026-10-01', end_date: '2026-10-02' }, TODAY),
+    ).toBe(ErrorCode.CLOSURE_PAST);
   });
 });

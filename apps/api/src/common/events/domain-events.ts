@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Room } from '@point/shared';
 
 import { TransactionScope } from '../database/transaction-scope.js';
 import { BackgroundTasks } from '../http/background-tasks.js';
@@ -10,6 +11,8 @@ import { BackgroundTasks } from '../http/background-tasks.js';
 export interface DomainEvent {
   readonly name: string;
   readonly payload: Readonly<Record<string, unknown>>;
+  /** The realtime rooms the event is delivered to (API-RT-01) — a top-level member, never in `payload`. */
+  readonly rooms?: readonly Room[];
 }
 
 type Handler = (event: DomainEvent) => Promise<void> | void;
