@@ -250,7 +250,6 @@ export type ServiceCategoryStatus =
 export const ServiceStatus = { INACTIVE: 0, ACTIVE: 1 } as const;
 export type ServiceStatus = (typeof ServiceStatus)[keyof typeof ServiceStatus];
 
-
 /** part8 — attachments.kind; a receipt PDF / PNG is a DOCUMENT (add-walkin-visit-checkout design D10). */
 export const AttachmentKind = { DOCUMENT: 1, IMAGE: 2, IMPORT_FILE: 3 } as const;
 export type AttachmentKind = (typeof AttachmentKind)[keyof typeof AttachmentKind];
