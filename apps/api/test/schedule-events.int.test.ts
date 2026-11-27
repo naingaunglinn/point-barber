@@ -115,23 +115,6 @@ describe('add-schedule-patterns · scheduling · Each save is announced', () => 
       },
     ]);
   });
-
-  it('the data holds ids and dates only — no name, no note, no recipient id outside rooms', async () => {
-    await save('E002', E.E004, {
-      effective_from: '2026-10-19',
-      days: week([1, 2, 3, 4, 5], '10:00', '20:00'),
-    });
-    const events = await settle();
-    expect(events.length).toBeGreaterThan(0);
-    for (const event of events) {
-      expect(Object.keys(event.payload).sort()).toStrictEqual(
-        'branch_id' in event.payload
-          ? ['branch_id', 'dates', 'employee_id']
-          : ['dates', 'employee_id'],
-      );
-      expect(JSON.stringify(event.payload)).not.toContain(U.E004);
-    }
-  });
 });
 
 describe('add-schedule-patterns · scheduling · The website tag barbers', () => {

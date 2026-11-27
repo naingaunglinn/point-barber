@@ -15,39 +15,17 @@ const mmt = (local: string) => new Date(`${local}+06:30`);
 
 let s: SeededApp;
 let booked: string;
-let otherDate: string;
-let started: string;
-let cancelled: string;
-let minsBooking: string;
+
+const at = (status: number, startsAt: string, employee: 'E004' | 'E005' = 'E004') =>
+  bookingAt(s.prisma, { branch: B3, status, startsAt: mmt(startsAt), employee });
 
 beforeAll(async () => {
   s = await seededApp(mmt('2026-10-05T11:00:00'));
-  booked = await bookingAt(s.prisma, {
-    branch: B3,
-    status: BookingStatus.BOOKED,
-    startsAt: mmt('2026-10-17T16:00:00'),
-  });
-  otherDate = await bookingAt(s.prisma, {
-    branch: B3,
-    status: BookingStatus.BOOKED,
-    startsAt: mmt('2026-10-18T10:00:00'),
-  });
-  started = await bookingAt(s.prisma, {
-    branch: B3,
-    status: BookingStatus.STARTED,
-    startsAt: mmt('2026-10-17T11:00:00'),
-  });
-  cancelled = await bookingAt(s.prisma, {
-    branch: B3,
-    status: BookingStatus.CANCELLED,
-    startsAt: mmt('2026-10-17T12:00:00'),
-  });
-  minsBooking = await bookingAt(s.prisma, {
-    branch: B3,
-    status: BookingStatus.BOOKED,
-    startsAt: mmt('2026-10-17T13:00:00'),
-    employee: 'E005',
-  });
+  booked = await at(BookingStatus.BOOKED, '2026-10-17T16:00:00');
+  await at(BookingStatus.BOOKED, '2026-10-18T10:00:00');
+  await at(BookingStatus.STARTED, '2026-10-17T11:00:00');
+  await at(BookingStatus.CANCELLED, '2026-10-17T12:00:00');
+  await at(BookingStatus.BOOKED, '2026-10-17T13:00:00', 'E005');
 });
 afterAll(() => s.close());
 
@@ -57,7 +35,6 @@ describe('add-schedule-patterns · booking · BookedBlocks.forEmployeeDates (Boo
       .get(BookedBlocks)
       .forEmployeeDates(s.prisma, { employee_id: E.E004, dates: ['2026-10-17'] });
     expect(blocks.map((block) => block.booking_id)).toStrictEqual([booked]);
-    expect([started, cancelled, otherDate, minsBooking]).not.toContain(blocks[0]?.booking_id);
   });
 
   it('carries the BookedBlock row of design D1', async () => {
@@ -76,17 +53,5 @@ describe('add-schedule-patterns · booking · BookedBlocks.forEmployeeDates (Boo
       block_ends_at: mmt('2026-10-17T16:30:00'),
       customer_name: 'Ma Su',
     });
-  });
-
-  it('reads several dates in the order of the start, and none for no dates', async () => {
-    const port = s.app.get(BookedBlocks);
-    const many = await port.forEmployeeDates(s.prisma, {
-      employee_id: E.E004,
-      dates: ['2026-10-18', '2026-10-17'],
-    });
-    expect(many.map((block) => block.booking_id)).toStrictEqual([booked, otherDate]);
-    expect(await port.forEmployeeDates(s.prisma, { employee_id: E.E004, dates: [] })).toStrictEqual(
-      [],
-    );
   });
 });

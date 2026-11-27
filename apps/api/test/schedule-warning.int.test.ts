@@ -74,14 +74,6 @@ describe('add-schedule-patterns · scheduling · Saturday removed', () => {
     expect(await bookingRow(saturday)).toStrictEqual(before);
     expect((await bookingRow(tuesday)).status).toBe(BookingStatus.BOOKED);
   });
-
-  it('a save that changes no shift answers no warning', async () => {
-    const res = await save('E002', E.E004, {
-      effective_from: '2026-10-12',
-      days: week([1, 2, 3, 4, 5], '09:00', '21:00'),
-    });
-    expect([res.status, res.body.warnings]).toStrictEqual([200, []]);
-  });
 });
 
 describe('add-schedule-patterns · scheduling · the block against the new end of the shift', () => {

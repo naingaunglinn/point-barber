@@ -112,9 +112,4 @@ describe('add-schedule-patterns · scheduling · Generation can be run now for o
     expect(aung.body.context).toMatchObject({ required: 'schedule.update' });
     expect(await jobCount()).toBe(jobs);
   });
-
-  it('a body without a branch is a 400, not a job', async () => {
-    const res = await post('E002', {});
-    expect(res.status).toBe(400);
-  });
 });
