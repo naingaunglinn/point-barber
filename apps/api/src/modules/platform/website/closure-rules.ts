@@ -36,7 +36,7 @@ export function closureDateProblem(
 /** What an edit breaks: a 400 on `end_date`, or a 422 with its code (and context). */
 export interface ClosureEditProblem {
   readonly status: 400 | 422;
-  readonly code: string;
+  readonly code: ErrorCode;
   readonly context?: { readonly max_days: number };
 }
 

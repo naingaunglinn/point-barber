@@ -175,11 +175,14 @@ export class ClosureWrites {
         };
         saved = { branch_id: stored.branch_id, ...merged };
         const problem = closureEditProblem(stored, merged, today);
+        if (problem?.status === 400) {
+          // The merged end is before the merged start: the schema cannot see it (both are optional).
+          throw new ProblemException(ErrorCode.VALIDATION, 400, {
+            errors: [{ field: 'end_date', code: problem.code }],
+          });
+        }
         if (problem !== null) {
-          throw new ProblemException(problem.code, problem.status, {
-            ...(problem.status === 400
-              ? { errors: [{ field: 'end_date', code: problem.code }] }
-              : {}),
+          throw new ProblemException(problem.code, 422, {
             ...(problem.context === undefined ? {} : { context: problem.context }),
           });
         }
@@ -287,7 +290,12 @@ export class ClosureWrites {
     exceptId?: string,
   ): Promise<ProblemException> {
     return overlap(
-      await this.repository.overlapping(range.branch_id, range.start_date, range.end_date, exceptId),
+      await this.repository.overlapping(
+        range.branch_id,
+        range.start_date,
+        range.end_date,
+        exceptId,
+      ),
     );
   }
 }

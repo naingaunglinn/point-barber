@@ -91,9 +91,9 @@ describe('closureEditProblem — an edit by the closure state', () => {
   });
 
   it('a current closure ending yesterday is date_in_past (WM4 ★)', () => {
-    expect(closureEditProblem(current, { ...current, end_date: '2026-10-04' }, TODAY)).toStrictEqual(
-      { status: 422, code: ErrorCode.DATE_IN_PAST },
-    );
+    expect(
+      closureEditProblem(current, { ...current, end_date: '2026-10-04' }, TODAY),
+    ).toStrictEqual({ status: 422, code: ErrorCode.DATE_IN_PAST });
   });
 
   it('a closure that starts today is current: its start stays', () => {
@@ -143,11 +143,11 @@ describe('closureArchiveProblem — only while no past day changes', () => {
   });
 
   it('a started closure is closure_started, an ended one closure_past', () => {
-    expect(
-      closureArchiveProblem({ start_date: '2026-10-04', end_date: '2026-10-07' }, TODAY),
-    ).toBe(ErrorCode.CLOSURE_STARTED);
-    expect(
-      closureArchiveProblem({ start_date: '2026-10-01', end_date: '2026-10-02' }, TODAY),
-    ).toBe(ErrorCode.CLOSURE_PAST);
+    expect(closureArchiveProblem({ start_date: '2026-10-04', end_date: '2026-10-07' }, TODAY)).toBe(
+      ErrorCode.CLOSURE_STARTED,
+    );
+    expect(closureArchiveProblem({ start_date: '2026-10-01', end_date: '2026-10-02' }, TODAY)).toBe(
+      ErrorCode.CLOSURE_PAST,
+    );
   });
 });

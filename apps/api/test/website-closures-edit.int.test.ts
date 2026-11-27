@@ -213,9 +213,11 @@ describe('add-website-management · website · A closure is edited according to 
     const backwards = await edit('E002', id, { start_date: '2026-10-14' });
     const long = await edit('E002', id, { end_date: '2027-10-13' });
     expect([past.status, past.body.code]).toStrictEqual([422, 'date_in_past']);
-    expect([backwards.status, backwards.body.code, backwards.body.errors?.[0]?.field]).toStrictEqual(
-      [400, 'validation', 'end_date'],
-    );
+    expect([
+      backwards.status,
+      backwards.body.code,
+      backwards.body.errors?.[0]?.field,
+    ]).toStrictEqual([400, 'validation', 'end_date']);
     expect([long.status, long.body.code, long.body.context]).toStrictEqual([
       422,
       'range_too_long',
@@ -232,10 +234,12 @@ describe('add-website-management · website · A closure is edited according to 
     const id = await closureRow(B3, '2026-10-20', '2026-10-21');
     const res = await edit('E002', id, { start_date: '2026-10-12', end_date: '2026-10-13' });
     expect(res.status).toBe(200);
-    expect(res.body.affected_bookings.map((row: { booking_id: string }) => row.booking_id)).toStrictEqual(
-      [booked],
-    );
-    expect(res.body.warnings).toStrictEqual([{ code: 'bookings_in_closure', params: { count: 1 } }]);
+    expect(
+      res.body.affected_bookings.map((row: { booking_id: string }) => row.booking_id),
+    ).toStrictEqual([booked]);
+    expect(res.body.warnings).toStrictEqual([
+      { code: 'bookings_in_closure', params: { count: 1 } },
+    ]);
     expect((await s.prisma.bookings.findUniqueOrThrow({ where: { id: booked } })).status).toBe(
       BookingStatus.BOOKED,
     );
@@ -351,7 +355,9 @@ describe('add-website-management · website · Closure writes refresh the site a
         .send(THINGYAN),
     );
     expect(res.status).toBe(201);
-    expect((await revalidateJobs(s.prisma)).slice(-1)).toStrictEqual([{ tags: ['home', 'branch:B3'] }]);
+    expect((await revalidateJobs(s.prisma)).slice(-1)).toStrictEqual([
+      { tags: ['home', 'branch:B3'] },
+    ]);
     expect(await effectsSince(mark)).toStrictEqual({ jobs: 1, events: 1, cleared: 1 });
     expect(events.at(-1)).toStrictEqual({
       name: 'schedule.changed',
@@ -384,7 +390,9 @@ describe('add-website-management · website · Closure writes refresh the site a
       ['2026-10-14', '2026-10-15'],
     ]);
     expect(events.slice(-2).every((event) => event.rooms?.join() === `branch:${B3}`)).toBe(true);
-    expect((await revalidateJobs(s.prisma)).slice(-1)).toStrictEqual([{ tags: ['home', 'branch:B3'] }]);
+    expect((await revalidateJobs(s.prisma)).slice(-1)).toStrictEqual([
+      { tags: ['home', 'branch:B3'] },
+    ]);
   });
 
   it('Scenario: A notice-only edit names the one range', async () => {
