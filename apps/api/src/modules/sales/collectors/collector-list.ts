@@ -3,6 +3,7 @@ import {
   type CollectorList as CollectorListDto,
   ErrorCode,
   SaleStatus,
+  businessDateOf,
   todayMmt,
 } from '@point/shared';
 
@@ -25,7 +26,7 @@ import type { SaleRow } from '../repositories/sales.repository.js';
 /** The sale date of the list (recorded reading 1). */
 function saleDate(sale: SaleRow, visit: VisitForSale | null, now: Date): string {
   if (sale.status === SaleStatus.FINISHED && sale.business_date !== null)
-    return sale.business_date.toISOString().slice(0, 10);
+    return businessDateOf(sale.business_date);
   if (visit?.is_late_entry === true) return visit.business_date;
   return todayMmt(now);
 }
