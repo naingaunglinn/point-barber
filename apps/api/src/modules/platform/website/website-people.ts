@@ -9,6 +9,8 @@ export interface WebsitePeopleReads {
   branch(id: string): Promise<{ readonly id: string; readonly code: string } | null>;
   /** The display names of users in the caller's language (AD-L10N-03), keyed by user id. */
   userDisplayNames(userIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
+  /** The display names of employees in the caller's language, keyed by employee id. */
+  employeeDisplayNames(employeeIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
 }
 
 @Injectable()
@@ -27,6 +29,12 @@ export class WebsitePeople implements WebsitePeopleReads {
     return userIds.length === 0
       ? Promise.resolve(new Map())
       : this.registered().userDisplayNames(userIds);
+  }
+
+  employeeDisplayNames(employeeIds: readonly string[]): Promise<ReadonlyMap<string, string>> {
+    return employeeIds.length === 0
+      ? Promise.resolve(new Map())
+      : this.registered().employeeDisplayNames(employeeIds);
   }
 
   private registered(): WebsitePeopleReads {
