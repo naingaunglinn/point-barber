@@ -33,7 +33,14 @@ import { MaintenanceController } from './system/maintenance.controller.js';
 import { MaintenanceMode } from './system/maintenance-mode.js';
 import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
+import { AffectedBookings } from './website/affected-bookings.js';
+import { BranchClosures } from './website/branch-closures.js';
 import { ClosureAccess } from './website/closure-access.js';
+import { ClosureBookings } from './website/closure-bookings.js';
+import { ClosureReads } from './website/closure-reads.js';
+import { ClosureViews } from './website/closure-view.js';
+import { ClosureWrites } from './website/closure-writes.js';
+import { ClosuresController } from './website/closures.controller.js';
 import { OpeningHours } from './website/opening-hours.js';
 import { OpeningHoursWrites } from './website/opening-hours-writes.js';
 import { SiteContent } from './website/site-content.js';
@@ -70,8 +77,10 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     StatusController,
     MaintenanceController,
     SettingsWriteController,
-    // add-website-management — mounted part by part (website/not-built.ts): A2 the hours.
+    // add-website-management — mounted part by part (website/not-built.ts): A2 the hours, A3 the
+    // closures' list and create (the edit and the archive answer 501 until A4).
     WebsiteHoursController,
+    ClosuresController,
   ],
   providers: [
     SystemService,
@@ -96,6 +105,13 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     // A2 — the week of opening hours and the people reads registered by people (design D1 / D5).
     WebsitePeople,
     OpeningHoursWrites,
+    // A3 — closures: the dates a closure covers, the list, the create and the bookings inside (D1 / D6 / D7).
+    BranchClosures,
+    ClosureBookings,
+    AffectedBookings,
+    ClosureViews,
+    ClosureReads,
+    ClosureWrites,
     RateLimiter,
     Observability,
     // ADR-013: one headless Chromium per API process, launched on first use (design D10).
@@ -130,6 +146,8 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     OpeningHours,
     SiteContent,
     WebsitePeople,
+    BranchClosures,
+    ClosureBookings,
     RateLimiter,
     SettingsModule,
     MaintenanceGate,

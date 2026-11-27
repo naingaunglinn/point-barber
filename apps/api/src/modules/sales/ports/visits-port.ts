@@ -32,7 +32,8 @@ export interface VisitForSale {
 export const isPhoneUnavailableRecorder = (
   visit: Pick<VisitForSale, 'proxy_reason' | 'started_by_user_id'>,
   callerUserId: string,
-): boolean => visit.proxy_reason === ProxyReason.PHONE_UNAVAILABLE && visit.started_by_user_id === callerUserId;
+): boolean =>
+  visit.proxy_reason === ProxyReason.PHONE_UNAVAILABLE && visit.started_by_user_id === callerUserId;
 
 export interface VisitsPort {
   read(db: Tx, visitId: string): Promise<VisitForSale | null>;

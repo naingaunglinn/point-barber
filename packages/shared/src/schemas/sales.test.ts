@@ -21,7 +21,7 @@ const HAIRCUT = '7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f';
 const CASH = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
 
 describe('request schemas strip what this change does not build', () => {
-  it('START keeps branch_id and items, drops performer, booking, location and price', () => {
+  it('START keeps branch_id, items and the performer; drops booking, location and price', () => {
     expect(
       startVisitRequestSchema.parse({
         branch_id: B3,
@@ -30,7 +30,11 @@ describe('request schemas strip what this change does not build', () => {
         booking_id: CASH,
         location_type: 2,
       }),
-    ).toStrictEqual({ branch_id: B3, items: [{ service_id: HAIRCUT }] });
+    ).toStrictEqual({
+      branch_id: B3,
+      items: [{ service_id: HAIRCUT }],
+      performed_by_employee_id: CASH,
+    });
   });
 
   it('a line keeps line_type 1 and the service; a sent price or variant is dropped', () => {
@@ -322,8 +326,10 @@ describe('proxy members of START (add-proxy-recording)', () => {
     ).toStrictEqual({ branch_id: B3, performed_by_employee_id: KO_AUNG, proxy_reason: 1 });
   });
 
-  it.each([1, 2, null])('proxy_reason %s is accepted', (proxy_reason) => {
-    expect(startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason }).success).toBe(true);
+  it.each([1, 2, null])('proxy_reason %s is accepted', (reason) => {
+    expect(startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason: reason }).success).toBe(
+      true,
+    );
   });
 
   it('both members may be missing or null', () => {
@@ -337,8 +343,8 @@ describe('proxy members of START (add-proxy-recording)', () => {
     ).toStrictEqual({ branch_id: B3, performed_by_employee_id: null, proxy_reason: null });
   });
 
-  it.each([3, 0, '1'])('proxy_reason %s is refused with invalid_union', (proxy_reason) => {
-    const result = startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason });
+  it.each([3, 0, '1'])('proxy_reason %s is refused with invalid_union', (reason) => {
+    const result = startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason: reason });
     expect(result.error?.issues.map((issue) => [issue.path, issue.code])).toStrictEqual([
       [['proxy_reason'], 'invalid_union'],
     ]);

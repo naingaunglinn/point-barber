@@ -11,8 +11,7 @@ export async function defaultCollectorOf(
   people: Pick<PeopleDirectory, 'employeeOfUser'>,
   visit: Pick<VisitForSale, 'proxy_reason' | 'started_by_user_id' | 'performed_by_employee_id'>,
 ): Promise<string> {
-  if (visit.proxy_reason !== ProxyReason.PHONE_UNAVAILABLE)
-    return visit.performed_by_employee_id;
+  if (visit.proxy_reason !== ProxyReason.PHONE_UNAVAILABLE) return visit.performed_by_employee_id;
   const recorder = await people.employeeOfUser(visit.started_by_user_id);
   // Every staff user has one employee (D-AUTH-07); a reason-1 START checked his assignment.
   if (recorder === null) throw new Error(`user ${visit.started_by_user_id} has no employee`);

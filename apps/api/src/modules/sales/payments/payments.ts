@@ -185,7 +185,8 @@ export class Payments {
     if (visit === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
     // Again under the sale lock: a COMPLETE that ran meanwhile set the completed time.
     if (late) paymentOrder(visit, receivedAt, now);
-    const collector = body.collected_by_employee_id ?? (await defaultCollectorOf(this.people, visit));
+    const collector =
+      body.collected_by_employee_id ?? (await defaultCollectorOf(this.people, visit));
     if (body.collected_by_employee_id !== undefined && body.collected_by_employee_id !== null) {
       const assigned = await this.assignments.isActiveAndAssigned(tx, {
         employee_id: collector,

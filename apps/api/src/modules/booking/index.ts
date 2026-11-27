@@ -1,5 +1,6 @@
 // Public surface of the `booking` module (CG-ARCH-01 · ADR-001 rule 1).
 export { BookingModule } from './booking.module.js';
+export { type BookedInRange, type BookedRange, BookingReads } from './reads/booking-reads.js';
 export { type CancelReasonRef, CancelReasons } from './cancel-reasons/cancel-reasons.js';
 export {
   CUSTOMER_CREATE,

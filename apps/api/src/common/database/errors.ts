@@ -95,3 +95,15 @@ export function isFinishedImmutable(error: unknown): boolean {
   const message = meta?.driverAdapterError?.cause?.originalMessage;
   return typeof message === 'string' && message.includes('finished_immutable');
 }
+
+/**
+ * A closure that shares a day with another non-archived closure of the branch hit the exclusion
+ * constraint branch_closures_no_overlap (SQLSTATE 23P01 — P8-RULE-12 · add-website-management design
+ * D6): the pre-check missed a race, and the answer is the same 409 `closure_overlap`.
+ */
+export function isClosureOverlap(error: unknown): boolean {
+  if (sqlStateOf(error) === '23P01') return true;
+  const message =
+    typeof error === 'object' && error !== null ? (error as PrismaLikeError).message : null;
+  return typeof message === 'string' && message.includes('branch_closures_no_overlap');
+}
