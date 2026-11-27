@@ -6,11 +6,9 @@ import { Clock } from '../../../common/clock/clock.js';
 import { SiteContentReader } from './site-content-reader.js';
 import { WebsiteDirectory, type WebsiteProfile, WebsiteShifts } from './website-ports.js';
 
-// P8.WEB.09 — every ACTIVE employee's public profile (P8-RULE-11 · owner WM5 ★ · design D8):
-// `shown_on_site` = `site.show_barbers` ∧ `public_profile` as written; `today_branches` by the rule of
-// P8.PUB.04 through `TodayShifts.branchesOf`; `actions` from the caller's `employee.update` /
-// `employee.rating_update` covering the employee. Each member is named, so no phone, e-mail or note
-// can reach the response.
+// P8.WEB.09 (P8-RULE-11 · owner WM5 ★ · design D8): `shown_on_site` = `site.show_barbers` ∧ `public_profile`;
+// `today_branches` through `TodayShifts.branchesOf`; `actions` from the caller's `employee.*` grants. Each
+// member is named, so no phone, e-mail or note can reach the response.
 
 /** `employee.*` code `code` reaches the employee: one of its open branches, or company scope (P1-RULE-11). */
 function reaches(grants: GrantSet, code: string, profile: WebsiteProfile): boolean {

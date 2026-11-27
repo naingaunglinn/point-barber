@@ -6,10 +6,9 @@ import { SiteContentReader } from './site-content-reader.js';
 import { WebsiteDirectory } from './website-ports.js';
 
 // P8.WEB.10 — what a link-preview crawler gets for `/` or `/branches/<code>` in a language (AD-WEB-04 ·
-// FE-SEO-01 / 02 / 04 · design D10): the inputs are gathered here and `siteMetadata()` of packages/shared
-// — the function the public pages call — derives the answer. A branch that is unknown, INACTIVE or not
-// public is a 404, as its page is on the site. The share image comes with part A6 (no image setting can
-// exist before it), so `image` is null and `share_image_missing` is warned.
+// FE-SEO-01 / 02 / 04 · design D10): `siteMetadata()` of packages/shared — the function the public pages
+// call — derives the answer. An unknown, INACTIVE or non-public branch is a 404. The share image comes
+// with part A6, so `image` is null until then.
 const BRANCH_PATH = '/branches/';
 
 @Injectable()
