@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { ErrorCode, FieldIssueCode } from '../constants/error-codes.js';
 import { CATALOGUE_CODE_PREFIX } from './catalogue-code.js';
+import { listQuerySchema } from './list-query.js';
 import { textMmEnSchema } from '../settings/text-mm-en.js';
 import { warningSchema } from './sales.js';
 import { timeOfDaySchema } from './schedule.js';
@@ -20,6 +21,8 @@ export const WebsiteLimits = {
   SEO_DESCRIPTION: 160,
   ANNOUNCEMENT_TEXT: 200,
   CLOSURE_NOTICE: 300,
+  /** The most closed days one closure may cover, both ends counted (P8-RULE-12 · reading 5). */
+  CLOSURE_MAX_DAYS: 366,
   ARCHIVE_REASON: 1000,
   WEEK_DAYS: 7,
 } as const;
@@ -120,13 +123,37 @@ export const branchHoursWriteSchema = z
 
 const noticeMm = z.string().trim().min(1).max(WebsiteLimits.CLOSURE_NOTICE);
 
-/** P8.WEB.06 body — `ClosureCreate`. */
-export const closureCreateSchema = z.object({
-  branch_id: z.uuid(),
-  start_date: wireDate,
-  end_date: wireDate,
-  notice_mm: noticeMm,
-  notice_en: optionalText(WebsiteLimits.CLOSURE_NOTICE),
+/** An `end_date` before its `start_date`: the issue sits at the end (catalogue code `end_before_start`). */
+const endBeforeStart = (value: { start_date: string; end_date: string }, ctx: z.RefinementCtx) => {
+  // `YYYY-MM-DD` texts sort as dates; a date that is no date has its own issue.
+  if (!wireDate.safeParse(value.start_date).success || !wireDate.safeParse(value.end_date).success)
+    return;
+  if (value.end_date < value.start_date) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['end_date'],
+      message: `${CATALOGUE_CODE_PREFIX}${ErrorCode.END_BEFORE_START}`,
+    });
+  }
+};
+
+/** P8.WEB.06 body — `ClosureCreate`; today and the 366-day limit are checked in the write. */
+export const closureCreateSchema = z
+  .object({
+    branch_id: z.uuid(),
+    start_date: wireDate,
+    end_date: wireDate,
+    notice_mm: noticeMm,
+    notice_en: optionalText(WebsiteLimits.CLOSURE_NOTICE),
+  })
+  .superRefine(endBeforeStart);
+
+/** P8.WEB.05 query — `from` / `to` select the closures that overlap `[from, to]` (reading 7). */
+export const closureListQuerySchema = listQuerySchema.extend({
+  branch_id: z.uuid().optional(),
+  from: wireDate.optional(),
+  to: wireDate.optional(),
+  include_archived: z.stringbool({ truthy: ['true'], falsy: ['false'] }).default(false),
 });
 
 /** P8.WEB.07 body — `ClosureUpdate`: any member, always the `updated_at` last read (API-IDEM-04). */
@@ -155,6 +182,7 @@ export const revalidateRequestSchema = z.object({ tags: z.array(z.string()).opti
 export type SiteContentWriteBody = z.infer<typeof siteContentWriteSchema>;
 export type BranchHoursWriteBody = z.infer<typeof branchHoursWriteSchema>;
 export type ClosureCreateBody = z.infer<typeof closureCreateSchema>;
+export type ClosureListQuery = z.infer<typeof closureListQuerySchema>;
 export type ClosureUpdateBody = z.infer<typeof closureUpdateSchema>;
 export type ArchiveRequestBody = z.infer<typeof archiveRequestSchema>;
 export type SharePreviewQuery = z.infer<typeof sharePreviewQuerySchema>;
