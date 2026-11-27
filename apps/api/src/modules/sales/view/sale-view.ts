@@ -18,7 +18,7 @@ import type { Tx } from '../../../common/database/transaction-runner.js';
 import { Customers } from '../../booking/index.js';
 import { DisplayNames } from '../../people/index.js';
 import { type ActionRights, saleActions } from '../actions/sale-actions.js';
-import type { VisitForSale } from '../ports/visits-port.js';
+import { type VisitForSale, isPhoneUnavailableRecorder } from '../ports/visits-port.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
 import { type PaymentRow, PaymentsRepository } from '../repositories/payments.repository.js';
 import { RefundsRepository } from '../repositories/refunds.repository.js';
@@ -237,6 +237,8 @@ export class SaleView {
           visit_status: visit?.status ?? null,
           is_performer: visit?.performed_by_employee_id === viewer.actor.employee_id,
           is_recorder: visit?.started_by_user_id === viewer.actor.user_id,
+          is_phone_unavailable_recorder:
+            visit !== null && isPhoneUnavailableRecorder(visit, viewer.actor.user_id),
         },
         viewer.rightsAt(sale.branch_id),
       ),

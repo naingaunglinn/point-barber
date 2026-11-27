@@ -27,7 +27,7 @@ import { PayrollLock } from '../../payroll/index.js';
 import { Audit, Jobs } from '../../platform/index.js';
 import { assertLateEntryOrder, enteredTime } from '../late-entry/late-entry-times.js';
 import { Sales } from '../lines/sales.js';
-import type { VisitForSale } from '../ports/visits-port.js';
+import { type VisitForSale, isPhoneUnavailableRecorder } from '../ports/visits-port.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
 import { RECEIPT_RENDER, type ReceiptRenderData } from '../receipts/receipt-render.job.js';
 import { PaymentMethodsRepository } from '../repositories/payment-methods.repository.js';
@@ -133,8 +133,11 @@ export class SalesFinish {
       // 5. Visit FOR UPDATE through the port.
       if (sale.visit_id === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
       const visit = await this.registry.visits.lockForUpdate(tx, sale.visit_id);
-      // 6. A checkout actor, or the override holder with a reason (the guard let the caller in).
-      const override = visit.performed_by_employee_id !== actor.employee_id;
+      // 6. A checkout actor (the performer, or the recorder of a reason-1 visit — no reason, D-VIS-06),
+      // or the override holder with a reason (the guard let the caller in).
+      const override =
+        visit.performed_by_employee_id !== actor.employee_id &&
+        !isPhoneUnavailableRecorder(visit, actor.user_id);
       if (override && blank(body.override_reason))
         throw new ProblemException(ErrorCode.REASON_REQUIRED, 400);
       // 7. The visit must be COMPLETED.

@@ -20,9 +20,10 @@ import { type Tx, TransactionRunner } from '../../../common/database/transaction
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { uuidV7 } from '../../../common/http/uuid-v7.js';
 import { DayLock } from '../../cash-closing/index.js';
-import { Assignments } from '../../people/index.js';
+import { Assignments, PeopleDirectory } from '../../people/index.js';
 import { Audit, Idempotency } from '../../platform/index.js';
 import { assertLateEntryOrder, enteredTime } from '../late-entry/late-entry-times.js';
+import { defaultCollectorOf } from './default-collector.js';
 import { Sales, assertSaleOpen } from '../lines/sales.js';
 import type { VisitForSale } from '../ports/visits-port.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
@@ -91,6 +92,7 @@ export class Payments {
     private readonly registry: VisitsRegistry,
     private readonly dayLock: DayLock,
     private readonly assignments: Assignments,
+    private readonly people: PeopleDirectory,
     private readonly audit: Audit,
     private readonly clock: Clock,
   ) {}
@@ -177,13 +179,14 @@ export class Payments {
         });
     }
 
-    // Collected by: the performer unless named; a named one ACTIVE and assigned to the branch today.
+    // Collected by: the default collector (the performer, or the reason-1 recorder) unless named; a named one ACTIVE and assigned to the branch today.
     const visit =
       sale.visit_id === null ? null : await this.registry.visits.read(tx, sale.visit_id);
     if (visit === null) throw new ProblemException(ErrorCode.NOT_FOUND, 404);
     // Again under the sale lock: a COMPLETE that ran meanwhile set the completed time.
     if (late) paymentOrder(visit, receivedAt, now);
-    const collector = body.collected_by_employee_id ?? visit.performed_by_employee_id;
+    const collector =
+      body.collected_by_employee_id ?? (await defaultCollectorOf(this.people, visit));
     if (body.collected_by_employee_id !== undefined && body.collected_by_employee_id !== null) {
       const assigned = await this.assignments.isActiveAndAssigned(tx, {
         employee_id: collector,

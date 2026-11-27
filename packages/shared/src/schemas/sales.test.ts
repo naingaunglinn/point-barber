@@ -21,7 +21,7 @@ const HAIRCUT = '7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f';
 const CASH = '0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
 
 describe('request schemas strip what this change does not build', () => {
-  it('START keeps branch_id and items, drops performer, booking, location and price', () => {
+  it('START keeps branch_id, items and the performer; drops booking, location and price', () => {
     expect(
       startVisitRequestSchema.parse({
         branch_id: B3,
@@ -30,7 +30,11 @@ describe('request schemas strip what this change does not build', () => {
         booking_id: CASH,
         location_type: 2,
       }),
-    ).toStrictEqual({ branch_id: B3, items: [{ service_id: HAIRCUT }] });
+    ).toStrictEqual({
+      branch_id: B3,
+      items: [{ service_id: HAIRCUT }],
+      performed_by_employee_id: CASH,
+    });
   });
 
   it('a line keeps line_type 1 and the service; a sent price or variant is dropped', () => {
@@ -304,5 +308,55 @@ describe('late-entry members (add-late-entry)', () => {
     expect(
       finishRequestSchema.parse({ expected_total_amount: 0, finished_at: null }),
     ).toStrictEqual({ expected_total_amount: 0, finished_at: null });
+  });
+});
+
+// add-proxy-recording task 1.2 — the two START members (design D1 · P4.VIS.03 · API-ERR-03). The
+// cross-field rules need the caller, so the service checks them; here only the shapes.
+describe('proxy members of START (add-proxy-recording)', () => {
+  const KO_AUNG = '0199a3f2-0000-7000-8000-0000000000e4';
+
+  it('keeps performed_by_employee_id and proxy_reason', () => {
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        performed_by_employee_id: KO_AUNG,
+        proxy_reason: 1,
+      }),
+    ).toStrictEqual({ branch_id: B3, performed_by_employee_id: KO_AUNG, proxy_reason: 1 });
+  });
+
+  it.each([1, 2, null])('proxy_reason %s is accepted', (reason) => {
+    expect(startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason: reason }).success).toBe(
+      true,
+    );
+  });
+
+  it('both members may be missing or null', () => {
+    expect(startVisitRequestSchema.parse({ branch_id: B3 })).toStrictEqual({ branch_id: B3 });
+    expect(
+      startVisitRequestSchema.parse({
+        branch_id: B3,
+        performed_by_employee_id: null,
+        proxy_reason: null,
+      }),
+    ).toStrictEqual({ branch_id: B3, performed_by_employee_id: null, proxy_reason: null });
+  });
+
+  it.each([3, 0, '1'])('proxy_reason %s is refused with invalid_union', (reason) => {
+    const result = startVisitRequestSchema.safeParse({ branch_id: B3, proxy_reason: reason });
+    expect(result.error?.issues.map((issue) => [issue.path, issue.code])).toStrictEqual([
+      [['proxy_reason'], 'invalid_union'],
+    ]);
+  });
+
+  it('performed_by_employee_id must be a UUID', () => {
+    const result = startVisitRequestSchema.safeParse({
+      branch_id: B3,
+      performed_by_employee_id: 'ko-aung',
+    });
+    expect(result.error?.issues.map((issue) => issue.path)).toStrictEqual([
+      ['performed_by_employee_id'],
+    ]);
   });
 });

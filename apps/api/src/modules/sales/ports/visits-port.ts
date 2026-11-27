@@ -1,3 +1,5 @@
+import { ProxyReason } from '@point/shared';
+
 import type { Tx } from '../../../common/database/transaction-runner.js';
 
 // The port `VisitsPort` (add-walkin-visit-checkout design D1): FINISH lives in `sales` and must lock
@@ -11,6 +13,8 @@ export interface VisitForSale {
   readonly status: number;
   readonly performed_by_employee_id: string;
   readonly started_by_user_id: string;
+  /** 1 PHONE_UNAVAILABLE, 2 OTHER, null = recorded by the performer (D-VIS-04 / 12). */
+  readonly proxy_reason: number | null;
   /** The Myanmar calendar date of the visit (D-PLT-15). */
   readonly business_date: string;
   readonly location_type: number;
@@ -19,6 +23,17 @@ export interface VisitForSale {
   readonly started_at: Date;
   readonly completed_at: Date | null;
 }
+
+/**
+ * The recorder of a visit with `proxy_reason` 1 PHONE_UNAVAILABLE (D-VIS-06 / 12 · P4-RULE-03 · design
+ * D4): a checkout actor and the default collector of that visit only. The one predicate `delivery` and
+ * `sales` share; it lives here because `delivery` imports `sales`, never the other way (ADR-001 rule 1).
+ */
+export const isPhoneUnavailableRecorder = (
+  visit: Pick<VisitForSale, 'proxy_reason' | 'started_by_user_id'>,
+  callerUserId: string,
+): boolean =>
+  visit.proxy_reason === ProxyReason.PHONE_UNAVAILABLE && visit.started_by_user_id === callerUserId;
 
 export interface VisitsPort {
   read(db: Tx, visitId: string): Promise<VisitForSale | null>;

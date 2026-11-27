@@ -353,11 +353,20 @@ export const lateEntrySchema = z.object({
   started_at: enteredTime,
 });
 
-/** P4.VIS.03 START (walk-in or late entry): the performer is the caller, the location the branch. */
+/**
+ * P4.VIS.03 START (walk-in or late entry): the location is the branch; the performer is the caller
+ * unless `performed_by_employee_id` names a colleague, who then needs `proxy_reason` 1 or 2
+ * (add-proxy-recording design D1). Whether the reason fits the performer needs the caller, so the
+ * service checks that (400 `reason_required` / `validation`); a value other than 1, 2 or null fails here.
+ */
 export const startVisitRequestSchema = z.object({
   branch_id: z.uuid(),
   items: z.array(z.object({ service_id: z.uuid() })).optional(),
   late_entry: lateEntrySchema.nullish(),
+  performed_by_employee_id: z.uuid().nullish(),
+  proxy_reason: z
+    .union([z.literal(ProxyReason.PHONE_UNAVAILABLE), z.literal(ProxyReason.OTHER)])
+    .nullish(),
 });
 
 /** P4.VIS.05 COMPLETE: the completed time of a late entry; ignored on any other visit. */

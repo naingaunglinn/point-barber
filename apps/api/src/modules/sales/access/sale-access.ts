@@ -10,7 +10,7 @@ import {
 } from '../../../common/access/resolvers.js';
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import { isUuid } from '../../../common/http/uuid-v7.js';
-import type { VisitForSale } from '../ports/visits-port.js';
+import { type VisitForSale, isPhoneUnavailableRecorder } from '../ports/visits-port.js';
 import { VisitsRegistry } from '../ports/visits-registry.js';
 import { PaymentsRepository } from '../repositories/payments.repository.js';
 import { SaleItemsRepository } from '../repositories/sale-items.repository.js';
@@ -18,7 +18,8 @@ import { type SaleRow, SalesRepository } from '../repositories/sales.repository.
 
 // The access of the sale and payment routes (add-walkin-visit-checkout design D2 · P4-RULE-03 ·
 // API-PERM-02): the loaders the access guard calls for `params.id→entity.branch_id`, and sales' two
-// actor sets. Checkout actors reduce to the visit's performer in this change; readers are the performer
+// actor sets. Checkout actors are the visit's performer and the recorder of a reason-1 visit
+// (add-proxy-recording design D4); readers are the performer
 // of the visit or of a line, the recorder and the finisher. The guard runs before the pipes, so an id
 // that is not a UUID is a missing row — 404 — never a query error.
 
@@ -50,7 +51,11 @@ export class SaleAccess {
       const id = paramAt(parts, 'id');
       const sale = (await this.sale(id)) ?? (await this.saleOfPayment(id));
       const visit = await this.visitOf(sale);
-      return visit !== null && visit.performed_by_employee_id === caller.employeeId;
+      return (
+        visit !== null &&
+        (visit.performed_by_employee_id === caller.employeeId ||
+          isPhoneUnavailableRecorder(visit, caller.userId))
+      );
     });
     // The read of a sale (a sale id) and of a visit (a visit id).
     orSelf.register('sale.readers', async (parts, caller) => {
