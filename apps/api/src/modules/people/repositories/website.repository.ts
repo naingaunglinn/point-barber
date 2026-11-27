@@ -4,11 +4,7 @@ import { BranchStatus, EmployeeStatus } from '@point/shared';
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import { TransactionScope } from '../../../common/database/transaction-scope.js';
 import { READ_ROW_CEILING, assertWithinCeiling } from '../../../common/limits.js';
-import type {
-  WebsiteBranch,
-  WebsiteCompany,
-  WebsiteProfile,
-} from '../../platform/index.js';
+import type { WebsiteBranch, WebsiteCompany, WebsiteProfile } from '../../platform/index.js';
 
 // The people tables as the website management reads them (add-website-management design D1 · D8 ·
 // P8.WEB.01 / 09 / 10 / 11): the company's names, the ACTIVE branches and the public fields of the ACTIVE
@@ -34,7 +30,10 @@ export class WebsiteRepository {
   /** The ACTIVE branches ordered by code; every one when `ids` is undefined. */
   async branches(ids?: readonly string[]): Promise<WebsiteBranch[]> {
     const rows = await this.db.branches.findMany({
-      where: { status: BranchStatus.ACTIVE, ...(ids === undefined ? {} : { id: { in: [...ids] } }) },
+      where: {
+        status: BranchStatus.ACTIVE,
+        ...(ids === undefined ? {} : { id: { in: [...ids] } }),
+      },
       orderBy: { code: 'asc' },
       take: READ_ROW_CEILING + 1,
       select: {

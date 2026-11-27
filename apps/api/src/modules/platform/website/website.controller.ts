@@ -62,9 +62,7 @@ export class WebsiteController {
   /** P8.WEB.10 — the share preview of `/` or `/branches/<code>`. */
   @Get('share-preview')
   @CanView('website')
-  sharePreview(
-    @ZQuery(sharePreviewQuerySchema) query: SharePreviewQuery,
-  ): Promise<SharePreview> {
+  sharePreview(@ZQuery(sharePreviewQuerySchema) query: SharePreviewQuery): Promise<SharePreview> {
     return this.previewReader.read(query);
   }
 

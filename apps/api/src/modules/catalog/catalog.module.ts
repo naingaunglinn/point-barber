@@ -38,6 +38,8 @@ export class CatalogModule implements OnModuleInit {
 
   onModuleInit(): void {
     // The website management counts the services shown on the site (add-website-management design D1).
-    this.websiteCatalog.use({ countOnWebsite: () => this.serviceCatalog.countOnWebsite(this.prisma) });
+    this.websiteCatalog.use({
+      countOnWebsite: () => this.serviceCatalog.countOnWebsite(this.prisma),
+    });
   }
 }
