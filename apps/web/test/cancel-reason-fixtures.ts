@@ -38,7 +38,12 @@ export const REASON_PEOPLE: Readonly<
   viewer: meOf({ grants: [at('booking_cancel_reason.view', FIXTURE_IDS.branches.B1)] }),
   /** "Reasons editor" at B1: the four codes, but through a branch-scope assignment. */
   editor: meOf({ grants: CODES.map((code) => at(code, FIXTURE_IDS.branches.B1)) }),
-  hnin: meOf({ grants: [at('branch.view', FIXTURE_IDS.branches.B3), at('sale.create', FIXTURE_IDS.branches.B3)] }),
+  hnin: meOf({
+    grants: [
+      at('branch.view', FIXTURE_IDS.branches.B3),
+      at('sale.create', FIXTURE_IDS.branches.B3),
+    ],
+  }),
   aung: meOf({ grants: [at('sale.create', FIXTURE_IDS.branches.B3)] }),
 };
 
@@ -64,7 +69,11 @@ export const REASONS = {
     name_en: 'Customer wants to change',
     sort_order: 1,
   }),
-  barber: reason(idOf(2), { name_mm: 'Barber မအား', name_en: 'Barber not available', sort_order: 2 }),
+  barber: reason(idOf(2), {
+    name_mm: 'Barber မအား',
+    name_en: 'Barber not available',
+    sort_order: 2,
+  }),
   noShow: reason(idOf(3), {
     name_mm: 'Customer မလာ',
     name_en: 'Customer no-show',

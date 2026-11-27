@@ -5,12 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 
 import type { Locale } from '@point/i18n';
-import {
-  type CancelReason,
-  CancelReasonStatus,
-  type Problem,
-  localized,
-} from '@point/shared';
+import { type CancelReason, CancelReasonStatus, type Problem, localized } from '@point/shared';
 import {
   Button,
   ConfirmDialog,
@@ -117,7 +112,10 @@ export function CancelReasonsScreen() {
       ) : null}
       <span className="ms-auto flex gap-2">
         {access.update ? (
-          <Button onClick={() => setOpen({ reason })} data-testid={`cancel-reason-edit-${reason.id}`}>
+          <Button
+            onClick={() => setOpen({ reason })}
+            data-testid={`cancel-reason-edit-${reason.id}`}
+          >
             {t('list.edit')}
           </Button>
         ) : null}
