@@ -237,7 +237,13 @@ describe('PaymentList (task 12.5)', () => {
 
   it('Myanmar: the name is the Myanmar button text, the method and the amount', () => {
     renderStaff(
-      <PaymentList {...COLLECT} payments={[payment(CASH, 5000)]} methods={[CASH]} canVoid onVoid={() => {}} />,
+      <PaymentList
+        {...COLLECT}
+        payments={[payment(CASH, 5000)]}
+        methods={[CASH]}
+        canVoid
+        onVoid={() => {}}
+      />,
       { locale: 'my' },
     );
     const button = screen.getByTestId('payment-void');
