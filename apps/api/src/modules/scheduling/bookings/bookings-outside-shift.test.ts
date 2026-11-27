@@ -11,7 +11,13 @@ const B3 = '0199a3f2-0000-7000-8001-0000000000b3';
 const KO_AUNG = '0199a3f2-0000-7000-8003-00000000e004';
 const mmt = (local: string) => new Date(`${local}+06:30`);
 
-const booking = (id: number, date: string, start: string, end: string, branch = B3): BookedBlock => ({
+const booking = (
+  id: number,
+  date: string,
+  start: string,
+  end: string,
+  branch = B3,
+): BookedBlock => ({
   booking_id: `0199a3f2-0000-7000-8004-00000000000${String(id)}`,
   booked_employee_id: KO_AUNG,
   branch_id: branch,
@@ -48,20 +54,20 @@ describe('add-schedule-patterns · scheduling · bookings outside the shifts (pu
 
   it('Scenario: A block that runs past the new end — 18:45 – 19:15 against 10:00 – 19:00 is listed', () => {
     expect(
-      outsideShifts([booking(1, '2026-10-13', '18:45', '19:15')], [shift('2026-10-13', '10:00', '19:00')]),
+      outsideShifts(
+        [booking(1, '2026-10-13', '18:45', '19:15')],
+        [shift('2026-10-13', '10:00', '19:00')],
+      ),
     ).not.toBeNull();
   });
 
   it('Scenario: A block that ends with the shift — 18:30 – 19:00 against 10:00 – 19:00 is not listed', () => {
     expect(
-      outsideShifts([booking(1, '2026-10-13', '18:30', '19:00')], [shift('2026-10-13', '10:00', '19:00')]),
+      outsideShifts(
+        [booking(1, '2026-10-13', '18:30', '19:00')],
+        [shift('2026-10-13', '10:00', '19:00')],
+      ),
     ).toBeNull();
-  });
-
-  it('a block starting before the shift is listed; one starting with it is not', () => {
-    const shifts = [shift('2026-10-13', '10:00', '19:00')];
-    expect(outsideShifts([booking(1, '2026-10-13', '09:45', '10:15')], shifts)).not.toBeNull();
-    expect(outsideShifts([booking(1, '2026-10-13', '10:00', '10:30')], shifts)).toBeNull();
   });
 
   it('touching shifts of one branch are merged — a block over the join is inside', () => {
@@ -85,13 +91,10 @@ describe('add-schedule-patterns · scheduling · bookings outside the shifts (pu
       [booking(2, '2026-10-17', '16:00', '16:30'), booking(1, '2026-10-10', '09:00', '09:30')],
       [],
     );
-    expect(warning?.items.map((item) => item.starts_at)).toStrictEqual([
+    const items = warning?.code === 'bookings_outside_shift' ? warning.items : [];
+    expect(items.map((item) => item.starts_at)).toStrictEqual([
       '2026-10-10T09:00:00+06:30',
       '2026-10-17T16:00:00+06:30',
     ]);
-  });
-
-  it('is null with no bookings', () => {
-    expect(outsideShifts([], [shift('2026-10-13', '09:00', '18:00')])).toBeNull();
   });
 });

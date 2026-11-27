@@ -20,11 +20,7 @@ export class BookingsRepository {
    * The BOOKED bookings of the employee whose business date is one of `dates` (add-schedule-patterns
    * design D1 · D8 — a STARTED or CANCELLED booking is not returned), by start.
    */
-  async bookedOn(
-    tx: Tx,
-    employeeId: string,
-    dates: readonly string[],
-  ): Promise<BookedBlockRow[]> {
+  async bookedOn(tx: Tx, employeeId: string, dates: readonly string[]): Promise<BookedBlockRow[]> {
     return tx.bookings.findMany({
       where: {
         booked_employee_id: employeeId,

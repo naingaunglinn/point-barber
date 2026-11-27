@@ -60,7 +60,11 @@ describe('add-schedule-patterns · scheduling · Generation can be run now for o
   it('writes one schedule.generate audit row at B3, by Ma Hnin, in the request', async () => {
     const rows = await s.prisma.audit_events.findMany({ where: { action: 'schedule.generate' } });
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ branch_id: B3, actor_user_id: FIXTURE_IDS.users.E002, source: 1 });
+    expect(rows[0]).toMatchObject({
+      branch_id: B3,
+      actor_user_id: FIXTURE_IDS.users.E002,
+      source: 1,
+    });
   });
 
   it('Scenario: The admin runs B3 — the same four and U Kyaw Zin, his B1 Monday segment included', async () => {

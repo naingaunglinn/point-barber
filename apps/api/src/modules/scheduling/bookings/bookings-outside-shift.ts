@@ -80,7 +80,9 @@ export class BookingsOutsideShift {
   ): Promise<ScheduleWarning | null> {
     if (dates.length === 0) return null;
     if (this.port === undefined) {
-      throw new Error('BookingsOutsideShift: no BookedBlocksPort registered (BookingModule not loaded)');
+      throw new Error(
+        'BookingsOutsideShift: no BookedBlocksPort registered (BookingModule not loaded)',
+      );
     }
     const blocks = await this.port.forEmployeeDates(tx, { employee_id: employeeId, dates });
     if (blocks.length === 0) return null;

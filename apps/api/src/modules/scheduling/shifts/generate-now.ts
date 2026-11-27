@@ -48,7 +48,9 @@ export class GenerateNow {
         to,
       });
       const candidates =
-        body.employee_id === undefined ? atBranch : atBranch.filter((id) => id === body.employee_id);
+        body.employee_id === undefined
+          ? atBranch
+          : atBranch.filter((id) => id === body.employee_id);
       const touched = [
         ...(await this.patterns.branchesOf(tx, candidates, from, to)),
         ...(await this.shifts.branchesOf(tx, candidates, from, to)),
@@ -61,7 +63,8 @@ export class GenerateNow {
       const employeeIds = candidates.filter((id) => !uncovered.has(id)).sort();
 
       const requestedBy = RequestContext.current()?.user_id;
-      if (requestedBy === undefined) throw new Error('schedule: P2.SHF.06 without a signed-in user');
+      if (requestedBy === undefined)
+        throw new Error('schedule: P2.SHF.06 without a signed-in user');
       const jobId = await this.jobs.send(tx, SHIFTS_GENERATE, {
         branch_id: body.branch_id,
         from,

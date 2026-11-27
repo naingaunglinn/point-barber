@@ -1,4 +1,4 @@
-import { BookingStatus } from '@point/shared';
+import { BookingStatus, type StatusCode } from '@point/shared';
 import { FIXTURE_IDS } from '@point/shared/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -16,7 +16,7 @@ const mmt = (local: string) => new Date(`${local}+06:30`);
 let s: SeededApp;
 let booked: string;
 
-const at = (status: number, startsAt: string, employee: 'E004' | 'E005' = 'E004') =>
+const at = (status: StatusCode<'bookings'>, startsAt: string, employee: 'E004' | 'E005' = 'E004') =>
   bookingAt(s.prisma, { branch: B3, status, startsAt: mmt(startsAt), employee });
 
 beforeAll(async () => {

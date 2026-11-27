@@ -29,10 +29,21 @@ const week = (days: number[], start: string, end: string) =>
 const bookingRow = (id: string) =>
   s.prisma.bookings.findUniqueOrThrow({
     where: { id },
-    select: { status: true, starts_at: true, ends_at: true, block_starts_at: true, updated_at: true },
+    select: {
+      status: true,
+      starts_at: true,
+      ends_at: true,
+      block_starts_at: true,
+      updated_at: true,
+    },
   });
 const booked = (startsAt: string, employee: FixturePerson = 'E004') =>
-  bookingAt(s.prisma, { branch: B3, status: BookingStatus.BOOKED, startsAt: mmt(startsAt), employee });
+  bookingAt(s.prisma, {
+    branch: B3,
+    status: BookingStatus.BOOKED,
+    startsAt: mmt(startsAt),
+    employee,
+  });
 
 describe('add-schedule-patterns · scheduling · Saturday removed', () => {
   let saturday: string;

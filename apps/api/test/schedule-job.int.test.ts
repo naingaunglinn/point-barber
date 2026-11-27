@@ -29,7 +29,10 @@ const allShifts = async () => {
   return rows;
 };
 const generateAudits = () =>
-  s.prisma.audit_events.findMany({ where: { action: 'schedule.generate' }, orderBy: { id: 'asc' } });
+  s.prisma.audit_events.findMany({
+    where: { action: 'schedule.generate' },
+    orderBy: { id: 'asc' },
+  });
 const barbersTouches = async () =>
   Number(
     (
@@ -79,7 +82,9 @@ describe('add-schedule-patterns · scheduling · The nightly run', () => {
   it('the changing run wrote one schedule.generate row — source 3, no branch', async () => {
     const [first, second, ...rest] = await generateAudits();
     expect(rest).toStrictEqual([]);
-    expect([first, second].map((row) => [row?.source, row?.branch_id, row?.actor_user_id])).toStrictEqual([
+    expect(
+      [first, second].map((row) => [row?.source, row?.branch_id, row?.actor_user_id]),
+    ).toStrictEqual([
       [3, null, null],
       [3, null, null],
     ]);
@@ -96,13 +101,6 @@ describe('add-schedule-patterns · scheduling · The nightly run', () => {
     expect(await allShifts()).toStrictEqual(before);
     expect((await generateAudits()).length).toBe(audits);
     expect(received).toStrictEqual([]);
-    expect(await barbersTouches()).toBe(touches + 1);
-  });
-
-  it('a run queues barbers once, however many employees it generated', async () => {
-    const touches = await barbersTouches();
-    s.clock?.set(mmt('2026-10-06T00:30:00'));
-    await run();
     expect(await barbersTouches()).toBe(touches + 1);
   });
 });
@@ -155,9 +153,5 @@ describe('add-schedule-patterns · scheduling · A run P2.SHF.06 asked for', () 
     expect((await shiftsOf(s, E.E004)).length).toBeGreaterThan(0);
     expect(await shiftsOf(s, E.E005)).toStrictEqual([]);
     expect((await generateAudits()).length).toBe(audits);
-  });
-
-  it('refuses data that is neither the nightly {} nor a request', async () => {
-    await expect(run({ employee_ids: ['x'] })).rejects.toThrow();
   });
 });

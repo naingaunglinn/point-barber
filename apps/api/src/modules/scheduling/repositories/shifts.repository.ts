@@ -107,11 +107,7 @@ export class ShiftsRepository {
    * The employee's active (non-archived) shifts on `dates` — what the booking warning measures the
    * bookings against (design D8). A read inside the caller's transaction, by date and start.
    */
-  async activeOn(
-    tx: Tx,
-    employeeId: string,
-    dates: readonly string[],
-  ): Promise<ActiveShift[]> {
+  async activeOn(tx: Tx, employeeId: string, dates: readonly string[]): Promise<ActiveShift[]> {
     if (dates.length === 0) return [];
     const rows = await tx.$queryRaw<unknown[]>`
       SELECT branch_id, shift_date::text AS shift_date, starts_at, ends_at

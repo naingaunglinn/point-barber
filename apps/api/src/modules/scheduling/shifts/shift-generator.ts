@@ -138,7 +138,9 @@ export class ShiftGenerator {
 
     return {
       changed_dates: [...new Set([...changed.values()].map((shift) => shift.shift_date))].sort(),
-      changed: [...changed.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, shift]) => shift),
+      changed: [...changed.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([, shift]) => shift),
       warnings:
         convert.length === 0
           ? []
