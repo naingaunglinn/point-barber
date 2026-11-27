@@ -48,6 +48,7 @@ interface PaymentBody {
   readonly payment_method_id: string;
   readonly amount: number;
   readonly external_reference?: string;
+  readonly collected_by_employee_id?: string;
   readonly received_at?: string;
 }
 
@@ -67,6 +68,8 @@ export function Checkout({
   // Finish step on its fields or above its button — never twice.
   const action = useAction(() => store.reloadSale(sale.id));
   const finishing = useAction(() => store.reloadSale(sale.id));
+  // A collector change of a payment line (P4.PAY.04): its refusal reads under the line, not at the top.
+  const collecting = useAction(() => store.reloadSale(sale.id));
   // A FINISH refusal speaks of the payments it was refused on (`amount_mismatch`, `change_too_large`):
   // once the live payments change — a void or a payment here, or another device's, reloaded — it no
   // longer holds and is cleared, so it is not shown above an enabled Finish. Not keyed on the total:
@@ -128,6 +131,9 @@ export function Checkout({
       ...(payment.external_reference === undefined
         ? {}
         : { external_reference: payment.external_reference }),
+      ...(payment.collected_by_employee_id === undefined
+        ? {}
+        : { collected_by_employee_id: payment.collected_by_employee_id }),
     });
 
   const active = methods.data ?? [];
@@ -160,6 +166,7 @@ export function Checkout({
       <SaleLinesEditor sale={sale} visit={visit} />
       {action.problem !== null && <FormAlert problem={action.problem} />}
       <PaymentList
+        saleId={sale.id}
         payments={sale.payments}
         methods={active}
         canVoid={sale.actions.take_payment}
@@ -169,6 +176,18 @@ export function Checkout({
             store.sale,
           )
         }
+        onChangeCollector={(paymentId, employeeId) =>
+          collecting.run(
+            () =>
+              api<SaleDto>(`/payments/${paymentId}`, {
+                method: 'PATCH',
+                body: { collected_by_employee_id: employeeId },
+              }),
+            store.sale,
+          )
+        }
+        collectorPending={collecting.pending}
+        collectorProblem={collecting.problem}
       />
       {/* Always mounted while the sale is open: "Remaining to pay" while money is missing, "Change to
           return" after a non-cash over-transfer (task 12.6), announced as it changes (aria-live). */}
@@ -197,6 +216,7 @@ export function Checkout({
             }}
           />
           <PaymentSheet
+            saleId={sale.id}
             open={sheet !== null}
             onOpenChange={(open) => {
               if (open) return;

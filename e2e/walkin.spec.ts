@@ -1,7 +1,8 @@
+import { AxeBuilder } from '@axe-core/playwright';
 import type { APIRequestContext, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures.js';
-import { restartApi } from './helpers/stack.js';
+import { restartApi, sql } from './helpers/stack.js';
 import {
   DESKTOP,
   MOBILE,
@@ -397,6 +398,69 @@ test.describe('14.9 The START sheet fits 360 × 640 without scrolling', () => {
       await expect(
         page.getByRole('dialog').getByText(language === 'my' ? 'ကိုအောင်' : 'Ko Aung'),
       ).toBeInViewport();
+      await context.close();
+    });
+  }
+});
+
+test.describe('16.1 Collected by — Ko Aung hands a KBZPay payment to Ko Min and takes it back', () => {
+  // add-payment-collector-picker task 5.1 (AD-POS-08 · AD-QA-03): Ko Min is clocked in by a test builder row
+  // (the clock-in endpoints are add-attendance-clock's), so the list marks him and puts him first.
+  const idOf = (email: string) =>
+    sql(
+      `SELECT e.id FROM employees e JOIN users u ON u.id = e.user_id WHERE u.email = '${email}';`,
+    ).trim();
+  const clockOut = () =>
+    sql(
+      `UPDATE attendance_records SET clock_out_at = now(), clock_out_source = 1
+       WHERE employee_id = '${idOf(PEOPLE.min)}' AND clock_out_at IS NULL AND voided_at IS NULL;`,
+    );
+
+  test.beforeAll(() => {
+    clockOut();
+    sql(
+      `INSERT INTO attendance_records (id, employee_id, branch_id, business_date, clock_in_at, method,
+         manual_reason, entered_by_user_id)
+       SELECT gen_random_uuid(), e.id, b.id, (now() AT TIME ZONE 'Asia/Yangon')::date, now(), 2, 1, h.id
+       FROM employees e JOIN users u ON u.id = e.user_id, branches b, users h
+       WHERE u.email = '${PEOPLE.min}' AND b.code = 'B3' AND h.email = '${PEOPLE.hnin}';`,
+    );
+  });
+  test.afterAll(() => {
+    clockOut();
+  });
+
+  for (const [name, language, reference, minName, aungName] of [
+    ['EN at 360 × 800', 'en', 'KBZ0001234601', 'Ko Min', 'Ko Aung'],
+    ['MM at 360 × 800', 'my', 'KBZ0001234602', 'ကိုမင်း', 'ကိုအောင်'],
+  ] as const) {
+    test(name, async ({ browser }) => {
+      setLanguage(PEOPLE.aung, language);
+      await clearOpenVisits(aungApi);
+      const { context, page } = await pageAs(browser, aung, MOBILE);
+      await start(page, 1);
+      await complete(page);
+      await page.getByTestId('pay-KBZPAY').click();
+      const sheet = page.getByRole('dialog');
+      await sheet.getByTestId('payment-reference-field').locator('input').fill(reference);
+      await expect(sheet.getByTestId('collected-by')).toContainText(aungName);
+      await sheet.getByTestId('collector-change').click();
+      const picker = sheet.getByTestId('collector-picker');
+      await expect(picker).toBeVisible();
+      expect(
+        (await new AxeBuilder({ page }).include('[role="dialog"]').analyze()).violations,
+      ).toStrictEqual([]);
+      await picker.getByTestId(`collector-${idOf(PEOPLE.min)}`).click();
+      await expect(sheet.getByTestId('collected-by')).toContainText(minName);
+      await sheet.getByTestId('payment-submit').click();
+      const line = page.getByTestId('payment-list').getByRole('listitem').first();
+      await expect(line).toContainText(minName);
+      // The payment goes back to Ko Aung before Finish; the amount and the reference stay.
+      await line.getByTestId('payment-collector-change').click();
+      await line.getByTestId(`collector-${idOf(PEOPLE.aung)}`).click();
+      await expect(line).toContainText(aungName);
+      await expect(line).toContainText(reference);
+      await finishSkip(page);
       await context.close();
     });
   }

@@ -6,6 +6,7 @@ export const posKeys = {
   openVisits: ['me', 'visits', 'open'] as const,
   sale: (id: string) => ['sale', id] as const,
   visit: (id: string) => ['visit', id] as const,
+  collectors: (saleId: string) => ['sale', saleId, 'collectors'] as const,
   services: (branchId: string | undefined) => ['services', branchId, 'simple'] as const,
   categories: ['service-categories'] as const,
   paymentMethods: ['payment-methods'] as const,

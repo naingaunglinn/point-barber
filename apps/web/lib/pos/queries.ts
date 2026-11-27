@@ -3,6 +3,7 @@
 import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  type CollectorList,
   type CursorPage,
   type CustomerLookupDto,
   HttpStatus,
@@ -52,6 +53,16 @@ export function useSale(id: string) {
   return useQuery({
     queryKey: posKeys.sale(id),
     queryFn: () => api<SaleDto>(`/sales/${id}`),
+    ...LIVE,
+    retry: false,
+  });
+}
+
+/** P4.SAL.14 — the "Collected by" choices of a sale, in the server's order (clocked in first). */
+export function useCollectors(saleId: string) {
+  return useQuery({
+    queryKey: posKeys.collectors(saleId),
+    queryFn: () => api<CollectorList>(`/sales/${saleId}/collectors`),
     ...LIVE,
     retry: false,
   });

@@ -48,6 +48,14 @@ const CASH = method('00000000-0000-4000-8000-0000000000c1', 'CASH', true, 2);
 const KBZ = method('00000000-0000-4000-8000-0000000000c2', 'KBZPAY', false, 1);
 const WAVE = method('00000000-0000-4000-8000-0000000000c3', 'WAVE', false, 3);
 
+// The collector change of add-payment-collector-picker, idle: every older PaymentList test leaves it be.
+const COLLECT = {
+  saleId: '00000000-0000-4000-8000-0000000000a1',
+  onChangeCollector: () => Promise.resolve(true),
+  collectorPending: false,
+  collectorProblem: null,
+} as const;
+
 const payment = (
   m: PaymentMethodDto,
   amount: number,
@@ -183,6 +191,7 @@ describe('PaymentList (task 12.5)', () => {
   it('method, amount, reference and collector; a voided payment struck through with no actions', () => {
     renderStaff(
       <PaymentList
+        {...COLLECT}
         payments={[
           payment(CASH, 5000, { voided_at: '2026-10-05T10:45:00+06:30' } as Partial<PaymentDto>),
           payment(KBZ, 6000, { external_reference: 'KBZ0001234567' } as Partial<PaymentDto>),
@@ -207,6 +216,7 @@ describe('PaymentList (task 12.5)', () => {
   it('each "Void payment" is named by its line — method and amount — so a screen reader tells them apart', () => {
     renderStaff(
       <PaymentList
+        {...COLLECT}
         payments={[payment(CASH, 5000), payment(KBZ, 6000)]}
         methods={[CASH, KBZ]}
         canVoid
@@ -227,7 +237,7 @@ describe('PaymentList (task 12.5)', () => {
 
   it('Myanmar: the name is the Myanmar button text, the method and the amount', () => {
     renderStaff(
-      <PaymentList payments={[payment(CASH, 5000)]} methods={[CASH]} canVoid onVoid={() => {}} />,
+      <PaymentList {...COLLECT} payments={[payment(CASH, 5000)]} methods={[CASH]} canVoid onVoid={() => {}} />,
       { locale: 'my' },
     );
     const button = screen.getByTestId('payment-void');
@@ -238,6 +248,7 @@ describe('PaymentList (task 12.5)', () => {
     const onVoid = vi.fn();
     renderStaff(
       <PaymentList
+        {...COLLECT}
         payments={[payment(CASH, 8000)]}
         methods={[CASH, KBZ]}
         canVoid
@@ -261,6 +272,7 @@ describe('PaymentList (task 12.5)', () => {
   it('a closed sale (no take_payment) shows no void button and no helper', () => {
     renderStaff(
       <PaymentList
+        {...COLLECT}
         payments={[payment(CASH, 8000)]}
         methods={[CASH]}
         canVoid={false}
@@ -274,6 +286,7 @@ describe('PaymentList (task 12.5)', () => {
   it('"Customer gave" 10,000 on a cash line of 8,000 shows the change 2,000 — never on KBZPay', () => {
     renderStaff(
       <PaymentList
+        {...COLLECT}
         payments={[payment(CASH, 8000), payment(KBZ, 3000)]}
         methods={[CASH, KBZ]}
         canVoid

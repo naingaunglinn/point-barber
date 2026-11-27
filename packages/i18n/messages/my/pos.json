@@ -126,5 +126,12 @@
   },
   "cancelled": {
     "locked": "{datetime} မှာ {name} က မပြီးဆုံးဟု မှတ်ခဲ့: {reason}"
+  },
+  "collector": {
+    "change": "ပြောင်းမည်",
+    "title": "ငွေကို ဘယ်သူ လက်ခံသလဲ",
+    "clockedIn": "Clock-in ထားသည်",
+    "default": "မူလ",
+    "search": "ဝန်ထမ်း ရှာရန်"
   }
 }

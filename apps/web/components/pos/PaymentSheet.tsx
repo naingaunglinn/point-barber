@@ -10,6 +10,7 @@ import {
 import {
   Button,
   ChoiceGroup,
+  EmployeeChip,
   type FieldError,
   FormAlert,
   FormField,
@@ -21,6 +22,8 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { type ReactNode, useId, useState } from 'react';
 
+import { useCollectors } from '../../lib/pos/queries';
+import { CollectorPicker } from './CollectorPicker';
 import { orderedMethods } from './PaymentButtons';
 import { referenceHint } from './reference-hint';
 
@@ -30,7 +33,8 @@ import { referenceHint } from './reference-hint';
 // non-cash transfer may exceed it — the server answers `amount_exceeds_remaining` for cash); a method that
 // requires a reference asks for it, with the expected format as helper text, and nothing is sent without
 // it. A cash amount shows the optional "Customer gave" helper. The server's refusals appear on their
-// field; the rest above the form.
+// field; the rest above the form. "Collected by" shows the default collector with "Change" (add-payment-
+// collector-picker task 4.2 · owner CL3): a collector other than the default is sent with the payment.
 
 export interface PaymentProblem {
   readonly code: string;
@@ -43,9 +47,12 @@ export interface PaymentSubmit {
   readonly payment_method_id: string;
   readonly amount: Mmk;
   readonly external_reference?: string;
+  /** Only when the chosen collector is not the default — the default rule decides otherwise. */
+  readonly collected_by_employee_id?: string;
 }
 
 export interface PaymentSheetProps {
+  readonly saleId: string;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   /** The active methods (`GET /v1/payment-methods`). */
@@ -99,6 +106,7 @@ export function PaymentSheet(props: PaymentSheetProps) {
 }
 
 function PaymentForm({
+  saleId,
   formId,
   methods,
   method,
@@ -116,6 +124,8 @@ function PaymentForm({
   const [reference, setReference] = useState('');
   const [gave, setGave] = useState<Mmk | null>(null);
   const [missing, setMissing] = useState<'amount' | 'reference' | null>(null);
+  // The collector chosen with "Change"; null keeps the default (nothing is sent).
+  const [collector, setCollector] = useState<string | null>(null);
   const chosen = method ?? choices.find((item) => item.id === methodId);
   const hint = referenceHint(chosen?.reference_regex ?? null);
   const helper =
@@ -167,6 +177,7 @@ function PaymentForm({
       payment_method_id: chosen.id,
       amount,
       ...(trimmed === '' ? {} : { external_reference: trimmed }),
+      ...(collector === null ? {} : { collected_by_employee_id: collector }),
     });
   };
 
@@ -225,6 +236,7 @@ function PaymentForm({
           )}
         </div>
       )}
+      <CollectedBy saleId={saleId} chosen={collector} onChoose={setCollector} />
       {chosen?.is_cash === true && (
         <div className="grid gap-1">
           <FormField label={t('customerGave')}>
@@ -238,5 +250,54 @@ function PaymentForm({
         </div>
       )}
     </form>
+  );
+}
+
+/**
+ * "Collected by" with the default collector's chip and "Change", which opens the list of the sale's
+ * collectors (CL3). Choosing the default again clears the choice, so the request carries no member.
+ */
+function CollectedBy({
+  saleId,
+  chosen,
+  onChoose,
+}: {
+  readonly saleId: string;
+  readonly chosen: string | null;
+  readonly onChoose: (employeeId: string | null) => void;
+}) {
+  const t = useTranslations('pos.checkout');
+  const tc = useTranslations('pos.collector');
+  const list = useCollectors(saleId);
+  const [open, setOpen] = useState(false);
+  const items = list.data?.items ?? [];
+  const defaultId = items.find((item) => item.is_default)?.employee_id ?? null;
+  const shown = items.find((item) => item.employee_id === (chosen ?? defaultId));
+  return (
+    <div className="grid gap-2" data-testid="collected-by">
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">{t('collectedBy')}</span>
+        {shown !== undefined && <EmployeeChip name={shown.display_name} />}
+        <Button
+          variant="ghost"
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+          data-testid="collector-change"
+        >
+          {tc('change')}
+        </Button>
+      </div>
+      {open && (
+        <CollectorPicker
+          saleId={saleId}
+          value={chosen ?? defaultId}
+          onChange={(employeeId) => {
+            onChoose(employeeId === defaultId ? null : employeeId);
+            setOpen(false);
+          }}
+        />
+      )}
+    </div>
   );
 }

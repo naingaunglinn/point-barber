@@ -52,6 +52,8 @@ interface ChoiceGroupBase<V extends string> {
   readonly invalidBy?: string;
   /** Set on the combobox's trigger (8 or more options), else on the group's wrapper. */
   readonly 'data-testid'?: string;
+  /** The search field's name and placeholder, translated; `common.search.placeholder` when absent. */
+  readonly searchLabel?: string;
 }
 
 /** Exactly one name: a visible `label`, or an `aria-label` when a visible title already names the group. */
@@ -93,6 +95,7 @@ export function ChoiceGroup<V extends string = string>(props: ChoiceGroupProps<V
     required = false,
     error,
     invalidBy,
+    searchLabel,
     'data-testid': testId,
   } = props;
   const t = useTranslations();
@@ -160,7 +163,7 @@ export function ChoiceGroup<V extends string = string>(props: ChoiceGroupProps<V
           onChange={onChange}
           named={named}
           state={state}
-          search={t('common.search.placeholder')}
+          search={searchLabel ?? t('common.search.placeholder')}
           testId={testId}
         />
       )}

@@ -126,5 +126,12 @@
   },
   "cancelled": {
     "locked": "Marked incomplete {datetime} by {name}: {reason}"
+  },
+  "collector": {
+    "change": "Change",
+    "title": "Who collected the money?",
+    "clockedIn": "Clocked in",
+    "default": "Default",
+    "search": "Search staff"
   }
 }
