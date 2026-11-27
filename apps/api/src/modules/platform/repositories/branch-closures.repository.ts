@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { businessDateOf } from '@point/shared';
 
 import { PrismaService } from '../../../common/database/prisma.service.js';
 import type { Tx } from '../../../common/database/transaction-runner.js';
@@ -47,7 +48,8 @@ export interface ClosureListFilter {
   readonly take: number;
 }
 
-const dateOf = (value: Date): string => value.toISOString().slice(0, 10);
+// A DATE column arrives as UTC midnight; its Myanmar business date is the same calendar day (CG-TIME-02).
+const dateOf = (value: Date): string => businessDateOf(value);
 const dateColumn = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
 type StoredClosure = {
