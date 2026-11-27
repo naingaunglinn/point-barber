@@ -50,6 +50,7 @@ export {
   ClosureBookings,
   type ClosureBookingReads,
 } from './website/closure-bookings.js';
+export { BookingOptionsCache } from './website/booking-options-cache.js';
 export { type OpeningDay, OpeningHours } from './website/opening-hours.js';
 export { WebsitePeople } from './website/website-people.js';
 export {

@@ -35,8 +35,10 @@ import { StatusController } from './system/status.controller.js';
 import { SystemService } from './system/system.service.js';
 import { AffectedBookings } from './website/affected-bookings.js';
 import { BranchClosures } from './website/branch-closures.js';
+import { BookingOptionsCache, NoBookingOptionsCache } from './website/booking-options-cache.js';
 import { ClosureAccess } from './website/closure-access.js';
 import { ClosureBookings } from './website/closure-bookings.js';
+import { ClosureEffects } from './website/closure-effects.js';
 import { ClosureReads } from './website/closure-reads.js';
 import { ClosureViews } from './website/closure-view.js';
 import { ClosureWrites } from './website/closure-writes.js';
@@ -78,7 +80,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     MaintenanceController,
     SettingsWriteController,
     // add-website-management — mounted part by part (website/not-built.ts): A2 the hours, A3 the
-    // closures' list and create (the edit and the archive answer 501 until A4).
+    // closures' list and create, A4 the edit and the archive.
     WebsiteHoursController,
     ClosuresController,
   ],
@@ -111,6 +113,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     AffectedBookings,
     ClosureViews,
     ClosureReads,
+    ClosureEffects,
     ClosureWrites,
     RateLimiter,
     Observability,
@@ -120,6 +123,8 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     // scheduling and attendance replace TodayBranch.
     { provide: MaintenanceGate, useClass: StoreMaintenanceGate },
     { provide: TodayBranch, useClass: NoTodayBranch },
+    // A4 — the booking-options cache port of a closure write (design D9); add-public-booking-modal fills it.
+    { provide: BookingOptionsCache, useClass: NoBookingOptionsCache },
     // ADR-014: the bucket of generated documents (add-walkin-visit-checkout design D10). In development
     // and test the local MinIO's bucket is created when missing; a failure is a warning, never a stop.
     {
@@ -148,6 +153,7 @@ async function localBucket(storage: S3StorageService, bucket: string, log: Logge
     WebsitePeople,
     BranchClosures,
     ClosureBookings,
+    BookingOptionsCache,
     RateLimiter,
     SettingsModule,
     MaintenanceGate,
