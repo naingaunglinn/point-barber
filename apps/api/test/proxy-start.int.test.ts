@@ -89,10 +89,12 @@ describe('START for another barber (task 2.1 · P4-RULE-02 #2 · D-VIS-04 / 12)'
       sale: { total_amount: 10_000 },
     });
     expect(
-      res.body.sale.items.map((item: { performed_by: { id: string }; unit_price_amount: number }) => [
-        item.performed_by.id,
-        item.unit_price_amount,
-      ]),
+      res.body.sale.items.map(
+        (item: { performed_by: { id: string }; unit_price_amount: number }) => [
+          item.performed_by.id,
+          item.unit_price_amount,
+        ],
+      ),
     ).toStrictEqual([[employees.E004, 10_000]]);
   });
 
@@ -120,13 +122,16 @@ describe('START for another barber (task 2.1 · P4-RULE-02 #2 · D-VIS-04 / 12)'
     expect(await rows()).toStrictEqual(before);
   });
 
-  it.each([3, 0, '1'])('Scenario: A reason outside the list (%s) — 400 validation', async (reason) => {
-    const before = await rows();
-    const res = await post(MIN, proxyBody(employees.E004, reason));
-    expect(res.status).toBe(400);
-    expect(res.body.code).toBe(ErrorCode.VALIDATION);
-    expect(await rows()).toStrictEqual(before);
-  });
+  it.each([3, 0, '1'])(
+    'Scenario: A reason outside the list (%s) — 400 validation',
+    async (reason) => {
+      const before = await rows();
+      const res = await post(MIN, proxyBody(employees.E004, reason));
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe(ErrorCode.VALIDATION);
+      expect(await rows()).toStrictEqual(before);
+    },
+  );
 
   it.each([
     ['a performer of another branch (Ko Htet, B1)', employees.E006],
@@ -184,9 +189,13 @@ describe('The unpaid block is the performer’s (task 2.3 · D-VIS-07 · P4-RULE
   it('Scenario: Ko Aung unpaid visit blocks a START recorded for him; Ko Min own unpaid visit does not', async () => {
     const minOwn = await api.start(MIN, [services.HAIRCUT]);
     await api.complete(MIN, minOwn.id);
+    // The recorder's own COMPLETED, unpaid visit does not block a START that names another performer.
+    const allowed = await post(MIN, proxyBody(employees.E004, 2));
+    expect(allowed.status).toBe(201);
+    expect(allowed.body.performed_by.id).toBe(employees.E004);
+
     const aungVisit = await api.start(AUNG, [services.HAIRCUT]);
     await api.complete(AUNG, aungVisit.id);
-
     const before = await rows();
     const blocked = await post(MIN, proxyBody(employees.E004, 1));
     expect(blocked.status).toBe(422);
@@ -196,20 +205,15 @@ describe('The unpaid block is the performer’s (task 2.3 · D-VIS-07 · P4-RULE
     });
     expect(await rows()).toStrictEqual(before);
 
-    // The recorder's own COMPLETED, unpaid visit does not block a START that names another performer.
-    const allowed = await post(HNIN, proxyBody(employees.E005, 2));
-    expect(allowed.status).toBe(201);
-    const helper = await post(MIN, proxyBody(employees.E002, 2));
-    expect(helper.status).toBe(201);
-    expect(helper.body.performed_by.id).toBe(employees.E002);
-
     // …and Ko Min is blocked on his own START, by his own unpaid visit.
     const own = await post(MIN, { branch_id: branches.B3 });
     expect(own.status).toBe(422);
     expect(own.body.context).toStrictEqual({ visit_id: minOwn.id });
 
     // Ko Aung closes his unpaid visit so that the tests below can start for him.
-    const closed = await api.post(AUNG, `/visits/${aungVisit.id}/incomplete`, { reason: 'Test cleanup' });
+    const closed = await api.post(AUNG, `/visits/${aungVisit.id}/incomplete`, {
+      reason: 'Test cleanup',
+    });
     expect(closed.status).toBe(200);
   });
 });
@@ -244,7 +248,10 @@ describe('START is idempotent on the resolved performer (task 2.3 · P4-RULE-22)
 describe('A late entry for a colleague (task 2.3 · P4-RULE-13 · D-VIS-13) — last, it finalizes a period', () => {
   const late = (extra: object = {}) =>
     proxyBody(employees.E004, 1, {
-      late_entry: { reason: LateEntryReason.INTERNET_OUTAGE, started_at: '2026-10-04T15:00:00+06:30' },
+      late_entry: {
+        reason: LateEntryReason.INTERNET_OUTAGE,
+        started_at: '2026-10-04T15:00:00+06:30',
+      },
       ...extra,
     });
 

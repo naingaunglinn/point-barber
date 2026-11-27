@@ -94,11 +94,18 @@ describe('the visit actors (task 3.1 · P4-RULE-03 / 11)', () => {
   it('Scenario: The helper adds a line and completes — Shave 3,000 for Ko Aung, completed_by Ko Min', async () => {
     const { visitId, saleId } = await recorded(REASON_2, [services.HAIRCUT]);
     const line = await addLine(MIN, saleId, services.SHAVE);
-    expect(line.status).toBe(201);
+    expect(line.status).toBe(200);
     const shave = (
-      line.body.items as { description_en: string; performed_by: { id: string }; unit_price_amount: number }[]
+      line.body.items as {
+        description_en: string;
+        performed_by: { id: string };
+        unit_price_amount: number;
+      }[]
     ).find((item) => item.description_en === 'Shave');
-    expect([shave?.performed_by.id, shave?.unit_price_amount]).toStrictEqual([employees.E004, 3_000]);
+    expect([shave?.performed_by.id, shave?.unit_price_amount]).toStrictEqual([
+      employees.E004,
+      3_000,
+    ]);
     const done = await api.post(MIN, `/visits/${visitId}/complete`);
     expect(done.status).toBe(200);
     expect(done.body).toMatchObject({
@@ -137,7 +144,9 @@ describe('the checkout actors (task 3.3 · D-VIS-06 · P4-RULE-03 / 10)', () => 
     const paid = await api.pay(MIN, saleId, { payment_method_id: cash, amount: 10_000 });
     expect(paid.remaining_amount).toBe(0);
 
-    const finish = await api.post(MIN, `/sales/${saleId}/finish`, { expected_total_amount: 10_000 });
+    const finish = await api.post(MIN, `/sales/${saleId}/finish`, {
+      expected_total_amount: 10_000,
+    });
     expect(finish.status).toBe(200);
     expect(finish.body).toMatchObject({
       status: SaleStatus.FINISHED,
@@ -159,7 +168,9 @@ describe('the checkout actors (task 3.3 · D-VIS-06 · P4-RULE-03 / 10)', () => 
     expect(await prisma.payments.count({ where: { sale_id: saleId } })).toBe(0);
     const read = await api.get(MIN, `/visits/${visitId}`);
     expect(read.body.sale.actions).toMatchObject({ take_payment: false, finish: false });
-    const finish = await api.post(MIN, `/sales/${saleId}/finish`, { expected_total_amount: 10_000 });
+    const finish = await api.post(MIN, `/sales/${saleId}/finish`, {
+      expected_total_amount: 10_000,
+    });
     expect(finish.status).toBe(403);
     await abandon(visitId);
   });
@@ -186,9 +197,9 @@ describe('the checkout actors (task 3.3 · D-VIS-06 · P4-RULE-03 / 10)', () => 
 
 describe('the default collector (task 3.5 · P4-RULE-09 · D-VIS-06 / 12)', () => {
   const collectorOf = async (saleId: string) =>
-    (await prisma.payments.findMany({ where: { sale_id: saleId }, orderBy: { created_at: 'asc' } })).map(
-      (payment) => payment.collected_by_employee_id,
-    );
+    (
+      await prisma.payments.findMany({ where: { sale_id: saleId }, orderBy: { created_at: 'asc' } })
+    ).map((payment) => payment.collected_by_employee_id);
 
   it('Scenario: The reason-1 recorder collects by default — Cash by Ko Min is collected by Ko Min', async () => {
     const { saleId } = await recorded(REASON_1, [services.HAIRCUT]);

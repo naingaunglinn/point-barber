@@ -24,7 +24,15 @@ const absent = { override_price: false, request_discount: false, refund: false, 
 describe('saleActions', () => {
   it('the performer of a COMPLETED visit: everything, no reason needed', () => {
     expect(
-      saleActions({ ...open(VisitStatus.COMPLETED), is_performer: true, is_recorder: true, is_phone_unavailable_recorder: false }, none),
+      saleActions(
+        {
+          ...open(VisitStatus.COMPLETED),
+          is_performer: true,
+          is_recorder: true,
+          is_phone_unavailable_recorder: false,
+        },
+        none,
+      ),
     ).toStrictEqual({
       edit_lines: true,
       take_payment: true,
@@ -37,14 +45,27 @@ describe('saleActions', () => {
 
   it('a STARTED visit: lines and payments, no Finish yet', () => {
     expect(
-      saleActions({ ...open(VisitStatus.STARTED), is_performer: true, is_recorder: true, is_phone_unavailable_recorder: false }, none),
+      saleActions(
+        {
+          ...open(VisitStatus.STARTED),
+          is_performer: true,
+          is_recorder: true,
+          is_phone_unavailable_recorder: false,
+        },
+        none,
+      ),
     ).toMatchObject({ edit_lines: true, take_payment: true, finish: false, mark_incomplete: true });
   });
 
   it('Ma Hnin with the codes for the branch: Finish through the override needs a reason', () => {
     expect(
       saleActions(
-        { ...open(VisitStatus.COMPLETED), is_performer: false, is_recorder: false, is_phone_unavailable_recorder: false },
+        {
+          ...open(VisitStatus.COMPLETED),
+          is_performer: false,
+          is_recorder: false,
+          is_phone_unavailable_recorder: false,
+        },
         manager,
       ),
     ).toStrictEqual({
@@ -60,7 +81,12 @@ describe('saleActions', () => {
   it('Ko Min, a colleague without a code: nothing', () => {
     expect(
       saleActions(
-        { ...open(VisitStatus.COMPLETED), is_performer: false, is_recorder: false, is_phone_unavailable_recorder: false },
+        {
+          ...open(VisitStatus.COMPLETED),
+          is_performer: false,
+          is_recorder: false,
+          is_phone_unavailable_recorder: false,
+        },
         none,
       ),
     ).toStrictEqual({
@@ -75,7 +101,15 @@ describe('saleActions', () => {
 
   it('the recorder who is not the performer may edit lines only', () => {
     expect(
-      saleActions({ ...open(VisitStatus.STARTED), is_performer: false, is_recorder: true, is_phone_unavailable_recorder: false }, none),
+      saleActions(
+        {
+          ...open(VisitStatus.STARTED),
+          is_performer: false,
+          is_recorder: true,
+          is_phone_unavailable_recorder: false,
+        },
+        none,
+      ),
     ).toMatchObject({ edit_lines: true, take_payment: false, mark_incomplete: false });
   });
 
@@ -84,7 +118,13 @@ describe('saleActions', () => {
     ['CANCELLED', SaleStatus.CANCELLED, VisitStatus.INCOMPLETE],
   ])('a %s sale: no action, whoever asks', (_, sale, visit) => {
     const actions = saleActions(
-      { sale_status: sale, visit_status: visit, is_performer: true, is_recorder: true, is_phone_unavailable_recorder: false },
+      {
+        sale_status: sale,
+        visit_status: visit,
+        is_performer: true,
+        is_recorder: true,
+        is_phone_unavailable_recorder: false,
+      },
       manager,
     );
     expect(Object.values(actions).every((flag) => !flag)).toBe(true);
