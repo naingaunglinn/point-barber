@@ -20,6 +20,17 @@ const totalsRowSchema = z.object({
 });
 const recentRowSchema = z.object({ visit_id: z.uuid(), finished_at: z.date() });
 
+const timelineSaleSchema = z.object({
+  id: z.uuid(),
+  visit_id: z.uuid().nullable(),
+  status: z.number().int(),
+  branch_id: z.uuid(),
+  receipt_number: z.string().nullable(),
+  total_amount: z.bigint(),
+  finished_at: z.date().nullable(),
+});
+
+export type TimelineSaleRow = z.infer<typeof timelineSaleSchema>;
 export type CustomerTotalsRow = z.infer<typeof totalsRowSchema>;
 export type RecentVisitSaleRow = z.infer<typeof recentRowSchema>;
 
@@ -80,25 +91,37 @@ export class CustomerActivityRepository {
   }
 
   /**
-   * Every sale of the customer in the scope, for the timeline: one customer's sales, merged and cut in
-   * memory with the visit fields (design D10 · R6), so no page bound here.
+   * The timeline's sales side, cut in SQL (design D10 · R6 · CG-PERF-02): a visit-backed sale is an entry
+   * at its visit's `started_at` with the visit's id, a FINISHED visit-less sale one at `finished_at`
+   * with its own id. Strictly older than `before` on `(at, id)`, newest first, at most `take`. Only
+   * the visit's start is read from `visits` (the ordering key); every other visit field comes from
+   * delivery through the VisitsPort.
    */
-  timelineSales(db: Tx, customerId: string, scope: ReadScope) {
-    return db.sales.findMany({
-      where: {
-        customer_id: customerId,
-        ...(scope === 'all' ? {} : { branch_id: { in: [...scope] } }),
-      },
-      select: {
-        id: true,
-        visit_id: true,
-        status: true,
-        branch_id: true,
-        receipt_number: true,
-        total_amount: true,
-        finished_at: true,
-      },
-    });
+  async timelineSales(
+    db: Tx,
+    customerId: string,
+    scope: ReadScope,
+    before: { readonly at: Date; readonly id: string } | null,
+    take: number,
+  ): Promise<TimelineSaleRow[]> {
+    const rows = await db.$queryRaw<unknown[]>`
+      SELECT s.id, s.visit_id, s.status, s.branch_id, s.receipt_number, s.total_amount, s.finished_at,
+        coalesce(v.started_at, s.finished_at) AS entry_at, coalesce(s.visit_id, s.id) AS entry_id
+      FROM sales s
+      LEFT JOIN visits v ON v.id = s.visit_id
+      WHERE s.customer_id = ${customerId}::uuid ${inScope(Prisma.sql`s.branch_id`, scope)}
+        AND (s.visit_id IS NOT NULL
+          OR (s.status = ${SaleStatus.FINISHED} AND s.finished_at IS NOT NULL
+              AND s.receipt_number IS NOT NULL))
+        ${
+          before === null
+            ? Prisma.empty
+            : Prisma.sql`AND (coalesce(v.started_at, s.finished_at), coalesce(s.visit_id, s.id))
+                < (${before.at}::timestamptz, ${before.id}::uuid)`
+        }
+      ORDER BY entry_at DESC, entry_id DESC
+      LIMIT ${take}`;
+    return rows.map((row) => timelineSaleSchema.parse(row));
   }
 
   /** The last `window` finished visit sales of the customer, newest first (`finished_at`, `id`). */

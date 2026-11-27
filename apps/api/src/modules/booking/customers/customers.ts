@@ -88,8 +88,17 @@ export interface CustomerActivity {
     scope: ReadScope,
     window: number,
   ): Promise<readonly RecentVisit[]>;
-  /** Every visit of the customer's sales and every FINISHED visit-less sale, in no order (D10). */
-  timelineEntries(db: Tx, customerId: string, scope: ReadScope): Promise<readonly ActivityEntry[]>;
+  /**
+   * The visits of the customer's sales and the FINISHED visit-less sales strictly older than `before`
+   * (`(at, id)`), newest first, at most `take` — cut in SQL (design D10 · R6 · CG-PERF-02).
+   */
+  timelineEntries(
+    db: Tx,
+    customerId: string,
+    scope: ReadScope,
+    before: { readonly at: Date; readonly id: string } | null,
+    take: number,
+  ): Promise<readonly ActivityEntry[]>;
 }
 
 /** A timeline entry of `sales`: a visit at `started_at`, a visit-less FINISHED sale at `finished_at`. */
