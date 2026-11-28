@@ -10,6 +10,7 @@ import {
   type ServicesQuery,
   todayMmt,
   toMmtIso,
+  toMmtIsoMillis,
 } from '@point/shared';
 
 import { Clock } from '../../../common/clock/clock.js';
@@ -72,7 +73,34 @@ export function toListItem(
       max: durations.length === 0 ? 0 : Math.max(...durations),
     },
     archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
-    updated_at: toMmtIso(row.updated_at),
+    // With its milliseconds: the value a client echoes as expected_updated_at (API-IDEM-04 · D6 of
+    // add-branch-management); the catalogue edits compare to the millisecond.
+    updated_at: toMmtIsoMillis(row.updated_at),
+  };
+}
+
+/** One category as the API answers it (CG-API-04); `count` only with `include_counts`. */
+export function toCategoryDto(
+  row: {
+    readonly id: string;
+    readonly name_mm: string;
+    readonly name_en: string | null;
+    readonly sort_order: number;
+    readonly status: number;
+    readonly archived_at: Date | null;
+    readonly updated_at: Date;
+  },
+  count?: number,
+): ServiceCategoryDto {
+  return {
+    id: row.id,
+    name_mm: row.name_mm,
+    name_en: row.name_en,
+    sort_order: row.sort_order,
+    status: row.status as ServiceCategoryDto['status'],
+    ...(count === undefined ? {} : { service_count: count }),
+    archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
+    updated_at: toMmtIsoMillis(row.updated_at),
   };
 }
 
@@ -139,16 +167,9 @@ export class ServiceCatalog {
     });
     const counts = query.include_counts ? await this.repository.serviceCounts(db) : null;
     return {
-      items: rows.map((row) => ({
-        id: row.id,
-        name_mm: row.name_mm,
-        name_en: row.name_en,
-        sort_order: row.sort_order,
-        status: row.status as ServiceCategoryDto['status'],
-        ...(counts === null ? {} : { service_count: counts.get(row.id) ?? 0 }),
-        archived_at: row.archived_at === null ? null : toMmtIso(row.archived_at),
-        updated_at: toMmtIso(row.updated_at),
-      })),
+      items: rows.map((row) =>
+        toCategoryDto(row, counts === null ? undefined : (counts.get(row.id) ?? 0)),
+      ),
     };
   }
 }

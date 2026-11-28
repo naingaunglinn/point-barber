@@ -59,6 +59,16 @@ export function isBranchCodeTaken(error: unknown): boolean {
 }
 
 /**
+ * A second non-archived category or service with a Myanmar name the company already has hit
+ * `service_categories_name_active` / `services_name_active` (P2.CAT.02 · P2.SVC.02 · add-service-catalogue
+ * design D8): answered 409 already_exists — the index is the final word in a race (API-IDEM-05).
+ */
+export function isCatalogueNameTaken(error: unknown): boolean {
+  const index = uniqueViolationIndex(error);
+  return index === 'service_categories_name_active' || index === 'services_name_active';
+}
+
+/**
  * A second non-archived leave type with a Myanmar name the company already has hit
  * leave_types_name_active (P2.LVT.02 / 03 · Part 2 §13b · add-leave-types design D5): 409 already_exists.
  */
