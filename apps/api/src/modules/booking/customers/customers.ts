@@ -3,16 +3,23 @@ import {
   type CursorPage,
   type CustomerDto,
   type CustomerListItemDto,
+  type CustomerArchiveBody,
+  type CustomerCreateBody,
   type CustomerListQuery,
   type CustomerLookupDto,
+  type CustomerStatusBody,
   CustomerStatus,
   type CustomerTimelineQuery,
+  type CustomerUpdateBody,
   type E164,
   ErrorCode,
+  type FieldError,
   type Mmk,
   type SaleStatus,
   type VisitStatus,
+  isZawgyi,
   maskPhone,
+  normalizeCustomerMembers,
   normalizeDigits,
   normalizePhone,
   parseCustomerQuery,
@@ -23,7 +30,12 @@ import {
 
 import type { ReadScope } from '../../../common/access/read-scope.js';
 import { Clock } from '../../../common/clock/clock.js';
-import type { SqlPiece, Tx } from '../../../common/database/transaction-runner.js';
+import { isCustomerPhoneTaken } from '../../../common/database/errors.js';
+import {
+  type SqlPiece,
+  TransactionRunner,
+  type Tx,
+} from '../../../common/database/transaction-runner.js';
 import { ProblemException } from '../../../common/http/problem.exception.js';
 import { isUuid, uuidV7 } from '../../../common/http/uuid-v7.js';
 import { CurrentCompany } from '../../people/index.js';
@@ -34,6 +46,12 @@ import {
   CustomersRepository,
 } from '../repositories/customers.repository.js';
 import { decodeListCursor, decodeTimelineCursor, encodeListCursor } from './customer-cursors.js';
+import {
+  type ChangedMember,
+  type StoredCustomer,
+  changedMembers,
+  sameMillisecond,
+} from './changed-members.js';
 import { CustomerStats } from './customer-stats.js';
 import { CustomerTimeline } from './customer-timeline.js';
 import type { RecentVisit } from './preferred-barber.js';
@@ -48,6 +66,9 @@ import type { RecentVisit } from './preferred-barber.js';
 export const CUSTOMER_CREATE = 'customer.create';
 export const CUSTOMER_RESTORE = 'customer.restore';
 export const CUSTOMER_REACTIVATE = 'customer.reactivate';
+export const CUSTOMER_UPDATE = 'customer.update';
+export const CUSTOMER_DEACTIVATE = 'customer.deactivate';
+export const CUSTOMER_ARCHIVE = 'customer.archive';
 
 export interface CustomerRef {
   readonly id: string;
@@ -126,6 +147,53 @@ export type ActivityEntry =
 
 const notFound = (): ProblemException => new ProblemException(ErrorCode.NOT_FOUND, 404);
 
+/** The write routes of part A5 answer 500 until it lands (task 3.1 declares them first). */
+const notBuilt = (method: string, args: readonly unknown[]): Promise<never> =>
+  Promise.reject(new Error(`Customers.${method}(${args.length} arguments) is built in part A5`));
+
+/** The members checked for Zawgyi after the schema passed (API-SHAPE-05 · design D4). */
+const ZAWGYI_MEMBERS = ['name', 'notes'] as const;
+
+/** Every member with Zawgyi text, one `errors[]` item each (`code` zawgyi_text); none → no throw. */
+function assertNoZawgyi(members: { readonly name?: string; readonly notes?: string | null }): void {
+  const errors: FieldError[] = [];
+  for (const member of ZAWGYI_MEMBERS) {
+    const value = members[member];
+    if (typeof value === 'string' && isZawgyi(value)) {
+      errors.push({ field: member, code: ErrorCode.ZAWGYI_TEXT });
+    }
+  }
+  if (errors.length > 0) throw new ProblemException(ErrorCode.ZAWGYI_TEXT, 400, { errors });
+}
+
+/** The `before_data` / `after_data` of an update: the changed members, `phone` always with its E.164 form. */
+function auditMembers(
+  changes: readonly ChangedMember[],
+  stored: StoredCustomer,
+  side: 'before' | 'after',
+): Record<string, string | null> {
+  const members: Record<string, string | null> = {};
+  for (const change of changes) members[change.member] = change[side];
+  if ('phone' in members && !('phone_normalized' in members)) {
+    members.phone_normalized = stored.phone_normalized;
+  }
+  return members;
+}
+
+/** 409 `already_exists` with the holder of the phone: its id, status and archive flag, never its name. */
+const phoneTaken = (holder: {
+  readonly id: string;
+  readonly status: number;
+  readonly archived_at: Date | null;
+}): ProblemException =>
+  new ProblemException(ErrorCode.ALREADY_EXISTS, 409, {
+    context: {
+      customer_id: holder.id,
+      status: holder.status,
+      archived: holder.archived_at !== null,
+    },
+  });
+
 /** `CustomerListItem` — the counts are the caller's read scope's (P3.CUS.01 · P3-RULE-03). */
 const toListItem = (row: CustomerListRow): CustomerListItemDto => ({
   id: row.id,
@@ -157,6 +225,7 @@ export class Customers {
     private readonly clock: Clock,
     private readonly stats: CustomerStats,
     private readonly timelines: CustomerTimeline,
+    private readonly runner: TransactionRunner,
   ) {}
 
   /** Called once by the sales module at start-up; booking never imports sales. */
@@ -355,6 +424,140 @@ export class Customers {
     await this.customerOf(db, id);
     const before = query.cursor === undefined ? null : decodeTimelineCursor(query.cursor);
     return this.timelines.page(db, this.port(), id, scope, before, query.limit);
+  }
+
+  /**
+   * P3.CUS.03 — a new ACTIVE customer (design D5 step 1): the phone is normalised and the text checked
+   * before the insert; a phone that exists answers 409 with its holder, nothing stored. `insertNew`
+   * does not abort the transaction, so the holder is read in it.
+   */
+  create(body: CustomerCreateBody, scope: ReadScope): Promise<CustomerDto> {
+    return this.runner.run(async (tx) => {
+      const members = normalizeCustomerMembers(body);
+      const normalized = normalizePhone(body.phone);
+      if (normalized === 'phone_invalid') throw new ProblemException(ErrorCode.PHONE_INVALID, 400);
+      assertNoZawgyi(members);
+      const now = this.clock.now();
+      const companyId = await this.company.id(tx);
+      const id = uuidV7(now.getTime());
+      const row = {
+        id,
+        company_id: companyId,
+        name: body.name,
+        // Stored as typed, but with Western digits (AD-FMT-10).
+        phone: normalizeDigits(body.phone).trim(),
+        phone_normalized: normalized,
+        notes: members.notes ?? null,
+        at: now,
+      };
+      if (!(await this.repository.insertNew(tx, row))) {
+        const holder = await this.repository.findByPhone(tx, companyId, normalized);
+        if (holder === null)
+          throw new Error('Customers.create: the phone conflicted but has no holder');
+        throw phoneTaken(holder);
+      }
+      await this.audit.emit({
+        action: CUSTOMER_CREATE,
+        entity_type: 'customers',
+        entity_id: id,
+        // The stored members (API-AUD-01): what the row holds now.
+        after: {
+          name: row.name,
+          phone: row.phone,
+          phone_normalized: row.phone_normalized,
+          notes: row.notes,
+          status: CustomerStatus.ACTIVE,
+        },
+      });
+      return this.detail(tx, id, scope);
+    });
+  }
+
+  /**
+   * P3.CUS.05 — only the members sent (design D5 step 2): the row is locked first, then the stale
+   * check (D8), the phone, the text, the diff (D7). A phone another customer holds answers 409 with its
+   * holder — checked under the lock, and again from the unique index when a FINISH took the number while
+   * this transaction waited (that violation aborts the transaction, so the holder is read in a new one).
+   */
+  async update(id: string, body: CustomerUpdateBody, scope: ReadScope): Promise<CustomerDto> {
+    let wanted: string | undefined;
+    try {
+      return await this.runner.run(async (tx) => {
+        const stored = await this.locked(tx, id);
+        if (!sameMillisecond(stored.updated_at, body.expected_updated_at)) {
+          throw new ProblemException(ErrorCode.CONFLICT, 409);
+        }
+        const members = normalizeCustomerMembers(body);
+        let normalized: E164 | undefined;
+        if (members.phone !== undefined) {
+          const phone = normalizePhone(members.phone);
+          if (phone === 'phone_invalid') throw new ProblemException(ErrorCode.PHONE_INVALID, 400);
+          normalized = phone;
+        }
+        assertNoZawgyi(members);
+        const write = {
+          ...members,
+          ...(normalized === undefined ? {} : { phone_normalized: normalized }),
+        };
+        const changes = changedMembers(stored, write);
+        if (changes.length === 0) {
+          // Nothing changed: no UPDATE, no audit row, the stored updated_at (D7).
+          this.audit.skip();
+          return this.detail(tx, id, scope);
+        }
+        if (normalized !== undefined && normalized !== stored.phone_normalized) {
+          wanted = normalized;
+          const holder = await this.repository.findByPhone(
+            tx,
+            await this.company.id(tx),
+            normalized,
+          );
+          if (holder !== null && holder.id !== id) throw phoneTaken(holder);
+        }
+        await this.repository.updateMembers(tx, id, write, this.clock.now());
+        await this.audit.emit({
+          action: CUSTOMER_UPDATE,
+          entity_type: 'customers',
+          entity_id: id,
+          // A phone change always carries both members (D7), the E.164 form even when only the typing differs.
+          before: auditMembers(changes, stored, 'before'),
+          after: auditMembers(changes, stored, 'after'),
+        });
+        return this.detail(tx, id, scope);
+      });
+    } catch (error) {
+      if (!isCustomerPhoneTaken(error) || wanted === undefined) throw error;
+      const phone = wanted;
+      const holder = await this.runner.run(async (tx) => {
+        this.audit.skip();
+        return this.repository.findByPhone(tx, await this.company.id(tx), phone);
+      });
+      if (holder === null) throw error;
+      throw phoneTaken(holder);
+    }
+  }
+
+  /** P3.CUS.06 — built by add-customer-management part A5 (task 3.7); A4 carries the route's declaration. */
+  setStatus(id: string, body: CustomerStatusBody, scope: ReadScope): Promise<CustomerDto> {
+    return notBuilt('setStatus', [id, body, scope]);
+  }
+
+  /** P3.CUS.07 — built by part A5 (tasks 3.8 / 3.9). */
+  archive(id: string, body: CustomerArchiveBody, scope: ReadScope): Promise<CustomerDto> {
+    return notBuilt('archive', [id, body, scope]);
+  }
+
+  /** P3.CUS.08 — built by part A5 (task 3.9). */
+  restore(id: string, scope: ReadScope): Promise<CustomerDto> {
+    return notBuilt('restore', [id, scope]);
+  }
+
+  /** The customer's row locked FOR UPDATE (design D5); 404 for an id that is no customer. */
+  private async locked(tx: Tx, id: string) {
+    if (!isUuid(id)) throw notFound();
+    const row = await this.repository.lockById(tx, await this.company.id(tx), id);
+    if (row === null) throw notFound();
+    return row;
   }
 
   /** The company's customer of `id`; 404 for an id that is no uuid or names no customer. */
